@@ -908,8 +908,9 @@ function renderTypePicker() {
   const isGame = formType === "game";
   $("typePicker").innerHTML = Object.entries(TYPES).map(([k, t]) =>
     `<button type="button" data-type="${k}" class="${formType === k ? "active" : ""}">${t.icon} ${t.label}</button>`).join("");
-  $("titleLabel").textContent = isGame ? "Oyun ara" : "İsim";
-  $("f-title").placeholder = isGame ? "Oyunun adını yaz ve listeden seç…" : "";
+  $("titleLabel").textContent = isGame ? "Oyun ara" : formType === "music" ? "Albüm / şarkı" : "İsim";
+  $("f-title").placeholder = isGame ? "Oyunun adını yaz ve listeden seç…"
+    : formType === "music" ? "Albüm ya da şarkı ara, listeden seç veya elle yaz…" : "";
   $("creatorLabel").textContent = TYPES[formType].creator;
   $("platformLabel").textContent = TYPES[formType].where;
   $("f-progress").placeholder = TYPES[formType].progress;
@@ -1005,7 +1006,7 @@ async function deleteEntry() {
   }
 }
 
-// ---------- Oyun araması (RAWG) ----------
+// ---------- Arama: oyun (RAWG), müzik (iTunes) ----------
 
 let searchTimer;
 let searchSeq = 0;    // geç gelen eski cevapları yok saymak için
@@ -1028,37 +1029,84 @@ function rawg(path, params = {}) {
 // RAWG'nin küçültülmüş görsel adresi (tam boy görseller birkaç MB olabiliyor)
 const smallImage = (url) => url.replace(/\/media\/(games|screenshots)\//, "/media/crop/600/400/$1/");
 
+// iTunes kapakları 100px gelir; adresteki boyutu değiştirince büyüğü verir
+const bigArtwork = (url) => url.replace(/\/\d+x\d+bb\./, "/600x600bb.");
+
+async function itunes(text, entity, limit) {
+  const qs = new URLSearchParams({ term: text, entity, limit, country: "TR" });
+  const r = await fetch(`https://itunes.apple.com/search?${qs}`);
+  if (!r.ok) throw new Error(r.status);
+  return (await r.json()).results || [];
+}
+
+// Her tür için: nereden arandığı, sonuçların listede nasıl görüneceği ve seçilince ne olacağı
+const SEARCH = {
+  game: {
+    credit: ["RAWG", "https://rawg.io"],
+    enabled: () => !!RAWG_KEY,
+    async find(text) {
+      const data = await rawg("games", { search: text, page_size: 6 });
+      return (data.results || []).map((g) => ({
+        name: g.name, year: (g.released || "").slice(0, 4),
+        thumb: g.background_image && smallImage(g.background_image), raw: g,
+      }));
+    },
+    pick(item) {
+      formGame = gameFromRawg(item.raw);
+      fillOptions();
+      renderPicked();
+      loadGameOptions(item.raw.id); // arama sonucunda geliştirici yok, detaydan gelir
+    },
+  },
+  music: {
+    credit: ["Apple Music", "https://music.apple.com"],
+    enabled: () => true,
+    async find(text) {
+      const [albums, songs] = await Promise.all([itunes(text, "album", 4), itunes(text, "song", 3)]);
+      return [
+        ...albums.map((a) => ({ name: a.collectionName, sub: `Albüm · ${a.artistName}`, artist: a.artistName, year: (a.releaseDate || "").slice(0, 4), art: a.artworkUrl100 })),
+        ...songs.map((s) => ({ name: s.trackName, sub: `Şarkı · ${s.artistName}`, artist: s.artistName, year: (s.releaseDate || "").slice(0, 4), art: s.artworkUrl100 })),
+      ].map((m) => ({ ...m, thumb: m.art }));
+    },
+    pick(item) {
+      // Müzikte elle yazmak serbest; seçim sadece kutuları doldurur
+      $("f-title").value = item.name;
+      $("f-creator").value = item.artist;
+      $("f-year").value = item.year;
+      $("f-cover").value = item.art ? bigArtwork(item.art) : "";
+    },
+  },
+};
+
 function showSuggest(html) {
+  const [name, url] = SEARCH[formType].credit;
   $("suggest").innerHTML = html +
-    `<span class="credit">Veri: <a href="https://rawg.io" target="_blank" rel="noopener">RAWG</a></span>`;
+    `<span class="credit">Veri: <a href="${url}" target="_blank" rel="noopener">${name}</a></span>`;
   $("suggest").hidden = false;
 }
 
-async function searchGames(text) {
+async function searchMedia(text) {
   const seq = ++searchSeq;
   try {
-    const data = await rawg("games", { search: text, page_size: 6 });
+    const list = await SEARCH[formType].find(text);
     if (seq !== searchSeq) return;
-    suggestions = data.results || [];
-    showSuggest(suggestions.length
-      ? suggestions.map((g, i) => `<button type="button" data-i="${i}">
-          ${g.background_image ? `<img src="${esc(smallImage(g.background_image))}" alt="" onerror="this.style.visibility='hidden'">` : `<span class="noimg"></span>`}
-          <span class="name">${esc(g.name)}</span>
-          <span class="year">${(g.released || "").slice(0, 4)}</span>
+    suggestions = list;
+    showSuggest(list.length
+      ? list.map((m, i) => `<button type="button" data-i="${i}">
+          ${m.thumb ? `<img class="${formType === "music" ? "sq" : ""}" src="${esc(m.thumb)}" alt="" onerror="this.style.visibility='hidden'">` : `<span class="noimg"></span>`}
+          <span class="name">${esc(m.name)}${m.sub ? `<small>${esc(m.sub)}</small>` : ""}</span>
+          <span class="year">${esc(m.year)}</span>
         </button>`).join("")
-      : `<div class="note">Sonuç yok. Farklı yazmayı dene.</div>`);
+      : `<div class="note">Sonuç yok. ${formType === "game" ? "Farklı yazmayı dene." : "İstersen elle yazabilirsin."}</div>`);
   } catch {
     if (seq === searchSeq) showSuggest(`<div class="note">Arama şu an çalışmıyor.</div>`);
   }
 }
 
-async function pickGame(g) {
+function pickSuggestion(item) {
   hideSuggest();
   setFormError("");
-  formGame = gameFromRawg(g);
-  fillOptions();
-  renderPicked();
-  loadGameOptions(g.id); // arama sonucunda geliştirici yok, detaydan gelir
+  SEARCH[formType].pick(item);
 }
 
 // ---------- Üst bar ----------
@@ -1105,7 +1153,7 @@ document.addEventListener("click", (e) => {
   // Form içi
   if ((x = el("#typePicker [data-type]"))) { formType = x.dataset.type; setFormError(""); return renderTypePicker(); }
   if (el("#changeGame")) { formGame = null; $("f-title").value = ""; renderPicked(); return $("f-title").focus(); }
-  if ((x = el("#suggest button[data-i]"))) return pickGame(suggestions[x.dataset.i]);
+  if ((x = el("#suggest button[data-i]"))) return pickSuggestion(suggestions[x.dataset.i]);
   if (el("#stars .clear")) { formRating = 0; return renderStarInput(); }
   if ((x = el("#stars .star"))) {
     formRating = x.dataset.i * 2 - (e.offsetX < x.offsetWidth / 2 ? 1 : 0);
@@ -1131,8 +1179,8 @@ document.addEventListener("input", (e) => {
   if (id === "f-title") {
     hideSuggest();
     const text = e.target.value.trim();
-    if (formType !== "game" || !RAWG_KEY || text.length < 2) return;
-    searchTimer = setTimeout(() => searchGames(text), 300);
+    if (!SEARCH[formType]?.enabled() || text.length < 2) return;
+    searchTimer = setTimeout(() => searchMedia(text), 300);
   }
 });
 
