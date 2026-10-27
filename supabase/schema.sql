@@ -25,6 +25,11 @@ create table public.entries (
   cover text check (cover ~ '^https?://'),
   notes text check (char_length(notes) <= 5000),
   rawg_id int,
+  platform text check (char_length(platform) <= 60),
+  store text check (char_length(store) <= 60),
+  started_on date,
+  hours numeric(7, 1) check (hours >= 0 and hours < 100000),
+  progress text check (char_length(progress) <= 200),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

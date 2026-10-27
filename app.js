@@ -1,13 +1,22 @@
 // Ancalog: oyun, film, dizi, müzik ve anime günlüğü + topluluk.
 // Veriler Supabase'de, oyun bilgileri RAWG'den. Ayarlar config.js'te.
 
+const WATCH = ["Netflix", "Disney+", "Prime Video", "HBO Max", "Apple TV+", "YouTube", "Mubi", "Tabii", "Exxen", "Sinema", "TV"];
 const TYPES = {
-  game:  { label: "Oyun",  icon: "🎮", creator: "Geliştirici",      active: "Oynuyorum",  done: "bitirdi", doing: "oynuyor" },
-  movie: { label: "Film",  icon: "🎬", creator: "Yönetmen",         active: "İzliyorum",  done: "izledi",  doing: "izliyor" },
-  show:  { label: "Dizi",  icon: "📺", creator: "Yaratıcı / Kanal", active: "İzliyorum",  done: "bitirdi", doing: "izliyor" },
-  music: { label: "Müzik", icon: "🎵", creator: "Sanatçı",          active: "Dinliyorum", done: "dinledi", doing: "dinliyor", square: true },
-  anime: { label: "Anime", icon: "🌸", creator: "Stüdyo",           active: "İzliyorum",  done: "bitirdi", doing: "izliyor" },
+  game:  { label: "Oyun",  icon: "🎮", creator: "Geliştirici",      active: "Oynuyorum",  done: "bitirdi", doing: "oynuyor",
+           where: "Platform", progress: "ör. Ana hikâye %60, 5. bölüm",
+           places: ["PC", "PlayStation 5", "PlayStation 4", "Xbox Series X|S", "Xbox One", "Nintendo Switch", "Nintendo Switch 2", "Steam Deck", "iOS", "Android"] },
+  movie: { label: "Film",  icon: "🎬", creator: "Yönetmen",         active: "İzliyorum",  done: "izledi",  doing: "izliyor",
+           where: "Nerede izledin", progress: "ör. 1 saat 10 dakikada kaldım", places: WATCH },
+  show:  { label: "Dizi",  icon: "📺", creator: "Yaratıcı / Kanal", active: "İzliyorum",  done: "bitirdi", doing: "izliyor",
+           where: "Nerede izledin", progress: "ör. 2. sezon 5. bölüm", places: WATCH },
+  music: { label: "Müzik", icon: "🎵", creator: "Sanatçı",          active: "Dinliyorum", done: "dinledi", doing: "dinliyor", square: true,
+           where: "Nerede dinledin", progress: "ör. 7. şarkı", places: ["Spotify", "Apple Music", "YouTube Music", "Deezer", "Plak", "CD", "Konser"] },
+  anime: { label: "Anime", icon: "🌸", creator: "Stüdyo",           active: "İzliyorum",  done: "bitirdi", doing: "izliyor",
+           where: "Nerede izledin", progress: "ör. 12. bölüm", places: ["Crunchyroll", "Netflix", "Prime Video", "Disney+", "YouTube"] },
 };
+const STORES = ["Steam", "Epic Games Store", "PlayStation Store", "Xbox Store", "Xbox Game Pass", "PC Game Pass", "Nintendo eShop", "GOG",
+  "EA app", "Ubisoft Connect", "Battle.net", "itch.io", "App Store", "Google Play", "Fiziksel kopya"];
 
 const STATUSES = ["completed", "active", "planned", "paused", "dropped"];
 const statusLabel = (s, type) => ({
@@ -52,6 +61,10 @@ function today() {
   return new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 }
 const fmtDate = (d) => new Date(d + "T00:00").toLocaleDateString("tr", { day: "numeric", month: "long", year: "numeric" });
+const fmtHours = (h) => `${Number(h).toLocaleString("tr", { maximumFractionDigits: 1 })} saat`;
+const fmtRating = (r) => (r / 2).toLocaleString("tr");
+// RAWG görselini genişliğe göre küçült (dikey kapak CSS ile kırpılır)
+const resized = (url, w = 640) => url.replace(/\/media\/(games|screenshots)\//, `/media/resize/${w}/-/$1/`);
 
 function timeAgo(iso) {
   const s = (Date.now() - new Date(iso)) / 1000;
@@ -116,12 +129,14 @@ function statsHtml(list) {
   const rated = list.filter((i) => i.rating > 0);
   const avg = rated.length ? (rated.reduce((s, i) => s + i.rating, 0) / rated.length / 2).toLocaleString("tr", { maximumFractionDigits: 1 }) : "–";
   const year = new Date().getFullYear().toString();
+  const hours = list.reduce((s, i) => s + (Number(i.hours) || 0), 0);
   return [
     [list.length, "Toplam kayıt"],
     [list.filter((i) => i.status === "completed").length, "Bitirilen"],
     [list.filter((i) => i.status === "active").length, "Devam eden"],
     [list.filter((i) => i.status === "completed" && (i.date || "").startsWith(year)).length, "Bu yıl bitirilen"],
     [avg === "–" ? avg : `${avg} ★`, "Ortalama puan"],
+    ...(hours ? [[`⏱ ${Math.round(hours).toLocaleString("tr")}`, "Saat oynandı"]] : []),
   ].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("");
 }
 
@@ -142,19 +157,22 @@ function cardHtml(e, { kind = false, edit = false } = {}) {
   </button>`;
 }
 
+// Akışta notlar gösterilmez; kayda tıklayan, sahibinin profilinde kaydı açar.
 function feedItem(e) {
   const p = e.profiles || {};
   const t = TYPES[e.type];
   const cover = safeUrl(e.cover);
+  const link = `#/u/${esc(p.username)}/${e.id}`;
+  const extra = [e.platform, e.status === "active" ? e.progress : "", e.hours ? fmtHours(e.hours) : ""].filter(Boolean);
   return `<div class="feed-item">
     <a href="#/u/${esc(p.username)}">${avatarHtml(p)}</a>
     <div class="text">
       <div class="line"><a href="#/u/${esc(p.username)}"><b>${displayName(p)}</b></a> ${esc(activityVerb(e))}:
-        <span class="title-link" data-entry="${e.id}">${esc(e.title)}</span></div>
+        <a class="title-link" href="${link}">${esc(e.title)}</a></div>
       <div class="sub"><span>${t.icon} ${t.label}</span>${e.rating ? `<span class="stars">${starsHtml(e.rating)}</span>` : ""}<span>${timeAgo(e.updated_at)}</span></div>
-      ${e.notes ? `<div class="note">“${esc(e.notes)}”</div>` : ""}
+      ${extra.length || e.notes ? `<div class="chips-row">${extra.map((x) => `<span class="tag">${esc(x)}</span>`).join("")}${e.notes ? `<span class="tag ghost">📝 not var</span>` : ""}</div>` : ""}
     </div>
-    <div class="thumb" data-entry="${e.id}">${t.icon}${cover ? `<img src="${esc(cover)}" alt="" loading="lazy" onerror="this.remove()">` : ""}</div>
+    <a class="thumb" href="${link}">${t.icon}${cover ? `<img src="${esc(cover)}" alt="" loading="lazy" onerror="this.remove()">` : ""}</a>
   </div>`;
 }
 
@@ -200,7 +218,7 @@ const routes = {
 };
 
 async function route({ keepScroll = false } = {}) {
-  const [name, arg = ""] = location.hash.replace(/^#\/?/, "").split("/");
+  const [name, arg = "", extra = ""] = location.hash.replace(/^#\/?/, "").split("/");
   const seq = ++routeSeq;
   document.querySelectorAll("dialog[open]").forEach((d) => d.close());
   document.querySelectorAll("[data-nav]").forEach((a) => {
@@ -213,7 +231,7 @@ async function route({ keepScroll = false } = {}) {
   }
   if (!sb) return show(seq, `<div class="empty">Supabase ayarları eksik. <code>config.js</code> dosyasını doldur.</div>`);
   try {
-    await (routes[name] || viewNotFound)(decodeURIComponent(arg), seq);
+    await (routes[name] || viewNotFound)(decodeURIComponent(arg), seq, extra);
   } catch (err) {
     if (err === STALE) return;
     console.error(err);
@@ -316,9 +334,14 @@ async function viewCommunity(_, seq) {
   }
   const popular = [...byGame.values()].sort((a, b) => b.n - a.n).slice(0, 12);
 
+  const unique = [...new Set([...games, ...feed].map((e) => safeUrl(e.cover)).filter(Boolean))].slice(0, 30);
+  const covers = unique.length ? Array.from({ length: 30 }, (_, i) => unique[i % unique.length]) : []; // az kapak varsa tekrarla
   show(seq, `
-    <div class="section-head"><h1>Topluluk</h1></div>
-    ${popular.length ? `<section>
+    <section class="mosaic-head">
+      <div class="mosaic">${covers.map((c) => `<img src="${esc(c)}" alt="" loading="lazy" onerror="this.remove()">`).join("")}</div>
+      <div class="mosaic-text"><h1>Topluluk</h1><p>Herkes neyi oynuyor, neyi izliyor? Keşfet, takip et.</p></div>
+    </section>
+    ${popular.length ? `<section class="section">
       <div class="section-head"><h2>🔥 Popüler oyunlar</h2></div>
       <div class="strip">${popular.map((g) => `<a class="card" href="#/game/${g.rawg_id}">
         <div class="poster"><div class="ph">🎮</div>${safeUrl(g.cover) ? `<img src="${esc(g.cover)}" alt="" loading="lazy" onerror="this.remove()">` : ""}
@@ -348,7 +371,7 @@ async function searchMembers(text) {
 
 // ---------- Profil ----------
 
-async function viewProfile(username, seq) {
+async function viewProfile(username, seq, entryId) {
   const profile = await q(sb.from("profiles").select("*").eq("username", username.toLowerCase()).maybeSingle());
   if (!profile) return show(seq, `<div class="empty">@${esc(username)} diye bir kullanıcı yok.</div>`);
 
@@ -361,7 +384,7 @@ async function viewProfile(username, seq) {
   remember(entries);
   const isMe = state.me?.id === profile.id;
   current = { profile, entries, isMe };
-  if (lib.user !== profile.id) lib = { user: profile.id, type: "all", status: "all", sort: "updated", q: "" };
+  if (lib.user !== profile.id) lib = { user: profile.id, type: "all", status: "all", sort: "updated", q: "", view: savedView() };
 
   show(seq, `
     <div class="profile-banner"></div>
@@ -391,13 +414,19 @@ async function viewProfile(username, seq) {
             <option value="rating">Puan (yüksek)</option>
             <option value="title">İsim (A-Z)</option>
             <option value="year">Yıl (yeni)</option>
+            <option value="hours">Süre (uzun)</option>
           </select>
+          <div class="seg" id="viewToggle">
+            <button type="button" data-view="grid" title="Izgara">▦</button>
+            <button type="button" data-view="list" title="Liste">☰</button>
+          </div>
         </div>
       </div>
       <div id="libGrid"></div>
     </section>`);
   $("libSort").value = lib.sort;
   updateLibrary();
+  if (entryId && cache.has(entryId)) openView(cache.get(entryId));
 }
 
 function updateLibrary() {
@@ -423,17 +452,55 @@ function updateLibrary() {
     rating: (a, b) => b.rating - a.rating || b.updated_at.localeCompare(a.updated_at),
     title: (a, b) => a.title.localeCompare(b.title, "tr"),
     year: (a, b) => (b.year || 0) - (a.year || 0),
+    hours: (a, b) => (Number(b.hours) || 0) - (Number(a.hours) || 0),
   };
+  document.querySelectorAll("#viewToggle [data-view]").forEach((b) => b.classList.toggle("active", b.dataset.view === lib.view));
   const list = scoped
     .filter((e) => (lib.status === "all" || e.status === lib.status) &&
       (!text || `${e.title} ${e.creator || ""} ${e.notes || ""}`.toLocaleLowerCase("tr").includes(text)))
     .sort(sorters[lib.sort]);
 
   $("libGrid").innerHTML = list.length
-    ? `<div class="grid">${list.map((e) => cardHtml(e, { kind: lib.type === "all", edit: isMe })).join("")}</div>`
+    ? lib.view === "list"
+      ? `<div class="rows">${list.map((e) => rowHtml(e, isMe)).join("")}</div>`
+      : `<div class="grid">${list.map((e) => cardHtml(e, { kind: lib.type === "all" })).join("")}</div>`
     : `<div class="empty">${entries.length ? "Bu filtreye uyan kayıt yok." : isMe
         ? `Henüz hiçbir şey loglamadın.<br><button class="btn primary" data-add>+ İlk kaydını ekle</button>`
         : "Burada henüz kayıt yok."}</div>`;
+}
+
+function savedView() {
+  try { return localStorage.getItem("ancalog.view") || "grid"; } catch { return "grid"; }
+}
+
+// Liste görünümünde bir satır: kapak, başlık, platform/durum/mağaza, ilerleme, süre, puan
+function rowHtml(e, isMe) {
+  const t = TYPES[e.type];
+  const cover = safeUrl(e.cover);
+  const dates = [e.started_on && `${fmtDate(e.started_on)}`, e.date && `${fmtDate(e.date)}`].filter(Boolean).join(" → ");
+  return `<div class="lrow">
+    <button class="lrow-cover poster ${t.square ? "square" : ""}" data-entry="${e.id}">
+      <div class="ph">${t.icon}</div>${cover ? `<img src="${esc(cover)}" alt="" loading="lazy" onerror="this.remove()">` : ""}
+    </button>
+    <div class="lrow-main">
+      <div class="lrow-head">
+        <button class="lrow-title" data-entry="${e.id}">${esc(e.title)}${e.year ? ` <span class="muted">(${e.year})</span>` : ""}</button>
+        <div class="lrow-tags">
+          ${e.platform ? `<span class="tag">${esc(e.platform)}</span>` : ""}
+          <span class="pill ${e.status}">${statusLabel(e.status, e.type)}</span>
+          ${e.store ? `<span class="tag">${esc(e.store)}</span>` : ""}
+        </div>
+      </div>
+      ${e.progress ? `<div class="lrow-progress">${esc(e.progress)}</div>` : ""}
+      <div class="lrow-foot">
+        ${e.rating ? `<span class="stars">${starsHtml(e.rating)}</span>` : `<span class="muted">Puan yok</span>`}
+        ${e.hours ? `<span>⏱ ${fmtHours(e.hours)}</span>` : ""}
+        ${dates ? `<span>📅 ${dates}</span>` : ""}
+        ${e.notes ? `<span>📝 Not</span>` : ""}
+      </div>
+    </div>
+    ${isMe ? `<button class="icon-btn lrow-edit" data-edit="${e.id}" title="Düzenle">✎</button>` : ""}
+  </div>`;
 }
 
 async function openUserList(kind) {
@@ -469,65 +536,78 @@ async function toggleFollow(id, btn) {
 // ---------- Oyun sayfası ----------
 
 async function viewGame(id, seq) {
-  const [g, logs] = await Promise.all([
+  const [g, logs, shots] = await Promise.all([
     rawg(`games/${encodeURIComponent(id)}`).catch(() => null),
     q(sb.from("entries").select(ENTRY_COLS).eq("rawg_id", Number(id) || 0).order("updated_at", { ascending: false }).limit(200)),
+    rawg(`games/${encodeURIComponent(id)}/screenshots`, { page_size: 5 }).then((r) => r.results || []).catch(() => []),
   ]);
   if (!g && !logs.length) return show(seq, `<div class="empty">Bu oyun bulunamadı.</div>`);
   remember(logs);
   currentGame = g;
 
   const name = g?.name || logs[0].title;
-  const bg = safeUrl(g?.background_image || logs[0]?.cover);
+  const art = safeUrl(g?.background_image) ? resized(g.background_image) : safeUrl(logs[0]?.cover);
   const rated = logs.filter((l) => l.rating);
-  const avg = rated.length ? (rated.reduce((s, l) => s + l.rating, 0) / rated.length / 2) : 0;
+  const avg = rated.length ? rated.reduce((s, l) => s + l.rating, 0) / rated.length / 2 : 0;
+  const timed = logs.filter((l) => Number(l.hours) > 0);
+  const avgHours = timed.length ? timed.reduce((s, l) => s + Number(l.hours), 0) / timed.length : 0;
   const mine = state.me && logs.find((l) => l.user_id === state.me.id);
   const count = (s) => logs.filter((l) => l.status === s).length;
-  const devs = (g?.developers || []).map((d) => d.name).join(", ");
+  const names = (list) => (list || []).map((x) => x.name || x.platform?.name || x.store?.name).filter(Boolean);
+  const devs = names(g?.developers).join(", ");
   const desc = (g?.description_raw || "").trim();
-  const action = !state.me ? `<a class="btn primary big" href="#/login">+ Kütüphaneme ekle</a>`
-    : mine ? `<button class="btn big" data-edit="${mine.id}">✎ Kaydımı düzenle</button>`
-    : g ? `<button class="btn primary big" data-add-game>+ Kütüphaneme ekle</button>` : "";
+  const action = !state.me ? `<a class="btn primary wide" href="#/login">+ Kütüphaneme ekle</a>`
+    : mine ? `<button class="btn primary wide" data-edit="${mine.id}">${TYPES.game.icon} ${statusLabel(mine.status, "game")} · Düzenle</button>`
+    : g ? `<button class="btn primary wide" data-add-game>+ Kütüphaneme ekle</button>` : "";
   const facts = [
-    ["Çıkış", g?.released ? fmtDate(g.released) : ""],
-    ["Geliştirici", devs],
-    ["Yayıncı", (g?.publishers || []).map((d) => d.name).join(", ")],
-    ["Platformlar", (g?.platforms || []).map((p) => p.platform.name).join(", ")],
-    ["Metacritic", g?.metacritic || ""],
+    ["Geliştirici", names(g?.developers).join("\n")],
+    ["Yayıncı", names(g?.publishers).join("\n")],
+    ["Çıkış tarihi", g?.released ? fmtDate(g.released) : ""],
+    ["Ortalama süre (RAWG)", g?.playtime ? fmtHours(g.playtime) : ""],
+    ["Ortalama süre (Ancalog)", avgHours ? fmtHours(avgHours) : ""],
+    ["Mağazalar", names(g?.stores).join("\n")],
+    ["Yaş sınırı", g?.esrb_rating?.name || ""],
   ].filter(([, v]) => v);
 
   show(seq, `
-    <section class="game-hero">
-      <div class="bg" style="${bg ? `background-image:${cssUrl(bg)}` : "background:linear-gradient(120deg,#3b1f7a,#db2777)"}"></div>
-      <div class="content">
-        <div>
-          <h1>${esc(name)}</h1>
-          <div class="facts">${esc([g?.released?.slice(0, 4), devs].filter(Boolean).join(" · "))}</div>
+    <section class="gh">
+      <div class="gh-bg" style="${art ? `background-image:${cssUrl(art)}` : ""}"></div>
+      <div class="gh-inner">
+        <div class="gh-left">
+          <div class="gh-cover">${art ? `<img src="${esc(art)}" alt="">` : `<div class="ph">🎮</div>`}</div>
+          <div class="gh-counts">
+            <span title="Kütüphanesine ekleyen">📚 ${logs.length}</span>
+            <span title="Oynuyor">▶ ${count("active")}</span>
+            <span title="Bitirdi">🏆 ${count("completed")}</span>
+            <span title="Planlıyor">📋 ${count("planned")}</span>
+          </div>
+          ${action}
+        </div>
+        <div class="gh-main">
+          <div class="crumbs"><a href="#/community">Oyunlar</a> / ${esc(name)}</div>
+          <h1>${esc(name)} ${g?.released ? `<small>${g.released.slice(0, 4)}</small>` : ""}</h1>
+          ${devs ? `<div class="gh-dev">${esc(devs)}</div>` : ""}
+          ${desc ? `<p class="gh-desc clamp" id="gameDesc">${esc(desc)}</p>${desc.length > 300 ? `<button class="link" id="moreDesc">Devamını oku</button>` : ""}` : ""}
+          ${g?.platforms?.length ? `<div class="gh-line"><b>Platformlar:</b> ${esc(names(g.platforms).join(", "))}</div>` : ""}
           ${g?.genres?.length ? `<div class="genres">${g.genres.map((x) => `<span>${esc(x.name)}</span>`).join("")}</div>` : ""}
         </div>
-        ${action}
+        <div class="gh-score">
+          <div><b>★ ${avg ? avg.toLocaleString("tr", { maximumFractionDigits: 1 }) : "–"}<small>/5</small></b><span>${rated.length} oy · Ancalog</span></div>
+          ${g?.metacritic ? `<div><b class="mc">${g.metacritic}</b><span>Metacritic</span></div>` : ""}
+        </div>
       </div>
     </section>
     <div class="game-body">
+      <aside class="facts">${facts.map(([k, v]) => `<div><span>${k}</span><b>${esc(v)}</b></div>`).join("")}
+        <span class="muted" style="font-size:12px">Oyun bilgileri: <a href="https://rawg.io/games/${esc(g?.slug || id)}" target="_blank" rel="noopener" style="color:var(--accent-2)">RAWG</a></span>
+      </aside>
       <div>
-        ${desc ? `<section><div class="section-head"><h2>Hakkında</h2></div>
-          <p class="game-desc">${esc(desc.length > 1200 ? desc.slice(0, 1200) + "…" : desc)}</p></section>` : ""}
+        ${shots.length ? `<div class="shots">${shots.map((s) => `<a href="${esc(s.image)}" target="_blank" rel="noopener"><img src="${esc(resized(s.image))}" alt="" loading="lazy"></a>`).join("")}</div>` : ""}
         <section class="section">
           <div class="section-head"><h2>Ancalog'da kimler logladı</h2></div>
           ${feedHtml(logs, `<div class="empty">Henüz kimse loglamadı. İlk sen ol!</div>`)}
         </section>
       </div>
-      <aside class="game-side">
-        <div class="stats">
-          <div class="stat"><b>${logs.length}</b><span>Kişi logladı</span></div>
-          <div class="stat"><b>${avg ? avg.toLocaleString("tr", { maximumFractionDigits: 1 }) + " ★" : "–"}</b><span>Ortalama puan</span></div>
-          <div class="stat"><b>${count("completed")}</b><span>Bitirdi</span></div>
-          <div class="stat"><b>${count("active")}</b><span>Oynuyor</span></div>
-          <div class="stat"><b>${count("planned")}</b><span>Oynamayı planlıyor</span></div>
-        </div>
-        ${facts.length ? `<div class="stat">${facts.map(([k, v]) => `<div style="margin-bottom:8px"><span>${k}</span><div>${esc(v)}</div></div>`).join("")}</div>` : ""}
-        <span class="muted" style="font-size:12px">Oyun bilgileri: <a href="https://rawg.io/games/${esc(g?.slug || id)}" target="_blank" rel="noopener" style="color:var(--accent-2)">RAWG</a></span>
-      </aside>
     </div>`);
 }
 
@@ -718,6 +798,14 @@ function openView(e) {
   const p = e.profiles || {};
   const cover = safeUrl(e.cover);
   const mine = state.me?.id === e.user_id;
+  const details = [
+    [t.where, e.platform],
+    ["Mağaza", e.store],
+    ["Başladı", e.started_on && fmtDate(e.started_on)],
+    [e.status === "completed" ? "Bitirdi" : "Tarih", e.date && fmtDate(e.date)],
+    ["Süre", e.hours && fmtHours(e.hours)],
+    ["İlerleme", e.progress],
+  ].filter(([, v]) => v);
   $("viewBody").innerHTML = `
     <div class="view-cover" style="${cover ? `background-image:${cssUrl(cover)}` : "background:linear-gradient(120deg,#3b1f7a,#db2777)"}">
       <button type="button" class="icon-btn" data-close aria-label="Kapat">✕</button>
@@ -727,7 +815,8 @@ function openView(e) {
       <h2>${esc(e.title)}</h2>
       ${e.creator || e.year ? `<div class="muted">${esc([e.creator, e.year].filter(Boolean).join(" · "))}</div>` : ""}
       ${e.rating ? `<div class="stars" style="font-size:22px">${starsHtml(e.rating)}</div>` : ""}
-      ${p.username ? `<div class="view-user">${avatarHtml(p, "sm")} <a href="#/u/${esc(p.username)}">${displayName(p)}</a>${e.date ? ` · ${fmtDate(e.date)}` : ""}</div>` : ""}
+      ${p.username ? `<div class="view-user">${avatarHtml(p, "sm")} <a href="#/u/${esc(p.username)}">${displayName(p)}</a></div>` : ""}
+      ${details.length ? `<div class="view-details">${details.map(([k, v]) => `<div><span>${k}</span><b>${esc(v)}</b></div>`).join("")}</div>` : ""}
       ${e.notes ? `<div class="view-notes">${esc(e.notes)}</div>` : ""}
       <div class="actions">
         ${e.rawg_id ? `<a class="btn" href="#/game/${e.rawg_id}">Oyun sayfası →</a>` : ""}
@@ -757,7 +846,12 @@ function openForm(item, { game } = {}) {
   $("f-title").value = item && !formGame ? item.title : "";
   $("f-year").value = item?.year || "";
   $("f-creator").value = item?.creator || "";
-  $("f-date").value = item?.date || today();
+  $("f-date").value = item?.date || "";
+  $("f-start").value = item?.started_on || "";
+  $("f-platform").value = item?.platform || "";
+  $("f-store").value = item?.store || "";
+  $("f-hours").value = item?.hours ?? "";
+  $("f-progress").value = item?.progress || "";
   $("f-cover").value = item?.cover || "";
   $("f-notes").value = item?.notes || "";
   $("f-status").innerHTML = "";
@@ -768,6 +862,8 @@ function openForm(item, { game } = {}) {
   $("deleteBtn").hidden = !item;
   $("dialog").showModal();
   if (!formGame) $("f-title").focus();
+  // Kayıtlı oyunu düzenlerken platform/mağaza önerileri için RAWG'den detayı çek
+  if (formGame && !game) loadGameOptions(formGame.rawg_id);
 }
 
 function gameFromRawg(g) {
@@ -775,7 +871,31 @@ function gameFromRawg(g) {
     rawg_id: g.id, title: g.name, year: parseInt(g.released) || null,
     cover: g.background_image ? smallImage(g.background_image) : null,
     creator: (g.developers || []).map((d) => d.name).join(", ") || null,
+    platforms: (g.platforms || []).map((p) => p.platform.name),
+    stores: (g.stores || []).map((s) => s.store.name),
   };
+}
+
+async function loadGameOptions(id) {
+  try {
+    const d = await rawg(`games/${id}`);
+    if (formGame?.rawg_id !== id) return;
+    const full = gameFromRawg(d);
+    Object.assign(formGame, { platforms: full.platforms, stores: full.stores });
+    if (!formGame.creator) formGame.creator = full.creator;
+    fillOptions();
+    renderPicked();
+  } catch { /* öneriler olmadan da yazılabilir */ }
+}
+
+// Platform ve mağaza kutularının önerileri: seçilen oyunun RAWG listesi önce, sonra genel liste
+function fillOptions() {
+  const uniq = (list) => [...new Set(list)];
+  const isGame = formType === "game";
+  const places = uniq([...(isGame ? formGame?.platforms || [] : []), ...TYPES[formType].places]);
+  const stores = uniq([...(formGame?.stores || []), ...STORES]);
+  $("platformList").innerHTML = places.map((p) => `<option value="${esc(p)}">`).join("");
+  $("storeList").innerHTML = stores.map((s) => `<option value="${esc(s)}">`).join("");
 }
 
 function setFormError(msg) {
@@ -791,7 +911,11 @@ function renderTypePicker() {
   $("titleLabel").textContent = isGame ? "Oyun ara" : "İsim";
   $("f-title").placeholder = isGame ? "Oyunun adını yaz ve listeden seç…" : "";
   $("creatorLabel").textContent = TYPES[formType].creator;
+  $("platformLabel").textContent = TYPES[formType].where;
+  $("f-progress").placeholder = TYPES[formType].progress;
   document.querySelectorAll(".manual-only").forEach((el) => (el.hidden = isGame));
+  document.querySelectorAll(".game-only").forEach((el) => (el.hidden = !isGame));
+  fillOptions();
   const cur = $("f-status").value || "completed";
   $("f-status").innerHTML = STATUSES.map((s) => `<option value="${s}">${statusLabel(s, formType)}</option>`).join("");
   $("f-status").value = cur;
@@ -818,9 +942,11 @@ function renderStarInput() {
 async function submitForm() {
   setFormError("");
   let data;
-  if (formType === "game") {
+  const isGame = formType === "game";
+  if (isGame) {
     if (!formGame) return setFormError("Listeden bir oyun seçmelisin.");
-    data = { ...formGame };
+    const { rawg_id, title, year, cover, creator } = formGame;
+    data = { rawg_id, title, year, cover, creator };
   } else {
     const title = $("f-title").value.trim();
     const cover = $("f-cover").value.trim();
@@ -828,10 +954,22 @@ async function submitForm() {
     if (cover && !safeUrl(cover)) return setFormError("Kapak linki http:// ya da https:// ile başlamalı.");
     data = { title, year: parseInt($("f-year").value) || null, creator: $("f-creator").value.trim() || null, cover: cover || null, rawg_id: null };
   }
+  const status = $("f-status").value;
+  const started = $("f-start").value || null;
+  // Bitti işaretlenip tarih girilmediyse bugünü yaz (yıllık istatistik için)
+  const finished = $("f-date").value || (status === "completed" ? today() : null);
+  if (started && finished && started > finished) return setFormError("Başlama tarihi bitirme tarihinden sonra olamaz.");
+  const hours = isGame && $("f-hours").value !== "" ? Number($("f-hours").value) : null;
+  if (hours !== null && !(hours >= 0 && hours < 100000)) return setFormError("Oynama süresi geçerli bir sayı olmalı.");
   Object.assign(data, {
     type: formType,
-    status: $("f-status").value,
-    date: $("f-date").value || null,
+    status,
+    date: finished,
+    started_on: started,
+    platform: $("f-platform").value.trim() || null,
+    store: isGame ? $("f-store").value.trim() || null : null,
+    hours,
+    progress: $("f-progress").value.trim() || null,
     rating: formRating,
     notes: $("f-notes").value.trim() || null,
     updated_at: new Date().toISOString(),
@@ -918,14 +1056,9 @@ async function pickGame(g) {
   hideSuggest();
   setFormError("");
   formGame = gameFromRawg(g);
+  fillOptions();
   renderPicked();
-  try {
-    const d = await rawg(`games/${g.id}`);
-    if (formGame?.rawg_id === g.id) {
-      formGame.creator = (d.developers || []).map((x) => x.name).join(", ") || null;
-      renderPicked();
-    }
-  } catch { /* geliştirici bilgisi gelmezse boş kalır */ }
+  loadGameOptions(g.id); // arama sonucunda geliştirici yok, detaydan gelir
 }
 
 // ---------- Üst bar ----------
@@ -954,6 +1087,12 @@ document.addEventListener("click", (e) => {
   if ((x = el("[data-list]"))) return openUserList(x.dataset.list);
   if ((x = el("[data-libtype]"))) { lib.type = x.dataset.libtype; lib.status = "all"; return updateLibrary(); }
   if ((x = el("[data-libstatus]"))) { lib.status = x.dataset.libstatus; return updateLibrary(); }
+  if ((x = el("[data-view]"))) {
+    lib.view = x.dataset.view;
+    try { localStorage.setItem("ancalog.view", lib.view); } catch { /* sadece tercih */ }
+    return updateLibrary();
+  }
+  if (el("#moreDesc")) { $("gameDesc").classList.remove("clamp"); return el("#moreDesc").remove(); }
   if (el("#importLocal")) return importLocal($("importLocal"));
   if (el("#dismissLocal")) {
     localStorage.setItem(LOCAL_KEY + ".dismissed", localStorage.getItem(LOCAL_KEY));
@@ -1014,6 +1153,11 @@ $("suggest").addEventListener("keydown", (e) => {
   if (e.key === "Escape") { e.preventDefault(); hideSuggest(); $("f-title").focus(); }
 });
 $("dialog").addEventListener("close", hideSuggest);
+// Akıştan açılan kaydın id'sini adresten sil (sayfa yenilenince tekrar açılmasın)
+$("viewDialog").addEventListener("close", () => {
+  const parts = location.hash.split("/");
+  if (parts[1] === "u" && parts.length > 3) history.replaceState(null, "", parts.slice(0, 3).join("/"));
+});
 
 window.addEventListener("hashchange", () => route());
 
