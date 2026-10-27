@@ -3,7 +3,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import type { Profile } from "@/lib/types";
+import type { List, Profile } from "@/lib/types";
+import { PROFILE_COLS } from "@/lib/constants";
+import { ListCard } from "@/components/ListCard";
 import { safeUrl } from "@/lib/format";
 import { fetchFeed } from "@/lib/data";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
@@ -17,12 +19,14 @@ export default function Community() {
   const { version } = useApp();
   const { data, error } = useLoad(async () => {
     const db = sb();
-    const [feed, members, games] = await Promise.all([
+    const [feed, members, games, lists] = await Promise.all([
       fetchFeed({ limit: 40 }),
       q<Profile[]>(db.from("profiles").select("*").order("created_at", { ascending: false }).limit(30)),
       q<Slim[]>(db.from("entries").select("rawg_id, title, cover, rating").eq("type", "game").order("updated_at", { ascending: false }).limit(300)),
+      q<List[]>(db.from("lists").select(`*, profiles(${PROFILE_COLS}), list_items(id, type, title, cover, rawg_id, position)`)
+        .eq("is_public", true).order("updated_at", { ascending: false }).limit(12)).catch(() => [] as List[]),
     ]);
-    return { feed, members, games };
+    return { feed, members, games, lists: lists.filter((l) => l.list_items?.length) };
   }, [version], supabaseConfigured());
 
   const [found, setFound] = useState<Profile[] | null>(null);
@@ -41,7 +45,7 @@ export default function Community() {
   if (!supabaseConfigured()) return <div className="empty">Supabase ayarları eksik.</div>;
   if (error) return <div className="empty">Bir şeyler ters gitti: {error}</div>;
   if (!data) return <div className="loading">Yükleniyor…</div>;
-  const { feed, members, games } = data;
+  const { feed, members, games, lists } = data;
 
   // Son kayıtlarda en çok loglanan oyunlar
   const byGame = new Map<number, Slim & { n: number }>();
@@ -73,6 +77,12 @@ export default function Community() {
               </Link>
             ))}
           </div>
+        </section>
+      )}
+      {lists.length > 0 && (
+        <section className="section">
+          <div className="section-head"><h2>📚 Yeni listeler</h2></div>
+          <div className="list-grid">{lists.slice(0, 8).map((l) => <ListCard key={l.id} l={l} owner />)}</div>
         </section>
       )}
       <div className="cols section">

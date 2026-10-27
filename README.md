@@ -1,43 +1,47 @@
 # 📒 Ancalog
 
-Oyun, film, dizi, müzik ve anime günlüğü + topluluk. Oynadığın, izlediğin, dinlediğin her şeyi logla, puanla, arkadaşlarını takip et.
+Oyun, film, dizi, müzik ve anime günlüğü + topluluk. Oynadığın, izlediğin, dinlediğin her şeyi logla, puanla, listeler yap, arkadaşlarını takip et.
 
-🌐 **Site:** https://warhead500metalmonster.github.io/ProjectAnca/
+🌐 **Site:** https://ancalog.vercel.app
 
 ## Özellikler
 
 - 🎮 Oyun · 🎬 Film · 📺 Dizi · 🎵 Müzik · 🌸 Anime
-- E-posta + şifre ile hesap, profil sayfası (avatar, bio)
-- Ana sayfa: kendi özetin, devam ettiklerin, arkadaşlarının ve topluluğun son hareketleri
-- Topluluk: son hareketler, popüler oyunlar, üye arama, takip etme
-- Oyun sayfası: oyunu Ancalog'da kimlerin logladığı ve ortalama puan
-- Oyunlar sadece [RAWG](https://rawg.io) aramasından seçilir; kapak, yıl ve geliştirici otomatik gelir
-- Durum, yarım yıldızlı puan, tarih ve notlar
-- Verilerini JSON olarak indirme
+- Arama: oyunlar [RAWG](https://rawg.io), film ve diziler [TMDB](https://www.themoviedb.org), animeler [AniList](https://anilist.co), müzik Apple Music
+- Kayıtta platform, mağaza (Direct Download dahil), emülatör, başlama/bitirme tarihi, kaç günde bitti, süre ve ilerleme (saat-dakika-saniye), not, inceleme
+- 5 ya da 10 üzerinden puan: herkes puanları kendi seçtiği ölçekte görür; başkasının kaydında kendi puanınla karşılaştırma
+- İncelemelere beğeni ve yorum, bildirimler
+- Listeler (açık / gizli): listedekilerin kaçını bitirdiğin yüzdesiyle
+- Profil: rozetler (👑 site sahibi, 🌟 öncü), favoriler (her kategoriden 10), renk, kapak görseli, sosyal bağlantılar
+- Kütüphanede birden çok filtre bir arada (durum, çıkış yılı, bitirme yılı, platform, puan…) ve sıralama
+- Tüm zamanlar istatistikleri: türe, çıkış yılına ve bitirme yılına göre
+- Keşfet: içerik ve kişi arama; çıkış yılı + "en çok bitirilen" gibi filtreler birlikte
+- Karşılıklı takipleşen arkadaşlarla mesajlaşma
+- "Beni hatırla" ile oturum
 
 ## Yapı
 
-| Dosya | Ne işe yarar |
+| Klasör | Ne işe yarar |
 |---|---|
-| `index.html`, `style.css`, `app.js` | Site (GitHub Pages'te statik olarak yayınlanır) |
-| `config.js` | Supabase adresi/anahtarı ve RAWG anahtarı |
-| `supabase/schema.sql` | Veritabanı tabloları ve güvenlik kuralları |
+| `web/` | Site (Next.js). Vercel bu klasörü yayınlar. |
+| `supabase/schema.sql` | İlk veritabanı şeması |
+| `supabase/migrations/` | Sonraki veritabanı değişiklikleri, sırayla çalıştırılır |
+| `index.html`, `app.js`, `style.css` | Eski düz HTML sürüm (Vercel'in kök klasörü `web` yapılınca kaldırılabilir) |
 
-Veriler [Supabase](https://supabase.com)'de durur. `config.js`'teki *anon* anahtar herkese açık olabilir; kim neyi değiştirebilir, `schema.sql`'deki RLS kuralları belirler.
+Veriler [Supabase](https://supabase.com)'de durur. Sitedeki Supabase anahtarı herkese açık olabilir; kim neyi değiştirebilir, veritabanındaki RLS kuralları belirler.
 
 ## Kurulum
 
-1. Supabase'de proje aç, **SQL Editor**'de `supabase/schema.sql`'i çalıştır.
-2. **Authentication → Sign In / Providers → Email** altında "Confirm email"i istersen kapat.
-3. **Project Settings → API**'deki Project URL ve anon key'i `config.js`'e yaz.
-4. Push'la. Güncellemelerde `index.html`'deki `?v=` numaralarını artır, yoksa tarayıcılar eski dosyayı kullanabilir.
+1. Supabase'de **SQL Editor**'de önce `supabase/schema.sql`'i, sonra `supabase/migrations/` içindekileri sırayla çalıştır.
+2. Vercel'de proje ayarları: **Root Directory** = `web`, **Framework** = Next.js.
+3. Vercel ortam değişkeni: `TMDB_KEY` (film/dizi araması için). İstersen `RAWG_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` de girilebilir; girilmezse koddaki varsayılanlar kullanılır.
 
-## Yerel test
-
-`dev/` klasörü ve `test.html` git'e girmez. `test.html`, Supabase yerine `dev/mock-supabase.js`'teki sahte veritabanıyla çalışır:
+## Yerel çalıştırma
 
 ```bash
-python -m http.server 8080
+cd web
+npm install
+npm run dev
 ```
 
-Sonra `http://localhost:8080/test.html` adresini aç.
+`web/.env.local` içine `TMDB_KEY=...` yaz. Gerçek veritabanına dokunmadan denemek için `ANCALOG_MOCK=1` ile çalıştır; o zaman `web/dev/mock-supabase.ts` (git'e girmez) sahte veritabanı olarak kullanılır.

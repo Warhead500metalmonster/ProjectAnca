@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import type { Entry, RawgGame } from "@/lib/types";
 import { ENTRY_COLS, TYPES, statusLabel } from "@/lib/constants";
-import { cssUrl, fmtDate, fmtHours, resized, safeUrl } from "@/lib/format";
+import { avgText, cssUrl, fmtDate, fmtDur, num, playSec, resized, safeUrl, scoreText, smallImage } from "@/lib/format";
 import { rawg } from "@/lib/rawg";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
@@ -18,7 +18,7 @@ const names = (list?: { name?: string; platform?: { name: string }; store?: { na
 
 export default function GamePage() {
   const { id } = useParams<{ id: string }>();
-  const { me, version, openForm } = useApp();
+  const { me, version, openForm, pickList, scale } = useApp();
   const [more, setMore] = useState(false);
 
   const { data, error } = useLoad(async () => {
@@ -39,9 +39,12 @@ export default function GamePage() {
   const name = g?.name || logs[0].title;
   const art = safeUrl(g?.background_image) ? resized(g!.background_image!) : safeUrl(logs[0]?.cover);
   const rated = logs.filter((l) => l.rating);
-  const avg = rated.length ? rated.reduce((s, l) => s + l.rating, 0) / rated.length / 2 : 0;
-  const timed = logs.filter((l) => Number(l.hours) > 0);
-  const avgHours = timed.length ? timed.reduce((s, l) => s + Number(l.hours), 0) / timed.length : 0;
+  const avg = rated.length ? rated.reduce((s, l) => s + Number(l.rating), 0) / rated.length : 0;
+  const timed = logs.filter((l) => playSec(l) > 0);
+  const avgSec = timed.length ? timed.reduce((s, l) => s + playSec(l), 0) / timed.length : 0;
+  const item = { type: "game" as const, title: g?.name || logs[0]?.title || "", year: parseInt(g?.released || "") || logs[0]?.year || null,
+    creator: names(g?.developers).join(", ") || logs[0]?.creator || null, cover: logs[0]?.cover || (g?.background_image ? smallImage(g.background_image) : null),
+    rawg_id: Number(id), ext_id: null };
   const mine = me && logs.find((l) => l.user_id === me.id);
   const count = (s: Entry["status"]) => logs.filter((l) => l.status === s).length;
   const devs = names(g?.developers).join(", ");
@@ -50,8 +53,8 @@ export default function GamePage() {
     ["Geliştirici", names(g?.developers).join("\n")],
     ["Yayıncı", names(g?.publishers).join("\n")],
     ["Çıkış tarihi", g?.released ? fmtDate(g.released) : ""],
-    ["Ortalama süre (RAWG)", g?.playtime ? fmtHours(g.playtime) : ""],
-    ["Ortalama süre (Ancalog)", avgHours ? fmtHours(avgHours) : ""],
+    ["Ortalama süre (RAWG)", g?.playtime ? `${num(g.playtime)} sa` : ""],
+    ["Ortalama süre (Ancalog)", avgSec ? fmtDur(Math.round(avgSec)) : ""],
     ["Mağazalar", names(g?.stores as never).join("\n")],
     ["Yaş sınırı", g?.esrb_rating?.name || ""],
   ] as [string, string][]).filter(([, v]) => v);
@@ -72,9 +75,10 @@ export default function GamePage() {
             {!me ? <Link className="btn primary wide" href="/login">+ Kütüphaneme ekle</Link>
               : mine ? <button className="btn primary wide" onClick={() => openForm(mine)}>{TYPES.game.icon} {statusLabel(mine.status, "game")} · Düzenle</button>
               : g ? <button className="btn primary wide" onClick={() => openForm(null, { game: g })}>+ Kütüphaneme ekle</button> : null}
+            {item.title && <button className="btn wide" onClick={() => pickList(item)}>📚 Listeye ekle</button>}
           </div>
           <div className="gh-main">
-            <div className="crumbs"><Link href="/community">Oyunlar</Link> / {name}</div>
+            <div className="crumbs"><Link href="/search?type=game">Oyunlar</Link> / {name}</div>
             <h1>{name} {g?.released ? <small>{g.released.slice(0, 4)}</small> : null}</h1>
             {devs && <div className="gh-dev">{devs}</div>}
             {desc && <p className={`gh-desc ${more ? "" : "clamp"}`}>{desc}</p>}
@@ -83,7 +87,8 @@ export default function GamePage() {
             {g?.genres?.length ? <div className="genres">{g.genres.map((x) => <span key={x.name}>{x.name}</span>)}</div> : null}
           </div>
           <div className="gh-score">
-            <div><b>★ {avg ? avg.toLocaleString("tr", { maximumFractionDigits: 1 }) : "–"}<small>/5</small></b><span>{rated.length} oy · Ancalog</span></div>
+            <div><b>★ {avg ? avgText(avg, scale) : "–"}</b><span>{rated.length} oy · Ancalog</span></div>
+            {mine?.rating ? <div><b className="you">★ {scoreText(Number(mine.rating), scale)}</b><span>Senin puanın</span></div> : null}
             {g?.metacritic ? <div><b className="mc">{g.metacritic}</b><span>Metacritic</span></div> : null}
           </div>
         </div>

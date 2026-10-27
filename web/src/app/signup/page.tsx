@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { q, sb } from "@/lib/supabase";
+import { q, sb, setRemember } from "@/lib/supabase";
 import { authError } from "@/lib/auth";
 
 export default function Signup() {
@@ -22,6 +22,7 @@ export default function Signup() {
       const db = sb();
       const taken = await q(db.from("profiles").select("id").eq("username", username).maybeSingle());
       if (taken) return setError("Bu kullanıcı adı alınmış, başka bir tane dene.");
+      setRemember(true);
       const { data, error } = await db.auth.signUp({
         email: String(f.get("email")).trim(),
         password: String(f.get("password")),

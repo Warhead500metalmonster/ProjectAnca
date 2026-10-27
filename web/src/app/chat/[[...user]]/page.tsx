@@ -1,0 +1,138 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import type { Message, Profile } from "@/lib/types";
+import { timeAgo } from "@/lib/format";
+import { q, sb } from "@/lib/supabase";
+import { useApp } from "@/components/AppProvider";
+import { Avatar, Name } from "@/components/ui";
+
+// Sadece karşılıklı takipleşen arkadaşlar mesajlaşabilir (veritabanı da bunu zorunlu tutar)
+export default function ChatPage() {
+  const params = useParams<{ user?: string[] }>();
+  const username = params.user?.[0] ? decodeURIComponent(params.user[0]).toLowerCase() : "";
+  const { me, ready, following, followers, checkInbox, toast } = useApp();
+  const [friends, setFriends] = useState<Profile[] | null>(null);
+  const [msgs, setMsgs] = useState<Message[]>([]);
+  const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  const friendIds = [...following].filter((id) => followers.has(id));
+  const friendKey = friendIds.sort().join(",");
+
+  useEffect(() => {
+    if (!me) return;
+    (friendIds.length ? q<Profile[]>(sb().from("profiles").select("*").in("id", friendIds)) : Promise.resolve([]))
+      .then(setFriends).catch(() => setFriends([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me?.id, friendKey]);
+
+  // Mesajları çek; sohbet açıkken birkaç saniyede bir yenile
+  const load = useCallback(async () => {
+    if (!me) return;
+    const list = await q<Message[]>(sb().from("messages").select("*").order("created_at", { ascending: false }).limit(500));
+    setMsgs((old) => (old.length === list.length && old[0]?.id === list[0]?.id && old[0]?.read_at === list[0]?.read_at ? old : list));
+  }, [me]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- tarayıcı deposundan / ağdan gelen veri
+    load().catch(() => {});
+    const timer = setInterval(() => load().catch(() => {}), 4000);
+    return () => clearInterval(timer);
+  }, [load]);
+
+  const friend = friends?.find((f) => f.username === username);
+  const convo = friend ? msgs.filter((m) => m.sender_id === friend.id || m.receiver_id === friend.id).reverse() : [];
+  const lastId = convo[convo.length - 1]?.id;
+
+  // Açık sohbetteki okunmamış mesajları okundu yap, en alta kaydır
+  useEffect(() => {
+    if (!me || !friend) return;
+    if (convo.some((m) => m.receiver_id === me.id && !m.read_at)) {
+      sb().from("messages").update({ read_at: new Date().toISOString() })
+        .eq("receiver_id", me.id).eq("sender_id", friend.id).is("read_at", null)
+        .then(() => checkInbox());
+    }
+    box.current?.scrollTo({ top: box.current.scrollHeight });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [friend?.id, lastId]);
+
+  async function send(e: React.FormEvent) {
+    e.preventDefault();
+    const body = text.trim();
+    if (!body || !friend) return;
+    setSending(true);
+    try {
+      const m = await q<Message>(sb().from("messages").insert({ receiver_id: friend.id, body }).select().single());
+      setMsgs((list) => [m, ...list]);
+      setText("");
+    } catch (err) {
+      toast((err as Error).message.includes("row-level security")
+        ? "Sadece karşılıklı takipleştiğin arkadaşlarına yazabilirsin." : "Gönderilemedi: " + (err as Error).message);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  if (!ready) return <div className="loading">Yükleniyor…</div>;
+  if (!me) return <div className="empty">Mesajlaşmak için giriş yapmalısın.<br /><Link className="btn" href="/login">Giriş yap</Link></div>;
+
+  const last = (id: string) => msgs.find((m) => m.sender_id === id || m.receiver_id === id);
+  const unreadFrom = (id: string) => msgs.filter((m) => m.sender_id === id && m.receiver_id === me.id && !m.read_at).length;
+  const sorted = [...(friends || [])].sort((a, b) => (last(b.id)?.created_at || "").localeCompare(last(a.id)?.created_at || ""));
+
+  return (
+    <div className={`chat ${username ? "has-convo" : ""}`}>
+      <aside className="chat-list">
+        <h2>Mesajlar</h2>
+        {friends === null ? <div className="loading">Yükleniyor…</div> : sorted.length ? sorted.map((f) => {
+          const m = last(f.id), n = unreadFrom(f.id);
+          return (
+            <Link key={f.id} href={`/chat/${f.username}`} className={`chat-friend ${f.username === username ? "active" : ""}`}>
+              <Avatar p={f} />
+              <div className="grow">
+                <b><Name p={f} /></b>
+                <span>{m ? `${m.sender_id === me.id ? "Sen: " : ""}${m.body}` : "Henüz mesaj yok"}</span>
+              </div>
+              {n > 0 && <span className="unread">{n}</span>}
+            </Link>
+          );
+        }) : (
+          <p className="muted">Mesajlaşmak için karşılıklı takipleşmeniz gerekiyor. <Link className="grad" href="/community">Topluluğa göz at</Link>, arkadaşlarını takip et; onlar da seni takip edince burada görünürler.</p>
+        )}
+      </aside>
+      <section className="chat-main">
+        {friend ? (
+          <>
+            <header className="chat-head">
+              <Link href="/chat" className="icon-btn back" aria-label="Geri">←</Link>
+              <Avatar p={friend} />
+              <Link href={`/u/${friend.username}`}><b><Name p={friend} /></b> <span className="muted">@{friend.username}</span></Link>
+            </header>
+            <div className="msgs" ref={box}>
+              {convo.length ? convo.map((m, i) => {
+                const mine = m.sender_id === me.id;
+                const showTime = i === convo.length - 1 || new Date(convo[i + 1].created_at).getTime() - new Date(m.created_at).getTime() > 600000;
+                return (
+                  <div key={m.id} className={`bubble ${mine ? "me" : ""}`}>
+                    <p>{m.body}</p>
+                    {showTime && <small>{timeAgo(m.created_at)}{mine && m.read_at ? " · görüldü" : ""}</small>}
+                  </div>
+                );
+              }) : <p className="muted center">İlk mesajı sen yaz 👋</p>}
+            </div>
+            <form className="chat-form" onSubmit={send}>
+              <input value={text} maxLength={2000} autoFocus placeholder="Mesaj yaz…" onChange={(e) => setText(e.target.value)} />
+              <button className="btn primary" disabled={sending || !text.trim()}>Gönder</button>
+            </form>
+          </>
+        ) : username && friends ? (
+          <div className="empty">@{username} ile karşılıklı takipleşmiyorsunuz. Sadece arkadaşlarınla mesajlaşabilirsin.</div>
+        ) : (
+          <div className="empty">Soldan bir arkadaşını seç.</div>
+        )}
+      </section>
+    </div>
+  );
+}

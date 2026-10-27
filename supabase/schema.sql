@@ -1,4 +1,5 @@
 -- Ancalog veritabanı şeması.
+-- Sonraki değişiklikler supabase/migrations/ klasöründe; yeni kurulumda onları da sırayla çalıştır.
 -- Supabase panelinde: SQL Editor → New query → bu dosyanın tamamını yapıştır → Run.
 
 -- Kullanıcı profilleri (her hesap için bir satır, kayıt olunca otomatik oluşur)

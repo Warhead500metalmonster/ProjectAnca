@@ -2,43 +2,50 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Entry, EntryType, FormGame, RawgGame } from "@/lib/types";
-import { STATUSES, STORES, TYPES, statusLabel } from "@/lib/constants";
-import { safeUrl, smallImage, today } from "@/lib/format";
+import type { Entry, EntryType, FormGame, Item, RawgGame } from "@/lib/types";
+import { STATUSES, STORES, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
+import { safeUrl, scoreText, today } from "@/lib/format";
 import { gameFromRawg, rawg } from "@/lib/rawg";
+import { type Found, findContent, searchCredit, tmdbCreator, tmdbDetail } from "@/lib/data";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "./AppProvider";
+import { HmsInput } from "./ui";
 
-interface Props { entry: Entry | null; game: RawgGame | null; type?: EntryType; onClose: () => void }
+interface Props { entry: Entry | null; game?: RawgGame | null; type?: EntryType; item?: Item | null; onClose: () => void }
 
-export function EntryForm({ entry, game, type: initialType, onClose }: Props) {
-  const { me, toast, refresh } = useApp();
+export function EntryForm({ entry, game, type: initialType, item, onClose }: Props) {
+  const { me, toast, refresh, scale } = useApp();
   const ref = useRef<HTMLDialogElement>(null);
   const searchSeq = useRef(0);       // geç gelen eski cevapları yok saymak için
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const src = entry || item;         // düzenlenen kayıt ya da önceden doldurulacak içerik
 
-  const [type, setType] = useState<EntryType>(entry?.type || (game ? "game" : initialType) || "game");
+  const [type, setType] = useState<EntryType>(src?.type || (game ? "game" : initialType) || "game");
   const [picked, setPicked] = useState<FormGame | null>(
-    entry?.type === "game" && entry.rawg_id
-      ? { rawg_id: entry.rawg_id, title: entry.title, year: entry.year, cover: entry.cover, creator: entry.creator }
+    src?.type === "game" && src.rawg_id
+      ? { rawg_id: src.rawg_id, title: src.title, year: src.year, cover: src.cover, creator: src.creator }
       : game ? gameFromRawg(game) : null,
   );
-  const [title, setTitle] = useState(entry && !picked ? entry.title : "");
-  const [year, setYear] = useState(entry?.year?.toString() || "");
-  const [creator, setCreator] = useState(entry?.creator || "");
+  const [title, setTitle] = useState(src && src.type !== "game" ? src.title : "");
+  const [year, setYear] = useState(src?.year?.toString() || "");
+  const [creator, setCreator] = useState(src?.creator || "");
+  const [cover, setCover] = useState(src?.cover || "");
+  const [extId, setExtId] = useState(src?.ext_id || null); // seçilen film/dizi/animenin dış kaynak kimliği
   const [status, setStatus] = useState(entry?.status || "completed");
   const [platform, setPlatform] = useState(entry?.platform || "");
   const [store, setStore] = useState(entry?.store || "");
-  const [hours, setHours] = useState(entry?.hours?.toString() || "");
+  const [emulated, setEmulated] = useState(!!entry?.emulated);
+  const [playtime, setPlaytime] = useState<number | null>(entry?.playtime_sec ?? (entry?.hours ? Math.round(Number(entry.hours) * 3600) : null));
+  const [progressSec, setProgressSec] = useState<number | null>(entry?.progress_sec ?? null);
   const [started, setStarted] = useState(entry?.started_on || "");
   const [date, setDate] = useState(entry?.date || "");
-  const [progress, setProgress] = useState(entry?.progress || "");
-  const [cover, setCover] = useState(entry?.cover || "");
-  const [notes, setNotes] = useState(entry?.notes || "");
-  const [rating, setRating] = useState(entry?.rating || 0); // 0-10 (yarım yıldız = 1 puan)
+  const [note, setNote] = useState(entry?.progress || "");
+  const [review, setReview] = useState(entry?.notes || "");
+  const [rating, setRating] = useState(Number(entry?.rating) || 0); // 0-10
+  const [favorite, setFavorite] = useState(!!entry?.favorite);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const [suggestions, setSuggestions] = useState<RawgGame[] | null>(null);
+  const [suggestions, setSuggestions] = useState<Found[] | null>(null);
   const [suggestNote, setSuggestNote] = useState("");
 
   const t = TYPES[type];
@@ -47,7 +54,7 @@ export function EntryForm({ entry, game, type: initialType, onClose }: Props) {
   useEffect(() => {
     ref.current?.showModal();
     // Kayıtlı oyunu düzenlerken platform/mağaza önerileri için RAWG'den detayı çek
-    if (entry?.type === "game" && entry.rawg_id && !game) loadGameOptions(entry.rawg_id);
+    if (src?.type === "game" && src.rawg_id && !game) loadGameOptions(src.rawg_id);
     return () => clearTimeout(searchTimer.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -61,36 +68,52 @@ export function EntryForm({ entry, game, type: initialType, onClose }: Props) {
 
   function onTitleChange(text: string) {
     setTitle(text);
+    setExtId(null); // elle değiştirilen isim artık seçilen içerik değil
     clearTimeout(searchTimer.current);
     searchSeq.current++;
     setSuggestions(null);
     setSuggestNote("");
-    if (!isGame || text.trim().length < 2) return;
-    searchTimer.current = setTimeout(() => searchGames(text.trim()), 300);
+    if (text.trim().length < 2) return;
+    searchTimer.current = setTimeout(() => search(text.trim()), 300);
   }
 
-  async function searchGames(text: string) {
+  async function search(text: string) {
     const seq = ++searchSeq.current;
     try {
-      const data = await rawg<{ results?: RawgGame[] }>("games", { search: text, page_size: 6 });
+      const list = await findContent(type, text);
       if (seq !== searchSeq.current) return;
-      setSuggestions(data.results || []);
-      setSuggestNote(data.results?.length ? "" : "Sonuç yok. Farklı yazmayı dene.");
+      setSuggestions(list);
+      setSuggestNote(list.length ? "" : isGame ? "Sonuç yok. Farklı yazmayı dene." : "");
+      if (!list.length && !isGame) setSuggestions(null); // elle yazmak serbest
     } catch {
       if (seq === searchSeq.current) { setSuggestions([]); setSuggestNote("Arama şu an çalışmıyor."); }
     }
   }
 
-  function pickGame(g: RawgGame) {
+  function pick(f: Found) {
     searchSeq.current++;
     setSuggestions(null);
     setError("");
-    setPicked(gameFromRawg(g));
-    loadGameOptions(g.id); // arama sonucunda geliştirici yok, detaydan gelir
+    if (isGame && f.raw) {
+      setPicked(gameFromRawg(f.raw));
+      loadGameOptions(f.raw.id); // arama sonucunda geliştirici yok, detaydan gelir
+      return;
+    }
+    // Diğer türlerde seçim sadece kutuları doldurur
+    setTitle(f.title);
+    setCreator(f.creator || "");
+    setYear(f.year ? String(f.year) : "");
+    setCover(f.cover || "");
+    setExtId(f.ext_id || null);
+    // TMDB aramasında yönetmen yok, ayrıntıdan gelir
+    if (f.ext_id?.startsWith("tmdb:")) {
+      tmdbDetail(f.ext_id).then((d) => { const c = tmdbCreator(d); if (c) setCreator((cur) => cur || c); }).catch(() => {});
+    }
   }
 
   function changeType(next: EntryType) {
     setType(next);
+    setExtId(null);
     setError("");
     setSuggestions(null);
   }
@@ -109,22 +132,24 @@ export function EntryForm({ entry, game, type: initialType, onClose }: Props) {
       const url = cover.trim();
       if (!name) return setError("İsim boş olamaz.");
       if (url && !safeUrl(url)) return setError("Kapak linki http:// ya da https:// ile başlamalı.");
-      data = { title: name, year: parseInt(year) || null, creator: creator.trim() || null, cover: url || null, rawg_id: null };
+      data = { title: name, year: parseInt(year) || null, creator: creator.trim() || null, cover: url || null, rawg_id: null, ext_id: extId };
     }
     const startedOn = started || null;
     // Bitti işaretlenip tarih girilmediyse bugünü yaz (yıllık istatistik için)
     const finished = date || (status === "completed" ? today() : null);
     if (startedOn && finished && startedOn > finished) return setError("Başlama tarihi bitirme tarihinden sonra olamaz.");
-    const h = isGame && hours !== "" ? Number(hours) : null;
-    if (h !== null && !(h >= 0 && h < 100000)) return setError("Oynama süresi geçerli bir sayı olmalı.");
     Object.assign(data, {
       type, status, date: finished, started_on: startedOn,
       platform: platform.trim() || null,
       store: isGame ? store.trim() || null : null,
-      hours: h,
-      progress: progress.trim() || null,
+      emulated: isGame && emulated,
+      playtime_sec: playtime,
+      progress_sec: progressSec,
+      hours: playtime ? Math.round(playtime / 360) / 10 : null, // eski alanla uyumlu kalsın
+      progress: note.trim() || null,
       rating,
-      notes: notes.trim() || null,
+      favorite,
+      notes: review.trim() || null,
       updated_at: new Date().toISOString(),
     });
 
@@ -141,7 +166,8 @@ export function EntryForm({ entry, game, type: initialType, onClose }: Props) {
       toast(entry ? "Kayıt güncellendi ✓" : "Kütüphanene eklendi ✓");
       refresh();
     } catch (err) {
-      setError("Kaydedilemedi: " + (err as Error).message);
+      const msg = (err as Error).message;
+      setError(msg.includes("favori") ? msg : "Kaydedilemedi: " + msg);
     } finally {
       setSaving(false);
     }
@@ -162,6 +188,9 @@ export function EntryForm({ entry, game, type: initialType, onClose }: Props) {
   const uniq = (list: string[]) => [...new Set(list)];
   const places = uniq([...(isGame ? picked?.platforms || [] : []), ...t.places]);
   const stores = uniq([...(picked?.stores || []), ...STORES]);
+  const credit = searchCredit(type);
+  // 5'lik ölçekte 5 yıldız (her yarım = 1 puan), 10'lukta 10 yıldız (her yarım = 0,5 puan)
+  const n = scale === 10 ? 10 : 5, step = 10 / n;
 
   return (
     <dialog ref={ref} onClose={onClose}>
@@ -173,13 +202,13 @@ export function EntryForm({ entry, game, type: initialType, onClose }: Props) {
         <div className="field">
           <label>Tür</label>
           <div className="type-picker">
-            {(Object.entries(TYPES) as [EntryType, (typeof TYPES)[EntryType]][]).map(([k, v]) => (
-              <button type="button" key={k} className={type === k ? "active" : ""} onClick={() => changeType(k)}>{v.icon} {v.label}</button>
+            {TYPE_KEYS.map((k) => (
+              <button type="button" key={k} className={type === k ? "active" : ""} onClick={() => changeType(k)}>{TYPES[k].icon} {TYPES[k].label}</button>
             ))}
           </div>
         </div>
         <div className="field suggest-wrap">
-          <label htmlFor="f-title">{isGame ? "Oyun ara" : "İsim"}</label>
+          <label htmlFor="f-title">{isGame ? "Oyun ara" : type === "music" ? "Albüm / şarkı" : "İsim"}</label>
           {isGame && picked ? (
             <div className="picked">
               {safeUrl(picked.cover) ? <img src={picked.cover!} alt="" /> : <span className="noimg" />}
@@ -188,7 +217,7 @@ export function EntryForm({ entry, game, type: initialType, onClose }: Props) {
             </div>
           ) : (
             <input id="f-title" maxLength={200} autoComplete="off" autoFocus value={title}
-              placeholder={isGame ? "Oyunun adını yaz ve listeden seç…" : ""}
+              placeholder={isGame ? "Oyunun adını yaz ve listeden seç…" : type === "music" ? "Albüm ya da şarkı ara, listeden seç veya elle yaz…" : `${t.label} ara, listeden seç ya da elle yaz…`}
               onChange={(e) => onTitleChange(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "ArrowDown") { e.preventDefault(); (e.currentTarget.parentElement?.querySelector(".suggest button") as HTMLElement | null)?.focus(); }
@@ -201,17 +230,17 @@ export function EntryForm({ entry, game, type: initialType, onClose }: Props) {
               if (e.key === "ArrowUp") { e.preventDefault(); ((b.previousElementSibling as HTMLElement | null) || document.getElementById("f-title"))?.focus(); }
               if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); setSuggestions(null); document.getElementById("f-title")?.focus(); }
             }}>
-              {suggestions.map((g) => (
-                <button type="button" key={g.id} onClick={() => pickGame(g)}>
-                  {g.background_image
-                    ? <img src={smallImage(g.background_image)} alt="" onError={(e) => (e.currentTarget.style.visibility = "hidden")} />
+              {suggestions.map((f, i) => (
+                <button type="button" key={i} onClick={() => pick(f)}>
+                  {f.thumb
+                    ? <img className={TYPES[f.type].square ? "sq" : ""} src={f.thumb} alt="" onError={(e) => (e.currentTarget.style.visibility = "hidden")} />
                     : <span className="noimg" />}
-                  <span className="name">{g.name}</span>
-                  <span className="year">{(g.released || "").slice(0, 4)}</span>
+                  <span className="name">{f.title}{f.sub && <small>{f.sub}</small>}</span>
+                  <span className="year">{f.year || ""}</span>
                 </button>
               ))}
               {suggestNote && <div className="note">{suggestNote}</div>}
-              <span className="credit">Veri: <a href="https://rawg.io" target="_blank" rel="noopener">RAWG</a></span>
+              <span className="credit">Veri: <a href={credit[1]} target="_blank" rel="noopener">{credit[0]}</a></span>
             </div>
           )}
         </div>
@@ -247,12 +276,19 @@ export function EntryForm({ entry, game, type: initialType, onClose }: Props) {
               <input id="f-store" list="storeList" maxLength={60} autoComplete="off" value={store} onChange={(e) => setStore(e.target.value)} />
               <datalist id="storeList">{stores.map((s) => <option key={s} value={s} />)}</datalist>
             </div>
-            <div className="field grow">
-              <label htmlFor="f-hours">Oynama süresi (saat)</label>
-              <input id="f-hours" type="number" min={0} max={99999} step={0.5} inputMode="decimal" value={hours} onChange={(e) => setHours(e.target.value)} />
-            </div>
+            <label className="check grow"><input type="checkbox" checked={emulated} onChange={(e) => setEmulated(e.target.checked)} /> 🕹️ Emülatörde oynadım</label>
           </div>
         )}
+        <div className="row">
+          <div className="field grow">
+            <label>{t.time}</label>
+            <HmsInput value={playtime} onChange={setPlaytime} label={t.time} />
+          </div>
+          <div className="field grow">
+            <label>Şu anki ilerleme</label>
+            <HmsInput value={progressSec} onChange={setProgressSec} label="Şu anki ilerleme" />
+          </div>
+        </div>
         <div className="row">
           <div className="field grow">
             <label htmlFor="f-start">Başlama tarihi</label>
@@ -264,22 +300,23 @@ export function EntryForm({ entry, game, type: initialType, onClose }: Props) {
           </div>
         </div>
         <div className="field">
-          <label htmlFor="f-progress">Şu anki ilerleme</label>
-          <input id="f-progress" maxLength={200} placeholder={t.progress} value={progress} onChange={(e) => setProgress(e.target.value)} />
+          <label htmlFor="f-note">Not <span className="muted">· akışta görünmez, kayda tıklayan görür</span></label>
+          <input id="f-note" maxLength={200} placeholder={t.progress} value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
         <div className="field">
-          <label>Puan <span className="muted">{rating ? `(${(rating / 2).toLocaleString("tr")} / 5)` : ""}</span></label>
-          <div className="stars input">
-            {[1, 2, 3, 4, 5].map((i) => {
-              const v = rating - (i - 1) * 2;
+          <label>Puan <span className="muted">{rating ? `(${scoreText(rating, scale)})` : ""}</span></label>
+          <div className={`stars input ${n === 10 ? "ten" : ""}`}>
+            {Array.from({ length: n }, (_, j) => j + 1).map((i) => {
+              const v = rating - (i - 1) * step;
               return (
-                <span key={i} className={`star ${v >= 2 ? "full" : v === 1 ? "half" : ""}`}
-                  onClick={(e) => setRating(i * 2 - (e.nativeEvent.offsetX < e.currentTarget.offsetWidth / 2 ? 1 : 0))}>★</span>
+                <span key={i} className={`star ${v >= step ? "full" : v >= step / 2 ? "half" : ""}`}
+                  onClick={(e) => setRating((i - (e.nativeEvent.offsetX < e.currentTarget.offsetWidth / 2 ? 0.5 : 0)) * step)}>★</span>
               );
             })}
             <button type="button" className="link clear" onClick={() => setRating(0)}>temizle</button>
           </div>
         </div>
+        <label className="check"><input type="checkbox" checked={favorite} onChange={(e) => setFavorite(e.target.checked)} /> ❤️ Favorilerime ekle <span className="muted">(her kategoride en fazla 10)</span></label>
         {!isGame && (
           <div className="field">
             <label htmlFor="f-cover">Kapak görseli (URL)</label>
@@ -287,8 +324,8 @@ export function EntryForm({ entry, game, type: initialType, onClose }: Props) {
           </div>
         )}
         <div className="field">
-          <label htmlFor="f-notes">Notlar / inceleme <span className="muted">· sadece profilinde bu kayda tıklayanlar görür</span></label>
-          <textarea id="f-notes" rows={3} maxLength={5000} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <label htmlFor="f-review">İnceleme <span className="muted">· profilinde bu kayda tıklayanlar okuyup beğenebilir, yorum yapabilir</span></label>
+          <textarea id="f-review" rows={3} maxLength={5000} value={review} onChange={(e) => setReview(e.target.value)} />
         </div>
         {error && <p className="form-error">{error}</p>}
         <div className="actions">

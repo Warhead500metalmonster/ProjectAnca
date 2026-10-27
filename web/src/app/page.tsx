@@ -44,9 +44,12 @@ function Landing({ version }: { version: number }) {
         </div>
       </section>
       <div className="features">
-        <div className="feature"><span className="ico">📒</span><b>Her şeyi logla</b><span>Oyun, film, dizi, müzik ve anime tek kütüphanede. Durum, puan ve notlarınla.</span></div>
-        <div className="feature"><span className="ico">⭐</span><b>Puanla ve hatırla</b><span>Yarım yıldızlı puanlar, tarihler ve kısa incelemelerle neyi ne zaman sevdiğini unutma.</span></div>
-        <div className="feature"><span className="ico">👥</span><b>Arkadaşlarını takip et</b><span>Kimin ne oynadığını, ne izlediğini gör; oyun sayfalarında topluluğun puanlarına bak.</span></div>
+        <div className="feature"><span className="ico">📒</span><b>Her şeyi logla</b><span>Oyun, film, dizi, müzik ve anime tek kütüphanede. Platform, süre, tarih ve notlarınla.</span></div>
+        <div className="feature"><span className="ico">⭐</span><b>5 ya da 10 üzerinden puanla</b><span>Hangi ölçeği seversen. İncelemelerini arkadaşların beğenip yorumlayabilir.</span></div>
+        <div className="feature"><span className="ico">📚</span><b>Listeler yap</b><span>Herkese açık ya da gizli listeler; hangilerini bitirdiğini yüzdesiyle gör.</span></div>
+        <div className="feature"><span className="ico">📊</span><b>Tüm zamanların istatistikleri</b><span>Yıla, türe ve çıkış tarihine göre süzülebilen ayrıntılı istatistikler.</span></div>
+        <div className="feature"><span className="ico">👥</span><b>Arkadaşlarınla</b><span>Takip et, akışı izle, puanlarınızı karşılaştırın, karşılıklı takipleşince mesajlaşın.</span></div>
+        <div className="feature"><span className="ico">❤️</span><b>Favoriler ve rozetler</b><span>Her kategoriden 10 favorini profilinde sergile, kendi rengini ve kapağını seç.</span></div>
       </div>
       <section className="section">
         <div className="section-head"><h2>Toplulukta son hareketler</h2><Link href="/community">Tümü →</Link></div>
@@ -123,7 +126,10 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
           <h1>{hello}, <span className="grad">{displayName(user)}</span> 👋</h1>
           <p>{mine.length ? `Kütüphanende ${mine.length} kayıt var.` : "Kütüphanen boş, ilk kaydını ekleyerek başla."}</p>
         </div>
-        <AddButton />
+        <div className="hero-actions">
+          {mine.some((e) => e.status === "planned") && <Roulette list={mine.filter((e) => e.status === "planned")} />}
+          <AddButton />
+        </div>
       </section>
       {localCount > 0 && (
         <div className="banner">
@@ -162,6 +168,12 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
       </div>
     </>
   );
+}
+
+// Planladıklarından rastgele birini seç: "ne oynasam / izlesem?"
+function Roulette({ list }: { list: Entry[] }) {
+  const { openView } = useApp();
+  return <button className="btn big" title="Planladıklarından rastgele birini seç" onClick={() => openView(list[Math.floor(Math.random() * list.length)])}>🎲 Ne yapsam?</button>;
 }
 
 function AddButton() {

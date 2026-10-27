@@ -3,34 +3,109 @@
 
 import Link from "next/link";
 import type { Entry, Profile } from "@/lib/types";
-import { TYPES, activityVerb, statusLabel } from "@/lib/constants";
-import { fmtHours, safeUrl, timeAgo } from "@/lib/format";
+import { BADGES, SOCIALS, TYPES, activityVerb, statusLabel } from "@/lib/constants";
+import { daysTaken, fmtDur, fmtHoursShort, num, playSec, safeUrl, scoreShort, scoreText, timeAgo, avgText } from "@/lib/format";
 import { useApp } from "./AppProvider";
 
-type Who = Partial<Pick<Profile, "username" | "display_name" | "avatar_url">> | null | undefined;
+type Who = Partial<Pick<Profile, "id" | "username" | "display_name" | "avatar_url">> | null | undefined;
 export const displayName = (p: Who) => p?.display_name || p?.username || "?";
 
 export function Avatar({ p, cls = "" }: { p: Who; cls?: string }) {
+  const { badges } = useApp();
+  const crown = p?.id && badges.get(p.id)?.includes("owner") ? " crown" : "";
   const url = safeUrl(p?.avatar_url);
-  if (url) return <img className={`avatar ${cls}`} src={url} alt="" />;
+  if (url) return <img className={`avatar ${cls}${crown}`} src={url} alt="" />;
   let h = 0;
   for (const c of p?.username || "") h = (h * 31 + c.charCodeAt(0)) % 360;
   return (
-    <span className={`avatar ${cls}`} style={{ background: `linear-gradient(135deg,hsl(${h} 70% 55%),hsl(${(h + 50) % 360} 70% 40%))` }}>
+    <span className={`avatar ${cls}${crown}`} style={{ background: `linear-gradient(135deg,hsl(${h} 70% 55%),hsl(${(h + 50) % 360} 70% 40%))` }}>
       {[...displayName(p)][0].toLocaleUpperCase("tr")}
     </span>
   );
 }
 
+// İsim + kazanılmış rozetlerin küçük simgeleri (👑 site sahibi, 🌟 öncü)
+export function Name({ p }: { p: Who }) {
+  const { badges } = useApp();
+  const mine = (p?.id && badges.get(p.id)) || [];
+  return (
+    <>
+      {displayName(p)}
+      {mine.filter((b) => BADGES[b]?.active).map((b) => <span key={b} className="bdg-i" title={BADGES[b].name}>{BADGES[b].icon}</span>)}
+    </>
+  );
+}
+
+export function BadgeChips({ id, showLocked = false }: { id: string; showLocked?: boolean }) {
+  const { badges } = useApp();
+  const mine = (badges.get(id) || []).filter((b) => BADGES[b]?.active);
+  const locked = Object.keys(BADGES).filter((b) => !mine.includes(b) && !BADGES[b].active);
+  if (!mine.length && !showLocked) return null;
+  return (
+    <div className="badge-row">
+      {mine.map((b) => (
+        <span key={b} className={`bdg ${BADGES[b].tone}`} title={BADGES[b].desc}>{BADGES[b].icon} {BADGES[b].name}</span>
+      ))}
+      {showLocked && locked.length > 0 && (
+        <details className="locked">
+          <summary>🔒 Yakında gelecek rozetler ({locked.length})</summary>
+          <div className="badge-row">
+            {locked.map((b) => <span key={b} className="bdg off" title={BADGES[b].desc}>{BADGES[b].icon} {BADGES[b].name} <small>{BADGES[b].desc}</small></span>)}
+          </div>
+        </details>
+      )}
+    </div>
+  );
+}
+
+export function socialUrl(key: string, v: string) {
+  if (/^https:\/\//i.test(v)) return v;
+  return SOCIALS.find((s) => s.key === key)?.url?.(v) || "";
+}
+
+export function Socials({ socials }: { socials?: Record<string, string> }) {
+  const { toast } = useApp();
+  const list = SOCIALS.filter((s) => socials?.[s.key]);
+  if (!list.length) return null;
+  return (
+    <div className="socials">
+      {list.map((s) => {
+        const v = socials![s.key];
+        if (s.key === "discord") {
+          return (
+            <button key={s.key} className="social" title="Kopyala"
+              onClick={() => navigator.clipboard?.writeText(v).then(() => toast("Discord adı kopyalandı ✓"), () => {})}>
+              {s.icon} {v}
+            </button>
+          );
+        }
+        const href = socialUrl(s.key, v);
+        return href ? <a key={s.key} className="social" href={href} target="_blank" rel="noopener nofollow">{s.icon} {s.label}</a> : null;
+      })}
+    </div>
+  );
+}
+
+// Yıldızlar her zaman 5 tane; puan 0-10 (yarım yıldız = 1)
 export function Stars({ r, style }: { r: number; style?: React.CSSProperties }) {
+  const rr = Math.round(r);
   return (
     <span className="stars" style={style}>
       {[1, 2, 3, 4, 5].map((i) => {
-        const v = r - (i - 1) * 2;
+        const v = rr - (i - 1) * 2;
         return <span key={i} className={`star ${v >= 2 ? "full" : v === 1 ? "half" : ""}`}>★</span>;
       })}
     </span>
   );
+}
+
+// Puanı izleyenin seçtiği ölçekte göster: 5'likte yıldız, 10'lukta sayı
+export function Rating({ r, big = false }: { r: number; big?: boolean }) {
+  const { scale } = useApp();
+  if (!r) return null;
+  return scale === 10
+    ? <span className={`score10 ${big ? "big" : ""}`} title={scoreText(r, 10)}>★ {num(r)}<small>/10</small></span>
+    : <span title={scoreText(r, 5)}><Stars r={r} style={big ? { fontSize: 22 } : undefined} /></span>;
 }
 
 export function Cover({ src }: { src?: string | null }) {
@@ -40,23 +115,24 @@ export function Cover({ src }: { src?: string | null }) {
 }
 
 export function Stats({ list }: { list: Entry[] }) {
+  const { scale } = useApp();
   const rated = list.filter((i) => i.rating > 0);
-  const avg = rated.length ? (rated.reduce((s, i) => s + i.rating, 0) / rated.length / 2).toLocaleString("tr", { maximumFractionDigits: 1 }) : "–";
+  const avg = rated.length ? rated.reduce((s, i) => s + Number(i.rating), 0) / rated.length : 0;
   const year = new Date().getFullYear().toString();
-  const hours = list.reduce((s, i) => s + (Number(i.hours) || 0), 0);
+  const secs = list.reduce((s, i) => s + playSec(i), 0);
   const items: [string | number, string][] = [
     [list.length, "Toplam kayıt"],
     [list.filter((i) => i.status === "completed").length, "Bitirilen"],
     [list.filter((i) => i.status === "active").length, "Devam eden"],
     [list.filter((i) => i.status === "completed" && (i.date || "").startsWith(year)).length, "Bu yıl bitirilen"],
-    [avg === "–" ? avg : `${avg} ★`, "Ortalama puan"],
-    ...(hours ? [[`⏱ ${Math.round(hours).toLocaleString("tr")}`, "Saat oynandı"] as [string, string]] : []),
+    [avg ? `★ ${avgText(avg, scale)}` : "–", "Ortalama puan"],
+    ...(secs ? [[`⏱ ${fmtHoursShort(secs)}`, "Toplam süre"] as [string, string]] : []),
   ];
   return <>{items.map(([b, s]) => <div className="stat" key={s}><b>{b}</b><span>{s}</span></div>)}</>;
 }
 
 export function EntryCard({ e, kind = false, edit = false, wall = false }: { e: Entry; kind?: boolean; edit?: boolean; wall?: boolean }) {
-  const { openForm, openView } = useApp();
+  const { openForm, openView, scale } = useApp();
   const t = TYPES[e.type];
   const meta = [e.creator, e.year].filter(Boolean).join(" · ");
   return (
@@ -65,8 +141,9 @@ export function EntryCard({ e, kind = false, edit = false, wall = false }: { e: 
         <div className="ph">{t.icon}</div>
         <Cover src={e.cover} />
         {kind && <span className="kind">{t.icon}</span>}
+        {e.favorite && <span className="fav" title="Favori">❤</span>}
         <span className={`st badge ${e.status}`}>{statusLabel(e.status, e.type)}</span>
-        {e.rating ? <span className="rating">★ {(e.rating / 2).toLocaleString("tr")}</span> : null}
+        {e.rating ? <span className="rating">★ {scoreShort(e.rating, scale)}</span> : null}
         {wall && <div className="hover"><b>{e.title}</b>{meta && <span>{meta}</span>}</div>}
       </div>
       {!wall && <div className="card-title">{e.title}</div>}
@@ -75,30 +152,50 @@ export function EntryCard({ e, kind = false, edit = false, wall = false }: { e: 
   );
 }
 
-// Akışta notlar gösterilmez; kayda tıklayan, sahibinin profilinde kaydı açar.
+export const likeCount = (e: Entry) => e.likes?.[0]?.count || 0;
+export const commentCount = (e: Entry) => e.comments?.[0]?.count || 0;
+
+// Kayıtla ilgili kısa etiketler: platform, emülatör, mağaza, ilerleme, süre, kaç günde bitti
+export function entryTags(e: Entry, { store = false } = {}) {
+  const days = daysTaken(e);
+  return [
+    e.platform,
+    e.emulated ? "🕹️ Emülatör" : "",
+    store ? e.store : "",
+    e.status === "active" && e.progress_sec ? `▶ ${fmtDur(e.progress_sec)}` : "",
+    playSec(e) ? `⏱ ${fmtDur(playSec(e))}` : "",
+    days ? `🏁 ${days} günde` : "",
+  ].filter(Boolean) as string[];
+}
+
+// Akışta notlar ve incelemeler gösterilmez; kayda tıklayan, sahibinin profilinde kaydı açar.
 export function FeedItem({ e }: { e: Entry }) {
   const p = e.profiles || {};
   const t = TYPES[e.type];
   const profile = `/u/${p.username}`;
   const link = `${profile}?entry=${e.id}`;
-  const extra = [e.platform, e.status === "active" ? e.progress : "", e.hours ? fmtHours(e.hours) : ""].filter(Boolean) as string[];
+  const extra = entryTags(e);
+  const likes = likeCount(e), comments = commentCount(e);
   return (
     <div className="feed-item">
       <Link href={profile}><Avatar p={p} /></Link>
       <div className="text">
         <div className="line">
-          <Link href={profile}><b>{displayName(p)}</b></Link> {activityVerb(e)}:{" "}
+          <Link href={profile}><b><Name p={p} /></b></Link> {activityVerb(e)}:{" "}
           <Link className="title-link" href={link}>{e.title}</Link>
         </div>
         <div className="sub">
           <span>{t.icon} {t.label}</span>
-          {e.rating ? <Stars r={e.rating} /> : null}
+          <Rating r={e.rating} />
           <span>{timeAgo(e.updated_at)}</span>
+          {likes > 0 && <span title="Beğeni">♥ {likes}</span>}
+          {comments > 0 && <span title="Yorum">💬 {comments}</span>}
         </div>
-        {(extra.length > 0 || e.notes) && (
+        {(extra.length > 0 || e.notes || e.favorite) && (
           <div className="chips-row">
             {extra.map((x) => <span className="tag" key={x}>{x}</span>)}
-            {e.notes && <span className="tag ghost">📝 not var</span>}
+            {e.favorite && <span className="tag fav">❤ favori</span>}
+            {e.notes && <span className="tag ghost">📝 inceleme</span>}
           </div>
         )}
       </div>
@@ -125,8 +222,27 @@ export function UserRow({ p }: { p: Profile }) {
   return (
     <div className="user-row">
       <Link href={`/u/${p.username}`}><Avatar p={p} /></Link>
-      <Link className="who" href={`/u/${p.username}`}><b>{displayName(p)}</b><span>@{p.username}{p.bio ? " · " + p.bio : ""}</span></Link>
+      <Link className="who" href={`/u/${p.username}`}><b><Name p={p} /></b><span>@{p.username}{p.bio ? " · " + p.bio : ""}</span></Link>
       <FollowButton id={p.id} />
+    </div>
+  );
+}
+
+// Saat-dakika-saniye kutuları; değer saniye olarak tutulur
+export function HmsInput({ value, onChange, label }: { value: number | null; onChange: (v: number | null) => void; label: string }) {
+  const h = value == null ? "" : String(Math.floor(value / 3600));
+  const m = value == null ? "" : String(Math.floor((value % 3600) / 60));
+  const s = value == null ? "" : String(value % 60);
+  function set(part: "h" | "m" | "s", raw: string) {
+    const parts = { h, m, s, [part]: raw.replace(/\D/g, "").slice(0, part === "h" ? 5 : 2) };
+    const total = Number(parts.h || 0) * 3600 + Math.min(59, Number(parts.m || 0)) * 60 + Math.min(59, Number(parts.s || 0));
+    onChange(total || null); // sıfır süre = girilmemiş
+  }
+  return (
+    <div className="hms" aria-label={label}>
+      <label><input inputMode="numeric" value={h} placeholder="0" onChange={(e) => set("h", e.target.value)} aria-label={`${label}: saat`} /><span>sa</span></label>
+      <label><input inputMode="numeric" value={m} placeholder="0" onChange={(e) => set("m", e.target.value)} aria-label={`${label}: dakika`} /><span>dk</span></label>
+      <label><input inputMode="numeric" value={s} placeholder="0" onChange={(e) => set("s", e.target.value)} aria-label={`${label}: saniye`} /><span>sn</span></label>
     </div>
   );
 }
