@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ancalog</title>
+  <meta name="description" content="Oyun, film, dizi, müzik ve anime günlüğün.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📒</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">📒 <span>Ancalog</span></div>
+    <input id="search" type="search" placeholder="Ara…" autocomplete="off">
+    <button id="addBtn" class="btn primary">+ Ekle</button>
+  </header>
+
+  <nav id="tabs" class="tabs"></nav>
+
+  <main>
+    <section id="stats" class="stats"></section>
+
+    <div class="toolbar">
+      <div id="statusFilter" class="chips"></div>
+      <select id="sort" aria-label="Sırala">
+        <option value="updated">Son eklenen</option>
+        <option value="rating">Puan (yüksek)</option>
+        <option value="title">İsim (A-Z)</option>
+        <option value="year">Yıl (yeni)</option>
+      </select>
+    </div>
+
+    <section id="grid" class="grid"></section>
+    <p id="empty" class="empty" hidden></p>
+  </main>
+
+  <footer class="footer">
+    <span>Veriler sadece bu tarayıcıda saklanır.</span>
+    <button id="exportBtn" class="link">Dışa aktar (JSON)</button>
+    <label class="link">İçe aktar<input id="importFile" type="file" accept="application/json" hidden></label>
+  </footer>
+
+  <dialog id="dialog">
+    <form id="form" method="dialog">
+      <h2 id="formTitle">Yeni kayıt</h2>
+      <div class="field">
+        <label>Tür</label>
+        <div id="typePicker" class="type-picker"></div>
+      </div>
+      <div class="row">
+        <div class="field grow">
+          <label for="f-title">İsim</label>
+          <input id="f-title" required maxlength="200">
+        </div>
+        <div class="field small">
+          <label for="f-year">Yıl</label>
+          <input id="f-year" type="number" min="1800" max="2100">
+        </div>
+      </div>
+      <div class="field">
+        <label for="f-creator" id="creatorLabel">Yapımcı</label>
+        <input id="f-creator" maxlength="200">
+      </div>
+      <div class="row">
+        <div class="field grow">
+          <label for="f-status">Durum</label>
+          <select id="f-status"></select>
+        </div>
+        <div class="field grow">
+          <label for="f-date">Tarih</label>
+          <input id="f-date" type="date">
+        </div>
+      </div>
+      <div class="field">
+        <label>Puan <span id="ratingText" class="muted"></span></label>
+        <div id="stars" class="stars input"></div>
+      </div>
+      <div class="field">
+        <label for="f-cover">Kapak görseli (URL)</label>
+        <input id="f-cover" type="url" placeholder="https://…">
+      </div>
+      <div class="field">
+        <label for="f-notes">Notlar / inceleme</label>
+        <textarea id="f-notes" rows="3" maxlength="5000"></textarea>
+      </div>
+      <div class="actions">
+        <button type="button" id="deleteBtn" class="btn danger">Sil</button>
+        <span class="spacer"></span>
+        <button type="button" id="cancelBtn" class="btn">Vazgeç</button>
+        <button type="submit" class="btn primary">Kaydet</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
