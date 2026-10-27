@@ -12,16 +12,11 @@ Oyun, film, dizi, müzik ve anime günlüğü. Oynadığın, izlediğin, dinledi
 
 Veriler tarayıcının `localStorage`'ında saklanır, sunucu yok. Tarayıcı verilerini silersen kayıtlar da gider, ara ara **Dışa aktar** ile yedek al.
 
+🌐 **Site:** https://warhead500metalmonster.github.io/ProjectAnca/
+
 ## GitHub Pages'te yayınlama
 
-1. GitHub'da yeni bir repo aç (ör. `ancalog`).
-2. Bu klasörü o repoya pushla:
-   ```bash
-   git remote add origin https://github.com/KULLANICI_ADIN/ancalog.git
-   git push -u origin main
-   ```
-3. Repo → **Settings → Pages** → *Source: Deploy from a branch* → `main` / `(root)` → **Save**.
-4. Bir dakika sonra site `https://KULLANICI_ADIN.github.io/ancalog/` adresinde açılır.
+Repo → **Settings → Pages** → *Source: Deploy from a branch* → `main` / `(root)` → **Save**. Bir dakika sonra site yukarıdaki adreste açılır. Her `git push`'tan sonra kendiliğinden güncellenir.
 
 ## Yerelde çalıştırma
 
