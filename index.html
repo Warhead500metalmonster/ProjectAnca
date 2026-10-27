@@ -4,63 +4,58 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ancalog</title>
-  <meta name="description" content="Oyun, film, dizi, müzik ve anime günlüğün.">
+  <meta name="description" content="Oyun, film, dizi, müzik ve anime günlüğün. Logla, puanla, arkadaşlarını takip et.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📒</text></svg>">
-  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <!-- Güncellemede ?v= numarasını artır, yoksa tarayıcı eski dosyayı kullanabilir -->
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">📒 <span>Ancalog</span></div>
-    <input id="search" type="search" placeholder="Ara…" autocomplete="off">
-    <button id="addBtn" class="btn primary">+ Ekle</button>
+    <a href="#/" class="brand">📒 <span>Ancalog</span></a>
+    <nav class="nav" id="nav">
+      <a href="#/" data-nav="home"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Ana Sayfa</span></a>
+      <a href="#/community" data-nav="community"><svg viewBox="0 0 24 24"><path d="M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4zm8 0c-.3 0-.7 0-1.1.1 1.3.9 2.1 2.2 2.1 3.9v2h7v-2c0-2.7-5.3-4-8-4z"/></svg><span>Topluluk</span></a>
+      <a href="#/me" data-nav="me" id="navMe"><svg viewBox="0 0 24 24"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zm0 2c-3 0-9 1.5-9 4.5V21h18v-2.5c0-3-6-4.5-9-4.5z"/></svg><span>Profilim</span></a>
+    </nav>
+    <div class="top-actions" id="topActions"></div>
   </header>
 
-  <nav id="tabs" class="tabs"></nav>
-
-  <main>
-    <section id="stats" class="stats"></section>
-
-    <div class="toolbar">
-      <div id="statusFilter" class="chips"></div>
-      <select id="sort" aria-label="Sırala">
-        <option value="updated">Son eklenen</option>
-        <option value="rating">Puan (yüksek)</option>
-        <option value="title">İsim (A-Z)</option>
-        <option value="year">Yıl (yeni)</option>
-      </select>
-    </div>
-
-    <section id="grid" class="grid"></section>
-    <p id="empty" class="empty" hidden></p>
-  </main>
+  <main id="app" class="app"></main>
 
   <footer class="footer">
-    <span>Veriler sadece bu tarayıcıda saklanır.</span>
-    <button id="exportBtn" class="link">Dışa aktar (JSON)</button>
-    <label class="link">İçe aktar<input id="importFile" type="file" accept="application/json" hidden></label>
+    <span>📒 Ancalog</span>
+    <span>Oyun verileri: <a href="https://rawg.io" target="_blank" rel="noopener">RAWG</a></span>
   </footer>
 
+  <!-- Kayıt ekleme / düzenleme -->
   <dialog id="dialog">
     <form id="form" method="dialog">
-      <h2 id="formTitle">Yeni kayıt</h2>
+      <div class="dialog-head">
+        <h2 id="formTitle">Yeni kayıt</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Kapat">✕</button>
+      </div>
       <div class="field">
         <label>Tür</label>
         <div id="typePicker" class="type-picker"></div>
       </div>
-      <div class="row">
-        <div class="field grow suggest-wrap">
-          <label for="f-title">İsim</label>
-          <input id="f-title" required maxlength="200" autocomplete="off">
-          <div id="suggest" class="suggest" hidden></div>
+      <div class="field suggest-wrap">
+        <label for="f-title" id="titleLabel">İsim</label>
+        <input id="f-title" maxlength="200" autocomplete="off">
+        <div id="suggest" class="suggest" hidden></div>
+        <div id="picked" class="picked" hidden></div>
+      </div>
+      <div class="row manual-only">
+        <div class="field grow">
+          <label for="f-creator" id="creatorLabel">Yapımcı</label>
+          <input id="f-creator" maxlength="200">
         </div>
         <div class="field small">
           <label for="f-year">Yıl</label>
           <input id="f-year" type="number" min="1800" max="2100">
         </div>
-      </div>
-      <div class="field">
-        <label for="f-creator" id="creatorLabel">Yapımcı</label>
-        <input id="f-creator" maxlength="200">
       </div>
       <div class="row">
         <div class="field grow">
@@ -76,7 +71,7 @@
         <label>Puan <span id="ratingText" class="muted"></span></label>
         <div id="stars" class="stars input"></div>
       </div>
-      <div class="field">
+      <div class="field manual-only">
         <label for="f-cover">Kapak görseli (URL)</label>
         <input id="f-cover" type="url" placeholder="https://…">
       </div>
@@ -84,16 +79,34 @@
         <label for="f-notes">Notlar / inceleme</label>
         <textarea id="f-notes" rows="3" maxlength="5000"></textarea>
       </div>
+      <p id="formError" class="form-error" hidden></p>
       <div class="actions">
         <button type="button" id="deleteBtn" class="btn danger">Sil</button>
         <span class="spacer"></span>
-        <button type="button" id="cancelBtn" class="btn">Vazgeç</button>
-        <button type="submit" class="btn primary">Kaydet</button>
+        <button type="button" class="btn" data-close>Vazgeç</button>
+        <button type="submit" class="btn primary" id="saveBtn">Kaydet</button>
       </div>
     </form>
   </dialog>
 
-  <!-- Güncellemede ?v= numarasını artır, yoksa tarayıcı eski dosyayı kullanabilir -->
-  <script src="app.js?v=2"></script>
+  <!-- Başkasının kaydını görüntüleme -->
+  <dialog id="viewDialog">
+    <div id="viewBody" class="view-body"></div>
+  </dialog>
+
+  <!-- Takipçi / takip listesi -->
+  <dialog id="listDialog">
+    <div class="dialog-head pad">
+      <h2 id="listTitle"></h2>
+      <button type="button" class="icon-btn" data-close aria-label="Kapat">✕</button>
+    </div>
+    <div id="listBody" class="user-list"></div>
+  </dialog>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="config.js?v=3"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>
