@@ -48,9 +48,10 @@
         <div id="typePicker" class="type-picker"></div>
       </div>
       <div class="row">
-        <div class="field grow">
+        <div class="field grow suggest-wrap">
           <label for="f-title">İsim</label>
-          <input id="f-title" required maxlength="200">
+          <input id="f-title" required maxlength="200" autocomplete="off">
+          <div id="suggest" class="suggest" hidden></div>
         </div>
         <div class="field small">
           <label for="f-year">Yıl</label>

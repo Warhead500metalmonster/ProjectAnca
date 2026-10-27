@@ -7,6 +7,7 @@ Oyun, film, dizi, müzik ve anime günlüğü. Oynadığın, izlediğin, dinledi
 - 🎮 Oyun · 🎬 Film · 📺 Dizi · 🎵 Müzik · 🌸 Anime
 - Durum: Bitti / Devam ediyor / Planlandı / Ara verdim / Bıraktım
 - Yarım yıldızlı 5 üzerinden puan, notlar, kapak görseli
+- Oyunlarda isim yazınca [RAWG](https://rawg.io) üzerinden arama: kapak, yıl ve geliştirici otomatik dolar
 - Arama (`/` kısayolu), filtreleme, sıralama, istatistikler
 - JSON olarak dışa / içe aktarma (yedek ya da başka cihaza taşıma için)
 

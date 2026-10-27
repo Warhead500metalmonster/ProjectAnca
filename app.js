@@ -17,6 +17,10 @@ const statusLabel = (s, type) => ({
   dropped: "Bıraktım",
 })[s];
 
+// Oyun araması için ücretsiz RAWG anahtarı: https://rawg.io/apidocs
+// Boşsa arama kapalıdır. Statik sitede herkes görebilir, gizli değildir.
+const RAWG_KEY = "7e702c5680bd4bc9b428ecd8409200fb";
+
 const STORAGE_KEY = "ancalog.v1";
 const $ = (id) => document.getElementById(id);
 
@@ -140,6 +144,8 @@ function renderGrid() {
 // ---------- Form ----------
 
 function renderTypePicker() {
+  hideSuggest();
+  $("f-title").placeholder = formType === "game" && RAWG_KEY ? "Oyun ara…" : "";
   $("typePicker").innerHTML = Object.entries(TYPES).map(([k, t]) =>
     `<button type="button" data-type="${k}" class="${formType === k ? "active" : ""}">${t.icon} ${t.label}</button>`).join("");
   $("creatorLabel").textContent = TYPES[formType].creator;
@@ -198,6 +204,99 @@ function submitForm(e) {
   $("dialog").close();
   render();
 }
+
+// ---------- Oyun araması (RAWG) ----------
+
+let searchTimer;
+let searchSeq = 0;    // geç gelen eski cevapları yok saymak için
+let suggestions = [];
+
+function hideSuggest() {
+  clearTimeout(searchTimer);
+  searchSeq++;
+  $("suggest").hidden = true;
+}
+
+function rawg(path, params = {}) {
+  const qs = new URLSearchParams({ key: RAWG_KEY, ...params });
+  return fetch(`https://api.rawg.io/api/${path}?${qs}`).then((r) => {
+    if (!r.ok) throw new Error(r.status);
+    return r.json();
+  });
+}
+
+function showSuggest(html) {
+  $("suggest").innerHTML = html +
+    `<span class="credit">Veri: <a href="https://rawg.io" target="_blank" rel="noopener">RAWG</a></span>`;
+  $("suggest").hidden = false;
+}
+
+async function searchGames(q) {
+  const seq = ++searchSeq;
+  try {
+    const data = await rawg("games", { search: q, page_size: 6 });
+    if (seq !== searchSeq) return;
+    suggestions = data.results || [];
+    showSuggest(suggestions.length
+      ? suggestions.map((g, i) => `<button type="button" data-i="${i}">
+          ${g.background_image ? `<img src="${esc(smallImage(g.background_image))}" alt="" onerror="this.style.visibility='hidden'">` : `<span class="noimg"></span>`}
+          <span class="name">${esc(g.name)}</span>
+          <span class="year">${(g.released || "").slice(0, 4)}</span>
+        </button>`).join("")
+      : `<div class="note">Sonuç yok, ismi kendin yazabilirsin.</div>`);
+  } catch {
+    if (seq === searchSeq) showSuggest(`<div class="note">Arama şu an çalışmıyor.</div>`);
+  }
+}
+
+// RAWG'nin küçültülmüş görsel adresi (tam boy görseller birkaç MB olabiliyor)
+function smallImage(url) {
+  return url.replace(/\/media\/(games|screenshots)\//, "/media/crop/600/400/$1/");
+}
+
+async function pickGame(g) {
+  hideSuggest();
+  $("f-title").value = g.name;
+  $("f-year").value = (g.released || "").slice(0, 4);
+  $("f-cover").value = g.background_image ? smallImage(g.background_image) : "";
+  $("f-creator").value = "";
+  try {
+    const d = await rawg(`games/${g.id}`);
+    if ($("f-title").value === g.name) $("f-creator").value = (d.developers || []).map((x) => x.name).join(", ");
+  } catch { /* geliştirici bilgisi gelmezse elle yazılır */ }
+}
+
+$("f-title").addEventListener("input", () => {
+  hideSuggest();
+  const q = $("f-title").value.trim();
+  if (formType !== "game" || !RAWG_KEY || q.length < 2) return;
+  searchTimer = setTimeout(() => searchGames(q), 300);
+});
+
+$("f-title").addEventListener("keydown", (e) => {
+  if (e.key === "ArrowDown" && !$("suggest").hidden) {
+    e.preventDefault();
+    $("suggest").querySelector("button")?.focus();
+  }
+});
+
+$("suggest").addEventListener("keydown", (e) => {
+  const b = document.activeElement;
+  if (e.key === "ArrowDown") { e.preventDefault(); b.nextElementSibling?.focus?.(); }
+  if (e.key === "ArrowUp") { e.preventDefault(); (b.previousElementSibling || $("f-title")).focus(); }
+  if (e.key === "Escape") { e.preventDefault(); hideSuggest(); $("f-title").focus(); }
+});
+
+$("suggest").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-i]");
+  if (b) pickGame(suggestions[b.dataset.i]);
+});
+
+// Liste dışına tıklanınca kapat
+$("dialog").addEventListener("pointerdown", (e) => {
+  if (!e.target.closest(".suggest-wrap")) hideSuggest();
+});
+$("dialog").addEventListener("close", hideSuggest);
 
 // ---------- Events ----------
 

@@ -183,6 +183,23 @@ textarea { resize: vertical; }
   padding: 6px 12px; border-radius: 999px; cursor: pointer;
 }
 .type-picker button.active { border-color: var(--accent); background: rgba(124, 92, 255, .15); }
+.suggest-wrap { position: relative; }
+.suggest {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 5; margin-top: 4px;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px;
+  overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
+}
+.suggest button {
+  display: flex; gap: 10px; align-items: center; width: 100%;
+  border: 0; background: none; padding: 6px 10px; cursor: pointer; text-align: left;
+}
+.suggest button:hover, .suggest button:focus { background: rgba(124, 92, 255, .18); outline: none; }
+.suggest img, .suggest .noimg { width: 64px; height: 36px; object-fit: cover; border-radius: 4px; background: var(--bg); flex: none; }
+.suggest .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.suggest .year { color: var(--muted); font-size: 12px; margin-left: auto; flex: none; }
+.suggest .note { padding: 8px 10px; color: var(--muted); font-size: 12px; }
+.suggest .credit { display: block; padding: 4px 10px 6px; font-size: 11px; color: var(--muted); text-align: right; border-top: 1px solid var(--border); }
+.suggest .credit a { color: var(--accent-2); }
 .actions { display: flex; gap: 8px; align-items: center; }
 .spacer { flex: 1; }
 
