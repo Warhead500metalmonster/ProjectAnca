@@ -50,10 +50,8 @@ h1, h2, h3 { font-family: var(--head); letter-spacing: -.01em; margin: 0; }
   border-bottom: 1px solid var(--border);
 }
 .brand { font-family: var(--head); font-weight: 800; font-size: 22px; white-space: nowrap; }
-.brand span, .grad {
-  background: linear-gradient(90deg, var(--accent-2), var(--pink));
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-}
+/* Düz renk: gradient + background-clip:text bazı Chrome kurulumlarında yazıyı tamamen görünmez yapıyordu */
+.brand span, .grad { color: var(--accent-2); text-shadow: 0 0 24px rgba(177, 151, 252, .35); }
 .nav { display: flex; gap: 4px; flex: 1; }
 .nav a {
   display: flex; align-items: center; gap: 8px;
