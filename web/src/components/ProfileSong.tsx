@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// Profilde arkada kısık sesle çalan YouTube şarkısı ve köşedeki küçük çalar.
-// Tarayıcılar, ziyaretçi sayfaya hiç tıklamadan sesli oynatmaya izin vermeyebilir: o zaman ilk tıklamada başlar.
+// Profilde arkada kısık sesle hep çalan YouTube şarkısı; köşede sadece adı yazar, durdurulamaz.
+// Tarayıcılar, ziyaretçi sayfaya hiç dokunmadan sesli oynatmaya izin vermez: şarkı sessiz başlar,
+// ziyaretçinin ilk tıklamasında / tuşunda ses açılır. Siteden linkle gelenlerde ses hemen açıktır.
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global { interface Window { YT?: any; onYouTubeIframeAPIReady?: () => void } }
@@ -30,71 +31,70 @@ export function youtubeId(url?: string | null) {
   return null;
 }
 
+const GESTURES = ["pointerdown", "keydown", "touchstart"] as const;
+
 export function ProfileSong({ url, title, volume }: { url: string; title?: string | null; volume?: number | null }) {
   const host = useRef<HTMLDivElement>(null);
-  const player = useRef<any>(null);
-  const userPaused = useRef(false);
-  const [state, setState] = useState<"loading" | "playing" | "paused" | "error">("loading");
-  const [muted, setMuted] = useState(false);
+  const [state, setState] = useState<"loading" | "playing" | "error">("loading");
   const id = youtubeId(url);
   const vol = Math.min(100, Math.max(1, volume || 15));
 
   useEffect(() => {
     if (!id || !host.current) return;
-    let dead = false;
+    let dead = false, player: any = null, ready = false;
     const target = document.createElement("div"); // YouTube bu kutuyu kendi iframe'iyle değiştirir; React'in kutusu bozulmasın
     host.current.appendChild(target);
-    // Otomatik başlayamadıysa ziyaretçinin sayfadaki ilk tıklamasında başlat
-    const kick = () => { if (!userPaused.current) player.current?.playVideo?.(); };
-    document.addEventListener("pointerdown", kick, { once: true });
+
+    const loud = () => { player.unMute(); player.setVolume(vol); player.playVideo(); };
+    // Ziyaretçinin ilk dokunuşunda sesi aç
+    const onGesture = () => {
+      if (!ready) return; // çalar hazır değilse bir sonraki dokunuşu bekle
+      loud();
+      GESTURES.forEach((g) => document.removeEventListener(g, onGesture, true));
+    };
+    GESTURES.forEach((g) => document.addEventListener(g, onGesture, true));
 
     loadYouTube().then((YT) => {
       if (dead) return;
-      player.current = new YT.Player(target, {
+      player = new YT.Player(target, {
         videoId: id, width: 200, height: 200,
-        playerVars: { autoplay: 1, loop: 1, playlist: id, controls: 0, playsinline: 1, rel: 0 },
+        // Sessiz otomatik oynatmaya her tarayıcı izin verir
+        playerVars: { autoplay: 1, mute: 1, loop: 1, playlist: id, controls: 0, disablekb: 1, playsinline: 1, rel: 0 },
         events: {
-          onReady: (e: any) => { e.target.setVolume(vol); e.target.playVideo(); },
-          onStateChange: (e: any) => { if (!dead) setState(e.data === 1 ? "playing" : e.data === 3 ? "loading" : "paused"); },
+          onReady: () => {
+            ready = true;
+            player.setVolume(vol);
+            player.playVideo();
+            if (navigator.userActivation?.hasBeenActive) onGesture(); // siteden tıklayıp geldiyse ses hemen açık
+          },
+          // Hep çalsın: herhangi bir sebeple durursa yeniden başlat
+          onStateChange: (e: any) => {
+            if (dead) return;
+            if (e.data === 1) setState("playing");
+            else if (e.data === 2 || e.data === 0 || e.data === 5) player.playVideo();
+          },
           onError: () => { if (!dead) setState("error"); },
         },
       });
     });
     return () => {
       dead = true;
-      document.removeEventListener("pointerdown", kick);
-      player.current?.destroy?.();
-      player.current = null;
+      GESTURES.forEach((g) => document.removeEventListener(g, onGesture, true));
+      player?.destroy?.();
       target.remove();
     };
   }, [id, vol]);
 
-  if (!id) return null;
-
-  function toggle() {
-    const p = player.current;
-    if (!p) return;
-    if (state === "playing") { userPaused.current = true; p.pauseVideo(); }
-    else { userPaused.current = false; p.setVolume(vol); p.playVideo(); }
-  }
-  function toggleMute() {
-    const p = player.current;
-    if (!p) return;
-    if (muted) p.unMute(); else p.mute();
-    setMuted(!muted);
-  }
+  if (!id || state === "error") return null;
 
   return (
-    <div className={`song ${state}`} onPointerDown={(e) => e.stopPropagation()}>
+    <div className={`song ${state}`}>
       <div className="song-frame" ref={host} aria-hidden="true" />
-      <button className="song-play" onClick={toggle} aria-label={state === "playing" ? "Durdur" : "Çal"} disabled={state === "error"}>
-        {state === "playing" ? <span className="eq"><i /><i /><i /></span> : "▶"}
-      </button>
+      <span className="song-play">{state === "playing" ? <span className="eq"><i /><i /><i /></span> : "♪"}</span>
       <div className="song-text">
-        <small>{state === "error" ? "Şarkı çalınamıyor" : state === "playing" ? "Şu an çalıyor" : "Profil şarkısı · çalmak için bas"}</small>
+        <small>{state === "playing" ? "Şu an çalıyor" : "Profil şarkısı"}</small>
         <b title={title || ""}>{title || "Profil şarkısı"}</b>
       </div>
-      {state === "playing" && <button className="song-mute" onClick={toggleMute} aria-label={muted ? "Sesi aç" : "Sesi kapat"}>{muted ? "🔇" : "🔉"}</button>}
     </div>
   );
 }
