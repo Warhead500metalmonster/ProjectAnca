@@ -34,7 +34,12 @@ export function LibraryTab() {
   const { profile, entries, isMe } = useProfile();
   const { openForm, openView, scale } = useApp();
 
-  const [type, setType] = useState<EntryType | "all">("all");
+  // Önce oyunlar açılır; oyunu yoksa ilk sahip olduğu tür, o da yoksa Tümü. Başka profile geçince yeniden seçilir.
+  const firstType = TYPE_KEYS.find((k) => entries.some((e) => e.type === k)) ?? "all";
+  const [pick, setPick] = useState<{ pid: string; t: EntryType | "all" } | null>(null);
+  const picked = pick?.pid === profile.id ? pick.t : null;
+  const type = picked && (picked === "all" || entries.some((e) => e.type === picked)) ? picked : firstType;
+  const setType = (t: EntryType | "all") => setPick({ pid: profile.id, t });
   const [statuses, setStatuses] = useState<Set<Status>>(new Set());
   const [year, setYear] = useState("");
   const [finishYear, setFinishYear] = useState("");
@@ -117,7 +122,7 @@ export function LibraryTab() {
       )}
       <section className="section">
         <div className="tabs">
-          {([["all", "", "Tümü"], ...TYPE_KEYS.map((k) => [k, "", TYPES[k].label])] as [EntryType | "all", string, string][])
+          {([...TYPE_KEYS.map((k) => [k, "", TYPES[k].label]), ["all", "", "Tümü"]] as [EntryType | "all", string, string][])
             .filter(([k]) => k === "all" || entries.some((e) => e.type === k))
             .map(([k, icon, label]) => (
               <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => { setType(k); setYear(""); setFinishYear(""); setPlatform(""); }}>
