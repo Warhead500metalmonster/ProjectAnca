@@ -30,27 +30,33 @@ function Ico({ children }: { children: React.ReactNode }) {
   return <svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{children}</svg>;
 }
 
+// Tam genişlikte, iki sıra halinde zıt yönlerde kayan kapaklar
+function CoverMarquee({ covers }: { covers: string[] }) {
+  // Kapak azsa tekrarlayarak şeridi doldur
+  const fill = (list: string[]) => (list.length ? Array.from({ length: Math.max(list.length, 12) }, (_, i) => list[i % list.length]) : []);
+  const rows = [fill(covers.filter((_, i) => i % 2 === 0)), fill(covers.filter((_, i) => i % 2 === 1))];
+  return (
+    <div className="marquee" aria-hidden>
+      {rows.map((row, r) => (
+        <div className={`mq-row ${r ? "rev" : ""}`} key={r}>
+          {[...row, ...row].map((c, i) => <img key={i} src={c} alt="" onError={(e) => e.currentTarget.remove()} />)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Landing({ version }: { version: number }) {
   const { data, error } = useLoad(() => fetchFeed({ limit: 40 }), [version]);
   if (error) return <div className="empty">Bir şeyler ters gitti: {error}</div>;
 
   const covers = [...new Set((data || []).map((e) => safeUrl(e.cover)).filter(Boolean))];
-  // Kapak azsa tekrarlayarak şeridi doldur
-  const fill = (list: string[]) => (list.length ? Array.from({ length: Math.max(list.length, 12) }, (_, i) => list[i % list.length]) : []);
-  const rowA = fill(covers.filter((_, i) => i % 2 === 0));
-  const rowB = fill(covers.filter((_, i) => i % 2 === 1));
   const people = [...new Map((data || []).filter((e) => e.profiles?.username).map((e) => [e.profiles!.username, e.profiles])).values()].slice(0, 5);
 
   return (
     <>
       <section className="hero2">
-        <div className="marquee" aria-hidden>
-          {[rowA, rowB].map((row, r) => (
-            <div className={`mq-row ${r ? "rev" : ""}`} key={r}>
-              {[...row, ...row].map((c, i) => <img key={i} src={c} alt="" onError={(e) => e.currentTarget.remove()} />)}
-            </div>
-          ))}
-        </div>
+        <CoverMarquee covers={covers} />
         <div className="hero2-text">
           <h1>Oynadığın, izlediğin, dinlediğin <span className="grad">her şey</span> tek yerde.</h1>
           <p>Oyunlarını, filmlerini, dizilerini, müziklerini ve animelerini logla. Puanla, not al, arkadaşlarının neyle uğraştığını gör.</p>
@@ -160,19 +166,23 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
   const { mine, friends, community } = data;
   const active = mine.filter((e) => e.status === "active");
   const backlog = mine.filter((e) => e.status === "planned").sort((a, b) => a.created_at.localeCompare(b.created_at)); // en eski bekleyen önce
+  // Önce kendi kapakların; azsa topluluğunkilerle tamamla
+  const own = [...new Set(mine.map((e) => safeUrl(e.cover)).filter(Boolean))];
+  const heroCovers = own.length >= 8 ? own : [...own, ...community.map((e) => safeUrl(e.cover)).filter(Boolean)];
   const hour = new Date().getHours();
   const hello = hour < 6 ? "İyi geceler" : hour < 12 ? "Günaydın" : hour < 18 ? "Selam" : "İyi akşamlar";
 
   return (
     <>
-      <section className="welcome">
-        <div>
-          <h1>{hello}, <span className="grad">{displayName(user)}</span> </h1>
+      <section className="hero2 compact">
+        <CoverMarquee covers={heroCovers} />
+        <div className="hero2-text">
+          <h1>{hello}, <span className="grad">{displayName(user)}</span></h1>
           <p>{mine.length ? `Kütüphanende ${mine.length} kayıt var.` : "Kütüphanen boş, ilk kaydını ekleyerek başla."}</p>
-        </div>
-        <div className="hero-actions">
-          {mine.some((e) => e.status === "planned") && <Roulette list={mine.filter((e) => e.status === "planned")} />}
-          <AddButton />
+          <div className="hero-actions">
+            {mine.some((e) => e.status === "planned") && <Roulette list={mine.filter((e) => e.status === "planned")} />}
+            <AddButton />
+          </div>
         </div>
       </section>
       {localCount > 0 && (
