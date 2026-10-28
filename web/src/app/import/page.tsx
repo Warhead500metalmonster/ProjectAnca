@@ -547,7 +547,8 @@ const SOURCES: Record<string, { name: string; platform: string; store: string; h
 
 const GAME_PLATFORMS = ["PlayStation 5", "PlayStation 4", "Xbox Series X|S", "Xbox One", "PC", "Nintendo Switch", "Nintendo Switch 2", "Steam Deck", "Mobil"];
 
-interface ListGame { title: string; status: Status | null; rating: number; sec: number | null; date: string | null; started: string | null; platform: string; store: string; notes: string }
+// cat: dosyadaki, bizde karşılığı olmayan kategori (ör. HLTB'de Replay ya da kendi açtığın sekme); kullanıcı eşler
+interface ListGame { title: string; status: Status | null; cat?: string | null; rating: number; sec: number | null; date: string | null; started: string | null; platform: string; store: string; notes: string }
 
 const col = (r: Record<string, string>, ...names: string[]) => {
   for (const n of names) {
@@ -570,6 +571,24 @@ function seconds(s: string, unitSec = false) {
   const n = Number(s.replace(",", "."));
   return n > 0 ? Math.round(unitSec ? n : n * 3600) : null;
 }
+const NOT_CATEGORY = /^(title|name|game|gamename|oyun|platforms?|storefront|source|store|library|progress|mainstory|mainextras|mainplusextras|completionist|speed.*|review.*|notes?|not|rating|userscore|score|puan|playtime|timeplayed|sure|.*date|addedon|started|finished|lastactivity|completionstatus|status|durum|id|.*id|genres?|developers?|publishers?|releasedate|year|hours?)$/;
+const KNOWN_CATEGORY = /^(completed|playing|retired|backlog)$/;
+function categoryColumns(rows: Record<string, string>[]) {
+  const heads = Object.keys(rows[0] || {});
+  return heads.filter((h) => {
+    const k = h.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (!k || NOT_CATEGORY.test(k) || KNOWN_CATEGORY.test(k)) return false;
+    const vals = rows.map((x) => x[h]).filter((v) => v && v !== "0" && v.toLowerCase() !== "false");
+    return vals.length > 0 && vals.every((v) => v.length <= 5); // işaret gibi kısa değerler (X, 1, true...)
+  });
+}
+// Durum yazısı tanınmayan satırın ham kategorisi (Playnite'ta yazı, HLTB'de işaretli sütun adı)
+function categoryOf(r: Record<string, string>, cols: string[]) {
+  const text = col(r, "completionstatus", "status", "durum");
+  if (text) return text;
+  return cols.find((h) => { const v = r[h]; return !!v && v !== "0" && v.toLowerCase() !== "false"; }) || null;
+}
+
 function statusFrom(r: Record<string, string>): Status | null {
   const s = col(r, "completionstatus", "status", "durum").toLowerCase();
   if (s) {
@@ -609,11 +628,13 @@ function ListImport() {
   const [status, setStatus] = useState<Status>("completed");
   const [text, setText] = useState("");
   const [csv, setCsv] = useState<ListGame[] | null>(null);
+  const [catMap, setCatMap] = useState<Record<string, Status | "skip">>({}); // bizde olmayan kategori → durum
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState<{ done: number; total: number } | null>(null);
   const s = SOURCES[src];
   const fileMode = src === "hltb" || src === "playnite";
   const myGames = mine.filter((e) => e.type === "game");
+  const fileStatus = (g: ListGame): Status | "skip" | null => g.status || (g.cat ? catMap[g.cat] ?? "owned" : null);
   const byKey = new Map(myGames.map((e) => [looseKey(e.title), e]));
 
   function pick(k: string) {
@@ -626,12 +647,15 @@ function ListImport() {
     if (!files?.length) return;
     const list: ListGame[] = [];
     for (const f of [...files]) {
-      for (const r of parseCsv(await f.text())) {
+      const rowsOf = parseCsv(await f.text());
+      const cats = categoryColumns(rowsOf);
+      for (const r of rowsOf) {
         const title = col(r, "title", "name", "game", "gamename", "oyun");
         if (!title) continue;
         const score = Number(col(r, "review", "userscore", "rating", "score", "puan").replace(",", ".")) || 0;
+        const known = statusFrom(r);
         list.push({
-          title, status: statusFrom(r), rating: Math.max(0, Math.min(10, Math.round(score > 10 ? score / 10 : score))),
+          title, status: known, cat: known ? null : categoryOf(r, cats), rating: Math.max(0, Math.min(10, Math.round(score > 10 ? score / 10 : score))),
           sec: seconds(col(r, "progress", "playtime", "timeplayed", "sure"), !!col(r, "playtime") && src === "playnite"),
           date: isoDate(col(r, "completiondate", "completed", "lastactivity", "finished", "date")),
           started: isoDate(col(r, "startdate", "started")),
@@ -641,6 +665,7 @@ function ListImport() {
       }
     }
     if (!list.length) return toast("Dosyada oyun bulunamadı. İçinde \"Title\" ya da \"Name\" sütunu olan bir .csv seç.");
+    setCatMap(Object.fromEntries([...new Set(list.map((g) => g.cat).filter(Boolean) as string[])].map((c) => [c, "owned" as Status])));
     setCsv(list);
   }
 
@@ -648,7 +673,9 @@ function ListImport() {
     .map((title) => ({ title, status: null, rating: 0, sec: null, date: null, started: null, platform: "", store: "", notes: "" }));
   const all = fileMode ? csv || [] : pasted;
   const seen = new Set<string>();
-  const unique = all.filter((g) => { const k = looseKey(g.title); if (!k || seen.has(k)) return false; seen.add(k); return true; });
+  const unique = all.filter((g) => { const k = looseKey(g.title); if (!k || seen.has(k) || fileStatus(g) === "skip") return false; seen.add(k); return true; });
+  const cats = Object.keys(catMap);
+  const catCount = (c: string) => all.filter((g) => !g.status && g.cat === c).length;
   const known = unique.filter((g) => byKey.has(looseKey(g.title))).length; // ada göre kütüphanede olanlar
 
   // Kütüphanede olan oyunun sadece boş alanlarını doldur (senin girdiğin hiçbir şeyin üstüne yazmaz)
@@ -661,7 +688,8 @@ function ListImport() {
     if (!e.notes?.trim() && g.notes) p.notes = g.notes;
     if (!e.platform && (g.platform || platform)) p.platform = (g.platform || platform).slice(0, 60);
     // Dosyada durum yazıyorsa: Kategorisiz ya da Planlandı olanı güncelle
-    if (g.status && g.status !== e.status && (e.status === "owned" || (e.status === "planned" && g.status !== "planned"))) p.status = g.status;
+    const fs = fileStatus(g);
+    if (fs && fs !== "skip" && fs !== e.status && (e.status === "owned" || (e.status === "planned" && fs !== "planned"))) p.status = fs;
     return Object.keys(p).length ? p : null;
   }
 
@@ -689,7 +717,8 @@ function ListImport() {
         }
         if (hit && used.has(hit.id)) { same++; return null; }
         if (hit) used.add(hit.id);
-        const st = g.status || status;
+        const fs = fileStatus(g);
+        const st = fs && fs !== "skip" ? fs : status;
         return {
           type: "game", title: (hit?.name || g.title).slice(0, 200), rawg_id: hit?.id ?? null, year: parseInt(hit?.released || "") || null,
           cover: hit?.background_image ? smallImage(hit.background_image) : null, status: st, rating: g.rating,
@@ -741,6 +770,21 @@ function ListImport() {
           </select>
         </label>
       </div>
+      {fileMode && cats.length > 0 && (
+        <div className="cat-map">
+          <b>Bizde karşılığı olmayan kategoriler</b>
+          <span className="muted small">Dosyandaki bu kategorilerdeki oyunlar hangi duruma geçsin?</span>
+          {cats.map((c) => (
+            <label key={c}>
+              <span>{c} <small className="muted">({catCount(c)} oyun)</small></span>
+              <select value={catMap[c]} onChange={(e) => setCatMap((m) => ({ ...m, [c]: e.target.value as Status | "skip" }))}>
+                {STATUSES.map((x) => <option key={x} value={x}>{statusLabel(x, "game")}</option>)}
+                <option value="skip">Aktarma (atla)</option>
+              </select>
+            </label>
+          ))}
+        </div>
+      )}
       {fileMode ? (
         !csv && <label className="btn file-btn">CSV dosyasını seç<input type="file" accept=".csv,text/csv" multiple onChange={(e) => read(e.target.files)} /></label>
       ) : (
@@ -755,14 +799,14 @@ function ListImport() {
             <div className="import-list">
               {unique.slice(0, 300).map((g) => (
                 <label key={g.title} className={byKey.has(looseKey(g.title)) ? "off" : ""}><span className="name">{g.title}</span>
-                  <small>{byKey.has(looseKey(g.title)) ? "kütüphanende" : statusLabel(g.status || status, "game")}{g.date ? ` · ${g.date}` : ""}{g.rating ? ` · ${g.rating}/10` : ""}</small></label>
+                  <small>{byKey.has(looseKey(g.title)) ? "kütüphanende" : statusLabel(((fs) => (fs && fs !== "skip" ? fs : status))(fileStatus(g)), "game")}{g.date ? ` · ${g.date}` : ""}{g.rating ? ` · ${g.rating}/10` : ""}</small></label>
               ))}
               {unique.length > 300 && <label className="off"><span className="name muted">…ve {unique.length - 300} oyun daha (hepsi aktarılır)</span></label>}
             </div>
           )}
           {step && <Progress done={step.done} total={step.total} label="Oyunlar eşleştiriliyor…" />}
           <div className="actions">
-            {fileMode && <button className="btn" disabled={busy} onClick={() => setCsv(null)}>Vazgeç</button>}
+            {fileMode && <button className="btn" disabled={busy} onClick={() => { setCsv(null); setCatMap({}); }}>Vazgeç</button>}
             <button className="btn primary" disabled={busy || !unique.length} onClick={run}>{busy ? "Aktarılıyor…" : known ? `Aktar (${unique.length - known} yeni, ${known} güncelleme)` : `${unique.length} oyunu ekle`}</button>
           </div>
         </>
