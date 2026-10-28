@@ -533,12 +533,12 @@ const SOURCES: Record<string, { name: string; platform: string; store: string; h
     <a className="grad" href="https://library.playstation.com/recently-purchased" target="_blank" rel="noreferrer">PlayStation oyun kütüphaneni</a> aç
     (oynadıkların için üstteki <b>Oynananlar</b> sekmesine geç),
     sayfanın tamamını seç (Ctrl+A), kopyala (Ctrl+C) ve aşağıya yapıştır. Menü, &quot;İndir&quot; gibi yazılar elenir; PS4 / PS5 kendiliğinden anlaşılır.
-    <CopyLink make={psBookmarklet} lead="Çok sayfa mı var?">
+    <CopyLink make={psBookmarklet} name="Ancalog'a ekle PlayStation" lead="Çok sayfa mı var?">
       Sonra PlayStation kütüphanende bu yer imine bas: bütün sayfaları kendisi toplar, sen çıkan kutudaki <b>Kopyala</b>&apos;ya basıp buraya yapıştırırsın.
     </CopyLink></> },
   backloggd: { name: "Backloggd", platform: "", store: "", help: <>
     Backloggd&apos;un dışa aktarma özelliği yok; bu düğme senin yerine oyun listeni okur.
-    <CopyLink make={backloggdBookmarklet} lead="1.">
+    <CopyLink make={backloggdBookmarklet} name="Ancalog'a ekle Backloggd" lead="1.">
       2. <a className="grad" href="https://backloggd.com/" target="_blank" rel="noreferrer">Backloggd</a>&apos;da kendi profilini aç ve bu yer imine bas.
       Played, Playing, Backlog ve Wishlist sekmelerindeki bütün oyunlarını puanlarıyla toplar.
       3. Çıkan kutudaki <b>Kopyala</b>&apos;ya bas, buraya dön ve aşağıya yapıştır.
@@ -718,7 +718,7 @@ function ListImport() {
   }
 
   const ps = src === "ps" ? psParse(text) : null; // PlayStation sayfası: sadece altında PS4 / PS5 etiketi olan satırlar oyundur
-  const ownPage = /Ancalog'a kopyala|PlayStation, Epic, Switch ve diğerleri|Başka yerdeki kütüphaneni/.test(text); // yanlışlıkla Ancalog'un kendi sayfası yapıştırıldı
+  const ownPage = /Ancalog'a (kopyala|ekle)|PlayStation, Epic, Switch ve diğerleri|Başka yerdeki kütüphaneni/.test(text); // yanlışlıkla Ancalog'un kendi sayfası yapıştırıldı
   const bl = src === "backloggd" ? blParse(text) : null; // Backloggd yer iminin topladığı liste (durum ve puanlarıyla)
   const pasted: ListGame[] = ps?.length ? ps : bl?.length ? bl : ownPage ? [] : cleanPaste(text)
     .map((title) => ({ title, status: null, rating: 0, sec: null, date: null, started: null, platform: "", store: "", notes: "" }));
@@ -1155,7 +1155,8 @@ function AlbumImport({ mode }: { mode: "link" | "lastfm" }) {
 const NOISE = /^(konsola indir|indirme durumunu görüntüle|view download status|download to (your )?console|gta\+|ps plus|playstation plus|oyun kütüphanesi|game library|satın alınanlar|oynananlar|indirilenler|purchased|played|collection|koleksiyon|ps vr2?|satın al(ındı)?|purchased|owned|sahip olunan|yükle(ndi)?|install(ed)?|oyna|play|indir|download|güncelle|update|kütüphane|library|kitaplığım|my games|oyunlarım|sırala|sort|filtre|filter|ara|search|tümü|all|favoriler|favorites|ücretsiz|free|ödendi|paid|iade|refund|detaylar|details|daha fazla|more|games?|oyunlar|apps?|uygulamalar|hepsi|yüklü|hazır|ready|ps5|ps4|pc|xbox( series x\|s| one)?|nintendo switch|dlc|eklenti|add-?on|demo|beta|trial)$/i;
 // Sayfa sayfa kopyalamak yerine: yer imleri çubuğuna sürüklenen düğme, PlayStation'da bütün sayfaları kendisi toplar
 // Yer imi düğmesi: kişi fareyle tutup tarayıcının yer imleri çubuğuna sürükler, sonra ilgili sitede basar
-function CopyLink({ make, lead, children }: { make: () => string; lead: string; children: React.ReactNode }) {
+// name: yer iminin adı olur (sürüklenince çubukta bu yazar)
+function CopyLink({ make, name, lead, children }: { make: () => string; name: string; lead: string; children: React.ReactNode }) {
   const { toast } = useApp();
   const link = useRef<HTMLAnchorElement>(null);
   // React "javascript:" linklerini engellediği için adres sayfa açıldıktan sonra verilir
@@ -1163,7 +1164,7 @@ function CopyLink({ make, lead, children }: { make: () => string; lead: string; 
   return (
     <span className="ps-helper">
       <b>{lead}</b> Şu düğmeyi fareyle tutup tarayıcının yer imleri çubuğuna sürükle (çubuk görünmüyorsa Ctrl+Shift+B):
-      <a ref={link} className="btn bookmarklet" draggable onClick={(e) => { e.preventDefault(); toast("Buna basma; fareyle tutup yer imleri çubuğuna sürükle."); }}>Ancalog&apos;a kopyala</a>
+      <a ref={link} className="btn bookmarklet" draggable onClick={(e) => { e.preventDefault(); toast("Buna basma; fareyle tutup yer imleri çubuğuna sürükle."); }}>{name}</a>
       {children}
     </span>
   );
