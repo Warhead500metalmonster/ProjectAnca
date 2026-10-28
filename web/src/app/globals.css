@@ -1061,7 +1061,8 @@ p.count-note { margin: -4px 0 12px; }
 .load-more { display: flex; justify-content: center; margin-top: 20px; }
 .fav-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: -6px 0 10px; }
 .strip.sorting { padding-top: 4px; }
-.fav-sort { position: relative; cursor: grab; transition: opacity .15s, transform .15s; }
+.fav-sort { position: relative; min-width: 0; cursor: grab; transition: opacity .15s, transform .15s; }
+.fav-sort > .card { width: 100%; } /* düğme kendi yazısı kadar daralıp kapakları farklı boyda göstermesin */
 .fav-sort.dragging { opacity: .4; transform: scale(.96); }
 .strip.sorting .fav-sort .card { pointer-events: none; }
 .fav-draggable .fav-sort { cursor: grab; }
