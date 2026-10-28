@@ -15,10 +15,13 @@ import { Cover, Feed, UserRow } from "@/components/ui";
 
 interface Slim { rawg_id: number | null; title: string; cover: string | null; rating: number }
 
-// En çok loglanan oyunlar: her oyunu kaç farklı kişinin loglandığına göre sırala
-async function popularGames(): Promise<(Slim & { n: number })[]> {
-  const rows = await fetchAll<{ rawg_id: number; user_id: string }>((from, to) =>
-    sb().from("entries").select("rawg_id, user_id").eq("type", "game").not("rawg_id", "is", null).order("id").range(from, to), 30000);
+// En çok loglanan oyunlar: her oyunu kaç farklı kişinin loglandığına göre sırala (users verilirse sadece onların kayıtları)
+async function popularGames(users?: string[]): Promise<(Slim & { n: number })[]> {
+  if (users && !users.length) return [];
+  const rows = await fetchAll<{ rawg_id: number; user_id: string }>((from, to) => {
+    const req = sb().from("entries").select("rawg_id, user_id").eq("type", "game").not("rawg_id", "is", null);
+    return (users ? req.in("user_id", users) : req).order("id").range(from, to);
+  }, 30000);
   const people = new Map<number, Set<string>>();
   for (const r of rows) (people.get(r.rawg_id) || people.set(r.rawg_id, new Set()).get(r.rawg_id)!).add(r.user_id);
   const top = [...people].map(([id, s]) => [id, s.size] as const).sort((a, b) => b[1] - a[1]).slice(0, 12);
@@ -32,7 +35,12 @@ async function popularGames(): Promise<(Slim & { n: number })[]> {
 }
 
 export default function Community() {
-  const { version } = useApp();
+  const { version, me, following } = useApp();
+  const [popWho, setPopWho] = useState<"all" | "following">("all");
+  const followIds = [...following].sort().join(",");
+  // Takip ettiklerinin popüler oyunları: seçilince ayrıca yüklenir
+  const { data: popFollowing } = useLoad(() => popularGames(followIds ? followIds.split(",") : []), [followIds, version, popWho],
+    supabaseConfigured() && popWho === "following");
   const { data, error } = useLoad(async () => {
     const db = sb();
     const [feed, members, games, lists] = await Promise.all([
@@ -63,7 +71,7 @@ export default function Community() {
   if (!data) return <div className="loading">Yükleniyor…</div>;
   const { feed, members, games, lists } = data;
 
-  const popular = games; // en çok loglanan oyunlar (kişi sayısına göre)
+  const popular = popWho === "following" ? popFollowing : games; // en çok loglanan oyunlar (kişi sayısına göre)
 
   const unique = [...new Set([...games, ...feed].map((e) => safeUrl(e.cover)).filter(Boolean))].slice(0, 30);
   const covers = unique.length ? Array.from({ length: 30 }, (_, i) => unique[i % unique.length]) : []; // az kapak varsa tekrarla
@@ -75,17 +83,27 @@ export default function Community() {
         <div className="mosaic">{covers.map((c, i) => <img key={i} src={c} alt="" loading="lazy" onError={(e) => e.currentTarget.remove()} />)}</div>
         <div className="mosaic-text"><h1>Topluluk</h1><p>Herkes neyi oynuyor, neyi izliyor? Keşfet, takip et.</p></div>
       </section>
-      {popular.length > 0 && (
+      {games.length > 0 && (
         <section className="section">
-          <div className="section-head"><h2>Popüler oyunlar</h2><span className="muted">en çok loglananlar</span></div>
-          <div className="strip">
+          <div className="section-head">
+            <h2>Popüler oyunlar</h2>
+            {me ? (
+              <div className="mini-tabs">
+                <button className={popWho === "all" ? "active" : ""} onClick={() => setPopWho("all")}>Herkes</button>
+                <button className={popWho === "following" ? "active" : ""} onClick={() => setPopWho("following")}>Takip ettiklerim</button>
+              </div>
+            ) : <span className="muted">en çok loglananlar</span>}
+          </div>
+          {!popular ? <div className="loading">Yükleniyor…</div>
+            : !popular.length ? <div className="muted">{following.size ? "Takip ettiklerin henüz oyun loglamamış." : "Henüz kimseyi takip etmiyorsun. Üyeler kısmından birini takip et, onların popüler oyunları burada görünür."}</div>
+            : <div className="strip">
             {popular.map((g) => (
               <Link className="card" href={`/game/${g.rawg_id}`} key={g.rawg_id}>
                 <div className="poster"><div className="ph">Oyun</div><Cover src={g.cover} /><span className="rating" title="Bu oyunu loglayan kişi sayısı">{g.n} kişi</span></div>
                 <div className="card-title">{g.title}</div>
               </Link>
             ))}
-          </div>
+          </div>}
         </section>
       )}
       {lists.length > 0 && (

@@ -1224,3 +1224,23 @@ body.fav-dragging, body.fav-dragging * { cursor: grabbing !important; user-selec
 .cat-map label { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .ps-helper { display: block; margin-top: 8px; padding: 10px 12px; border-radius: 10px; background: var(--panel-2); line-height: 1.7; }
 .ps-helper .bookmarklet { display: inline-flex; margin: 4px 8px; cursor: grab; border: 2px dashed var(--accent); }
+
+/* Kayıt formunda emülatör / DLC işaretleri alt alta */
+.checks { display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; padding-bottom: 6px; }
+
+/* Listedeki içeriğe listeye özel not */
+.li-note { margin: 2px 0 0; font-size: 13px; line-height: 1.4; color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; border-left: 2px solid var(--accent); padding-left: 8px; }
+.li-note-edit { display: flex; flex-direction: column; gap: 6px; }
+.li-note-edit textarea { width: 100%; font-size: 13px; }
+.li-note-edit .btn { padding: 4px 10px; font-size: 13px; }
+
+/* Profil ana sayfası */
+.home-edit-bar { display: flex; justify-content: flex-end; margin: 16px 0 -8px; }
+.home-text { white-space: pre-wrap; line-height: 1.6; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+.home-editor { background: var(--panel); border: 1px solid var(--accent); border-radius: var(--radius); padding: 16px 18px; }
+.home-editor h2 { margin: 0 0 4px; }
+.home-editor textarea { width: 100%; }
+.home-rows { display: flex; flex-direction: column; gap: 4px; margin: 12px 0; }
+.home-row { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 8px; background: var(--panel-2, rgba(255,255,255,.04)); }
+.home-row.off { opacity: .6; }
+.home-row .spacer { flex: 1; }

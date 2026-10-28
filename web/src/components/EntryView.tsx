@@ -40,7 +40,7 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
   const liked = !!me && !!likers?.includes(me.id);
   const days = daysTaken(e);
   const details = [
-    [t.where, [e.platform, e.emulated ? "Emülatör" : ""].filter(Boolean).join(" · ")],
+    [t.where, [e.platform, e.emulated ? "Emülatör" : "", e.dlc ? "DLC dahil" : ""].filter(Boolean).join(" · ")],
     ["Mağaza", e.store],
     ["Başladı", e.started_on && fmtDate(e.started_on)],
     [e.status === "completed" ? TYPES[e.type].done.replace(/^./, (c) => c.toLocaleUpperCase("tr")) : "Tarih", e.date && fmtDate(e.date)],
@@ -146,6 +146,7 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
             <div className="view-details">{details.map(([k, v]) => <div key={k}><span>{k}</span><b>{v}</b></div>)}</div>
           )}
           {e.progress && <div className="view-note"><span>Not</span>{e.progress}</div>}
+          {e.status === "dropped" && e.drop_note && <div className="view-note"><span>Neden bıraktı</span>{e.drop_note}</div>}
           {e.notes && <div className="view-notes"><span className="muted">İnceleme</span>{"\n"}<RichText text={e.notes} /></div>}
 
           <div className="social-bar">

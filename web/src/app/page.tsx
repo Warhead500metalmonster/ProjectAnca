@@ -190,13 +190,13 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
       </section>
       {active.length > 0 && (
         <section className="section">
-          <div className="section-head"><h2>Devam ettiklerin</h2><Link href={`/u/${user.username}`}>Kütüphanem →</Link></div>
+          <div className="section-head"><h2>Devam ettiklerin</h2><Link href={`/u/${user.username}/library`}>Kütüphanem →</Link></div>
           <div className="strip">{active.map((e) => <EntryCard key={e.id} e={e} kind edit />)}</div>
         </section>
       )}
       {backlog.length > 0 && (
         <section className="section">
-          <div className="section-head"><h2>Backlog&apos;un <span className="muted small">· {backlog.length} bekleyen</span></h2><Link href={`/u/${user.username}`}>Kütüphanem →</Link></div>
+          <div className="section-head"><h2>Backlog&apos;un <span className="muted small">· {backlog.length} bekleyen</span></h2><Link href={`/u/${user.username}/library`}>Kütüphanem →</Link></div>
           <div className="strip">{backlog.map((e) => <EntryCard key={e.id} e={e} kind edit />)}</div>
         </section>
       )}

@@ -32,7 +32,7 @@ const uniqSorted = (list: (string | number | null | undefined)[], desc = true) =
 
 export function LibraryTab() {
   const { profile, entries, isMe } = useProfile();
-  const { openForm, openView, scale } = useApp();
+  const { openForm, scale } = useApp();
 
   // Önce oyunlar açılır; oyunu yoksa ilk sahip olduğu tür, o da yoksa Tümü. Başka profile geçince yeniden seçilir.
   const firstType = TYPE_KEYS.find((k) => entries.some((e) => e.type === k)) ?? "all";
@@ -45,24 +45,15 @@ export function LibraryTab() {
   const [finishYear, setFinishYear] = useState("");
   const [platform, setPlatform] = useState("");
   const [minRating, setMinRating] = useState("");
-  const [flags, setFlags] = useState<Set<"fav" | "review" | "emu">>(new Set());
+  const [flags, setFlags] = useState<Set<"fav" | "review" | "emu" | "dlc">>(new Set());
   // Oyunlar oynama süresine göre, diğer türler son güncellenene göre sıralı açılır; kişi değiştirirse onun seçimi geçerli
   const [sortPick, setSort] = useState<Sort | null>(null);
   const sort: Sort = sortPick ?? (type === "game" ? "time" : "updated");
   const [text, setText] = useState("");
   const [view, setView] = useState<View>("grid");
   const [showFilters, setShowFilters] = useState(false);
-  const [favTab, setFavTab] = useState("");
   // eslint-disable-next-line react-hooks/set-state-in-effect -- tarayıcı deposundan / ağdan gelen veri
   useEffect(() => { try { if (localStorage.getItem("ancalog.view") === "list") setView("list"); } catch { /* tercih */ } }, []);
-
-  // Akıştan gelen /u/ali?entry=ID bağlantısı kaydı açar, sonra adresten silinir
-  useEffect(() => {
-    const id = new URLSearchParams(location.search).get("entry");
-    const e = id && entries.find((x) => x.id === id);
-    if (e) { openView(e); history.replaceState(null, "", location.pathname); }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile.id]);
 
   function pickView(v: View) {
     setView(v);
@@ -87,19 +78,17 @@ export function LibraryTab() {
     (!flags.has("fav") || e.favorite) &&
     (!flags.has("review") || e.notes) &&
     (!flags.has("emu") || e.emulated) &&
+    (!flags.has("dlc") || e.dlc) &&
     (!needle || `${e.title} ${e.creator || ""} ${e.notes || ""} ${e.progress || ""}`.toLocaleLowerCase("tr").includes(needle)),
   ).sort(sorter);
   const filterCount = statuses.size + [year, finishYear, platform, minRating].filter(Boolean).length + flags.size;
   const statusType = type === "all" ? null : type;
-  const favs = entries.filter((e) => e.favorite);
   // Sayfa sayfa göster; filtre ya da sıralama değişince baştan başla
   const pageKey = [type, [...statuses].join(), year, finishYear, platform, minRating, [...flags].join(), sort, needle, view].join("|");
   const [paging, setPaging] = useState({ key: pageKey, n: PAGE });
   const shown = paging.key === pageKey ? paging.n : PAGE;
   const more = () => setPaging({ key: pageKey, n: shown + PAGE });
 
-  const favTypes = TYPE_KEYS.filter((k) => favs.some((e) => e.type === k));
-  const favType = favTypes.includes(favTab as EntryType) ? (favTab as EntryType) : favTypes[0];
 
   function clear() {
     setStatuses(new Set()); setYear(""); setFinishYear(""); setPlatform(""); setMinRating(""); setFlags(new Set());
@@ -107,21 +96,6 @@ export function LibraryTab() {
 
   return (
     <>
-      {favs.length > 0 && (
-        <section className="section favs">
-          <div className="section-head">
-            <h2>♥ Favoriler</h2>
-            {favTypes.length > 1 && (
-              <div className="mini-tabs">
-                {favTypes.map((k) => (
-                  <button key={k} className={favType === k ? "active" : ""} onClick={() => setFavTab(k)} title={TYPES[k].plural}>{TYPES[k].label}</button>
-                ))}
-              </div>
-            )}
-          </div>
-          <Favorites list={favs.filter((e) => e.type === favType)} isMe={isMe} />
-        </section>
-      )}
       <section className="section">
         <div className="tabs">
           {([...TYPE_KEYS.map((k) => [k, "", TYPES[k].label]), ["all", "", "Tümü"]] as [EntryType | "all", string, string][])
@@ -183,6 +157,7 @@ export function LibraryTab() {
                 <button className={`chip ${flags.has("fav") ? "active" : ""}`} onClick={() => setFlags(toggle(flags, "fav"))}>♥ Favoriler</button>
                 <button className={`chip ${flags.has("review") ? "active" : ""}`} onClick={() => setFlags(toggle(flags, "review"))}>İncelemeli</button>
                 <button className={`chip ${flags.has("emu") ? "active" : ""}`} onClick={() => setFlags(toggle(flags, "emu"))}>Emülatör</button>
+                <button className={`chip ${flags.has("dlc") ? "active" : ""}`} onClick={() => setFlags(toggle(flags, "dlc"))}>DLC dahil</button>
               </div>
             </div>
             {filterCount > 0 && <button className="link" onClick={clear}>Filtreleri temizle</button>}
@@ -207,6 +182,31 @@ export function LibraryTab() {
         )}
       </section>
     </>
+  );
+}
+
+// Favoriler bölümü (profil ana sayfasında): türler arasında geçiş, sahibi sürükleyerek sıralar
+export function FavoritesSection() {
+  const { entries, isMe } = useProfile();
+  const [favTab, setFavTab] = useState("");
+  const favs = entries.filter((e) => e.favorite);
+  const favTypes = TYPE_KEYS.filter((k) => favs.some((e) => e.type === k));
+  const favType = favTypes.includes(favTab as EntryType) ? (favTab as EntryType) : favTypes[0];
+  if (!favs.length) return null;
+  return (
+    <section className="section favs">
+      <div className="section-head">
+        <h2>♥ Favoriler</h2>
+        {favTypes.length > 1 && (
+          <div className="mini-tabs">
+            {favTypes.map((k) => (
+              <button key={k} className={favType === k ? "active" : ""} onClick={() => setFavTab(k)} title={TYPES[k].plural}>{TYPES[k].label}</button>
+            ))}
+          </div>
+        )}
+      </div>
+      <Favorites list={favs.filter((e) => e.type === favType)} isMe={isMe} />
+    </section>
   );
 }
 

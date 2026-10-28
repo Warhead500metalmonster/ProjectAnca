@@ -169,6 +169,7 @@ export function entryTags(e: Entry, { store = false, time = true } = {}) {
   return [
     e.platform,
     e.emulated ? "Emülatör" : "",
+    e.dlc ? "DLC dahil" : "",
     store ? e.store : "",
     e.status === "active" && e.progress_sec ? `▶ ${fmtDur(e.progress_sec)}` : "",
     time && playSec(e) ? fmtDur(playSec(e)) : "",

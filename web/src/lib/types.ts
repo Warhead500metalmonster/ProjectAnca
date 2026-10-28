@@ -20,8 +20,12 @@ export interface Profile {
   song_url?: string | null;     // profilde arkada çalan şarkı (YouTube linki)
   song_title?: string | null;
   song_volume?: number | null;
+  home_layout?: HomeLayout | null; // profil ana sayfasının düzeni
   created_at: string;
 }
+
+// Profil ana sayfası: sahibinin seçtiği bölümler (sırasıyla) ve üstte duran serbest yazı
+export interface HomeLayout { sections: string[]; text?: string }
 
 export type ProfileLite = Pick<Profile, "id" | "username" | "display_name" | "avatar_url">;
 
@@ -47,6 +51,8 @@ export interface Entry {
   progress_sec?: number | null;
   progress: string | null;  // kısa not
   emulated?: boolean;
+  dlc?: boolean;            // DLC'siyle birlikte bitirdi
+  drop_note?: string | null; // bıraktıysa neden bıraktı
   favorite?: boolean;
   fav_pos?: number | null;  // favoriler şeridindeki sıra (sahibi sürükleyerek ayarlar)
   created_at: string;
@@ -83,6 +89,7 @@ export interface ListItem extends Item {
   id: string;
   list_id: string;
   position: number;
+  note?: string | null; // listeye özel not
   created_at: string;
 }
 

@@ -557,7 +557,13 @@ const SOURCES: Record<string, { name: string; platform: string; store: string; h
 const GAME_PLATFORMS = ["PlayStation 5", "PlayStation 4", "Xbox Series X|S", "Xbox One", "PC", "Nintendo Switch", "Nintendo Switch 2", "Steam Deck", "Mobil"];
 
 // cat: dosyadaki, bizde karşılığı olmayan kategori (ör. HLTB'de Replay ya da kendi açtığın sekme); kullanıcı eşler
-interface ListGame { title: string; status: Status | null; cat?: string | null; rating: number; sec: number | null; date: string | null; started: string | null; platform: string; store: string; notes: string }
+interface ListGame {
+  title: string; status: Status | null; cat?: string | null; rating: number; sec: number | null; date: string | null; started: string | null; platform: string; store: string;
+  notes: string;      // inceleme (HLTB Review Notes)
+  memo?: string;      // kısa not (HLTB General Notes)
+  dropNote?: string;  // bırakma notu (HLTB Retired Notes)
+  emulated?: boolean; // HLTB'de platform "Emulated"
+}
 
 const col = (r: Record<string, string>, ...names: string[]) => {
   for (const n of names) {
@@ -617,15 +623,23 @@ function statusFrom(r: Record<string, string>): Status | null {
   if (on("backlog")) return "planned";
   return null;
 }
+// Bilinen platform adları tek yazıma çevrilir; tanınmayan platform olduğu gibi kalır (ör. "Wii", "PlayStation 3")
 function platformFrom(s: string) {
-  const p = s.toLowerCase();
+  const p = s.toLowerCase().trim();
+  if (!p || /emulat/.test(p)) return "";
   if (/ps5|playstation 5/.test(p)) return "PlayStation 5";
   if (/ps4|playstation 4/.test(p)) return "PlayStation 4";
+  if (/portable|psp/.test(p)) return "PSP";
+  if (/vita/.test(p)) return "PS Vita";
   if (/series/.test(p)) return "Xbox Series X|S";
   if (/xbox one/.test(p)) return "Xbox One";
+  if (/switch 2/.test(p)) return "Nintendo Switch 2";
   if (/switch/.test(p)) return "Nintendo Switch";
-  if (/pc|windows|steam|epic|gog/.test(p)) return "PC";
-  return "";
+  if (/\bvr\b/.test(p)) return "PC VR";
+  if (/\bpc\b|windows|steam|epic|gog/.test(p)) return "PC";
+  if (/browser/.test(p)) return "Tarayıcı";
+  if (/mobile/.test(p)) return "Mobil";
+  return s.trim().slice(0, 60);
 }
 function storeFrom(s: string) {
   const p = s.toLowerCase();
@@ -675,11 +689,14 @@ function ListImport() {
         const known = statusFrom(r);
         list.push({
           title, status: known, cat: known ? null : categoryOf(r, cats), rating: Math.max(0, Math.min(10, Math.round(outOf100 ? score / 10 : score))),
-          sec: seconds(col(r, "progress", "playtime", "timeplayed", "sure", "mainstory", "mainsides", "completionist"), !!col(r, "playtime") && src === "playnite"),
+          sec: seconds(col(r, "completionist", "mainsides", "mainstory", "progress", "playtime", "timeplayed", "sure"), !!col(r, "playtime") && src === "playnite"),
           date: isoDate(col(r, "completiondate", "completed", "lastactivity", "finished", "date")),
           started: isoDate(col(r, "startdate", "started")),
           platform: platformFrom(col(r, "platform", "platforms")), store: storeFrom(col(r, "storefront", "source", "store", "library")),
           notes: col(r, "reviewnotes", "notes", "not").slice(0, 5000),
+          memo: col(r, "generalnotes").slice(0, 1000),
+          dropNote: col(r, "retirednotes").slice(0, 2000),
+          emulated: /emulat/i.test(col(r, "platform", "platforms")),
         });
       }
     }
@@ -708,6 +725,10 @@ function ListImport() {
     if (g.started && (!o.started || g.started < o.started)) o.started = g.started;
     if (g.status === "completed" || (!o.status && g.status)) { o.status = g.status; o.cat = null; }
     if (!o.notes && g.notes) o.notes = g.notes;
+    if (!o.memo && g.memo) o.memo = g.memo;
+    if (g.dropNote && g.dropNote !== o.dropNote) o.dropNote = [o.dropNote, g.dropNote].filter(Boolean).join("\n").slice(0, 2000);
+    o.emulated = o.emulated || g.emulated;
+    if (!o.platform && g.platform) o.platform = g.platform;
   }
   const unique = [...merged.values()];
   const cats = Object.keys(catMap);
@@ -722,6 +743,9 @@ function ListImport() {
     if ((!e.rating || fixRatings) && g.rating && g.rating !== e.rating) p.rating = g.rating;
     if (!e.playtime_sec && !e.hours && g.sec) { p.playtime_sec = g.sec; p.hours = Math.round(g.sec / 360) / 10; }
     if (!e.notes?.trim() && g.notes) p.notes = g.notes;
+    if (!e.progress?.trim() && g.memo) p.progress = g.memo;
+    if (!e.drop_note?.trim() && g.dropNote) p.drop_note = g.dropNote;
+    if (!e.emulated && g.emulated) p.emulated = true;
     if (!e.platform && (g.platform || platform)) p.platform = (g.platform || platform).slice(0, 60);
     // Dosyada durum yazıyorsa: Kategorisiz ya da Planlandı olanı güncelle
     const fs = fileStatus(g);
@@ -759,7 +783,8 @@ function ListImport() {
           type: "game", title: (hit?.name || g.title).slice(0, 200), rawg_id: hit?.id ?? null, year: parseInt(hit?.released || "") || null,
           cover: hit?.background_image ? smallImage(hit.background_image) : null, status: st, rating: g.rating,
           playtime_sec: g.sec, hours: g.sec ? Math.round(g.sec / 360) / 10 : null, date: g.date,
-          started_on: g.started, notes: g.notes || null,
+          started_on: g.started, notes: g.notes || null, progress: g.memo || null, emulated: !!g.emulated,
+          ...(g.dropNote && { drop_note: g.dropNote }),
           platform: (g.platform || platform || "").slice(0, 60) || null, store: (g.store || s.store || "").slice(0, 60) || null,
           ...(src === "ps" && !hit && { ext_id: `psn:${looseKey(g.title)}`.slice(0, 60) }),
           updated_at: new Date(g.date ? g.date + "T12:00" : Date.now()).toISOString(),

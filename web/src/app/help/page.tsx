@@ -14,7 +14,7 @@ const QA: [string, React.ReactNode][] = [
   ["Forum nedir?", <><b>Sosyal → Forum</b>&apos;da herkes konu açıp oyun, film, dizi konuşabilir. Bir oyunun sayfasındaki <b>Forumda tartış</b> düğmesi o oyunun konularına götürür.</>],
   ["Spoiler nasıl gizlenir?", <>İncelemede, yorumda ya da forumda gizlemek istediğin yeri iki dik çizgi arasına yaz: <code>||Sonunda ölüyor||</code>. Okuyan tıklayınca görür.</>],
   ["Rozetler nasıl kazanılır?", <>Kayıt ekledikçe, bitirdikçe, yorum yazdıkça kendiliğinden gelir. Profilindeki <b>Rozetler</b> sekmesinde hangisine ne kadar kaldığını görürsün.</>],
-  ["Profilimi nasıl özelleştiririm?", <><Link className="grad" href="/settings">Ayarlar</Link>&apos;dan fotoğraf, kapak, tema, Steam gibi arka plan resmi, şeffaf profil, profil şarkısı ve site rengini değiştirebilirsin.</>],
+  ["Profilimi nasıl özelleştiririm?", <><Link className="grad" href="/settings">Ayarlar</Link>&apos;dan fotoğraf, kapak, tema, Steam gibi arka plan resmi, şeffaf profil, profil şarkısı ve site rengini değiştirebilirsin. Profilinin Ana sayfa sekmesindeki <b>Ana sayfayı düzenle</b> ile hangi bölümlerin hangi sırayla görüneceğini seçip üste bir yazı ekleyebilirsin.</>],
   ["Verilerimi indirebilir miyim, hesabımı silebilir miyim?", <>Evet. <b>Ayarlar → Verilerimi indir</b> ile Excel / CSV, JSON ya da Letterboxd biçiminde indirirsin. Aynı yerden bütün kayıtlarını silip sıfırdan başlayabilir ya da hesabını tamamen silebilirsin.</>],
 ];
 

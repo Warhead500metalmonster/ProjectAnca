@@ -47,6 +47,7 @@ function ListView({ list, base }: { list: List; base: Entry[] }) {
   const isOwner = me?.id === list.user_id;
   const items = [...(list.list_items || [])].sort((a, b) => a.position - b.position || a.created_at.localeCompare(b.created_at));
   const [editing, setEditing] = useState(false);
+  const [noteFor, setNoteFor] = useState<{ id: string; text: string } | null>(null); // listeye özel notu düzenlenen içerik
   const owner = list.profiles || {};
 
   const byKey = new Map(base.map((e) => [contentKey(e), e]));
@@ -60,6 +61,15 @@ function ListView({ list, base }: { list: List; base: Entry[] }) {
       await q(sb().from("list_items").delete().eq("id", it.id));
       refresh();
     } catch (err) { toast("Olmadı: " + (err as Error).message); }
+  }
+
+  async function saveNote() {
+    if (!noteFor) return;
+    try {
+      await q(sb().from("list_items").update({ note: noteFor.text.trim() || null }).eq("id", noteFor.id));
+      setNoteFor(null);
+      refresh();
+    } catch (err) { toast("Not kaydedilemedi: " + (err as Error).message); }
   }
 
   async function move(it: ListItem, dir: -1 | 1) {
@@ -127,11 +137,22 @@ function ListView({ list, base }: { list: List; base: Entry[] }) {
                     <div className="card-title">{it.title}</div>
                     <div className="card-meta">{[t.label, it.year].filter(Boolean).join(" · ")}</div>
                   </Link>
+                  {noteFor?.id === it.id ? (
+                    <div className="li-note-edit">
+                      <textarea rows={3} maxLength={1000} autoFocus placeholder="Bu içerik listede neden var?" value={noteFor.text}
+                        onChange={(ev) => setNoteFor({ id: it.id, text: ev.target.value })} />
+                      <div className="row-end">
+                        <button className="btn" onClick={() => setNoteFor(null)}>Vazgeç</button>
+                        <button className="btn primary" onClick={saveNote}>Kaydet</button>
+                      </div>
+                    </div>
+                  ) : it.note && <p className="li-note">{it.note}</p>}
                   <div className="li-actions">
                     {me && (e && e.user_id === me.id
                       ? <button className="icon-btn" title="Kaydımı aç" onClick={() => openView({ ...e, profiles: me })}>Aç</button>
                       : !e && <button className="icon-btn" title="Kütüphaneme ekle" onClick={() => openForm(null, { item: itemOf(it) })}>＋</button>)}
                     {isOwner && <>
+                      <button className="icon-btn" title={it.note ? "Notu düzenle" : "Not ekle"} onClick={() => setNoteFor({ id: it.id, text: it.note || "" })}>✎</button>
                       <button className="icon-btn" title="Öne al" onClick={() => move(it, -1)} disabled={i === 0}>←</button>
                       <button className="icon-btn" title="Geri al" onClick={() => move(it, 1)} disabled={i === items.length - 1}>→</button>
                       <button className="icon-btn" title="Listeden çıkar" onClick={() => removeItem(it)}>✕</button>

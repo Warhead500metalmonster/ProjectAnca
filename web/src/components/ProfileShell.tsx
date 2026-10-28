@@ -44,7 +44,7 @@ export function ProfileShell({ children }: { children: React.ReactNode }) {
 }
 
 function Shell({ data, children }: { data: ProfileData; children: React.ReactNode }) {
-  const { me, openForm, isFriend, mine, isOwner, badges } = useApp();
+  const { me, openForm, openView, isFriend, mine, isOwner, badges } = useApp();
   const path = usePathname();
   const { profile, entries, followers, following } = data;
   const isMe = me?.id === profile.id;
@@ -52,6 +52,14 @@ function Shell({ data, children }: { data: ProfileData; children: React.ReactNod
   const [userList, setUserList] = useState<{ kind: "followers" | "following"; users: Profile[] | null } | null>(null);
   const listDialog = useRef<HTMLDialogElement>(null);
   useEffect(() => { if (userList) listDialog.current?.showModal(); }, [userList]);
+
+  // Akıştan gelen /u/ali?entry=ID bağlantısı kaydı açar, sonra adresten silinir
+  useEffect(() => {
+    const id = new URLSearchParams(location.search).get("entry");
+    const e = id && entries.find((x) => x.id === id);
+    if (e) { openView(e); history.replaceState(null, "", location.pathname); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile.id]);
 
   async function openUserList(kind: "followers" | "following") {
     setUserList({ kind, users: null });
@@ -70,7 +78,7 @@ function Shell({ data, children }: { data: ProfileData; children: React.ReactNod
   const tint = glass ? null : theme?.tint || (accent ? `color-mix(in srgb, ${accent} 14%, rgba(10, 12, 14, .86))` : bg ? "rgba(10, 12, 14, .84)" : null);
   const vars = { ...(accent && { "--pa": accent }), ...(tint && { "--ptint": tint }) } as React.CSSProperties;
   const banner = profile.banner_url && safeUrl(profile.banner_url);
-  const tab = path.endsWith("/lists") ? "lists" : path.endsWith("/stats") ? "stats" : path.endsWith("/compare") ? "compare" : path.endsWith("/badges") ? "badges" : "library";
+  const tab = path.split("/")[3] || "home"; // /u/ali/library → library
   const song = profile.song_url || null; // profilde arkada çalan şarkı
   const match = me && !isMe ? compat(mine, entries).score : null;
 
@@ -113,7 +121,10 @@ function Shell({ data, children }: { data: ProfileData; children: React.ReactNod
         </div>
         <Socials socials={profile.socials} />
         <nav className="subnav">
-          <Link href={base} className={tab === "library" ? "active" : ""}>Kütüphane</Link>
+          <Link href={base} className={tab === "home" ? "active" : ""}>Ana sayfa</Link>
+          <Link href={`${base}/library`} className={tab === "library" ? "active" : ""}>Kütüphane</Link>
+          <Link href={`${base}/reviews`} className={tab === "reviews" ? "active" : ""}>İncelemeler</Link>
+          <Link href={`${base}/likes`} className={tab === "likes" ? "active" : ""}>Beğendikleri</Link>
           <Link href={`${base}/lists`} className={tab === "lists" ? "active" : ""}>Listeler</Link>
           <Link href={`${base}/stats`} className={tab === "stats" ? "active" : ""}>İstatistikler</Link>
           <Link href={`${base}/badges`} className={tab === "badges" ? "active" : ""}>Rozetler</Link>

@@ -36,6 +36,8 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
   const [platform, setPlatform] = useState(entry?.platform || "");
   const [store, setStore] = useState(entry?.store || "");
   const [emulated, setEmulated] = useState(!!entry?.emulated);
+  const [dlc, setDlc] = useState(!!entry?.dlc);
+  const [dropNote, setDropNote] = useState(entry?.drop_note || "");
   const [playtime, setPlaytime] = useState<number | null>(entry?.playtime_sec ?? (entry?.hours ? Math.round(Number(entry.hours) * 3600) : null));
   const [progressSec, setProgressSec] = useState<number | null>(entry?.progress_sec ?? null);
   const [started, setStarted] = useState(entry?.started_on || "");
@@ -147,6 +149,9 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
       platform: platform.trim() || null,
       store: isGame ? store.trim() || null : null,
       emulated: isGame && emulated,
+      // Yeni alanlar sadece doluysa ya da önceden doluysa gönderilir (veritabanı güncellenmeden de kayıt çalışsın)
+      ...((dlc || entry?.dlc) && { dlc: isGame && dlc }),
+      ...((dropNote.trim() || entry?.drop_note) && { drop_note: status === "dropped" ? dropNote.trim() || null : entry?.drop_note ?? null }),
       playtime_sec: playtime,
       progress_sec: progressSec,
       hours: playtime ? Math.round(playtime / 360) / 10 : null, // eski alanla uyumlu kalsın
@@ -283,7 +288,8 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
           </div>
           <div className="field grow">
             <label htmlFor="f-platform">{t.where}</label>
-            <input id="f-platform" list="platformList" maxLength={60} autoComplete="off" value={platform} onChange={(e) => setPlatform(e.target.value)} />
+            <input id="f-platform" list="platformList" maxLength={60} autoComplete="off" value={platform} onChange={(e) => setPlatform(e.target.value)}
+              placeholder={isGame ? "Listeden seç ya da kendin yaz" : ""} />
             <datalist id="platformList">{places.map((p) => <option key={p} value={p} />)}</datalist>
           </div>
         </div>
@@ -294,7 +300,10 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
               <input id="f-store" list="storeList" maxLength={60} autoComplete="off" value={store} onChange={(e) => setStore(e.target.value)} />
               <datalist id="storeList">{stores.map((s) => <option key={s} value={s} />)}</datalist>
             </div>
-            <label className="check grow"><input type="checkbox" checked={emulated} onChange={(e) => setEmulated(e.target.checked)} /> Emülatörde oynadım</label>
+            <div className="checks grow">
+              <label className="check"><input type="checkbox" checked={emulated} onChange={(e) => setEmulated(e.target.checked)} /> Emülatörde oynadım</label>
+              <label className="check"><input type="checkbox" checked={dlc} onChange={(e) => setDlc(e.target.checked)} /> DLC ile bitirdim</label>
+            </div>
           </div>
         )}
         <div className="row">
@@ -319,8 +328,14 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
         </div>
         <div className="field">
           <label htmlFor="f-note">Not <span className="muted">· akışta görünmez, kayda tıklayan görür</span></label>
-          <input id="f-note" maxLength={200} placeholder={t.progress} value={note} onChange={(e) => setNote(e.target.value)} />
+          <input id="f-note" maxLength={1000} placeholder={t.progress} value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
+        {status === "dropped" && (
+          <div className="field">
+            <label htmlFor="f-drop">Bırakma notu <span className="muted">· neden bıraktın?</span></label>
+            <textarea id="f-drop" rows={2} maxLength={2000} placeholder="ör. Oynanışı sıkıcı geldi, belki sonra dönerim" value={dropNote} onChange={(e) => setDropNote(e.target.value)} />
+          </div>
+        )}
         <div className="field">
           <label>Puan <span className="muted">{rating ? `(${scoreText(rating, scale)})` : ""}</span></label>
           <div className={`stars input ${n === 10 ? "ten" : ""}`}>

@@ -1,8 +1,8 @@
-import { LibraryTab } from "@/components/profile/LibraryTab";
+import { HomeTab } from "@/components/profile/HomeTab";
 
 // Profil verisi tarayıcıda yükleniyor; anında gezinme denetimi bu sekmede kapalı
 export const instant = false;
 
 export default function Page() {
-  return <LibraryTab />;
+  return <HomeTab />;
 }
