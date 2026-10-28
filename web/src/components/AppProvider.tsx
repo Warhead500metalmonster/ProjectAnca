@@ -93,17 +93,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [toast]);
 
   // Okunmamış mesaj sayısı ve en yeni bildirim (beğeni, yorum, takip) zamanı
-  // Okunmamış mesaj varsa sekme başlığında da görünsün: "(2) Ancalog". Sayfa değişip başlık yenilense de geri eklenir.
+  // Okunmamış mesaj varsa sekme başlığında da görünsün: "(2) Ancalog".
+  // Sayfa değişince Next başlığı yeniden yazar; birkaç saniyede bir kontrol edip sayıyı geri ekler.
+  // (Başlığı izleyip anında yazmak sonsuz döngüye girebiliyordu, bu yüzden basit bir zamanlayıcı.)
   useEffect(() => {
     const apply = () => {
-      const base = document.title.replace(/^\(\d+\+?\)\s*/, "");
+      const base = document.title.replace(/^\(\d+\+?\)\s*/, "").trim() || "Ancalog";
       const want = unread > 0 ? `(${unread > 99 ? "99+" : unread}) ${base}` : base;
-      if (document.title !== want) document.title = want;
+      if (document.title.trim() !== want) document.title = want;
     };
     apply();
-    const mo = new MutationObserver(apply);
-    mo.observe(document.head, { childList: true, subtree: true, characterData: true });
-    return () => mo.disconnect();
+    const t = setInterval(apply, 2000);
+    return () => clearInterval(t);
   }, [unread]);
 
   const checkInbox = useCallback(async () => {
