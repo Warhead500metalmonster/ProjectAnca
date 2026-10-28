@@ -57,6 +57,8 @@ export const LOCAL_KEY = "ancalog.v1"; // hesaplardan önceki, tarayıcıda tutu
 type Prog = (e: Entry[]) => number;
 const doneOf = (type: EntryType): Prog => (e) => e.filter((x) => x.type === type && x.status === "completed").length;
 const thisYear = () => String(new Date().getFullYear());
+const secOf = (x: Entry) => x.playtime_sec ?? (x.hours ? Number(x.hours) * 3600 : 0);
+const count = (f: (x: Entry) => unknown): Prog => (e) => e.filter(f).length;
 const hoursOf: Prog = (e) => Math.floor(e.reduce((s, x) => s + (x.playtime_sec ?? (x.hours ? Number(x.hours) * 3600 : 0)), 0) / 3600);
 export const BADGES: Record<string, { icon: string; name: string; desc: string; tone: string; earn?: number; progress?: Prog }> = {
   owner: { icon: "♛", name: "Site Sahibi", desc: "Ancalog'un kurucusu ve sahibi", tone: "gold" },
@@ -87,6 +89,29 @@ export const BADGES: Record<string, { icon: string; name: string; desc: string; 
     progress: (e) => e.reduce((s, x) => s + (x.likes?.[0]?.count || 0), 0) },
   popular: { icon: "◆", name: "Popüler", desc: "10 takipçin olsun", tone: "", earn: 10 },
   forum: { icon: "◆", name: "Forumcu", desc: "Forumda 10 mesaj yaz", tone: "", earn: 10 },
+  pen: { icon: "◆", name: "Usta Kalem", desc: "50 inceleme yaz", tone: "", earn: 50, progress: count((x) => x.notes?.trim()) },
+  perfect: { icon: "◆", name: "Mükemmeliyetçi", desc: "10 şeye tam puan ver", tone: "", earn: 10, progress: count((x) => x.rating === 10) },
+  harsh: { icon: "◆", name: "Acımasız", desc: "10 şeye düşük puan ver (3/10 ya da altı)", tone: "", earn: 10, progress: count((x) => x.rating >= 1 && x.rating <= 3) },
+  retro: { icon: "◆", name: "Retrocu", desc: "1995'ten eski 10 şey logla", tone: "", earn: 10, progress: count((x) => !!x.year && x.year < 1995) },
+  fresh: { icon: "◆", name: "Güncel Takipçi", desc: "Çıktığı yıl içinde 10 şey bitir", tone: "", earn: 10,
+    progress: count((x) => x.status === "completed" && !!x.year && !!x.date && x.date.startsWith(String(x.year))) },
+  pc: { icon: "◆", name: "PC Ustası", desc: "50 PC oyunu logla", tone: "", earn: 50, progress: count((x) => x.type === "game" && (x.platform === "PC" || x.platform === "Steam Deck")) },
+  console: { icon: "◆", name: "Konsolcu", desc: "PlayStation, Xbox ya da Nintendo'dan 25 oyun logla", tone: "", earn: 25,
+    progress: count((x) => x.type === "game" && /^(PlayStation|Xbox|Nintendo)/.test(x.platform || "")) },
+  backlog: { icon: "◆", name: "Backlog Canavarı", desc: "Planladıkların 100'ü geçsin", tone: "", earn: 100, progress: count((x) => x.status === "planned") },
+  quitter: { icon: "◆", name: "Bırakmayı Bilen", desc: "10 şeyi yarıda bırak", tone: "", earn: 10, progress: count((x) => x.status === "dropped") },
+  devoted: { icon: "◆", name: "Sadık Oyuncu", desc: "Tek bir şeye 100 saat ver", tone: "", earn: 100, progress: (e) => Math.floor(Math.max(0, ...e.map(secOf)) / 3600) },
+  iron: { icon: "◆", name: "Demir İrade", desc: "Tek bir şeye 500 saat ver", tone: "", earn: 500, progress: (e) => Math.floor(Math.max(0, ...e.map(secOf)) / 3600) },
+  tastemaker: { icon: "◆", name: "Zevk Sahibi", desc: "10 favori seç", tone: "", earn: 10, progress: count((x) => x.favorite) },
+  film_buff: { icon: "◆", name: "Film Kurdu", desc: "500 film izle", tone: "", earn: 500, progress: doneOf("movie") },
+  psn: { icon: "◆", name: "PlayStation Bağlantısı", desc: "PlayStation kütüphaneni içe aktar", tone: "", earn: 1, progress: count((x) => x.ext_id?.startsWith("psn:")) },
+  xbox: { icon: "◆", name: "Xbox Bağlantısı", desc: "Xbox kütüphaneni içe aktar", tone: "", earn: 1, progress: count((x) => x.ext_id?.startsWith("xbox:")) },
+  music_link: { icon: "◆", name: "Müzik Bağlantısı", desc: "Spotify ya da Last.fm'den müzik aktar", tone: "", earn: 1,
+    progress: count((x) => x.ext_id?.startsWith("spotify:") || x.store === "Last.fm") },
+  generous: { icon: "◆", name: "Cömert", desc: "50 beğeni ver", tone: "", earn: 50 },
+  lister: { icon: "◆", name: "Liste Kralı", desc: "15 liste oluştur", tone: "", earn: 15 },
+  starter: { icon: "◆", name: "Gündem Yaratıcı", desc: "Forumda 5 konu aç", tone: "", earn: 5 },
+  veteran: { icon: "◆", name: "Emektar", desc: "1 yıldır Ancalog'dasın", tone: "", earn: 1 },
 };
 
 // Profil bağlantıları: kullanıcı adı ya da tam https:// link kabul edilir

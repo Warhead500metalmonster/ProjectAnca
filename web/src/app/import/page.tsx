@@ -10,7 +10,7 @@ import { rawg } from "@/lib/rawg";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
 
-// Başka sitelerden kütüphane aktarma: Steam, PlayStation / Xbox / Epic / HowLongToBeat listeleri, Letterboxd ve Spotify
+// Başka sitelerden kütüphane aktarma: Steam, PlayStation, Xbox, Epic / Switch / HowLongToBeat listeleri, Letterboxd, Spotify ve Last.fm
 export default function ImportPage() {
   const { me, ready } = useApp();
   if (!ready) return <div className="loading">Yükleniyor…</div>;
@@ -22,9 +22,11 @@ export default function ImportPage() {
         <p className="muted" style={{ margin: 0 }}>Başka yerdeki kütüphaneni tek seferde Ancalog&apos;a taşı. Zaten kütüphanende olanlar tekrar eklenmez.</p>
       </section>
       <Steam />
+      <AccountGames kind="psn" />
+      <AccountGames kind="xbox" />
       <ListImport />
       <Letterboxd />
-      <Spotify />
+      <Music />
     </div>
   );
 }
@@ -448,8 +450,7 @@ function Spotify() {
   const albums = items?.filter((a) => a.kind === "album").length || 0;
   const tracks = (items?.length || 0) - albums;
   return (
-    <section className="section import-card">
-      <div className="section-head"><h2>Spotify</h2></div>
+    <>
       <ol className="muted small import-steps">
         <li><a className="grad" href="https://www.spotify.com/account/privacy/" target="_blank" rel="noreferrer">Spotify gizlilik sayfasını</a> aç, en altta <b>Hesap verileri</b>ni seçip <b>Veri iste</b>&apos;ye bas.</li>
         <li>Spotify birkaç gün içinde e-postana bir zip gönderir. Zip&apos;i aç.</li>
@@ -475,7 +476,7 @@ function Spotify() {
           </div>
         </>
       )}
-    </section>
+    </>
   );
 }
 
@@ -483,18 +484,9 @@ function Spotify() {
 
 // Bu mağazaların herkese açık kütüphane bağlantısı yok; oyun adlarını yapıştırmak ya da CSV seçmek yeterli
 const SOURCES: Record<string, { name: string; platform: string; store: string; help: React.ReactNode }> = {
-  ps: { name: "PlayStation", platform: "PlayStation 5", store: "PlayStation Store", help: <>
-    <a className="grad" href="https://library.playstation.com/recently-purchased" target="_blank" rel="noreferrer">PlayStation oyun kütüphaneni</a> aç,
-    oyun adlarını seçip kopyala ve aşağıya yapıştır (her satıra bir oyun). PS4 oyunlarıysa yukarıdan platformu değiştir.</> },
-  xbox: { name: "Xbox", platform: "Xbox Series X|S", store: "Xbox Store", help: <>
-    <a className="grad" href="https://www.xbox.com/play/library" target="_blank" rel="noreferrer">Xbox oyun kütüphaneni</a> ya da
-    <a className="grad" href="https://account.xbox.com/Profile?activetab=main:mainTab2" target="_blank" rel="noreferrer"> Xbox profilindeki Oyunlar</a> sekmesini aç,
-    oyun adlarını kopyalayıp yapıştır.</> },
-  xboxpc: { name: "Xbox PC / Game Pass", platform: "PC", store: "PC Game Pass", help: <>
-    Bilgisayarda <b>Xbox uygulaması → Kitaplığım</b>&apos;daki oyun adlarını kopyalayıp yapıştır.</> },
   epic: { name: "Epic Games", platform: "PC", store: "Epic Games Store", help: <>
     <a className="grad" href="https://www.epicgames.com/account/transactions" target="_blank" rel="noreferrer">Epic satın alma geçmişini</a> ya da
-    Epic Launcher&apos;daki <b>Kütüphane</b>&apos;yi aç, oyun adlarını kopyalayıp yapıştır.</> },
+    Epic Launcher&apos;daki <b>Kütüphane</b>&apos;yi aç, sayfanın tamamını seçip (Ctrl+A) kopyala ve yapıştır.</> },
   switch: { name: "Nintendo Switch", platform: "Nintendo Switch", store: "Nintendo eShop", help: <>
     Konsolda ya da Nintendo hesabındaki oyun adlarını kopyalayıp yapıştır.</> },
   hltb: { name: "HowLongToBeat", platform: "", store: "", help: <>
@@ -503,6 +495,15 @@ const SOURCES: Record<string, { name: string; platform: string; store: string; h
   playnite: { name: "Playnite / diğer", platform: "", store: "", help: <>
     Playnite ya da başka bir uygulamadan dışa aktardığın <b>.csv</b> dosyasını seç. &quot;Name&quot; ya da &quot;Title&quot; sütunu olması yeter;
     durum, puan, süre, platform sütunları varsa onlar da okunur.</> },
+  ps: { name: "PlayStation (liste)", platform: "PlayStation 5", store: "PlayStation Store", help: <>
+    <a className="grad" href="https://library.playstation.com/recently-purchased" target="_blank" rel="noreferrer">PlayStation oyun kütüphaneni</a> aç,
+    oyun adlarını seçip kopyala ve aşağıya yapıştır (her satıra bir oyun). PS4 oyunlarıysa yukarıdan platformu değiştir.</> },
+  xbox: { name: "Xbox (liste)", platform: "Xbox Series X|S", store: "Xbox Store", help: <>
+    <a className="grad" href="https://www.xbox.com/play/library" target="_blank" rel="noreferrer">Xbox oyun kütüphaneni</a> ya da
+    <a className="grad" href="https://account.xbox.com/Profile?activetab=main:mainTab2" target="_blank" rel="noreferrer"> Xbox profilindeki Oyunlar</a> sekmesini aç,
+    oyun adlarını kopyalayıp yapıştır.</> },
+  xboxpc: { name: "Xbox PC (liste)", platform: "PC", store: "PC Game Pass", help: <>
+    Bilgisayarda <b>Xbox uygulaması → Kitaplığım</b>&apos;daki oyun adlarını kopyalayıp yapıştır.</> },
 };
 
 const GAME_PLATFORMS = ["PlayStation 5", "PlayStation 4", "Xbox Series X|S", "Xbox One", "PC", "Nintendo Switch", "Nintendo Switch 2", "Steam Deck", "Mobil"];
@@ -561,8 +562,8 @@ function storeFrom(s: string) {
 
 function ListImport() {
   const { me, mine, toast, refresh } = useApp();
-  const [src, setSrc] = useState("ps");
-  const [platform, setPlatform] = useState(SOURCES.ps.platform);
+  const [src, setSrc] = useState("epic");
+  const [platform, setPlatform] = useState(SOURCES.epic.platform);
   const [status, setStatus] = useState<Status>("completed");
   const [text, setText] = useState("");
   const [csv, setCsv] = useState<ListGame[] | null>(null);
@@ -600,7 +601,7 @@ function ListImport() {
     setCsv(list);
   }
 
-  const pasted: ListGame[] = text.split(/\r?\n/).map((l) => l.replace(/^[\s\-*•\d.)]+/, "").trim()).filter((l) => l.length > 1)
+  const pasted: ListGame[] = cleanPaste(text)
     .map((title) => ({ title, status: null, rating: 0, sec: null, date: null, started: null, platform: "", store: "", notes: "" }));
   const all = fileMode ? csv || [] : pasted;
   const seen = new Set<string>();
@@ -642,7 +643,7 @@ function ListImport() {
 
   return (
     <section className="section import-card">
-      <div className="section-head"><h2>PlayStation, Xbox, Epic ve diğerleri</h2></div>
+      <div className="section-head"><h2>Epic, Switch ve diğerleri</h2></div>
       <div className="chips" style={{ marginBottom: 12 }}>
         {Object.entries(SOURCES).map(([k, v]) => <button key={k} className={`chip ${src === k ? "active" : ""}`} onClick={() => pick(k)}>{v.name}</button>)}
       </div>
@@ -663,7 +664,7 @@ function ListImport() {
       {fileMode ? (
         !csv && <label className="btn file-btn">CSV dosyasını seç<input type="file" accept=".csv,text/csv" multiple onChange={(e) => read(e.target.files)} /></label>
       ) : (
-        <textarea className="input import-paste" rows={7} placeholder={"Her satıra bir oyun:\nElden Ring\nGod of War Ragnarök\nHalo Infinite"} value={text} onChange={(e) => setText(e.target.value)} />
+        <textarea className="input import-paste" rows={7} placeholder={"Her satıra bir oyun ya da sayfanın tamamı:\nElden Ring\nGod of War Ragnarök\nHalo Infinite\n(fiyat, tarih, düğme yazıları kendiliğinden ayıklanır)"} value={text} onChange={(e) => setText(e.target.value)} />
       )}
       {all.length > 0 && (
         <>
@@ -686,4 +687,288 @@ function ListImport() {
       )}
     </section>
   );
+}
+
+// ---------- PlayStation ve Xbox: sadece kullanıcı adını yaz ----------
+
+interface RemoteGame { id: string; name: string; platform: string; minutes: number; last: string | null; progress: number | null; done: boolean; cover: string | null }
+
+const ACCOUNT = {
+  psn: {
+    title: "PlayStation", placeholder: "PSN kullanıcı adın (ör. arno4436)", store: "PlayStation Store", doneText: "Platin aldığım ya da %100 bitirdiğim oyunları",
+    help: <>PSN kullanıcı adını yaz; kupası olan bütün oyunların ve PS4 / PS5 oynama sürelerin gelir. Kupaların herkese açık olmalı:
+      konsolda <b>Ayarlar → Kullanıcılar ve Hesaplar → Gizlilik → Oyun → Kupalar: Herkes</b>.</>,
+    errors: {
+      "not-found": "Bu PSN kullanıcı adı bulunamadı. Yazımını kontrol et.",
+      private: "Kupaların gizli görünüyor. Konsolda Ayarlar → Kullanıcılar ve Hesaplar → Gizlilik → Oyun → Kupalar: Herkes yap, sonra tekrar dene.",
+    } as Record<string, string>,
+  },
+  xbox: {
+    title: "Xbox ve Xbox PC", placeholder: "Gamertag'in", store: "Xbox Store", doneText: "Bütün başarımlarını açtığım oyunları",
+    help: <>Gamertag&apos;ini yaz; Xbox konsolunda ve bilgisayardaki Xbox uygulamasında (Game Pass dahil) oynadığın oyunlar gelir.
+      Oyun geçmişin herkese açık olmalı: <a className="grad" href="https://account.xbox.com/Settings" target="_blank" rel="noreferrer">Xbox gizlilik ayarları</a> → <b>Oyun geçmişini başkaları görebilir: Herkes</b>.</>,
+    errors: {
+      "not-found": "Bu gamertag bulunamadı. Yazımını kontrol et.",
+      private: "Oyun geçmişin gizli görünüyor. Xbox gizlilik ayarlarından herkese aç, sonra tekrar dene.",
+      busy: "Xbox bağlantısı şu an çok yoğun. Biraz sonra tekrar dene.",
+    } as Record<string, string>,
+  },
+};
+
+function AccountGames({ kind }: { kind: "psn" | "xbox" }) {
+  const cfg = ACCOUNT[kind];
+  const { me, mine, toast, refresh } = useApp();
+  const [user, setUser] = useState("");
+  const [games, setGames] = useState<RemoteGame[] | null>(null);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [markDone, setMarkDone] = useState(false);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [step, setStep] = useState<{ done: number; total: number } | null>(null);
+
+  const haveExt = new Set(mine.map((e) => e.ext_id).filter(Boolean));
+  const haveTitle = new Set(mine.filter((e) => e.type === "game").map((e) => norm(e.title)));
+  const already = (g: RemoteGame) => haveExt.has(`${kind}:${g.id}`) || haveTitle.has(norm(g.name));
+
+  async function load(ev: React.FormEvent) {
+    ev.preventDefault();
+    setError("");
+    setBusy(true);
+    try {
+      const r = await fetch(`/api/${kind}?user=${encodeURIComponent(user.trim())}`);
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        return setError(cfg.errors[d.error] || {
+          "no-key": "Bu bağlantı henüz kurulmadı. Şimdilik aşağıdaki \"Epic, Switch ve diğerleri\" bölümünden oyun adlarını yapıştırabilirsin.",
+          expired: "PlayStation bağlantısının süresi dolmuş. Site sahibine haber ver; o sırada oyun adlarını aşağıdan yapıştırabilirsin.",
+          "bad-user": "Kullanıcı adını doğru yaz.",
+        }[d.error as string] || "Bağlanılamadı, biraz sonra tekrar dene.");
+      }
+      const list: RemoteGame[] = (d.games as RemoteGame[]).sort((a, b) => (b.last || "").localeCompare(a.last || ""));
+      setGames(list);
+      setPicked(new Set(list.filter((g) => !already(g)).map((g) => g.id)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function run() {
+    if (!me || !games) return;
+    const chosen = games.filter((g) => picked.has(g.id) && !already(g));
+    if (!chosen.length) return;
+    setBusy(true);
+    setStep({ done: 0, total: chosen.length });
+    try {
+      const myRawg = new Set(mine.map((e) => e.rawg_id).filter(Boolean));
+      const rows = (await pool(chosen, async (g): Promise<Row | null> => {
+        const found = (await rawg<{ results?: RawgGame[] }>("games", { search: g.name, search_precise: "true", page_size: 3 }).catch(() => ({ results: [] }))).results || [];
+        const hit = found.find((x) => norm(x.name) === norm(g.name)) || found[0];
+        if (hit && myRawg.has(hit.id)) return null;
+        if (hit) myRawg.add(hit.id);
+        return {
+          type: "game", title: (hit?.name || g.name).slice(0, 200), rawg_id: hit?.id ?? null, ext_id: `${kind}:${g.id}`.slice(0, 60),
+          year: parseInt(hit?.released || "") || null,
+          cover: hit?.background_image ? smallImage(hit.background_image) : g.cover,
+          status: markDone && g.done ? "completed" : "owned", rating: 0,
+          playtime_sec: g.minutes ? g.minutes * 60 : null, hours: g.minutes ? Math.round(g.minutes / 6) / 10 : null,
+          platform: g.platform, store: g.platform === "PC" && kind === "xbox" ? "PC Game Pass" : cfg.store,
+          updated_at: g.last || new Date().toISOString(),
+        };
+      }, (done) => setStep({ done, total: chosen.length }))).filter(Boolean) as Row[];
+      await insertAll(rows, me.id);
+      toast(`${rows.length} oyun kütüphanene eklendi`);
+      setGames(null);
+      refresh();
+    } catch (err) {
+      toast("Aktarılamadı: " + (err as Error).message);
+    } finally {
+      setBusy(false);
+      setStep(null);
+    }
+  }
+
+  const toggle = (id: string) => setPicked((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const fresh = games?.filter((g) => !already(g)) || [];
+
+  return (
+    <section className="section import-card">
+      <div className="section-head"><h2>{cfg.title}</h2></div>
+      <p className="muted small" style={{ marginTop: 0 }}>{cfg.help} Oyunlar <b>Kategorisiz</b> eklenir.</p>
+      {!games ? (
+        <form className="admin-add" onSubmit={load}>
+          <input className="input" placeholder={cfg.placeholder} value={user} onChange={(e) => setUser(e.target.value)} />
+          <button className="btn primary" disabled={busy || !user.trim()}>{busy ? "Getiriliyor…" : "Oyunlarımı getir"}</button>
+        </form>
+      ) : (
+        <>
+          <div className="import-bar">
+            <span><b>{games.length}</b> oyun bulundu{games.length - fresh.length ? ` · ${games.length - fresh.length} tanesi zaten kütüphanende` : ""}</span>
+            <button className="link" onClick={() => setPicked(new Set(fresh.map((g) => g.id)))}>Hepsini seç</button>
+            <button className="link" onClick={() => setPicked(new Set())}>Hiçbiri</button>
+          </div>
+          {games.some((g) => g.done) && (
+            <label className="check-line"><input type="checkbox" checked={markDone} disabled={busy} onChange={(e) => setMarkDone(e.target.checked)} /> {cfg.doneText} <b>Bitti</b> yap (isteğe bağlı)</label>
+          )}
+          <div className="import-list">
+            {games.map((g) => (
+              <label key={g.id} className={already(g) ? "off" : ""}>
+                <input type="checkbox" disabled={already(g) || busy} checked={!already(g) && picked.has(g.id)} onChange={() => toggle(g.id)} />
+                <span className="name">{g.name}</span>
+                <small>{already(g) ? "zaten var" : [g.platform, g.minutes ? `${Math.round(g.minutes / 60).toLocaleString("tr")} sa` : "", g.progress !== null ? `%${g.progress}` : ""].filter(Boolean).join(" · ")}</small>
+              </label>
+            ))}
+          </div>
+          {step && <Progress done={step.done} total={step.total} label="Oyunlar eşleştiriliyor…" />}
+          <div className="actions">
+            <button className="btn" disabled={busy} onClick={() => setGames(null)}>Vazgeç</button>
+            <button className="btn primary" disabled={busy || !picked.size} onClick={run}>{busy ? "Ekleniyor…" : `${[...picked].filter((id) => fresh.some((g) => g.id === id)).length} oyunu ekle`}</button>
+          </div>
+        </>
+      )}
+      {error && <p className="form-error">{error}</p>}
+    </section>
+  );
+}
+
+// ---------- Müzik: Spotify listesi linki, Last.fm ya da Spotify veri dosyası ----------
+
+interface RemoteAlbum { title: string; artist: string; cover: string | null; year?: number | null; plays?: number; tracks?: number; id?: string }
+
+function Music() {
+  const [mode, setMode] = useState<"link" | "lastfm" | "file">("link");
+  return (
+    <section className="section import-card">
+      <div className="section-head"><h2>Spotify ve Last.fm</h2></div>
+      <div className="chips" style={{ marginBottom: 12 }}>
+        <button className={`chip ${mode === "link" ? "active" : ""}`} onClick={() => setMode("link")}>Spotify listesi linki</button>
+        <button className={`chip ${mode === "lastfm" ? "active" : ""}`} onClick={() => setMode("lastfm")}>Last.fm</button>
+        <button className={`chip ${mode === "file" ? "active" : ""}`} onClick={() => setMode("file")}>Spotify veri dosyası</button>
+      </div>
+      {mode === "file" ? <Spotify /> : <AlbumImport key={mode} mode={mode} />}
+    </section>
+  );
+}
+
+function AlbumImport({ mode }: { mode: "link" | "lastfm" }) {
+  const { me, mine, toast, refresh } = useApp();
+  const [text, setText] = useState("");
+  const [albums, setAlbums] = useState<RemoteAlbum[] | null>(null);
+  const [minPlays, setMinPlays] = useState(20);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [step, setStep] = useState<{ done: number; total: number } | null>(null);
+  const have = new Set(mine.filter((e) => e.type === "music").map((e) => `${norm(e.title)}|${norm(e.creator)}`));
+  const isNew = (a: RemoteAlbum) => !have.has(`${norm(a.title)}|${norm(a.artist)}`);
+  const lastfm = mode === "lastfm";
+
+  async function load(ev: React.FormEvent) {
+    ev.preventDefault();
+    setError("");
+    setBusy(true);
+    try {
+      const r = await fetch(lastfm ? `/api/lastfm?user=${encodeURIComponent(text.trim())}` : `/api/spotify?link=${encodeURIComponent(text.trim())}`);
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        return setError({
+          "no-key": "Bu bağlantı henüz kurulmadı. Şimdilik \"Spotify veri dosyası\" seçeneğini kullanabilirsin.",
+          "bad-link": "Spotify'da listeye sağ tıkla (telefonda üç nokta) → Paylaş → Bağlantıyı kopyala, sonra buraya yapıştır.",
+          "bad-user": "Last.fm kullanıcı adını doğru yaz.",
+          "not-found": lastfm ? "Bu Last.fm kullanıcısı bulunamadı." : "Liste bulunamadı. Listenin herkese açık olduğundan emin ol (Spotify'ın kendi hazırladığı listeler okunamıyor).",
+          empty: "Bu Last.fm hesabında dinleme kaydı yok.",
+        }[d.error as string] || "Bağlanılamadı, biraz sonra tekrar dene.");
+      }
+      setAlbums(d.albums);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const chosen = (albums || []).filter((a) => isNew(a) && (!lastfm || (a.plays || 0) >= minPlays));
+
+  async function run() {
+    if (!me || !chosen.length) return;
+    setBusy(true);
+    setStep({ done: 0, total: chosen.length });
+    try {
+      const rows = await pool(chosen, async (a): Promise<Row> => {
+        const meta = a.cover ? { cover: a.cover, year: a.year ?? null } : await musicMeta("album", a.artist, a.title);
+        return {
+          type: "music", title: a.title.slice(0, 200), creator: a.artist.slice(0, 200) || null, year: a.year ?? meta.year, cover: meta.cover, rawg_id: null,
+          ext_id: a.id ? `spotify:album:${a.id}` : null, status: "completed", rating: 0, store: lastfm ? "Last.fm" : "Spotify",
+          progress: a.plays ? `${a.plays.toLocaleString("tr")} kez dinlendi` : null,
+        };
+      }, (done) => setStep({ done, total: chosen.length }));
+      await insertAll(rows, me.id);
+      toast(`${rows.length} albüm kütüphanene eklendi`);
+      setAlbums(null);
+      refresh();
+    } catch (err) {
+      toast("Aktarılamadı: " + (err as Error).message);
+    } finally {
+      setBusy(false);
+      setStep(null);
+    }
+  }
+
+  return (
+    <>
+      <p className="muted small" style={{ marginTop: 0 }}>
+        {lastfm
+          ? <>Last.fm kullanıcı adını yaz; en çok dinlediğin albümler dinleme sayılarıyla gelir. Spotify&apos;ı Last.fm&apos;e bağladıysan bütün geçmişin oradadır.</>
+          : <>Spotify&apos;da bir çalma listesinin ya da albümün linkini yapıştır (Paylaş → Bağlantıyı kopyala). Listedeki şarkıların albümleri eklenir. Liste herkese açık olmalı.</>}
+      </p>
+      {!albums ? (
+        <form className="admin-add" onSubmit={load}>
+          <input className="input" placeholder={lastfm ? "Last.fm kullanıcı adın" : "https://open.spotify.com/playlist/…"} value={text} onChange={(e) => setText(e.target.value)} />
+          <button className="btn primary" disabled={busy || !text.trim()}>{busy ? "Getiriliyor…" : "Albümleri getir"}</button>
+        </form>
+      ) : (
+        <>
+          <div className="import-bar">
+            <span><b>{albums.length}</b> albüm bulundu{albums.length - albums.filter(isNew).length ? ` · ${albums.length - albums.filter(isNew).length} tanesi zaten kütüphanende` : ""}</span>
+            {lastfm && (
+              <label className="check">En az
+                <select value={minPlays} onChange={(e) => setMinPlays(Number(e.target.value))}>
+                  {[1, 5, 10, 20, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
+                </select> kez dinlediklerim
+              </label>
+            )}
+          </div>
+          <div className="import-list">
+            {chosen.slice(0, 300).map((a) => (
+              <label key={`${a.title}|${a.artist}`}><span className="name">{a.title} <span className="muted">· {a.artist}</span></span>
+                <small>{a.plays ? `${a.plays.toLocaleString("tr")} dinleme` : a.tracks ? `${a.tracks} şarkı` : ""}</small></label>
+            ))}
+          </div>
+          {step && <Progress done={step.done} total={step.total} label="Ekleniyor…" />}
+          <div className="actions">
+            <button className="btn" disabled={busy} onClick={() => setAlbums(null)}>Vazgeç</button>
+            <button className="btn primary" disabled={busy || !chosen.length} onClick={run}>{busy ? "Ekleniyor…" : `${chosen.length} albümü ekle`}</button>
+          </div>
+        </>
+      )}
+      {error && <p className="form-error">{error}</p>}
+    </>
+  );
+}
+
+// Mağaza sayfasından kopyalanan metindeki fiyat, tarih, düğme yazısı gibi gereksiz satırları ayıkla
+const NOISE = /^(satın al(ındı)?|purchased|owned|sahip olunan|yükle(ndi)?|install(ed)?|oyna|play|indir|download|güncelle|update|kütüphane|library|kitaplığım|my games|oyunlarım|sırala|sort|filtre|filter|ara|search|tümü|all|favoriler|favorites|ücretsiz|free|ödendi|paid|iade|refund|detaylar|details|daha fazla|more|games?|oyunlar|apps?|uygulamalar|hepsi|yüklü|hazır|ready|ps5|ps4|pc|xbox( series x\|s| one)?|nintendo switch|dlc|eklenti|add-?on|demo|beta|trial)$/i;
+function cleanPaste(text: string) {
+  const seen = new Set<string>();
+  return text.split(/\r?\n/)
+    .map((l) => l.replace(/[™®©]/g, "").replace(/^\s*(?:[-*•]\s*|\d{1,4}[.)]\s+)/, "").replace(/\s+/g, " ").trim())
+    .filter((l) => {
+      if (l.length < 2 || l.length > 120) return false;
+      if (NOISE.test(l)) return false;
+      if (/^[\d\s.,:/%-]+$/.test(l)) return false;                              // sayı, tarih, yüzde
+      if (/(₺|tl\b|\$|€|£|usd|eur|try)\s*\d|\d\s*(₺|tl\b|\$|€|£)/i.test(l)) return false; // fiyat
+      if (/^(order|sipariş|fatura|invoice|işlem|transaction)\b/i.test(l)) return false;
+      if (/^\d+\s*(saat|sa|dk|dakika|hours?|hrs?|mins?|minutes?)\b/i.test(l)) return false;
+      if (/^(son oynama|last played|oynama süresi|play time|eklendi|added)\b/i.test(l)) return false;
+      const k = l.toLowerCase();
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
 }
