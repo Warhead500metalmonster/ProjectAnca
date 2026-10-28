@@ -93,6 +93,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [toast]);
 
   // Okunmamış mesaj sayısı ve en yeni bildirim (beğeni, yorum, takip) zamanı
+  // Okunmamış mesaj varsa sekme başlığında da görünsün: "(2) Ancalog". Sayfa değişip başlık yenilense de geri eklenir.
+  useEffect(() => {
+    const apply = () => {
+      const base = document.title.replace(/^\(\d+\+?\)\s*/, "");
+      const want = unread > 0 ? `(${unread > 99 ? "99+" : unread}) ${base}` : base;
+      if (document.title !== want) document.title = want;
+    };
+    apply();
+    const mo = new MutationObserver(apply);
+    mo.observe(document.head, { childList: true, subtree: true, characterData: true });
+    return () => mo.disconnect();
+  }, [unread]);
+
   const checkInbox = useCallback(async () => {
     const id = userId.current;
     if (!id) return;
@@ -155,8 +168,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         else refresh();
       });
     });
-    const timer = setInterval(checkInbox, 30000);
-    return () => { sub.subscription.unsubscribe(); clearInterval(timer); };
+    // Yeni mesaj sayısı çabuk görünsün: sık yokla, sekmeye geri dönünce hemen bak
+    const timer = setInterval(() => { if (document.visibilityState === "visible") checkInbox(); }, 10000);
+    const onShow = () => { if (document.visibilityState === "visible") checkInbox(); };
+    document.addEventListener("visibilitychange", onShow);
+    return () => { sub.subscription.unsubscribe(); clearInterval(timer); document.removeEventListener("visibilitychange", onShow); };
   }, [router, refresh, checkInbox, loadBadges]);
 
   useEffect(() => { plansRef.current = { following: [...following], mine }; }, [following, mine]);
