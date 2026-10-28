@@ -12,6 +12,7 @@ import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { Cover, Feed, UserRow } from "@/components/ui";
+import { ImportPromo } from "@/components/ImportPromo";
 
 interface Slim { rawg_id: number | null; title: string; cover: string | null; rating: number }
 
@@ -83,6 +84,7 @@ export default function Community() {
         <div className="mosaic">{covers.map((c, i) => <img key={i} src={c} alt="" loading="lazy" onError={(e) => e.currentTarget.remove()} />)}</div>
         <div className="mosaic-text"><h1>Topluluk</h1><p>Herkes neyi oynuyor, neyi izliyor? Keşfet, takip et.</p></div>
       </section>
+      {!me && <ImportPromo signedIn={false} compact />}
       {games.length > 0 && (
         <section className="section">
           <div className="section-head">

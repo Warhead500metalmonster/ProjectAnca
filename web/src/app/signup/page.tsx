@@ -49,6 +49,11 @@ export default function Signup() {
   return (
     <form className="auth" onSubmit={submit}>
       <h1>Ancalog&apos;a katıl </h1>
+      <div className="signup-import">
+        <b>Katılınca bütün kütüphaneni getir</b>
+        <span>Steam, PlayStation, Xbox, Epic, Switch, HowLongToBeat, Backloggd, Playnite, Letterboxd, Spotify, Last.fm</span>
+        <small>Durumlar, puanlar, süreler, tarihler, notlar: hepsi gelir. Sıfırdan başlamak yok.</small>
+      </div>
       <div className="field">
         <label htmlFor="s-user">Kullanıcı adı</label>
         <input id="s-user" name="username" required minLength={3} maxLength={20} pattern="[a-zA-Z0-9_]+" autoFocus autoComplete="username" placeholder="ornek_kullanici" />

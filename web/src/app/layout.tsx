@@ -6,6 +6,7 @@ import "./globals.css";
 import { AppProvider } from "@/components/AppProvider";
 import { Topbar } from "@/components/Topbar";
 import { Announcement } from "@/components/Announcement";
+import { GuestBar } from "@/components/GuestBar";
 import { themeBootScript } from "@/lib/theme";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin", "latin-ext"] });
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AppProvider>
           <Suspense fallback={null}><Topbar /></Suspense>
           <Announcement />
+          <GuestBar />
           <main className="app"><Suspense fallback={<div className="loading">Yükleniyor…</div>}>{children}</Suspense></main>
           <footer className="footer">
             <span>Ancalog</span>

@@ -1290,3 +1290,15 @@ body.fav-dragging, body.fav-dragging * { cursor: grabbing !important; user-selec
 .admin-clean { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 10px 12px; border-radius: 10px; background: var(--panel-2, rgba(255,255,255,.04)); }
 .admin-item .acts select.btn { appearance: auto; }
 .admin-mod { display: flex; gap: 14px; align-items: center; justify-content: flex-end; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+
+/* Üye olmayanlara: kütüphaneni getir */
+.guest-bar { display: flex; align-items: center; gap: 14px; max-width: 1200px; margin: 10px auto 0; padding: 12px 16px; border-radius: 14px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 22%, var(--panel)), var(--panel)); border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border)); }
+.guest-bar p { flex: 1; margin: 0; font-size: 14px; line-height: 1.5; }
+.guest-bar .btn { white-space: nowrap; }
+@media (max-width: 640px) { .guest-bar { flex-wrap: wrap; margin: 8px 12px 0; } .guest-bar p { flex-basis: calc(100% - 40px); } }
+.hero-import { font-size: 15px !important; color: var(--accent-2) !important; margin-top: -14px !important; }
+.signup-import { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.signup-import span { font-size: 13px; color: var(--accent-2); }
+.signup-import small { color: var(--muted); font-size: 12px; }
