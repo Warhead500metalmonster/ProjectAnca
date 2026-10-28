@@ -1,6 +1,6 @@
 import type { Entry, EntryType, Item, RawgGame } from "./types";
 import { ENTRY_COLS, TYPES } from "./constants";
-import { contentKey, likeEsc, smallImage } from "./format";
+import { contentKey, likeEsc, norm, smallImage } from "./format";
 import { rawg } from "./rawg";
 import { q, sb } from "./supabase";
 
@@ -30,17 +30,43 @@ async function itunes(text: string, entity: string, limit: number): Promise<Itun
 
 export interface Found extends Item { sub?: string; thumb?: string | null; raw?: RawgGame }
 
+interface DeezerHit { title: string; artist: { name: string }; cover_medium?: string; cover_xl?: string; album?: { title: string; cover_medium?: string; cover_xl?: string } }
+
+async function deezer(kind: "album" | "track", text: string, limit: number): Promise<DeezerHit[]> {
+  const r = await fetch(`/api/deezer?${new URLSearchParams({ kind, q: text, limit: String(limit) })}`);
+  if (!r.ok) throw new Error(String(r.status));
+  return (await r.json()).data || [];
+}
+
+// Müzik: Apple Music ve Deezer birlikte aranır (birinde olmayan diğerinde çıkar), aynı albüm/şarkı bir kez gösterilir
 export async function searchMusic(text: string): Promise<Found[]> {
-  const [albums, songs] = await Promise.all([itunes(text, "album", 4), itunes(text, "song", 3)]);
+  const none = () => [] as never[];
+  const [albums, songs, dzAlbums, dzTracks] = await Promise.all([
+    itunes(text, "album", 4).catch(none), itunes(text, "song", 3).catch(none),
+    deezer("album", text, 4).catch(none), deezer("track", text, 4).catch(none),
+  ]);
   const map = (h: ItunesHit, title: string, kind: string): Found => ({
     type: "music", title, creator: h.artistName, year: parseInt(h.releaseDate || "") || null,
     cover: h.artworkUrl100 ? bigArtwork(h.artworkUrl100) : null, rawg_id: null,
     sub: `${kind} · ${h.artistName}`, thumb: h.artworkUrl100 || null,
   });
-  return [
+  const dz = (h: DeezerHit, kind: string, cover?: string, thumb?: string): Found => ({
+    type: "music", title: h.title, creator: h.artist.name, year: null, cover: cover || null, rawg_id: null,
+    sub: `${kind} · ${h.artist.name}`, thumb: thumb || null,
+  });
+  const all = [
     ...albums.map((a) => map(a, a.collectionName || "", "Albüm")),
+    ...dzAlbums.map((a) => dz(a, "Albüm", a.cover_xl, a.cover_medium)),
     ...songs.map((s) => map(s, s.trackName || "", "Şarkı")),
+    ...dzTracks.map((t) => dz(t, "Şarkı", t.album?.cover_xl, t.album?.cover_medium)),
   ].filter((m) => m.title);
+  const seen = new Set<string>();
+  return all.filter((m) => {
+    const k = `${m.sub?.split(" · ")[0]}|${norm(m.title)}|${norm(m.creator)}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  }).slice(0, 10);
 }
 
 export async function searchGames(text: string, limit = 6): Promise<Found[]> {
@@ -159,7 +185,7 @@ export function findContent(type: EntryType, text: string): Promise<Found[]> {
 }
 export const SEARCH_CREDITS: Record<EntryType, [string, string]> = {
   game: ["RAWG", "https://rawg.io"],
-  music: ["Apple Music", "https://music.apple.com"],
+  music: ["Apple Music · Deezer", "https://www.deezer.com"],
   movie: ["TMDB", "https://www.themoviedb.org"],
   show: ["TMDB", "https://www.themoviedb.org"],
   anime: ["AniList", "https://anilist.co"],

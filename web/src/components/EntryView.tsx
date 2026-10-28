@@ -17,6 +17,7 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
   const [comments, setComments] = useState<Comment[] | null>(null);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  const [fav, setFav] = useState(!!e.favorite);
   useEffect(() => { ref.current?.showModal(); }, []);
 
   const load = useCallback(async () => {
@@ -60,6 +61,18 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
     }
   }
 
+  // Kendi kaydını tek tıkla favorilere ekle / çıkar (her kategoride en fazla 10)
+  async function toggleFav() {
+    try {
+      await q(sb().from("entries").update({ favorite: !fav }).eq("id", e.id));
+      setFav(!fav);
+      toast(fav ? "Favorilerden çıkarıldı" : "Favorilere eklendi ❤");
+      refresh();
+    } catch (err) {
+      toast((err as Error).message);
+    }
+  }
+
   async function sendComment(ev: React.FormEvent) {
     ev.preventDefault();
     const body = text.trim();
@@ -100,7 +113,9 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
         <div className="view-content">
           <div className="chips-row">
             <span className={`badge ${e.status}`}>{t.icon} {statusLabel(e.status, e.type)}</span>
-            {e.favorite && <span className="badge fav">❤ Favori</span>}
+            {isMine
+              ? <button type="button" className={`fav-btn ${fav ? "on" : ""}`} onClick={toggleFav}>{fav ? "❤ Favori" : "♡ Favorilere ekle"}</button>
+              : fav && <span className="badge fav">❤ Favori</span>}
           </div>
           <h2><Link href={contentHref(e)} onClick={close}>{e.title}</Link></h2>
           {(e.creator || e.year) && <div className="muted">{[e.creator, e.year].filter(Boolean).join(" · ")}</div>}

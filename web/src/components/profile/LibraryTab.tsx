@@ -6,7 +6,7 @@ import { STATUSES, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
 import { daysTaken, fmtDate, fmtDur, num, playSec } from "@/lib/format";
 import { useApp } from "@/components/AppProvider";
 import { useProfile } from "@/components/ProfileShell";
-import { Cover, EntryCard, Rating, Stats, commentCount, entryTags, likeCount } from "@/components/ui";
+import { Cover, EntryCard, Rating, commentCount, entryTags, likeCount } from "@/components/ui";
 
 type Sort = "updated" | "rating" | "rating_asc" | "title" | "year" | "year_asc" | "finished" | "time" | "fastest";
 type View = "grid" | "list";
@@ -41,6 +41,8 @@ export function LibraryTab() {
   const [sort, setSort] = useState<Sort>("updated");
   const [text, setText] = useState("");
   const [view, setView] = useState<View>("grid");
+  const [showFilters, setShowFilters] = useState(false);
+  const [favTab, setFavTab] = useState("");
   // eslint-disable-next-line react-hooks/set-state-in-effect -- tarayıcı deposundan / ağdan gelen veri
   useEffect(() => { try { if (localStorage.getItem("ancalog.view") === "list") setView("list"); } catch { /* tercih */ } }, []);
 
@@ -77,78 +79,100 @@ export function LibraryTab() {
     (!flags.has("emu") || e.emulated) &&
     (!needle || `${e.title} ${e.creator || ""} ${e.notes || ""} ${e.progress || ""}`.toLocaleLowerCase("tr").includes(needle)),
   ).sort(sorter);
-  const filtered = statuses.size || year || finishYear || platform || minRating || flags.size || needle;
+  const filterCount = statuses.size + [year, finishYear, platform, minRating].filter(Boolean).length + flags.size;
   const statusType = type === "all" ? null : type;
   const favs = entries.filter((e) => e.favorite);
+  const favTypes = TYPE_KEYS.filter((k) => favs.some((e) => e.type === k));
+  const favType = favTypes.includes(favTab as EntryType) ? (favTab as EntryType) : favTypes[0];
 
   function clear() {
-    setStatuses(new Set()); setYear(""); setFinishYear(""); setPlatform(""); setMinRating(""); setFlags(new Set()); setText("");
+    setStatuses(new Set()); setYear(""); setFinishYear(""); setPlatform(""); setMinRating(""); setFlags(new Set());
   }
 
   return (
     <>
       {favs.length > 0 && (
         <section className="section favs">
-          <div className="section-head"><h2>❤ Favoriler</h2></div>
-          {TYPE_KEYS.filter((k) => favs.some((e) => e.type === k)).map((k) => (
-            <div key={k} className="fav-row">
-              <h3>{TYPES[k].icon} {TYPES[k].plural}</h3>
-              <div className="strip">{favs.filter((e) => e.type === k).sort((a, b) => b.rating - a.rating).map((e) => <EntryCard key={e.id} e={e} />)}</div>
-            </div>
-          ))}
+          <div className="section-head">
+            <h2>❤ Favoriler</h2>
+            {favTypes.length > 1 && (
+              <div className="mini-tabs">
+                {favTypes.map((k) => (
+                  <button key={k} className={favType === k ? "active" : ""} onClick={() => setFavTab(k)} title={TYPES[k].plural}>{TYPES[k].icon} {TYPES[k].label}</button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="strip">{favs.filter((e) => e.type === favType).sort((a, b) => b.rating - a.rating).map((e) => <EntryCard key={e.id} e={e} />)}</div>
         </section>
       )}
       <section className="section">
         <div className="tabs">
-          {([["all", "✨", "Tümü"], ...TYPE_KEYS.map((k) => [k, TYPES[k].icon, TYPES[k].label])] as [EntryType | "all", string, string][]).map(([k, icon, label]) => (
-            <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => { setType(k); setYear(""); setFinishYear(""); setPlatform(""); }}>
-              {icon} {label}<span className="count">{k === "all" ? entries.length : entries.filter((e) => e.type === k).length}</span>
-            </button>
-          ))}
-        </div>
-        <div className="stats"><Stats list={scoped} /></div>
-        <div className="toolbar" style={{ marginTop: 18 }}>
-          <div className="chips">
-            <button className={`chip ${!statuses.size ? "active" : ""}`} onClick={() => setStatuses(new Set())}>Hepsi</button>
-            {STATUSES.map((s) => (
-              <button key={s} className={`chip ${statuses.has(s) ? "active" : ""}`} onClick={() => setStatuses(toggle(statuses, s))}>{statusLabel(s, statusType)}</button>
+          {([["all", "✨", "Tümü"], ...TYPE_KEYS.map((k) => [k, TYPES[k].icon, TYPES[k].label])] as [EntryType | "all", string, string][])
+            .filter(([k]) => k === "all" || entries.some((e) => e.type === k))
+            .map(([k, icon, label]) => (
+              <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => { setType(k); setYear(""); setFinishYear(""); setPlatform(""); }}>
+                {icon} {label}<span className="count">{k === "all" ? entries.length : entries.filter((e) => e.type === k).length}</span>
+              </button>
             ))}
+        </div>
+        <div className="lib-bar">
+          <input className="input" type="search" placeholder="Kütüphanede ara…" value={text} autoComplete="off" onChange={(e) => setText(e.target.value)} />
+          <button className={`btn ${showFilters || filterCount ? "on" : ""}`} onClick={() => setShowFilters(!showFilters)}>
+            🔍 Filtrele{filterCount ? ` (${filterCount})` : ""}
+          </button>
+          <select aria-label="Sırala" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
+            {SORTS.map(([k, label]) => <option key={k} value={k}>↕ {label}</option>)}
+          </select>
+          <div className="seg">
+            <button type="button" className={view === "grid" ? "active" : ""} title="Izgara" onClick={() => pickView("grid")}>▦</button>
+            <button type="button" className={view === "list" ? "active" : ""} title="Liste" onClick={() => pickView("list")}>☰</button>
           </div>
-          <div className="right">
-            <input className="input" type="search" placeholder="Kütüphanede ara…" value={text} autoComplete="off" onChange={(e) => setText(e.target.value)} />
-            <select aria-label="Sırala" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
-              {SORTS.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
-            </select>
-            <div className="seg">
-              <button type="button" className={view === "grid" ? "active" : ""} title="Izgara" onClick={() => pickView("grid")}>▦</button>
-              <button type="button" className={view === "list" ? "active" : ""} title="Liste" onClick={() => pickView("list")}>☰</button>
+        </div>
+        {showFilters && (
+          <div className="filter-panel">
+            <div className="fp-row">
+              <span className="fp-label">Durum</span>
+              <div className="chips">
+                {STATUSES.map((s) => (
+                  <button key={s} className={`chip ${statuses.has(s) ? "active" : ""}`} onClick={() => setStatuses(toggle(statuses, s))}>{statusLabel(s, statusType)}</button>
+                ))}
+              </div>
             </div>
+            <div className="fp-row">
+              <span className="fp-label">Ayrıntı</span>
+              <div className="chips">
+                <select value={year} onChange={(e) => setYear(e.target.value)} aria-label="Çıkış yılı">
+                  <option value="">📅 Çıkış yılı: hepsi</option>
+                  {years.map((y) => <option key={y} value={y}>📅 Çıkış yılı: {y}</option>)}
+                </select>
+                <select value={finishYear} onChange={(e) => setFinishYear(e.target.value)} aria-label="Bitirme yılı">
+                  <option value="">🏁 Bitirme yılı: hepsi</option>
+                  {finishYears.map((y) => <option key={y} value={y}>🏁 Bitirme yılı: {y}</option>)}
+                </select>
+                <select value={platform} onChange={(e) => setPlatform(e.target.value)} aria-label="Platform">
+                  <option value="">🖥️ Platform: hepsi</option>
+                  {platforms.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+                <select value={minRating} onChange={(e) => setMinRating(e.target.value)} aria-label="Puan">
+                  <option value="">⭐ Puan: hepsi</option>
+                  {ratingSteps.map((r) => <option key={r} value={r}>{scale === 10 ? `${r}/10 ve üstü` : `${num(r / 2)} yıldız ve üstü`}</option>)}
+                  <option value="none">Puansız</option>
+                </select>
+              </div>
+            </div>
+            <div className="fp-row">
+              <span className="fp-label">Sadece</span>
+              <div className="chips">
+                <button className={`chip ${flags.has("fav") ? "active" : ""}`} onClick={() => setFlags(toggle(flags, "fav"))}>❤ Favoriler</button>
+                <button className={`chip ${flags.has("review") ? "active" : ""}`} onClick={() => setFlags(toggle(flags, "review"))}>📝 İncelemeli</button>
+                <button className={`chip ${flags.has("emu") ? "active" : ""}`} onClick={() => setFlags(toggle(flags, "emu"))}>🕹️ Emülatör</button>
+              </div>
+            </div>
+            {filterCount > 0 && <button className="link" onClick={clear}>Filtreleri temizle</button>}
           </div>
-        </div>
-        <div className="filters">
-          <select value={year} onChange={(e) => setYear(e.target.value)} aria-label="Çıkış yılı">
-            <option value="">📅 Çıkış yılı: hepsi</option>
-            {years.map((y) => <option key={y} value={y}>📅 Çıkış yılı: {y}</option>)}
-          </select>
-          <select value={finishYear} onChange={(e) => setFinishYear(e.target.value)} aria-label="Bitirme yılı">
-            <option value="">🏁 Bitirme yılı: hepsi</option>
-            {finishYears.map((y) => <option key={y} value={y}>🏁 Bitirme yılı: {y}</option>)}
-          </select>
-          <select value={platform} onChange={(e) => setPlatform(e.target.value)} aria-label="Platform">
-            <option value="">🖥️ Platform: hepsi</option>
-            {platforms.map((p) => <option key={p} value={p}>{p}</option>)}
-          </select>
-          <select value={minRating} onChange={(e) => setMinRating(e.target.value)} aria-label="Puan">
-            <option value="">⭐ Puan: hepsi</option>
-            {ratingSteps.map((r) => <option key={r} value={r}>{scale === 10 ? `${r}/10 ve üstü` : `${num(r / 2)} yıldız ve üstü`}</option>)}
-            <option value="none">Puansız</option>
-          </select>
-          <button className={`chip ${flags.has("fav") ? "active" : ""}`} onClick={() => setFlags(toggle(flags, "fav"))}>❤ Favoriler</button>
-          <button className={`chip ${flags.has("review") ? "active" : ""}`} onClick={() => setFlags(toggle(flags, "review"))}>📝 İncelemeli</button>
-          <button className={`chip ${flags.has("emu") ? "active" : ""}`} onClick={() => setFlags(toggle(flags, "emu"))}>🕹️ Emülatör</button>
-          {filtered ? <button className="link" onClick={clear}>Filtreleri temizle</button> : null}
-          <span className="muted count-note">{list.length} sonuç</span>
-        </div>
+        )}
+        {(filterCount > 0 || needle) && <p className="muted count-note">{list.length} sonuç</p>}
         {list.length ? (
           view === "list"
             ? <div className="rows">{list.map((e) => <Row key={e.id} e={e} isMe={isMe} />)}</div>

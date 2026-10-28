@@ -6,7 +6,7 @@ import { TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
 import { avgText, daysTaken, fmtDate, fmtDur, fmtHoursShort, num, playSec, scoreText } from "@/lib/format";
 import { useApp } from "@/components/AppProvider";
 import { useProfile } from "@/components/ProfileShell";
-import { Cover } from "@/components/ui";
+import { BadgeChips, Cover } from "@/components/ui";
 
 // Durum renkleri: renk körlüğü için doğrulanmış sırayla (yan yana duran dilimler ayırt edilebilsin)
 const STATUS_ORDER: Status[] = ["active", "dropped", "completed", "paused", "planned"];
@@ -20,7 +20,7 @@ function countBy<T>(list: T[], key: (x: T) => string | null | undefined) {
 }
 
 export function StatsTab() {
-  const { entries, profile } = useProfile();
+  const { entries, profile, isMe } = useProfile();
   const { scale, openView } = useApp();
   const [type, setType] = useState<EntryType | "all">("all");
   const [year, setYear] = useState("");       // çıkış yılı
@@ -147,6 +147,9 @@ export function StatsTab() {
           </div>
         </>
       )}
+
+      <div className="section-head" style={{ marginTop: 28 }}><h2>🎖️ Rozetler</h2></div>
+      <div className="badges-box"><BadgeChips id={profile.id} showLocked={isMe} /></div>
     </section>
   );
 }

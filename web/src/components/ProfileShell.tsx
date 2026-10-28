@@ -77,7 +77,7 @@ function Shell({ data, children }: { data: ProfileData; children: React.ReactNod
               : <>{isFriend(profile.id) && <Link className="btn" href={`/chat/${profile.username}`}>💬 Mesaj</Link>}<FollowButton id={profile.id} /></>}
           </div>
         </div>
-        <BadgeChips id={profile.id} showLocked={isMe} />
+        <BadgeChips id={profile.id} />
         {profile.bio && <p className="profile-bio">{profile.bio}</p>}
         <div className="profile-meta">
           <span><b>{entries.length}</b> kayıt</span>
