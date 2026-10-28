@@ -48,7 +48,34 @@ async function pool<T, R>(items: T[], fn: (x: T) => Promise<R>, onStep: (done: n
 }
 
 async function insertAll(rows: Row[], userId: string) {
-  for (let i = 0; i < rows.length; i += 50) await q(sb().from("entries").insert(rows.slice(i, i + 50).map((r) => ({ ...r, user_id: userId }))));
+  let failed = 0;
+  for (let i = 0; i < rows.length; i += 50) {
+    const chunk = rows.slice(i, i + 50).map((r) => ({ ...r, user_id: userId }));
+    const { error } = await sb().from("entries").insert(chunk);
+    if (!error) continue;
+    // Paketteki tek bir bozuk satır (ör. geçersiz tarih) yüzünden diğerleri kaybolmasın
+    for (const row of chunk) if ((await sb().from("entries").insert(row)).error) failed++;
+  }
+  return failed;
+}
+
+// Aynı oyunu farklı yazılışlarla da tanı: "The Witcher 3 - GOTY Edition" = "The Witcher 3"
+const EDITION = /\b(the|game of the year|goty|definitive|complete|deluxe|ultimate|enhanced|standard|edition|director'?s cut)\b/g;
+const looseKey = (t: string) =>
+  norm(t).replace(/ı/g, "i").replace(/[™®©]/g, "").replace(EDITION, "").replace(/[^a-z0-9ğüşöç]+/g, "");
+// RAWG sonucunu ancak adı gerçekten benziyorsa kabul et (yoksa alakasız bir oyuna eşleşiyordu)
+function similarHit(found: RawgGame[], title: string) {
+  const k = looseKey(title);
+  if (!k) return null;
+  const exact = found.find((x) => looseKey(x.name) === k);
+  if (exact) return exact;
+  // Biri diğerinin başıysa (ör. "Cyberpunk 2077 Ultimate" = "Cyberpunk 2077") ama devam oyunu değilse (Dark Souls ≠ Dark Souls III)
+  const near = found.map((x) => ({ x, n: looseKey(x.name) })).filter(({ n }) => {
+    if (k.length < 4 || n.length < 4 || !(n.startsWith(k) || k.startsWith(n))) return false;
+    const rest = n.length > k.length ? n.slice(k.length) : k.slice(n.length);
+    return !/^(\d|i{1,3}$|iv$|v$|vi{1,3}$|ix$|x$)/.test(rest);
+  }).sort((p, q) => Math.abs(p.n.length - k.length) - Math.abs(q.n.length - k.length));
+  return near[0]?.x || null;
 }
 
 function Progress({ done, total, label }: { done: number; total: number; label: string }) {
@@ -528,7 +555,10 @@ const col = (r: Record<string, string>, ...names: string[]) => {
   }
   return "";
 };
-const isoDate = (s: string) => s.match(/\d{4}-\d{2}-\d{2}/)?.[0] || null;
+const isoDate = (s: string) => {
+  const d = s.match(/\d{4}-\d{2}-\d{2}/)?.[0];
+  return d && +d.slice(0, 4) > 1970 && +d.slice(0, 4) <= 2100 && !isNaN(Date.parse(d)) ? d : null;
+};
 // "12:34:56", "12h 30m", "3600" (saniye) ya da "12.5" (saat)
 function seconds(s: string, unitSec = false) {
   if (!s) return null;
@@ -582,7 +612,8 @@ function ListImport() {
   const [step, setStep] = useState<{ done: number; total: number } | null>(null);
   const s = SOURCES[src];
   const fileMode = src === "hltb" || src === "playnite";
-  const haveTitle = new Set(mine.filter((e) => e.type === "game").map((e) => norm(e.title)));
+  const myGames = mine.filter((e) => e.type === "game");
+  const byKey = new Map(myGames.map((e) => [looseKey(e.title), e]));
 
   function pick(k: string) {
     setSrc(k);
@@ -616,19 +647,47 @@ function ListImport() {
     .map((title) => ({ title, status: null, rating: 0, sec: null, date: null, started: null, platform: "", store: "", notes: "" }));
   const all = fileMode ? csv || [] : pasted;
   const seen = new Set<string>();
-  const fresh = all.filter((g) => { const k = norm(g.title); if (haveTitle.has(k) || seen.has(k)) return false; seen.add(k); return true; });
+  const unique = all.filter((g) => { const k = looseKey(g.title); if (!k || seen.has(k)) return false; seen.add(k); return true; });
+  const known = unique.filter((g) => byKey.has(looseKey(g.title))).length; // ada göre kütüphanede olanlar
+
+  // Kütüphanede olan oyunun sadece boş alanlarını doldur (senin girdiğin hiçbir şeyin üstüne yazmaz)
+  function patchFor(e: Entry, g: ListGame): Row | null {
+    const p: Row = {};
+    if (!e.date && g.date) p.date = g.date;
+    if (!e.started_on && g.started) p.started_on = g.started;
+    if (!e.rating && g.rating) p.rating = g.rating;
+    if (!e.playtime_sec && !e.hours && g.sec) { p.playtime_sec = g.sec; p.hours = Math.round(g.sec / 360) / 10; }
+    if (!e.notes?.trim() && g.notes) p.notes = g.notes;
+    if (!e.platform && (g.platform || platform)) p.platform = (g.platform || platform).slice(0, 60);
+    // Dosyada durum yazıyorsa: Kategorisiz ya da Planlandı olanı güncelle
+    if (g.status && g.status !== e.status && (e.status === "owned" || (e.status === "planned" && g.status !== "planned"))) p.status = g.status;
+    return Object.keys(p).length ? p : null;
+  }
 
   async function run() {
-    if (!me || !fresh.length) return;
+    if (!me || !unique.length) return;
     setBusy(true);
-    setStep({ done: 0, total: fresh.length });
+    setStep({ done: 0, total: unique.length });
     try {
-      const myRawg = new Set(mine.map((e) => e.rawg_id).filter(Boolean));
-      const rows = (await pool(fresh, async (g): Promise<Row | null> => {
-        const found = (await rawg<{ results?: RawgGame[] }>("games", { search: g.title, search_precise: "true", page_size: 3 }).catch(() => ({ results: [] }))).results || [];
-        const hit = found.find((x) => norm(x.name) === norm(g.title)) || found[0];
-        if (hit && myRawg.has(hit.id)) return null;
-        if (hit) myRawg.add(hit.id);
+      const byRawg = new Map(myGames.filter((e) => e.rawg_id).map((e) => [e.rawg_id!, e]));
+      const used = new Set<number>(); // bu aktarımda aynı oyuna iki kez eşleşmesin
+      const updates: { id: string; patch: Row }[] = [];
+      let same = 0;
+      const rows = (await pool(unique, async (g): Promise<Row | null> => {
+        let old = byKey.get(looseKey(g.title));
+        let hit: RawgGame | null = null;
+        if (!old) {
+          const found = (await rawg<{ results?: RawgGame[] }>("games", { search: g.title, search_precise: "true", page_size: 5 }).catch(() => ({ results: [] }))).results || [];
+          hit = similarHit(found, g.title);
+          if (hit) old = byRawg.get(hit.id);
+        }
+        if (old) {
+          const patch = patchFor(old, g);
+          if (patch) updates.push({ id: old.id, patch }); else same++;
+          return null;
+        }
+        if (hit && used.has(hit.id)) { same++; return null; }
+        if (hit) used.add(hit.id);
         const st = g.status || status;
         return {
           type: "game", title: (hit?.name || g.title).slice(0, 200), rawg_id: hit?.id ?? null, year: parseInt(hit?.released || "") || null,
@@ -638,9 +697,18 @@ function ListImport() {
           platform: (g.platform || platform || "").slice(0, 60) || null, store: (g.store || s.store || "").slice(0, 60) || null,
           updated_at: new Date(g.date ? g.date + "T12:00" : Date.now()).toISOString(),
         };
-      }, (done) => setStep({ done, total: fresh.length }))).filter(Boolean) as Row[];
-      await insertAll(rows, me.id);
-      toast(`${rows.length} oyun kütüphanene eklendi`);
+      }, (done) => setStep({ done, total: unique.length }))).filter(Boolean) as Row[];
+      const failed = await insertAll(rows, me.id);
+      setStep({ done: 0, total: updates.length });
+      let upFailed = 0;
+      await pool(updates, async ({ id, patch }) => { if ((await sb().from("entries").update(patch).eq("id", id)).error) upFailed++; },
+        (done) => setStep({ done, total: updates.length }));
+      toast([
+        `${rows.length - failed} yeni oyun eklendi`,
+        updates.length ? `${updates.length - upFailed} oyunun tarih / puan / süresi güncellendi` : "",
+        same ? `${same} tanesi zaten aynıydı` : "",
+        failed + upFailed ? `${failed + upFailed} tanesi kaydedilemedi` : "",
+      ].filter(Boolean).join(", "));
       setText("");
       setCsv(null);
       refresh();
@@ -680,19 +748,21 @@ function ListImport() {
       {all.length > 0 && (
         <>
           <div className="import-bar" style={{ marginTop: 10 }}>
-            <span><b>{all.length}</b> oyun{all.length - fresh.length ? ` · ${all.length - fresh.length} tanesi zaten kütüphanende` : ""}</span>
+            <span><b>{unique.length}</b> oyun{known ? ` · ${known} tanesi zaten kütüphanende: tekrar eklenmez, boş kalan tarih, puan ve süreleri doldurulur` : ""}</span>
           </div>
           {fileMode && (
             <div className="import-list">
-              {fresh.slice(0, 300).map((g) => (
-                <label key={g.title}><span className="name">{g.title}</span><small>{statusLabel(g.status || status, "game")}{g.rating ? ` · ${g.rating}/10` : ""}</small></label>
+              {unique.slice(0, 300).map((g) => (
+                <label key={g.title} className={byKey.has(looseKey(g.title)) ? "off" : ""}><span className="name">{g.title}</span>
+                  <small>{byKey.has(looseKey(g.title)) ? "kütüphanende" : statusLabel(g.status || status, "game")}{g.date ? ` · ${g.date}` : ""}{g.rating ? ` · ${g.rating}/10` : ""}</small></label>
               ))}
+              {unique.length > 300 && <label className="off"><span className="name muted">…ve {unique.length - 300} oyun daha (hepsi aktarılır)</span></label>}
             </div>
           )}
           {step && <Progress done={step.done} total={step.total} label="Oyunlar eşleştiriliyor…" />}
           <div className="actions">
             {fileMode && <button className="btn" disabled={busy} onClick={() => setCsv(null)}>Vazgeç</button>}
-            <button className="btn primary" disabled={busy || !fresh.length} onClick={run}>{busy ? "Ekleniyor…" : `${fresh.length} oyunu ekle`}</button>
+            <button className="btn primary" disabled={busy || !unique.length} onClick={run}>{busy ? "Aktarılıyor…" : known ? `Aktar (${unique.length - known} yeni, ${known} güncelleme)` : `${unique.length} oyunu ekle`}</button>
           </div>
         </>
       )}

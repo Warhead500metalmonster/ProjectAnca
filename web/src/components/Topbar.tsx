@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Avatar } from "./ui";
 import { useApp } from "./AppProvider";
+import { sb } from "@/lib/supabase";
 
 export const NOTIF_SEEN = "ancalog.notifSeen";
 
@@ -62,7 +63,7 @@ export function Topbar() {
               {notifAt && notifAt > seen && <span className="dot" />}
             </Link>
             <button className="btn primary" onClick={() => openForm(null)}>+ Ekle</button>
-            <Link href={mine} title="Profilim"><Avatar p={me} /></Link>
+            <UserMenu mine={mine} isAdmin={isAdmin} />
           </>
         ) : (
           <>
@@ -72,5 +73,46 @@ export function Topbar() {
         )}
       </div>
     </header>
+  );
+}
+
+// Sağ üstteki profil fotoğrafı: tıklayınca profil, ayarlar ve çıkış menüsü açılır
+function UserMenu({ mine, isAdmin }: { mine: string; isAdmin: boolean }) {
+  const { me } = useApp();
+  const path = usePathname();
+  const [openAt, setOpenAt] = useState<string | null>(null);
+  const open = openAt === path; // başka sayfaya geçince kendiliğinden kapanır
+  const box = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent ? e.key === "Escape" : !box.current?.contains(e.target as Node)) setOpenAt(null);
+    };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", close);
+    return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", close); };
+  }, [open]);
+
+  if (!me) return null;
+  return (
+    <div className="user-menu" ref={box}>
+      <button className="avatar-btn" aria-haspopup="menu" aria-expanded={open} title="Hesabım" onClick={() => setOpenAt(open ? null : path)}>
+        <Avatar p={me} />
+      </button>
+      {open && (
+        <div className="menu" role="menu">
+          <div className="menu-head"><b>{me.display_name || me.username}</b><span>@{me.username}</span></div>
+          <Link role="menuitem" href={mine}>Profilim</Link>
+          <Link role="menuitem" href="/settings">Ayarlar</Link>
+          <Link role="menuitem" href={`${mine}/badges`}>Rozetlerim</Link>
+          <Link role="menuitem" href="/import">İçe aktar</Link>
+          {isAdmin && <Link role="menuitem" href="/admin">Yönetim paneli</Link>}
+          <Link role="menuitem" href="/help">Nasıl kullanılır?</Link>
+          <hr />
+          <button role="menuitem" className="danger" onClick={() => { setOpenAt(null); sb().auth.signOut(); }}>Çıkış yap</button>
+        </div>
+      )}
+    </div>
   );
 }
