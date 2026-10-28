@@ -907,3 +907,11 @@ p.count-note { margin: -4px 0 12px; }
 .top-link:hover { color: var(--text); }
 @media (max-width: 900px) { .bento { grid-template-columns: 1fr 1fr; } .bento .tile.big { grid-column: span 2; grid-row: auto; } }
 @media (max-width: 560px) { .bento { grid-template-columns: 1fr; } .bento .tile.big { grid-column: auto; } .hero2 { min-height: 520px; } .mq-row img { width: 110px; } }
+
+/* Profil şarkısında ziyaretçinin ses ayarı */
+.song-vol { display: flex; align-items: center; gap: 4px; flex: none; }
+.song-vol button { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 4px; display: grid; place-items: center; }
+.song-vol button:hover { color: var(--text); }
+.song-vol svg { width: 18px; height: 18px; fill: currentColor; }
+.song-vol input { width: 80px; accent-color: var(--accent); cursor: pointer; }
+@media (max-width: 480px) { .song-vol input { width: 60px; } }

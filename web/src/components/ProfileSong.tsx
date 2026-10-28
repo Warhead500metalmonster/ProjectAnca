@@ -32,20 +32,27 @@ export function youtubeId(url?: string | null) {
 }
 
 const GESTURES = ["pointerdown", "keydown", "touchstart"] as const;
+// Ziyaretçinin seçtiği ses seviyesi bütün profillerde geçerli olsun diye tarayıcıda saklanır
+const LEVEL_KEY = "ancalog.songVolume";
+const savedLevel = () => { try { const v = localStorage.getItem(LEVEL_KEY); return v === null ? null : Number(v); } catch { return null; } };
 
 export function ProfileSong({ url, title, volume }: { url: string; title?: string | null; volume?: number | null }) {
   const host = useRef<HTMLDivElement>(null);
+  const player = useRef<any>(null);
   const [state, setState] = useState<"loading" | "playing" | "error">("loading");
   const id = youtubeId(url);
-  const vol = Math.min(100, Math.max(1, volume || 15));
+  const vol = Math.min(100, Math.max(1, volume || 15)); // profil sahibinin seçtiği ses
+  const [level, setLevel] = useState(() => savedLevel() ?? vol); // ziyaretçinin ayarladığı ses
+  const levelRef = useRef(level);
+  const lastLevel = useRef(level || vol); // sessize alıp geri açınca dönülecek ses
 
   useEffect(() => {
     if (!id || !host.current) return;
-    let dead = false, player: any = null, ready = false;
+    let dead = false, ready = false;
     const target = document.createElement("div"); // YouTube bu kutuyu kendi iframe'iyle değiştirir; React'in kutusu bozulmasın
     host.current.appendChild(target);
 
-    const loud = () => { player.unMute(); player.setVolume(vol); player.playVideo(); };
+    const loud = () => { const p = player.current; p.unMute(); p.setVolume(levelRef.current); p.playVideo(); };
     // Ziyaretçinin ilk dokunuşunda sesi aç
     const onGesture = () => {
       if (!ready) return; // çalar hazır değilse bir sonraki dokunuşu bekle
@@ -56,22 +63,22 @@ export function ProfileSong({ url, title, volume }: { url: string; title?: strin
 
     loadYouTube().then((YT) => {
       if (dead) return;
-      player = new YT.Player(target, {
+      player.current = new YT.Player(target, {
         videoId: id, width: 200, height: 200,
         // Sessiz otomatik oynatmaya her tarayıcı izin verir
         playerVars: { autoplay: 1, mute: 1, loop: 1, playlist: id, controls: 0, disablekb: 1, playsinline: 1, rel: 0 },
         events: {
           onReady: () => {
             ready = true;
-            player.setVolume(vol);
-            player.playVideo();
+            player.current.setVolume(levelRef.current);
+            player.current.playVideo();
             if (navigator.userActivation?.hasBeenActive) onGesture(); // siteden tıklayıp geldiyse ses hemen açık
           },
           // Hep çalsın: herhangi bir sebeple durursa yeniden başlat
           onStateChange: (e: any) => {
             if (dead) return;
             if (e.data === 1) setState("playing");
-            else if (e.data === 2 || e.data === 0 || e.data === 5) player.playVideo();
+            else if (e.data === 2 || e.data === 0 || e.data === 5) player.current.playVideo();
           },
           onError: () => { if (!dead) setState("error"); },
         },
@@ -80,10 +87,22 @@ export function ProfileSong({ url, title, volume }: { url: string; title?: strin
     return () => {
       dead = true;
       GESTURES.forEach((g) => document.removeEventListener(g, onGesture, true));
-      player?.destroy?.();
+      player.current?.destroy?.();
+      player.current = null;
       target.remove();
     };
-  }, [id, vol]);
+  }, [id]);
+
+  function changeLevel(v: number) {
+    setLevel(v);
+    levelRef.current = v;
+    if (v) lastLevel.current = v;
+    try { localStorage.setItem(LEVEL_KEY, String(v)); } catch { /* yok say */ }
+    const p = player.current;
+    if (!p?.setVolume) return;
+    p.setVolume(v);
+    if (v) p.unMute();
+  }
 
   if (!id || state === "error") return null;
 
@@ -94,6 +113,16 @@ export function ProfileSong({ url, title, volume }: { url: string; title?: strin
       <div className="song-text">
         <small>{state === "playing" ? "Şu an çalıyor" : "Profil şarkısı"}</small>
         <b title={title || ""}>{title || "Profil şarkısı"}</b>
+      </div>
+      <div className="song-vol">
+        <button onClick={() => changeLevel(level ? 0 : lastLevel.current)} aria-label={level ? "Sessize al" : "Sesi aç"} title={level ? "Sessize al" : "Sesi aç"}>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 9h4l5-4v14l-5-4H4z" />
+            {level ? <path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              : <path d="M16 9l6 6m0-6l-6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />}
+          </svg>
+        </button>
+        <input type="range" min={0} max={100} value={level} onChange={(e) => changeLevel(Number(e.target.value))} aria-label="Ses seviyesi" />
       </div>
     </div>
   );
