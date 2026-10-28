@@ -65,10 +65,12 @@ function Shell({ data, children }: { data: ProfileData; children: React.ReactNod
   const theme = PROFILE_THEMES[profile.profile_theme || ""];
   const accent = theme?.accent || (/^#[0-9a-f]{6}$/i.test(profile.accent || "") ? profile.accent! : null);
   const bg = profile.bg_url?.startsWith("https://") ? profile.bg_url : null;
-  const tint = theme?.tint || (accent ? `color-mix(in srgb, ${accent} 14%, rgba(10, 12, 14, .86))` : bg ? "rgba(10, 12, 14, .84)" : null);
+  // Şeffaf profil: arka plan resmi her yerde görünür, kutular yarı saydam durur (Steam profili gibi)
+  const glass = profile.profile_theme === "glass" && !!bg;
+  const tint = glass ? null : theme?.tint || (accent ? `color-mix(in srgb, ${accent} 14%, rgba(10, 12, 14, .86))` : bg ? "rgba(10, 12, 14, .84)" : null);
   const vars = { ...(accent && { "--pa": accent }), ...(tint && { "--ptint": tint }) } as React.CSSProperties;
   const banner = profile.banner_url && safeUrl(profile.banner_url);
-  const tab = path.endsWith("/lists") ? "lists" : path.endsWith("/stats") ? "stats" : path.endsWith("/compare") ? "compare" : "library";
+  const tab = path.endsWith("/lists") ? "lists" : path.endsWith("/stats") ? "stats" : path.endsWith("/compare") ? "compare" : path.endsWith("/badges") ? "badges" : "library";
   const song = profile.song_url || null; // profilde arkada çalan şarkı
   const match = me && !isMe ? compat(mine, entries).score : null;
 
@@ -77,11 +79,13 @@ function Shell({ data, children }: { data: ProfileData; children: React.ReactNod
       {bg && (/\.(mp4|webm)(\?|$)/i.test(bg)
         ? <video className="profile-bg" src={bg} autoPlay muted loop playsInline aria-hidden="true" />
         : <div className="profile-bg" style={{ backgroundImage: cssUrl(bg) }} aria-hidden="true" />)}
-      {bg && <div className="profile-bg-shade" aria-hidden="true" />}
-      <div className={`profile ${accent ? "has-pa" : ""} ${tint ? "themed" : ""}`} style={vars}>
-        <div className={`profile-banner ${banner ? "img" : ""}`} style={banner ? { backgroundImage: cssUrl(banner) } : undefined}>
-          {!banner && <CoverMarquee covers={[...new Set(entries.map((e) => safeUrl(e.cover)).filter(Boolean))].slice(0, 24)} />}
-        </div>
+      {bg && <div className={`profile-bg-shade ${glass ? "light" : ""}`} aria-hidden="true" />}
+      <div className={`profile ${accent ? "has-pa" : ""} ${tint ? "themed" : ""} ${glass ? "glass" : ""}`} style={vars}>
+        {!glass && (
+          <div className={`profile-banner ${banner ? "img" : ""}`} style={banner ? { backgroundImage: cssUrl(banner) } : undefined}>
+            {!banner && <CoverMarquee covers={[...new Set(entries.map((e) => safeUrl(e.cover)).filter(Boolean))].slice(0, 24)} />}
+          </div>
+        )}
         <div className="profile-head">
           <Avatar p={profile} cls="lg" />
           <div className="profile-info">
@@ -97,7 +101,7 @@ function Shell({ data, children }: { data: ProfileData; children: React.ReactNod
               </>}
           </div>
         </div>
-        <BadgeChips id={profile.id} />
+        <BadgeChips id={profile.id} max={3} more={`/u/${profile.username}/badges`} />
         {profile.bio && <p className="profile-bio">{profile.bio}</p>}
         <div className="profile-meta">
           <span><b>{entries.length}</b> kayıt</span>
@@ -111,6 +115,7 @@ function Shell({ data, children }: { data: ProfileData; children: React.ReactNod
           <Link href={base} className={tab === "library" ? "active" : ""}>Kütüphane</Link>
           <Link href={`${base}/lists`} className={tab === "lists" ? "active" : ""}>Listeler</Link>
           <Link href={`${base}/stats`} className={tab === "stats" ? "active" : ""}>İstatistikler</Link>
+          <Link href={`${base}/badges`} className={tab === "badges" ? "active" : ""}>Rozetler</Link>
           {me && !isMe && <Link href={`${base}/compare`} className={tab === "compare" ? "active" : ""}>Uyum</Link>}
         </nav>
         {children}

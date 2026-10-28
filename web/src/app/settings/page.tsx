@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Profile } from "@/lib/types";
-import { ACCENTS, PROFILE_THEMES, SOCIALS } from "@/lib/constants";
+import { ACCENTS, PROFILE_THEMES, SOCIALS, TYPES, statusLabel } from "@/lib/constants";
 import { cssUrl, today } from "@/lib/format";
 import { fetchEntries } from "@/lib/data";
 import { q, sb } from "@/lib/supabase";
@@ -44,7 +44,7 @@ function SettingsForm({ me }: { me: Profile }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [accent, setAccent] = useState(me.accent || "");
-  const [theme, setTheme] = useState(me.profile_theme && PROFILE_THEMES[me.profile_theme] ? me.profile_theme : "");
+  const [theme, setTheme] = useState(me.profile_theme && (PROFILE_THEMES[me.profile_theme] || me.profile_theme === "glass") ? me.profile_theme : "");
   const [bgUrl, setBgUrl] = useState(me.bg_url || "");
   const [scale, setScale] = useState<5 | 10>(me.rating_scale === 10 ? 10 : 5);
   const [siteColor, setSiteColor] = useState(me.site_color || "");
@@ -108,15 +108,6 @@ function SettingsForm({ me }: { me: Profile }) {
     }
   }
 
-  async function exportMine() {
-    const data = await fetchEntries(me.id);
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
-    a.download = `ancalog-${me.username}-${today()}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  }
-
   return (
     <form className="auth settings" onSubmit={submit}>
       <h1>Profili düzenle</h1>
@@ -144,19 +135,27 @@ function SettingsForm({ me }: { me: Profile }) {
           style={{ "--t-tint": "var(--panel)", "--t-accent": "#58a98a" } as React.CSSProperties}>
           <span className="prev"><i /><i /></span>Varsayılan
         </button>
+        <button type="button" className={`theme-card glass-card ${theme === "glass" ? "on" : ""}`} onClick={() => setTheme("glass")}
+          style={{ "--t-tint": "rgba(0, 0, 0, .25)", "--t-accent": accent || "#58a98a", ...(bgUrl.trim().startsWith("https://") && { backgroundImage: cssUrl(bgUrl.trim()) }) } as React.CSSProperties}>
+          <span className="prev"><i /><i /></span>Şeffaf
+        </button>
         {Object.entries(PROFILE_THEMES).map(([k, t]) => (
           <button type="button" key={k} className={`theme-card ${theme === k ? "on" : ""}`} onClick={() => { setTheme(k); setAccent(""); }}
             style={{ "--t-tint": t.tint, "--t-accent": t.accent } as React.CSSProperties}>
             <span className="prev"><i /><i /></span>{t.name}
           </button>
         ))}
-        <label className={`theme-card ${!theme && accent ? "on" : ""}`}
+        <label className={`theme-card ${(!theme || theme === "glass") && accent ? "on" : ""}`}
           style={{ "--t-tint": `color-mix(in srgb, ${accent || "#8b5cf6"} 14%, rgba(10, 12, 14, .86))`, "--t-accent": accent || "#8b5cf6" } as React.CSSProperties}>
           <span className="prev"><i /><i /></span>Özel renk
-          <input type="color" value={accent || "#8b5cf6"} onChange={(e) => { setTheme(""); setAccent(e.target.value); }} />
+          <input type="color" value={accent || "#8b5cf6"} onChange={(e) => { if (theme !== "glass") setTheme(""); setAccent(e.target.value); }} />
         </label>
       </div>
 
+      {theme === "glass" && (
+        <p className="muted small">Şeffaf profilde arka plan resmin Steam&apos;deki gibi bütün profilde görünür, kutular yarı saydam olur.
+          {!bgUrl.trim().startsWith("https://") && <b> Bunun için aşağıya bir arka plan resmi linki koy.</b>} Renk için &quot;Özel renk&quot;i de seçebilirsin.</p>
+      )}
       <div className="field">
         <label htmlFor="p-bg">Arka plan resmi <span className="muted">· Steam&apos;deki gibi profilinin arkasını kaplar (resim, GIF ya da .mp4 / .webm linki)</span></label>
         <input id="p-bg" type="url" placeholder="https://…" value={bgUrl} onChange={(e) => setBgUrl(e.target.value)} />
@@ -214,13 +213,110 @@ function SettingsForm({ me }: { me: Profile }) {
       </div>
       <hr style={{ border: 0, borderTop: "1px solid var(--border)", width: "100%" }} />
       <div className="actions">
-        <Link className="btn" href="/import">Steam / Letterboxd&apos;dan içe aktar</Link>
-        <button type="button" className="btn" onClick={exportMine}>Verilerimi indir (JSON)</button>
+        <Link className="btn" href="/import">Başka siteden içe aktar</Link>
         <span className="spacer" />
         <button type="button" className="btn danger" onClick={() => sb().auth.signOut()}>Çıkış yap</button>
       </div>
+      <ExportData me={me} />
+      <DeleteAllLogs me={me} />
       <DeleteAccount me={me} />
     </form>
+  );
+}
+
+function download(name: string, text: string, type: string) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+const csvCell = (v: unknown) => {
+  const s = v === null || v === undefined ? "" : String(v);
+  return /[",\n\r;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
+// Excel Türkçe karakterleri doğru göstersin diye başta BOM var
+const toCsv = (head: string[], rows: unknown[][]) => "\ufeff" + [head, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n");
+
+// Verilerini istediğin an, istediğin biçimde indir: siteden ayrılan da her şeyini yanında götürür
+function ExportData({ me }: { me: Profile }) {
+  const { toast } = useApp();
+  const [busy, setBusy] = useState("");
+  const name = (ext: string, part = "") => `ancalog-${me.username}${part}-${today()}.${ext}`;
+
+  async function run(kind: "csv" | "json" | "letterboxd") {
+    setBusy(kind);
+    try {
+      const entries = await fetchEntries(me.id);
+      if (kind === "csv") {
+        download(name("csv"), toCsv(
+          ["Tür", "Ad", "Yıl", "Yapımcı / Sanatçı", "Durum", "Puan (10 üzerinden)", "Bitirme tarihi", "Başlama tarihi", "Süre (saat)", "Platform", "Nerede", "İlerleme", "Favori", "İnceleme"],
+          entries.map((e) => [TYPES[e.type].label, e.title, e.year, e.creator, statusLabel(e.status, e.type), e.rating || "", e.date, e.started_on,
+            e.playtime_sec ? Math.round(e.playtime_sec / 360) / 10 : e.hours, e.platform, e.store, e.progress, e.favorite ? "Evet" : "", e.notes]),
+        ), "text/csv;charset=utf-8");
+      } else if (kind === "letterboxd") {
+        // Letterboxd'un içe aktarma biçimi: letterboxd.com/import
+        const movies = entries.filter((e) => e.type === "movie" && e.status !== "planned");
+        if (!movies.length) return toast("Kütüphanende izlenmiş film yok.");
+        download(name("csv", "-letterboxd"), toCsv(["Title", "Year", "Rating10", "WatchedDate", "Review"],
+          movies.map((e) => [e.title, e.year, e.rating || "", e.date, e.notes])), "text/csv;charset=utf-8");
+      } else {
+        const [profile, lists, follows] = await Promise.all([
+          q(sb().from("profiles").select("*").eq("id", me.id).single()),
+          q(sb().from("lists").select("*, list_items(*)").eq("user_id", me.id)).catch(() => []),
+          q(sb().from("follows").select("following_id, created_at").eq("follower_id", me.id)).catch(() => []),
+        ]);
+        download(name("json"), JSON.stringify({ exported_at: new Date().toISOString(), profile, entries, lists, follows }, null, 2), "application/json");
+      }
+      toast("İndirildi");
+    } catch (err) {
+      toast("İndirilemedi: " + (err as Error).message);
+    } finally {
+      setBusy("");
+    }
+  }
+
+  return (
+    <div className="export-box">
+      <h3 className="set-h">Verilerimi indir</h3>
+      <p className="muted small">Kayıtların her zaman senin. İstediğin an indirip başka bir yere taşıyabilirsin.</p>
+      <div className="actions">
+        <button type="button" className="btn" disabled={!!busy} onClick={() => run("csv")}>{busy === "csv" ? "Hazırlanıyor…" : "Excel / CSV"}</button>
+        <button type="button" className="btn" disabled={!!busy} onClick={() => run("json")}>{busy === "json" ? "Hazırlanıyor…" : "Tam yedek (JSON)"}</button>
+        <button type="button" className="btn" disabled={!!busy} onClick={() => run("letterboxd")}>{busy === "letterboxd" ? "Hazırlanıyor…" : "Filmlerim (Letterboxd için)"}</button>
+      </div>
+    </div>
+  );
+}
+
+// Sıfırdan başlamak isteyenler için: hesap kalır, bütün kayıtlar silinir. İki kez sorulur.
+function DeleteAllLogs({ me }: { me: Profile }) {
+  const { mine, toast, refresh } = useApp();
+  const [busy, setBusy] = useState(false);
+
+  async function wipe() {
+    if (!mine.length) return toast("Silinecek kaydın yok.");
+    if (!confirm(`Kütüphanendeki ${mine.length} kaydın tamamı silinecek (puanlar, incelemeler, süreler, favoriler ve bunlara gelen beğeni ve yorumlar dahil). Emin misin?`)) return;
+    if (!confirm("Gerçekten emin misin? Bu işlem geri alınamaz. Hesabın, listelerin ve takiplerin kalır, kayıtların tamamen silinir.")) return;
+    setBusy(true);
+    try {
+      await q(sb().from("entries").delete().eq("user_id", me.id));
+      toast("Bütün kayıtların silindi. Sıfırdan başlayabilirsin.");
+      refresh();
+    } catch (err) {
+      toast("Silinemedi: " + (err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <details className="danger-zone">
+      <summary>Bütün kayıtlarımı sil (sıfırdan başla)</summary>
+      <p>Hesabın açık kalır; kütüphanendeki <b>{mine.length}</b> kaydın tamamı silinir. İstersen önce yukarıdaki <b>Verilerimi indir</b> ile yedek al.</p>
+      <button type="button" className="btn danger" disabled={busy} onClick={wipe}>{busy ? "Siliniyor…" : "Bütün kayıtlarımı sil"}</button>
+    </details>
   );
 }
 

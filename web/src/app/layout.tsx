@@ -33,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <span>Ancalog</span>
             <span>Veriler: <a href="https://rawg.io" target="_blank" rel="noopener">RAWG</a> · <a href="https://www.themoviedb.org" target="_blank" rel="noopener">TMDB</a> · <a href="https://anilist.co" target="_blank" rel="noopener">AniList</a> · <a href="https://music.apple.com" target="_blank" rel="noopener">Apple Music</a> · <a href="https://www.deezer.com" target="_blank" rel="noopener">Deezer</a></span>
             <span className="muted">Bu site TMDB API&apos;sini kullanır ancak TMDB tarafından onaylanmış değildir.</span>
+            <span><Link href="/about">Biz kimiz?</Link> · <Link href="/help">Nasıl kullanılır?</Link> · <Link href="/forum">Forum</Link> · <Link href="/chat">Site sahibine yaz</Link></span>
             <span><Link href="/terms">Kullanım Koşulları</Link> · <Link href="/privacy">Gizlilik ve KVKK</Link> · © 2026 Ancalog</span>
           </footer>
         </AppProvider>

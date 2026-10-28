@@ -13,6 +13,8 @@ import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { CoverMarquee } from "@/components/CoverMarquee";
 import { Goals } from "@/components/Goals";
+import { NextBadges } from "@/components/profile/BadgesTab";
+import { GettingStarted } from "@/components/GettingStarted";
 import { Avatar, EntryCard, Feed, Stars, Stats, displayName } from "@/components/ui";
 
 interface LocalEntry { title?: string; type?: string; year?: string; creator?: string; status?: string; date?: string; rating?: string; cover?: string; notes?: string; updated?: number }
@@ -180,8 +182,12 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
           <button className="btn ghost" onClick={dismissLocal}>Yoksay</button>
         </div>
       )}
+      <GettingStarted user={user} mine={mine} />
       <section className="section"><div className="stats"><Stats list={mine} /></div></section>
-      <section className="section"><Goals profile={user} entries={mine} isMe /></section>
+      <section className="section home-goals">
+        <Goals profile={user} entries={mine} isMe />
+        <NextBadges userId={user.id} username={user.username} entries={mine} />
+      </section>
       {active.length > 0 && (
         <section className="section">
           <div className="section-head"><h2>Devam ettiklerin</h2><Link href={`/u/${user.username}`}>Kütüphanem →</Link></div>

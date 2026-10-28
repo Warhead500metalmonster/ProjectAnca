@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Entry, EntryType, Item, Profile, RawgGame } from "@/lib/types";
 import { TYPES, TYPE_KEYS } from "@/lib/constants";
 import { avgText, contentHref, contentKey, likeEsc, smallImage } from "@/lib/format";
-import { anilist, searchMusic, tmdb, tmdbImage, SEARCH_CREDITS } from "@/lib/data";
+import { anilist, fetchAll, searchMusic, tmdb, tmdbImage, SEARCH_CREDITS } from "@/lib/data";
 import { rawg } from "@/lib/rawg";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
@@ -177,12 +177,15 @@ async function findUsers(text: string): Promise<Profile[]> {
 }
 
 async function findLocal(text: string, type: EntryType | "all", from: string, to: string): Promise<Agg[]> {
-  let req = sb().from("entries").select("type, title, year, creator, cover, rawg_id, ext_id, status, rating").limit(3000);
-  if (type !== "all") req = req.eq("type", type);
-  if (/^\d{4}$/.test(from)) req = req.gte("year", Number(from));
-  if (/^\d{4}$/.test(to)) req = req.lte("year", Number(to));
-  if (text.trim()) req = req.ilike("title", `%${likeEsc(text.trim())}%`);
-  return aggregate(await q<Entry[]>(req).catch(() => []));
+  const rows = await fetchAll<Entry>((a, b) => {
+    let req = sb().from("entries").select("type, title, year, creator, cover, rawg_id, ext_id, status, rating").order("id").range(a, b);
+    if (type !== "all") req = req.eq("type", type);
+    if (/^\d{4}$/.test(from)) req = req.gte("year", Number(from));
+    if (/^\d{4}$/.test(to)) req = req.lte("year", Number(to));
+    if (text.trim()) req = req.ilike("title", `%${likeEsc(text.trim())}%`);
+    return req;
+  }, 10000).catch(() => []);
+  return aggregate(rows);
 }
 
 // Dış kaynaktan arama: oyun RAWG, film/dizi TMDB, anime AniList, müzik iTunes

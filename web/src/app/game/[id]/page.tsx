@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import type { Entry, PageEdit, RawgGame, RawgRef } from "@/lib/types";
 import { ENTRY_COLS, statusLabel } from "@/lib/constants";
-import { avgText, cssUrl, fmtDate, fmtDur, num, playSec, resized, safeUrl, scoreText, smallImage } from "@/lib/format";
+import { avgText, cssUrl, fmtDate, fmtDur, forumHref, num, playSec, resized, safeUrl, scoreText, smallImage } from "@/lib/format";
 import { rawg } from "@/lib/rawg";
 import { fetchPageEdit } from "@/lib/data";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
@@ -97,6 +97,7 @@ export default function GamePage() {
               : mine ? <button className="btn primary wide" onClick={() => openForm(mine)}>{statusLabel(mine.status, "game")} · Düzenle</button>
               : g ? <button className="btn primary wide" onClick={() => openForm(null, { game: g })}>+ Kütüphaneme ekle</button> : null}
             {item.title && <button className="btn wide" onClick={() => pickList(item)}>Listeye ekle</button>}
+            {item.title && <Link className="btn wide" href={forumHref(item)}>Forumda tartış</Link>}
             {isAdmin && <button className="btn wide ghost" onClick={() => setEditing(true)}>Sayfayı düzenle</button>}
           </div>
           <div className="gh-main">

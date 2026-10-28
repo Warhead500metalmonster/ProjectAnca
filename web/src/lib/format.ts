@@ -59,6 +59,11 @@ export const contentKey = (x: Pick<Item, "type" | "title" | "rawg_id">) =>
 export const contentHref = (x: Pick<Item, "type" | "title" | "rawg_id" | "ext_id">) =>
   x.type === "game" && x.rawg_id ? `/game/${x.rawg_id}`
     : `/c/${x.type}/${encodeURIComponent(x.title)}${x.ext_id ? `?ext=${encodeURIComponent(x.ext_id)}` : ""}`;
+// Forumda bu içerikle ilgili konular (yeni konu açınca içerik hazır seçili gelir)
+export const forumHref = (x: Item) => "/forum?" + new URLSearchParams(Object.entries({
+  type: x.type, title: x.title, rawg: x.rawg_id ? String(x.rawg_id) : "", year: x.year ? String(x.year) : "",
+  creator: x.creator || "", cover: x.cover || "", ext: x.ext_id || "",
+}).filter(([, v]) => v)).toString();
 export const itemOf = (e: Item): Item => ({ type: e.type, title: e.title, year: e.year, creator: e.creator, cover: e.cover, rawg_id: e.rawg_id, ext_id: e.ext_id ?? null });
 
 // ilike içinde % _ \ harfiyen aransın

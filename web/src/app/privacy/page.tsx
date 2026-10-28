@@ -20,6 +20,7 @@ export default function Privacy() {
           <li>Herkese açık olan: profilin, kayıtların, puanların, incelemelerin, yorumların ve açık listelerin. Gizli listelerin ve mesajların yalnızca senin (ve mesajlaştığın kişinin).</li>
           <li>Hesabını istediğin an <b>Ayarlar → Hesabımı sil</b> ile kalıcı olarak silebilir, silmeden önce <b>Verilerimi indir</b> ile bir kopyasını alabilirsin.</li>
           <li>Steam&apos;den aktarırken Steam şifren istenmez; yalnızca herkese açık oyun listen okunur.</li>
+          <li>Yetkili makamlar kanuna uygun olarak isterse, mesajlar dahil kayıtlar onlarla paylaşılır. Herkes kendi yazdığından sorumludur.</li>
         </ul>
       </div>
 
@@ -50,6 +51,8 @@ export default function Privacy() {
         <li><b>Herkes:</b> profilin, kayıtların, puanların, incelemelerin, yorumların, rozetlerin ve açık listelerin. Bunlar giriş yapmamış ziyaretçilere de görünür.</li>
         <li><b>Sadece sen:</b> e-posta adresin, gizli listelerin, sadece senin gördüğün site rengi.</li>
         <li><b>Sen ve mesajlaştığın kişi:</b> mesajların. Mesajlar uçtan uca şifreli değildir; teknik olarak veritabanında saklanır. Site yöneticileri mesajları okumaz; yalnızca bir şikâyeti incelemek ya da kanuni bir zorunluluk gibi istisnai durumlarda bakılabilir.</li>
+        <li><b>Yetkili makamlar:</b> mahkemeler, savcılıklar, kolluk ve diğer yetkili kamu kurum ve kuruluşları kanuna uygun olarak talep ederse; hesap bilgilerin, paylaştığın içerikler,
+          mesaj kayıtların ve altyapı sağlayıcılarının tuttuğu teknik kayıtlar (giriş zamanları, IP adresleri gibi) bu makamlarla paylaşılır (KVKK m.8/2 ve m.28).</li>
         <li><b>Yöneticiler:</b> herkese açık içerikleri düzenleyebilir ya da kaldırabilir; e-posta adresini ve şifreni göremez.</li>
       </ul>
 
@@ -94,7 +97,7 @@ export default function Privacy() {
         aktarıldığı kişileri bilme, eksik ya da yanlışsa düzeltilmesini, silinmesini ya da yok edilmesini isteme, bunların aktarıldığı kişilere bildirilmesini isteme,
         otomatik sistemlerle analiz sonucu aleyhine bir sonuç çıkmasına itiraz etme ve zarara uğradıysan giderilmesini talep etme hakların vardır.</p>
       <ul>
-        <li>Bilgilerini <Link href="/settings">Ayarlar</Link>&apos;dan düzeltebilir, <b>Verilerimi indir</b> ile tümünün bir kopyasını alabilir, <b>Hesabımı sil</b> ile silebilirsin.</li>
+        <li>Bilgilerini <Link href="/settings">Ayarlar</Link>&apos;dan düzeltebilir, <b>Verilerimi indir</b> ile tümünün bir kopyasını Excel / CSV, JSON ya da Letterboxd biçiminde alıp başka bir yere taşıyabilir (veri taşınabilirliği), <b>Hesabımı sil</b> ile silebilirsin.</li>
         <li>Diğer talepler için site yöneticisine Ancalog üzerinden ulaş: <Link href="/u/arno4436">@arno4436</Link>. Talebin en geç 30 gün içinde ücretsiz olarak yanıtlanır.</li>
         <li>Yanıttan memnun kalmazsan <a href="https://www.kvkk.gov.tr" target="_blank" rel="noopener">Kişisel Verileri Koruma Kurulu</a>&apos;na şikâyette bulunabilirsin.</li>
       </ul>

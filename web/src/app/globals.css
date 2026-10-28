@@ -879,8 +879,8 @@ p.count-note { margin: -4px 0 12px; }
 /* ---------- Karşılama: tam genişlikte kayan kapak duvarı ---------- */
 .hero2 { position: relative; width: 100vw; margin: -24px calc(50% - 50vw) 0; min-height: 600px; display: grid; place-items: center; overflow: hidden; }
 .marquee { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 12px; transform: rotate(-4deg) scale(1.15); opacity: .5; }
-.mq-row { display: flex; gap: 12px; width: max-content; padding-right: 12px; animation: mq 90s linear infinite; }
-.mq-row.rev { animation-direction: reverse; animation-duration: 110s; }
+.mq-row { display: flex; gap: 12px; width: max-content; padding-right: 12px; animation: mq 260s linear infinite; will-change: transform; }
+.mq-row.rev { animation-direction: reverse; animation-duration: 300s; }
 .mq-row img { width: 150px; aspect-ratio: 2 / 3; object-fit: cover; border-radius: var(--radius); flex: none; background: var(--panel-2); }
 @keyframes mq { to { transform: translateX(-50%); } }
 .hero2::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, rgba(8, 12, 13, .88) 20%, rgba(8, 12, 13, .35) 75%), linear-gradient(to bottom, transparent 70%, var(--bg)); }
@@ -1056,3 +1056,146 @@ p.count-note { margin: -4px 0 12px; }
 
 /* Temalı (kutulu) profilde banner tam genişliğe taşmaz, kutunun içinde kalır */
 .profile.themed .profile-banner { margin: 0; height: 220px; border-radius: 18px; }
+
+/* ---------- Kütüphane: sayfa sayfa yükleme, favori sıralama ---------- */
+.load-more { display: flex; justify-content: center; margin-top: 20px; }
+.fav-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: -6px 0 10px; }
+.strip.sorting { padding-top: 4px; }
+.fav-sort { position: relative; cursor: grab; transition: opacity .15s, transform .15s; }
+.fav-sort.dragging { opacity: .4; transform: scale(.96); }
+.fav-sort .card { pointer-events: none; }
+.fav-num { position: absolute; top: 6px; left: 6px; z-index: 2; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; background: var(--accent); color: #fff; }
+.fav-arrows { display: flex; justify-content: center; gap: 6px; margin-top: 6px; }
+
+/* ---------- Rozetler sekmesi ---------- */
+.bdg.more { color: var(--muted); border-style: dashed; }
+.bdg.more:hover { color: var(--text); }
+.badges-head { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; align-items: center; padding: 16px 18px; border-radius: var(--radius); background: var(--panel); border: 1px solid var(--border); }
+.badges-head > div:first-child { grid-row: span 2; display: flex; flex-direction: column; align-items: center; }
+.badges-head > div:first-child b { font: 700 34px/1 var(--head); color: var(--accent-2); }
+.badges-head > div:first-child span { color: var(--muted); font-size: 12px; }
+.badges-page .bar, .badge-card .bar { height: 8px; border-radius: 4px; background: var(--panel-3); overflow: hidden; }
+.badges-page .bar i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+.badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.badge-card { display: flex; flex-direction: column; gap: 4px; padding: 14px; border-radius: 14px; background: var(--panel); border: 1px solid var(--border); }
+.badge-card .b-icon { font-size: 22px; color: var(--muted); }
+.badge-card small { color: var(--muted); }
+.badge-card .bar { margin-top: 6px; }
+.badge-card .b-left { font-size: 12px; }
+.badge-card.got { border-color: rgb(var(--accent-rgb) / .5); background: linear-gradient(160deg, rgb(var(--accent-rgb) / .16), transparent 70%), var(--panel); }
+.badge-card.got .b-icon { color: var(--accent-2); }
+.badge-card.gold { border-color: rgba(245, 197, 66, .55); }
+.badge-card.gold .b-icon { color: #fde68a; }
+
+.home-goals { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; align-items: start; }
+.home-goals .goals { margin-bottom: 0; }
+.next-badges { display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); }
+.next-badges .goal { grid-template-columns: 120px 1fr auto; }
+
+/* ---------- Sosyal: mesajlar + forum ---------- */
+.admin-link { font-weight: 600; color: var(--accent) !important; }
+.social-tabs { display: flex; gap: 4px; padding: 4px; margin-bottom: 14px; background: var(--panel-2); border-radius: 12px; }
+.social-tabs a { flex: 1; text-align: center; padding: 8px 12px; border-radius: 9px; font-weight: 600; color: var(--muted); position: relative; }
+.social-tabs a.active { background: var(--panel); color: var(--text); box-shadow: inset 0 0 0 1px var(--border); }
+.social-tabs .nav-badge { position: static; margin-left: 6px; }
+.forum > .social-tabs { max-width: 360px; }
+.owner-tag { font-style: normal; font-size: 11px; font-weight: 700; color: var(--accent); background: rgb(var(--accent-rgb) / .15); border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: middle; }
+.forum { max-width: 900px; margin: 0 auto; }
+.forum-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.forum-head h1 { margin: 0 0 4px; }
+.forum-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; margin: 10px 0 16px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); }
+.forum-item img { width: 44px; height: 58px; object-fit: cover; border-radius: 6px; flex: none; }
+.forum-item b { display: block; }
+.forum-new { display: grid; gap: 10px; padding: 16px; margin-bottom: 18px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); }
+.forum-new textarea { resize: vertical; font: inherit; }
+.row-end { display: flex; justify-content: flex-end; gap: 8px; }
+.threads { display: grid; gap: 8px; }
+.thread-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); }
+.thread-row:hover { border-color: var(--accent); }
+.thread-row.pinned { background: linear-gradient(90deg, rgb(var(--accent-rgb) / .1), var(--panel)); }
+.thread-row .grow { min-width: 0; }
+.thread-row b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.thread-row .t-cover { width: 36px; height: 48px; object-fit: cover; border-radius: 6px; flex: none; }
+.t-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--accent); margin-right: 8px; }
+.t-meta { display: grid; justify-items: end; flex: none; line-height: 1.2; }
+.t-meta b { font-size: 18px; }
+.t-meta span, .t-meta small { color: var(--muted); font-size: 12px; }
+.post { padding: 16px; margin: 10px 0; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); }
+.post.first { margin-top: 12px; border-color: rgb(var(--accent-rgb) / .4); }
+.post header { display: flex; gap: 10px; align-items: center; }
+.post h1 { font-size: 22px; margin: 0 0 2px; }
+.post-body { white-space: pre-wrap; overflow-wrap: anywhere; margin: 12px 0 0; line-height: 1.6; }
+.post-tools { display: flex; gap: 14px; margin-top: 12px; }
+.link.danger { color: var(--danger); }
+@media (max-width: 640px) {
+  .forum-head .btn { width: 100%; }
+  .thread-row { padding: 10px; }
+  .t-meta small { display: none; }
+}
+
+/* ---------- Şeffaf profil (Steam gibi): resim her yerde görünür, kutular yarı saydam ---------- */
+.profile-bg-shade.light { background: linear-gradient(to bottom, rgba(8, 12, 13, .05), rgba(8, 12, 13, .3)); }
+.profile.glass { padding-top: 24px; }
+.profile.glass .profile-head { margin-top: 0; padding: 18px 22px; align-items: center; }
+.profile.glass .profile-head, .profile.glass .profile > .section, .profile.glass > .section, .profile.glass .badges-page,
+.profile.glass .subnav, .profile.glass .song-box {
+  background: rgba(10, 8, 8, .55); border: 1px solid rgba(255, 255, 255, .07); border-radius: 14px;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.profile.glass > .section { padding: 16px 18px; margin-top: 16px; }
+.profile.glass .profile-bio, .profile.glass .profile-meta, .profile.glass .socials { margin-left: 0; margin-right: 0; padding: 0 22px; text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
+.profile.glass .badge-row { padding: 0 22px; }
+.profile.glass .subnav { margin-top: 16px; padding: 0 8px; border-bottom-color: transparent; }
+.profile.glass .profile-meta, .profile.glass .profile-meta button, .profile.glass .handle { color: #e3e6ea; }
+.theme-card.glass-card { background: center / cover no-repeat, repeating-conic-gradient(#2a2f36 0 25%, #1c2026 0 50%) 0 0 / 14px 14px; }
+@media (max-width: 640px) { .profile.glass > .section { padding: 12px; } .profile.glass .profile-head { padding: 14px; } }
+.import-steps { margin: 0 0 12px; padding-left: 20px; display: grid; gap: 4px; }
+.import-opts { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; }
+.import-opts label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+.import-paste { width: 100%; resize: vertical; font: inherit; }
+.import-bar .check { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; color: var(--text); }
+.export-box { margin-top: 8px; }
+
+/* ---------- Hız: ekranda olmayan kartlar çizilmez (uzun kütüphane ve akışlarda kasmayı önler) ---------- */
+.grid > .card, .rows > *, .feed > * { content-visibility: auto; contain-intrinsic-size: auto 260px; }
+.rows > * { contain-intrinsic-size: auto 64px; }
+
+/* ---------- Nasıl başlarım kartı ve yardım ---------- */
+.start-card { padding: 18px 20px; background: linear-gradient(135deg, rgb(var(--accent-rgb) / .14), var(--panel)); border: 1px solid rgb(var(--accent-rgb) / .35); border-radius: var(--radius); }
+.start-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+.start-head h2 { font-size: 20px; margin: 0 0 2px; }
+.start-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.start-steps li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: var(--panel); border-radius: 12px; }
+.start-steps li.done { opacity: .55; }
+.start-steps li .grow { min-width: 0; }
+.start-steps li b { display: block; }
+.start-steps .num { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; flex: none; font-weight: 700; background: var(--panel-3); }
+.start-steps li.done .num { background: var(--accent); color: #fff; }
+.help-q { border: 1px solid var(--border); border-radius: 12px; padding: 0 16px; margin: 8px 0; background: var(--panel); }
+.help-q summary { cursor: pointer; padding: 14px 0; font-weight: 600; }
+.help-q p { margin: 0 0 14px; }
+.help code { background: var(--panel-2); padding: 1px 6px; border-radius: 6px; }
+
+/* ---------- Telefon düzeni ---------- */
+@media (max-width: 640px) {
+  .start-steps li { flex-wrap: wrap; }
+  .start-steps li .btn { margin-left: 40px; }
+  .admin-link { font-size: 13px; padding: 4px 8px; }
+  .profile-info h1 { font-size: 30px; }
+  .profile-head { gap: 12px; padding: 0 14px; }
+  .profile-actions { width: 100%; flex-wrap: wrap; }
+  .profile-actions .btn { flex: 1; justify-content: center; }
+  .profile-bio, .profile-meta { margin-left: 14px; margin-right: 14px; }
+  .profile-meta { gap: 12px; font-size: 13px; }
+  .subnav a { padding: 10px 12px; }
+  .badge-row { padding: 0 14px; }
+  .import-card { padding: 14px; }
+  .import-opts label, .import-opts select { width: 100%; }
+  .chat { height: calc(100dvh - 190px); }
+  .social-tabs a { padding: 8px; }
+  .toolbar .right { width: 100%; }
+}
+.post header .t-tag { margin: 0 0 0 8px; }
+.check-line { display: flex; gap: 8px; align-items: center; margin: 0 0 10px; font-size: 14px; cursor: pointer; }
+.pill.owned { background: #4b5160; }
+.about h2 { margin-top: 28px; }

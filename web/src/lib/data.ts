@@ -10,9 +10,20 @@ export function fetchFeed({ users, limit = 20 }: { users?: string[]; limit?: num
   return q<Entry[]>(req);
 }
 
+// Veritabanı tek seferde en fazla 1000 satır verir; daha fazlası için sayfa sayfa çek
+export async function fetchAll<T>(page: (from: number, to: number) => PromiseLike<{ data: unknown; error: { message: string } | null }>, max = 20000): Promise<T[]> {
+  const all: T[] = [];
+  for (let from = 0; from < max; from += 1000) {
+    const rows = await q<T[]>(page(from, from + 999));
+    all.push(...rows);
+    if (rows.length < 1000) break;
+  }
+  return all;
+}
+
 export const fetchEntries = (userId: string) =>
-  q<Entry[]>(sb().from("entries").select("*, likes(count), comments(count)").eq("user_id", userId)
-    .order("updated_at", { ascending: false }).limit(2000));
+  fetchAll<Entry>((from, to) => sb().from("entries").select("*, likes(count), comments(count)").eq("user_id", userId)
+    .order("updated_at", { ascending: false }).order("id").range(from, to));
 
 // ---------- Müzik: Apple Music (iTunes) araması; anahtar istemez ----------
 
@@ -272,4 +283,14 @@ export async function friendsOnMyPlans(following: string[], mine: Entry[]): Prom
   const rows = await q<Entry[]>(sb().from("entries").select(ENTRY_COLS).in("user_id", following).in("status", ["completed", "active"])
     .order("updated_at", { ascending: false }).limit(150));
   return rows.filter((e) => planned.has(contentKey(e)));
+}
+
+// İçe aktarmada albüm / şarkı kapağı bul: önce Deezer, olmazsa Apple Music
+export async function musicMeta(kind: "album" | "track", artist: string, title: string): Promise<{ cover: string | null; year: number | null }> {
+  const text = `${artist} ${title}`.slice(0, 200);
+  const dz = (await deezer(kind, text, 1).catch(() => []))[0];
+  const dzCover = kind === "album" ? dz?.cover_xl : dz?.album?.cover_xl;
+  if (dzCover) return { cover: dzCover, year: null };
+  const it = (await itunes(text, kind === "album" ? "album" : "song", 1).catch(() => []))[0];
+  return { cover: it?.artworkUrl100 ? bigArtwork(it.artworkUrl100) : null, year: parseInt(it?.releaseDate || "") || null };
 }

@@ -74,6 +74,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
   const refresh = useCallback(() => setVersion((v) => v + 1), []);
 
+  const myBadgesRef = useRef<string[] | null>(null); // yeni kazanılan rozeti haber vermek için
   const loadBadges = useCallback(() => {
     q<{ user_id: string; badge: string }[]>(sb().from("user_badges").select("user_id, badge").order("granted_at"))
       .then((rows) => {
@@ -81,9 +82,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const order = Object.keys(BADGES); // her zaman önce
         for (const r of rows) m.set(r.user_id, [...(m.get(r.user_id) || []), r.badge].sort((x, y) => order.indexOf(x) - order.indexOf(y)));
         setBadges(m);
+        const id = userId.current;
+        if (!id) return;
+        const now = m.get(id) || [];
+        const fresh = myBadgesRef.current ? now.filter((b) => !myBadgesRef.current!.includes(b) && BADGES[b]) : [];
+        myBadgesRef.current = now;
+        if (fresh.length) toast(`Yeni rozet kazandın: ${fresh.map((b) => BADGES[b].name).join(", ")}!`);
       })
       .catch(() => {});
-  }, []);
+  }, [toast]);
 
   // Okunmamış mesaj sayısı ve en yeni bildirim (beğeni, yorum, takip) zamanı
   const checkInbox = useCallback(async () => {
@@ -156,6 +163,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Kişisel site rengi (çıkış yapınca varsayılana döner)
   useEffect(() => { if (ready) applyTheme(me?.site_color); }, [ready, me?.site_color]);
+
+  // Kayıt ekleyip değiştirdikçe rozetleri tazele (veritabanı hak edilen rozeti hemen verir)
+  useEffect(() => {
+    if (version) loadBadges();
+    if (!me) myBadgesRef.current = null;
+  }, [version, me, loadBadges]);
 
   // Kayıt eklenip silindikçe kendi kütüphanemi tazele
   useEffect(() => {

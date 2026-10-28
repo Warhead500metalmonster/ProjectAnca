@@ -26,21 +26,16 @@ export function Avatar({ p, cls = "" }: { p: Who; cls?: string }) {
 }
 
 // İsim + kazanılmış rozetlerin küçük simgeleri (site sahibi, öncü)
+// Rozetler ismin yanında gösterilmez; profilde kendi sekmesinde durur
 export function Name({ p }: { p: Who }) {
-  const { badges } = useApp();
-  const mine = (p?.id && badges.get(p.id)) || [];
-  return (
-    <>
-      {displayName(p)}
-      {mine.filter((b) => BADGES[b]).map((b) => <span key={b} className="bdg-i" title={BADGES[b].name}>{BADGES[b].icon}</span>)}
-    </>
-  );
+  return <>{displayName(p)}</>;
 }
 
 // entries verilirse kazanılmamış rozetlerde ilerleme gösterilir (ör. Eleştirmen 4/10)
-export function BadgeChips({ id, showLocked = false, entries }: { id: string; showLocked?: boolean; entries?: Entry[] }) {
+export function BadgeChips({ id, showLocked = false, entries, max, more }: { id: string; showLocked?: boolean; entries?: Entry[]; max?: number; more?: string }) {
   const { badges } = useApp();
-  const mine = (badges.get(id) || []).filter((b) => BADGES[b]);
+  const all = (badges.get(id) || []).filter((b) => BADGES[b]);
+  const mine = max ? all.slice(0, max) : all;
   const locked = Object.keys(BADGES).filter((b) => !mine.includes(b) && BADGES[b].earn);
   if (!mine.length && !showLocked) return null;
   return (
@@ -48,6 +43,7 @@ export function BadgeChips({ id, showLocked = false, entries }: { id: string; sh
       {mine.map((b) => (
         <span key={b} className={`bdg ${BADGES[b].tone}`} title={BADGES[b].desc}>{BADGES[b].icon} {BADGES[b].name}</span>
       ))}
+      {more && <Link className="bdg more" href={more}>{all.length > mine.length ? `+${all.length - mine.length} rozet` : "Rozetler"} →</Link>}
       {showLocked && locked.length > 0 && (
         <details className="locked">
           <summary>Kazanabileceğin rozetler ({locked.length})</summary>
@@ -123,7 +119,7 @@ export function Rating({ r, big = false }: { r: number; big?: boolean }) {
 export function Cover({ src }: { src?: string | null }) {
   const url = safeUrl(src);
   // Yüklenemeyen görsel kaldırılır, altındaki ikon görünür
-  return url ? <img src={url} alt="" loading="lazy" onError={(e) => e.currentTarget.remove()} /> : null;
+  return url ? <img src={url} alt="" loading="lazy" decoding="async" onError={(e) => e.currentTarget.remove()} /> : null;
 }
 
 export function Stats({ list }: { list: Entry[] }) {
@@ -154,7 +150,7 @@ export function EntryCard({ e, kind = false, edit = false, wall = false }: { e: 
         <Cover src={e.cover} />
         {kind && <span className="kind">{t.label}</span>}
         {e.favorite && <span className="fav" title="Favori">♥</span>}
-        <span className={`st badge ${e.status}`}>{statusLabel(e.status, e.type)}</span>
+        {e.status !== "owned" && <span className={`st badge ${e.status}`}>{statusLabel(e.status, e.type)}</span>}
         {e.rating ? <span className="rating">★ {scoreShort(e.rating, scale)}</span> : null}
         {wall && <div className="hover"><b>{e.title}</b>{meta && <span>{meta}</span>}</div>}
       </div>

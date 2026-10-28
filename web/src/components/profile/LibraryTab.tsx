@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Entry, EntryType, Status } from "@/lib/types";
 import { STATUSES, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
 import { daysTaken, fmtDate, fmtDur, num, playSec } from "@/lib/format";
+import { q, sb } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
 import { useProfile } from "@/components/ProfileShell";
 import { Cover, EntryCard, Rating, commentCount, entryTags, likeCount } from "@/components/ui";
@@ -22,6 +23,8 @@ const SORTS: [Sort, string, (a: Entry, b: Entry) => number][] = [
   ["time", "Süre (uzun)", (a, b) => playSec(b) - playSec(a)],
   ["fastest", "En hızlı bitirilen", (a, b) => (daysTaken(a) ?? 1e9) - (daysTaken(b) ?? 1e9)],
 ];
+
+const PAGE = 60; // bir seferde gösterilen kayıt: yüzlerce kapak aynı anda yüklenip sayfayı yavaşlatmasın
 
 const uniqSorted = (list: (string | number | null | undefined)[], desc = true) =>
   [...new Set(list.filter((x) => x !== null && x !== undefined && x !== ""))].sort((a, b) =>
@@ -82,6 +85,20 @@ export function LibraryTab() {
   const filterCount = statuses.size + [year, finishYear, platform, minRating].filter(Boolean).length + flags.size;
   const statusType = type === "all" ? null : type;
   const favs = entries.filter((e) => e.favorite);
+  // Sayfa sayfa göster; filtre ya da sıralama değişince baştan başla
+  const pageKey = [type, [...statuses].join(), year, finishYear, platform, minRating, [...flags].join(), sort, needle, view].join("|");
+  const [paging, setPaging] = useState({ key: pageKey, n: PAGE });
+  const shown = paging.key === pageKey ? paging.n : PAGE;
+  const more = () => setPaging({ key: pageKey, n: shown + PAGE });
+  const sentinel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el || shown >= list.length) return;
+    // Aşağı inince kendiliğinden devamını yükle
+    const io = new IntersectionObserver(([x]) => { if (x.isIntersecting) more(); }, { rootMargin: "600px" });
+    io.observe(el);
+    return () => io.disconnect();
+  });
   const favTypes = TYPE_KEYS.filter((k) => favs.some((e) => e.type === k));
   const favType = favTypes.includes(favTab as EntryType) ? (favTab as EntryType) : favTypes[0];
 
@@ -103,7 +120,7 @@ export function LibraryTab() {
               </div>
             )}
           </div>
-          <div className="strip">{favs.filter((e) => e.type === favType).sort((a, b) => b.rating - a.rating).map((e) => <EntryCard key={e.id} e={e} />)}</div>
+          <Favorites list={favs.filter((e) => e.type === favType)} isMe={isMe} />
         </section>
       )}
       <section className="section">
@@ -175,8 +192,8 @@ export function LibraryTab() {
         {(filterCount > 0 || needle) && <p className="muted count-note">{list.length} sonuç</p>}
         {list.length ? (
           view === "list"
-            ? <div className="rows">{list.map((e) => <Row key={e.id} e={e} isMe={isMe} />)}</div>
-            : <div className="grid">{list.map((e) => <EntryCard key={e.id} e={e} kind={type === "all"} />)}</div>
+            ? <div className="rows">{list.slice(0, shown).map((e) => <Row key={e.id} e={e} isMe={isMe} />)}</div>
+            : <div className="grid">{list.slice(0, shown).map((e) => <EntryCard key={e.id} e={e} kind={type === "all"} />)}</div>
         ) : (
           <div className="empty">
             {entries.length ? "Bu filtreye uyan kayıt yok." : isMe
@@ -184,7 +201,72 @@ export function LibraryTab() {
               : "Burada henüz kayıt yok."}
           </div>
         )}
+        {shown < list.length && (
+          <div ref={sentinel} className="load-more">
+            <button className="btn" onClick={more}>Daha fazla göster ({list.length - shown})</button>
+          </div>
+        )}
       </section>
+    </>
+  );
+}
+
+// Favoriler: sahibi "Sırala"ya basınca sürükleyip bırakarak (telefonda oklarla) sırasını değiştirir
+function Favorites({ list, isMe }: { list: Entry[]; isMe: boolean }) {
+  const { toast, refresh } = useApp();
+  const sorted = [...list].sort((a, b) => (a.fav_pos ?? 99) - (b.fav_pos ?? 99) || b.rating - a.rating);
+  const [order, setOrder] = useState<Entry[] | null>(null); // düzenlenirken yerel sıra
+  const [drag, setDrag] = useState<string | null>(null);
+  const items = order || sorted;
+
+  function move(from: number, to: number) {
+    if (to < 0 || to >= items.length || from === to) return;
+    const next = [...items];
+    const [x] = next.splice(from, 1);
+    next.splice(to, 0, x);
+    setOrder(next);
+  }
+
+  async function save() {
+    if (!order) return;
+    try {
+      await Promise.all(order.map((e, i) => (e.fav_pos === i ? null : q(sb().from("entries").update({ fav_pos: i }).eq("id", e.id)))));
+      toast("Favori sıran kaydedildi ✓");
+      setOrder(null);
+      refresh();
+    } catch (err) {
+      toast("Kaydedilemedi: " + (err as Error).message);
+    }
+  }
+
+  return (
+    <>
+      {isMe && list.length > 1 && (
+        <div className="fav-tools">
+          {order ? (
+            <>
+              <span className="muted small">Kapakları sürükleyip bırak ya da oklarla taşı.</span>
+              <button className="btn" onClick={() => setOrder(null)}>Vazgeç</button>
+              <button className="btn primary" onClick={save}>Sırayı kaydet</button>
+            </>
+          ) : <button className="link" onClick={() => setOrder(sorted)}>Sırala</button>}
+        </div>
+      )}
+      <div className={`strip ${order ? "sorting" : ""}`}>
+        {items.map((e, i) => order ? (
+          <div key={e.id} className={`fav-sort ${drag === e.id ? "dragging" : ""}`} draggable
+            onDragStart={(ev) => { setDrag(e.id); ev.dataTransfer.effectAllowed = "move"; }}
+            onDragOver={(ev) => { ev.preventDefault(); if (drag && drag !== e.id) move(items.findIndex((x) => x.id === drag), i); }}
+            onDragEnd={() => setDrag(null)}>
+            <div className="fav-num">{i + 1}</div>
+            <EntryCard e={e} />
+            <div className="fav-arrows">
+              <button className="icon-btn" aria-label="Sola taşı" disabled={i === 0} onClick={() => move(i, i - 1)}>‹</button>
+              <button className="icon-btn" aria-label="Sağa taşı" disabled={i === items.length - 1} onClick={() => move(i, i + 1)}>›</button>
+            </div>
+          </div>
+        ) : <EntryCard key={e.id} e={e} />)}
+      </div>
     </>
   );
 }

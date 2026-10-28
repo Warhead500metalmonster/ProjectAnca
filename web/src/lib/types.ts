@@ -1,5 +1,5 @@
 export type EntryType = "game" | "movie" | "show" | "music" | "anime";
-export type Status = "completed" | "active" | "planned" | "paused" | "dropped";
+export type Status = "completed" | "active" | "planned" | "paused" | "dropped" | "owned"; // owned: kategorisiz (ör. Steam'den gelen)
 
 export interface Profile {
   id: string;
@@ -48,6 +48,7 @@ export interface Entry {
   progress: string | null;  // kısa not
   emulated?: boolean;
   favorite?: boolean;
+  fav_pos?: number | null;  // favoriler şeridindeki sıra (sahibi sürükleyerek ayarlar)
   created_at: string;
   updated_at: string;
   profiles?: Partial<Profile> | null;
@@ -152,4 +153,30 @@ export interface FormGame {
   creator: string | null;
   platforms?: string[];
   stores?: string[];
+}
+
+// Forum: oyun / film tartışmaları
+export interface ForumThread {
+  id: string;
+  user_id: string;
+  title: string;
+  body: string;
+  category: string;
+  item: Item | null;        // tartışılan içerik (varsa)
+  content_key: string | null;
+  pinned: boolean;
+  locked: boolean;
+  reply_count: number;
+  last_post_at: string;
+  created_at: string;
+  profiles?: Partial<Profile> | null;
+}
+
+export interface ForumPost {
+  id: string;
+  thread_id: string;
+  user_id: string;
+  body: string;
+  created_at: string;
+  profiles?: Partial<Profile> | null;
 }

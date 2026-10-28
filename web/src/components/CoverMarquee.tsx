@@ -8,7 +8,7 @@ export function CoverMarquee({ covers }: { covers: string[] }) {
     <div className="marquee" aria-hidden>
       {rows.map((row, r) => (
         <div className={`mq-row ${r ? "rev" : ""}`} key={r}>
-          {[...row, ...row].map((c, i) => <img key={i} src={c} alt="" onError={(e) => e.currentTarget.remove()} />)}
+          {[...row, ...row].map((c, i) => <img key={i} src={c} alt="" decoding="async" loading={i < 10 ? "eager" : "lazy"} onError={(e) => e.currentTarget.remove()} />)}
         </div>
       ))}
     </div>

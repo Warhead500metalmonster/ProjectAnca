@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import type { Entry, EntryType, Item, PageEdit } from "@/lib/types";
 import { ENTRY_COLS, TYPES, statusLabel } from "@/lib/constants";
-import { avgText, contentKey, cssUrl, fmtDur, likeEsc, num, playSec, safeUrl, scoreText } from "@/lib/format";
+import { avgText, contentKey, cssUrl, fmtDur, forumHref, likeEsc, num, playSec, safeUrl, scoreText } from "@/lib/format";
 import { aniDetail, fetchPageEdit, tmdbCreator, tmdbDetail, tmdbImage } from "@/lib/data";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
@@ -130,6 +130,7 @@ export default function ContentPage() {
               : mine ? <button className="btn primary wide" onClick={() => openForm(mine)}>{statusLabel(mine.status, type)} · Düzenle</button>
               : <button className="btn primary wide" onClick={() => openForm(null, { item })}>+ Kütüphaneme ekle</button>}
             <button className="btn wide" onClick={() => pickList(item)}>Listeye ekle</button>
+            <Link className="btn wide" href={forumHref(item)}>Forumda tartış</Link>
             {isAdmin && <button className="btn wide ghost" onClick={() => setEditing(true)}>Sayfayı düzenle</button>}
           </div>
           <div className="gh-main">

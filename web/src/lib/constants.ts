@@ -26,7 +26,7 @@ export const TYPE_KEYS = Object.keys(TYPES) as EntryType[];
 export const STORES = ["Steam", "Epic Games Store", "PlayStation Store", "Xbox Store", "Xbox Game Pass", "PC Game Pass", "Nintendo eShop", "GOG",
   "EA app", "Ubisoft Connect", "Battle.net", "itch.io", "Direct Download", "App Store", "Google Play", "Fiziksel kopya"];
 
-export const STATUSES: Status[] = ["completed", "active", "planned", "paused", "dropped"];
+export const STATUSES: Status[] = ["completed", "active", "planned", "paused", "dropped", "owned"];
 
 export const statusLabel = (s: Status, type?: EntryType | null) => ({
   completed: "Bitti",
@@ -34,6 +34,7 @@ export const statusLabel = (s: Status, type?: EntryType | null) => ({
   planned: "Planlandı",
   paused: "Ara verdim",
   dropped: "Bıraktım",
+  owned: "Kategorisiz",
 })[s];
 
 export const activityVerb = (e: { type: EntryType; status: Status }) => ({
@@ -42,6 +43,7 @@ export const activityVerb = (e: { type: EntryType; status: Status }) => ({
   planned: "listesine ekledi",
   paused: "ara verdi",
   dropped: "bıraktı",
+  owned: "kütüphanesine ekledi",
 })[e.status];
 
 export const PROFILE_COLS = "id, username, display_name, avatar_url";
@@ -54,6 +56,7 @@ export const LOCAL_KEY = "ancalog.v1"; // hesaplardan önceki, tarayıcıda tutu
 // Yöneticiler panelden elle de verebilir.
 type Prog = (e: Entry[]) => number;
 const doneOf = (type: EntryType): Prog => (e) => e.filter((x) => x.type === type && x.status === "completed").length;
+const thisYear = () => String(new Date().getFullYear());
 const hoursOf: Prog = (e) => Math.floor(e.reduce((s, x) => s + (x.playtime_sec ?? (x.hours ? Number(x.hours) * 3600 : 0)), 0) / 3600);
 export const BADGES: Record<string, { icon: string; name: string; desc: string; tone: string; earn?: number; progress?: Prog }> = {
   owner: { icon: "♛", name: "Site Sahibi", desc: "Ancalog'un kurucusu ve sahibi", tone: "gold" },
@@ -67,6 +70,23 @@ export const BADGES: Record<string, { icon: string; name: string; desc: string; 
   cinephile: { icon: "◆", name: "Sinefil", desc: "100 film izle", tone: "", earn: 100, progress: doneOf("movie") },
   otaku: { icon: "◆", name: "Otaku", desc: "50 anime bitir", tone: "", earn: 50, progress: doneOf("anime") },
   melomane: { icon: "◆", name: "Melomane", desc: "100 albüm / şarkı dinle", tone: "", earn: 100, progress: doneOf("music") },
+  first_log: { icon: "◆", name: "İlk Adım", desc: "İlk kaydını ekle", tone: "", earn: 1, progress: (e) => e.length },
+  collector: { icon: "◆", name: "Koleksiyoncu", desc: "Kütüphanende 100 kayıt olsun", tone: "", earn: 100, progress: (e) => e.length },
+  archivist: { icon: "◆", name: "Arşivci", desc: "Kütüphanende 1000 kayıt olsun", tone: "", earn: 1000, progress: (e) => e.length },
+  rater: { icon: "◆", name: "Puan Ustası", desc: "50 şeye puan ver", tone: "", earn: 50, progress: (e) => e.filter((x) => x.rating > 0).length },
+  versatile: { icon: "◆", name: "Çok Yönlü", desc: "Oyun, film, dizi, müzik ve animenin hepsinden logla", tone: "", earn: 5, progress: (e) => new Set(e.map((x) => x.type)).size },
+  binger: { icon: "◆", name: "Dizi Bağımlısı", desc: "25 dizi bitir", tone: "", earn: 25, progress: doneOf("show") },
+  legend: { icon: "◆", name: "Efsane Oyuncu", desc: "200 oyun bitir", tone: "", earn: 200, progress: doneOf("game") },
+  year_star: { icon: "◆", name: "Yılın Yıldızı", desc: "Bir yılda 25 şey bitir", tone: "", earn: 25,
+    progress: (e) => e.filter((x) => x.status === "completed" && x.date?.startsWith(thisYear())).length },
+  speedrun: { icon: "◆", name: "Hızlı Bitirici", desc: "Bir şeyi başladığın gün bitir", tone: "", earn: 1,
+    progress: (e) => e.filter((x) => x.status === "completed" && x.started_on && x.started_on === x.date).length },
+  steam: { icon: "◆", name: "Steam Bağlantısı", desc: "Steam kütüphaneni içe aktar", tone: "", earn: 1, progress: (e) => e.filter((x) => x.ext_id?.startsWith("steam:")).length },
+  commenter: { icon: "◆", name: "Sohbetçi", desc: "25 yorum yaz", tone: "", earn: 25 },
+  loved: { icon: "◆", name: "Sevilen", desc: "İncelemelerin toplam 25 beğeni alsın", tone: "", earn: 25,
+    progress: (e) => e.reduce((s, x) => s + (x.likes?.[0]?.count || 0), 0) },
+  popular: { icon: "◆", name: "Popüler", desc: "10 takipçin olsun", tone: "", earn: 10 },
+  forum: { icon: "◆", name: "Forumcu", desc: "Forumda 10 mesaj yaz", tone: "", earn: 10 },
 };
 
 // Profil bağlantıları: kullanıcı adı ya da tam https:// link kabul edilir
@@ -94,3 +114,8 @@ export const PROFILE_THEMES: Record<string, { name: string; accent: string; tint
 };
 
 export const ACCENTS = ["#58a98a", "#8b5cf6", "#ec4899", "#ef4444", "#f97316", "#f59e0b", "#22c55e", "#14b8a6", "#0ea5e9", "#3b82f6", "#64748b"];
+
+// Forum bölümleri
+export const FORUM_CATS: Record<string, string> = {
+  genel: "Genel", oyun: "Oyun", film: "Film", dizi: "Dizi", muzik: "Müzik", anime: "Anime", oneri: "Öneri isteği", destek: "Site hakkında",
+};

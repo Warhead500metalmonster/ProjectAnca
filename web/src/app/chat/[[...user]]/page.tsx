@@ -8,26 +8,36 @@ import { timeAgo } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
 import { Avatar, Name } from "@/components/ui";
+import { SocialTabs } from "@/components/SocialTabs";
 
-// Sadece karşılıklı takipleşen arkadaşlar mesajlaşabilir (veritabanı da bunu zorunlu tutar)
+// Karşılıklı takipleşen arkadaşlar mesajlaşabilir; site sahibine ise herkes yazabilir (soru, sorun, şikayet için)
+// ve site sahibi herkese cevap verebilir. Veritabanı da bunu zorunlu tutar.
 export default function ChatPage() {
   const params = useParams<{ user?: string[] }>();
   const username = params.user?.[0] ? decodeURIComponent(params.user[0]).toLowerCase() : "";
-  const { me, ready, following, followers, checkInbox, toast } = useApp();
+  const { me, ready, following, followers, checkInbox, toast, badges, isOwner } = useApp();
   const [friends, setFriends] = useState<Profile[] | null>(null);
   const [msgs, setMsgs] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   const friendIds = [...following].filter((id) => followers.has(id));
-  const friendKey = friendIds.sort().join(",");
+  const ownerIds = [...badges].filter(([, b]) => b.includes("owner")).map(([id]) => id);
+  const partnerIds = [...new Set(msgs.flatMap((m) => [m.sender_id, m.receiver_id]))]; // daha önce yazıştıkların
+  const contactIds = [...new Set([...friendIds, ...ownerIds, ...partnerIds])].filter((id) => id !== me?.id);
+  const friendKey = contactIds.sort().join(",");
 
   useEffect(() => {
     if (!me) return;
-    (friendIds.length ? q<Profile[]>(sb().from("profiles").select("*").in("id", friendIds)) : Promise.resolve([]))
-      .then(setFriends).catch(() => setFriends([]));
+    const byName = username && isOwner ? sb().from("profiles").select("*").eq("username", username) : null; // sahip herkese yazabilir
+    Promise.all([
+      contactIds.length ? q<Profile[]>(sb().from("profiles").select("*").in("id", contactIds)) : Promise.resolve([]),
+      byName ? q<Profile[]>(byName).catch(() => []) : Promise.resolve([]),
+    ]).then(([a, b]) => setFriends([...a, ...b.filter((x) => x.id !== me.id && !a.some((y) => y.id === x.id))]))
+      .catch(() => setFriends([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [me?.id, friendKey]);
+  }, [me?.id, friendKey, username, isOwner]);
+  const isSiteOwner = (id: string) => ownerIds.includes(id);
 
   // Mesajları çek; sohbet açıkken birkaç saniyede bir yenile
   const load = useCallback(async () => {
@@ -69,7 +79,7 @@ export default function ChatPage() {
       setText("");
     } catch (err) {
       toast((err as Error).message.includes("row-level security")
-        ? "Sadece karşılıklı takipleştiğin arkadaşlarına yazabilirsin." : "Gönderilemedi: " + (err as Error).message);
+        ? "Sadece karşılıklı takipleştiğin arkadaşlarına (ve site sahibine) yazabilirsin." : "Gönderilemedi: " + (err as Error).message);
     } finally {
       setSending(false);
     }
@@ -85,21 +95,22 @@ export default function ChatPage() {
   return (
     <div className={`chat ${username ? "has-convo" : ""}`}>
       <aside className="chat-list">
-        <h2>Mesajlar</h2>
+        <SocialTabs />
         {friends === null ? <div className="loading">Yükleniyor…</div> : sorted.length ? sorted.map((f) => {
           const m = last(f.id), n = unreadFrom(f.id);
           return (
             <Link key={f.id} href={`/chat/${f.username}`} className={`chat-friend ${f.username === username ? "active" : ""}`}>
               <Avatar p={f} />
               <div className="grow">
-                <b><Name p={f} /></b>
-                <span>{m ? `${m.sender_id === me.id ? "Sen: " : ""}${m.body}` : "Henüz mesaj yok"}</span>
+                <b><Name p={f} />{isSiteOwner(f.id) && <em className="owner-tag">Site sahibi</em>}</b>
+                <span>{m ? `${m.sender_id === me.id ? "Sen: " : ""}${m.body}` : isSiteOwner(f.id) ? "Soru, sorun ya da şikayetin için yaz" : "Henüz mesaj yok"}</span>
               </div>
               {n > 0 && <span className="unread">{n}</span>}
             </Link>
           );
-        }) : (
-          <p className="muted">Mesajlaşmak için karşılıklı takipleşmeniz gerekiyor. <Link className="grad" href="/community">Topluluğa göz at</Link>, arkadaşlarını takip et; onlar da seni takip edince burada görünürler.</p>
+        }) : null}
+        {friends && !friendIds.length && (
+          <p className="muted small">Arkadaşlarınla mesajlaşmak için karşılıklı takipleşmeniz gerekiyor. <Link className="grad" href="/community">Topluluğa göz at</Link>, arkadaşlarını takip et; onlar da seni takip edince burada görünürler.</p>
         )}
       </aside>
       <section className="chat-main">
@@ -109,6 +120,7 @@ export default function ChatPage() {
               <Link href="/chat" className="icon-btn back" aria-label="Geri">←</Link>
               <Avatar p={friend} />
               <Link href={`/u/${friend.username}`}><b><Name p={friend} /></b> <span className="muted">@{friend.username}</span></Link>
+              {isSiteOwner(friend.id) && <em className="owner-tag">Site sahibi</em>}
             </header>
             <div className="msgs" ref={box}>
               {convo.length ? convo.map((m, i) => {
@@ -120,7 +132,7 @@ export default function ChatPage() {
                     {showTime && <small>{timeAgo(m.created_at)}{mine && m.read_at ? " · görüldü" : ""}</small>}
                   </div>
                 );
-              }) : <p className="muted center">İlk mesajı sen yaz </p>}
+              }) : <p className="muted center">{isSiteOwner(friend.id) ? "Siteyle ilgili sorunu, sorunu ya da önerini yaz; en kısa sürede cevap verilir." : "İlk mesajı sen yaz"}</p>}
             </div>
             <form className="chat-form" onSubmit={send}>
               <input value={text} maxLength={2000} autoFocus placeholder="Mesaj yaz…" onChange={(e) => setText(e.target.value)} />
@@ -128,7 +140,7 @@ export default function ChatPage() {
             </form>
           </>
         ) : username && friends ? (
-          <div className="empty">@{username} ile karşılıklı takipleşmiyorsunuz. Sadece arkadaşlarınla mesajlaşabilirsin.</div>
+          <div className="empty">@{username} ile karşılıklı takipleşmiyorsunuz. Arkadaşlarınla ve site sahibiyle mesajlaşabilirsin.</div>
         ) : (
           <div className="empty">Soldan bir arkadaşını seç.</div>
         )}

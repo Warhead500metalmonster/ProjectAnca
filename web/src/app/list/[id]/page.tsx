@@ -51,7 +51,7 @@ function ListView({ list, base }: { list: List; base: Entry[] }) {
 
   const byKey = new Map(base.map((e) => [contentKey(e), e]));
   const statusOf = (it: ListItem) => byKey.get(contentKey(it));
-  const counts = Object.fromEntries(SEGMENTS.map(([s]) => [s, items.filter((it) => (statusOf(it)?.status ?? "none") === s).length])) as Record<Status | "none", number>;
+  const counts = Object.fromEntries(SEGMENTS.map(([s]) => [s, items.filter((it) => ((s2) => (!s2 || s2 === "owned" ? "none" : s2))(statusOf(it)?.status) === s).length])) as Record<Status | "none", number>;
   const pct = items.length ? Math.round((counts.completed / items.length) * 100) : 0;
   const who = me ? "Sen" : (owner.display_name || owner.username);
 

@@ -22,7 +22,7 @@ export function Topbar() {
     home: path === "/",
     search: path.startsWith("/search"),
     community: path.startsWith("/community"),
-    chat: path.startsWith("/chat"),
+    chat: path.startsWith("/chat") || path.startsWith("/forum"),
     me: path === mine || path.startsWith(mine + "/") || path === "/settings",
   })[key] ? "active" : "";
 
@@ -44,7 +44,7 @@ export function Topbar() {
         </Link>
         <Link href="/chat" className={active("chat")}>
           <svg viewBox="0 0 24 24"><path d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm3 6v2h2V9zm4 0v2h2V9zm4 0v2h2V9z" /></svg>
-          <span>Mesajlar</span>{unread > 0 && <b className="nav-badge">{unread > 9 ? "9+" : unread}</b>}
+          <span>Sosyal</span>{unread > 0 && <b className="nav-badge">{unread > 9 ? "9+" : unread}</b>}
         </Link>
         <Link href={mine} className={active("me")}>
           <svg viewBox="0 0 24 24"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zm0 2c-3 0-9 1.5-9 4.5V21h18v-2.5c0-3-6-4.5-9-4.5z" /></svg><span>Profilim</span>
@@ -56,7 +56,7 @@ export function Topbar() {
       <div className="top-actions">
         {me ? (
           <>
-            {isAdmin && <Link className="icon-link" href="/admin" title="Yönetim paneli"></Link>}
+            {isAdmin && <Link className="top-link admin-link" href="/admin" title="Yönetim paneli">Yönetim</Link>}
             <Link className="icon-link" href="/notifications" title="Bildirimler">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
               {notifAt && notifAt > seen && <span className="dot" />}

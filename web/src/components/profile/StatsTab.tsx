@@ -6,12 +6,12 @@ import { TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
 import { avgText, daysTaken, fmtDate, fmtDur, fmtHoursShort, num, playSec, scoreText } from "@/lib/format";
 import { useApp } from "@/components/AppProvider";
 import { useProfile } from "@/components/ProfileShell";
-import { BadgeChips, Cover } from "@/components/ui";
+import { Cover } from "@/components/ui";
 import { Goals } from "@/components/Goals";
 
 // Durum renkleri: renk körlüğü için doğrulanmış sırayla (yan yana duran dilimler ayırt edilebilsin)
-const STATUS_ORDER: Status[] = ["active", "dropped", "completed", "paused", "planned"];
-const STATUS_COLORS: Record<Status, string> = { active: "#3987e5", dropped: "#d95926", completed: "#199e70", paused: "#c98500", planned: "#d55181" };
+const STATUS_ORDER: Status[] = ["active", "dropped", "completed", "paused", "planned", "owned"];
+const STATUS_COLORS: Record<Status, string> = { active: "#3987e5", dropped: "#d95926", completed: "#199e70", paused: "#c98500", planned: "#d55181", owned: "#5b6270" };
 const MONTHS = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
 
 function countBy<T>(list: T[], key: (x: T) => string | null | undefined) {
@@ -150,8 +150,6 @@ export function StatsTab() {
         </>
       )}
 
-      <div className="section-head" style={{ marginTop: 28 }}><h2>Rozetler</h2></div>
-      <div className="badges-box"><BadgeChips id={profile.id} showLocked={isMe} entries={entries} /></div>
     </section>
   );
 }
