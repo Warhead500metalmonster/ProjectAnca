@@ -21,6 +21,7 @@ export interface Profile {
   song_title?: string | null;
   song_volume?: number | null;
   home_layout?: HomeLayout | null; // profil ana sayfasının düzeni
+  muted_until?: string | null;     // yönetici susturduysa bu zamana kadar yazı yazamaz
   created_at: string;
 }
 

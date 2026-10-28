@@ -104,6 +104,16 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
   const diff = my && my.rating && e.rating ? Number(my.rating) - Number(e.rating) : null;
   const close = () => ref.current?.close();
 
+  // Yönetici: başkasının uygunsuz incelemesini kaldırır ya da kaydını siler (site sahibine dokunulamaz, veritabanı denetler)
+  async function moderate(kind: "review" | "entry") {
+    if (!confirm(kind === "review" ? "Bu kaydın incelemesi ve notları kaldırılsın mı?" : "Bu kayıt tamamen silinsin mi?")) return;
+    const { error } = await sb().rpc(kind === "review" ? "admin_clear_review" : "admin_delete_entry", { p_entry: e.id });
+    if (error) return toast("Olmadı: " + error.message);
+    toast(kind === "review" ? "İnceleme kaldırıldı" : "Kayıt silindi");
+    close();
+    refresh();
+  }
+
   return (
     <dialog ref={ref} onClose={onClose} onClick={(ev) => ev.target === ref.current && close()}>
       <div className="view-body">
@@ -183,6 +193,13 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
             <span className="spacer" />
             {isMine && <button type="button" className="btn primary" onClick={() => onEdit(e)}>Düzenle</button>}
           </div>
+          {isAdmin && !isMine && (
+            <div className="admin-mod">
+              <span className="muted small">Yönetici:</span>
+              {(e.notes || e.progress || e.drop_note) && <button type="button" className="link" onClick={() => moderate("review")}>İncelemeyi kaldır</button>}
+              <button type="button" className="link danger" onClick={() => moderate("entry")}>Kaydı sil</button>
+            </div>
+          )}
         </div>
       </div>
     </dialog>

@@ -14,6 +14,7 @@ import { useApp } from "@/components/AppProvider";
 import { Feed } from "@/components/ui";
 import { Lightbox } from "@/components/Lightbox";
 import { PageEditor } from "@/components/PageEditor";
+import { ListsWith } from "@/components/ListsWith";
 
 interface Info { title?: string; year?: number | null; creator?: string | null; cover?: string | null; backdrop?: string | null;
   overview?: string; genres?: string[]; facts: [string, string][]; score?: [string, string] }
@@ -156,6 +157,7 @@ export default function ContentPage() {
         <section>
           <div className="section-head"><h2>Ancalog&apos;da kimler logladı</h2></div>
           <Feed list={logs} empty={<div className="empty">Henüz kimse loglamadı. İlk sen ol!</div>} />
+          <ListsWith type={type} title={title} ext={extId} />
         </section>
       </div>
       {zoom && cover && <Lightbox images={[cover]} start={0} onClose={() => setZoom(false)} />}

@@ -12,7 +12,7 @@ import { useApp } from "@/components/AppProvider";
 import { Avatar, Name, UserRow } from "@/components/ui";
 import { NOTICE_TONES, type Notice, fetchNotice } from "@/components/Announcement";
 
-const TABS = [["home", "Genel"], ["members", "Üyeler"], ["content", "İçerikler"], ["comments", "Yorumlar"]] as const;
+const TABS = [["home", "Genel"], ["members", "Üyeler"], ["content", "İçerikler"], ["comments", "Moderasyon"]] as const;
 type Tab = (typeof TABS)[number][0];
 // Yöneticinin elle verebileceği rozetler (site sahibi / yönetici rozeti hariç)
 const GRANTABLE = Object.keys(BADGES).filter((b) => b !== "owner" && b !== "admin");
@@ -30,7 +30,7 @@ export default function AdminPage() {
         <h1>Yönetim paneli</h1>
         <p className="muted" style={{ margin: 0 }}>
           Bir oyunun, filmin ya da albümün sayfasını düzeltmek için o sayfaya git ve <b>Sayfayı düzenle</b>&apos;ye bas.
-          Uygunsuz yorumları kayıt penceresinden silebilirsin.
+          Uygunsuz inceleme, yorum, forum mesajı ve listeleri <b>Moderasyon</b>&apos;dan; kişileri susturmak ya da profilini temizlemek için <b>Üyeler</b>&apos;e bak.
         </p>
         <div className="tabs" style={{ marginBottom: 0 }}>
           {TABS.map(([k, label]) => <button key={k} className={`tab ${tab === k ? "active" : ""}`} onClick={() => setTab(k)}>{label}</button>)}
@@ -39,7 +39,7 @@ export default function AdminPage() {
       {tab === "home" && <><Overview /><NoticeEditor /></>}
       {tab === "members" && <><Admins /><Members /><BlockedWords /></>}
       {tab === "content" && <><Catalog /><Edits /></>}
-      {tab === "comments" && <Comments />}
+      {tab === "comments" && <><Reviews /><Comments /><ForumPosts /><PublicLists /></>}
     </>
   );
 }
@@ -325,8 +325,17 @@ function NoticeEditor() {
 }
 
 // Üye ara, rozet ver / al
+const MUTES: [number, string][] = [[1, "1 saat"], [24, "1 gün"], [72, "3 gün"], [168, "1 hafta"], [720, "1 ay"], [87600, "Süresiz"]];
+const PARTS: [string, string, (p: Profile) => unknown][] = [
+  ["name", "Görünen ad", (p) => p.display_name], ["bio", "Hakkında yazısı", (p) => p.bio], ["avatar", "Profil fotoğrafı", (p) => p.avatar_url],
+  ["banner", "Kapak", (p) => p.banner_url], ["bg", "Arka plan", (p) => p.bg_url], ["song", "Profil şarkısı", (p) => p.song_url],
+  ["home", "Ana sayfa yazısı", (p) => p.home_layout?.text],
+];
+const mutedNow = (p: Profile) => !!p.muted_until && p.muted_until > new Date().toISOString();
+
 function Members() {
   const { badges, loadBadges, toast, isOwner } = useApp();
+  const [cleaning, setCleaning] = useState<{ id: string; parts: Set<string> } | null>(null);
   const [text, setText] = useState("");
   const [v, setV] = useState(0);
   const { data } = useLoad(() => {
@@ -347,6 +356,31 @@ Tamam = engelle, İptal = sadece sil`);
     toast(`@${p.username} silindi${ban ? " ve engellendi" : ""}`);
     setV((x) => x + 1);
     loadBadges();
+  }
+
+  // Yönetici site sahibine, diğer yöneticilere sadece site sahibi işlem yapabilir (veritabanı da denetler)
+  const canModerate = (p: Profile) => {
+    const has = badges.get(p.id) || [];
+    return !has.includes("owner") && (isOwner || !has.includes("admin"));
+  };
+
+  async function mute(p: Profile, hours: number) {
+    if (hours && !confirm(`@${p.username} ${MUTES.find(([h]) => h === hours)?.[1].toLocaleLowerCase("tr")} susturulsun mu? Bu sürede yorum, forum mesajı ve mesaj yazamaz (sana yazabilir).`)) return;
+    const { error } = await sb().rpc("admin_mute", { p_username: p.username, p_hours: hours });
+    if (error) return toast("Olmadı: " + error.message);
+    toast(hours ? `@${p.username} susturuldu` : "Susturma kaldırıldı");
+    setV((x) => x + 1);
+  }
+
+  async function clean(p: Profile) {
+    if (!cleaning?.parts.size) return;
+    const names = PARTS.filter(([k]) => cleaning.parts.has(k)).map(([, n]) => n).join(", ");
+    if (!confirm(`@${p.username} profilinden silinsin mi: ${names}?`)) return;
+    const { error } = await sb().rpc("admin_reset_profile", { p_username: p.username, p_parts: [...cleaning.parts] });
+    if (error) return toast("Olmadı: " + error.message);
+    toast("Profil temizlendi");
+    setCleaning(null);
+    setV((x) => x + 1);
   }
 
   async function toggle(p: Profile, badge: string, on: boolean) {
@@ -370,7 +404,8 @@ Tamam = engelle, İptal = sadece sil`);
               <Link href={`/u/${p.username}`}><Avatar p={p} /></Link>
               <div className="info">
                 <Link href={`/u/${p.username}`}><b><Name p={p} /></b></Link>
-                <small>@{p.username} · {timeAgo(p.created_at)} katıldı</small>
+                <small>@{p.username} · {timeAgo(p.created_at)} katıldı
+                  {mutedNow(p) && <b className="muted-tag"> · {new Date(p.muted_until!).getFullYear() > new Date().getFullYear() + 5 ? "süresiz susturuldu" : `${new Date(p.muted_until!).toLocaleString("tr", { dateStyle: "short", timeStyle: "short" })} tarihine kadar susturuldu`}</b>}</small>
               </div>
               <div className="badge-toggles">
                 {GRANTABLE.map((b) => (
@@ -378,7 +413,29 @@ Tamam = engelle, İptal = sadece sil`);
                     onClick={() => toggle(p, b, !has.includes(b))}>{BADGES[b].name}</button>
                 ))}
               </div>
-              {isOwner && !has.includes("owner") && <div className="acts"><button className="btn danger" onClick={() => removeUser(p)}>Hesabı sil</button></div>}
+              {canModerate(p) && (
+                <div className="acts">
+                  <select className="btn" value="" aria-label="Sustur" onChange={(e) => mute(p, Number(e.target.value))}>
+                    <option value="" disabled>{mutedNow(p) ? "Susturuldu" : "Sustur"}</option>
+                    {mutedNow(p) && <option value="0">Susturmayı kaldır</option>}
+                    {MUTES.map(([h, label]) => <option key={h} value={h}>{label}</option>)}
+                  </select>
+                  <button className="btn" onClick={() => setCleaning(cleaning?.id === p.id ? null : { id: p.id, parts: new Set() })}>Profili temizle</button>
+                  {isOwner && <button className="btn danger" onClick={() => removeUser(p)}>Hesabı sil</button>}
+                </div>
+              )}
+              {cleaning?.id === p.id && (
+                <div className="admin-clean">
+                  {PARTS.filter(([, , has]) => has(p)).length ? <>
+                    <span className="muted small">Silinecekleri seç:</span>
+                    {PARTS.filter(([, , has]) => has(p)).map(([k, label]) => (
+                      <label key={k} className="check"><input type="checkbox" checked={cleaning.parts.has(k)}
+                        onChange={() => setCleaning((c) => { const n = new Set(c!.parts); if (n.has(k)) n.delete(k); else n.add(k); return { id: p.id, parts: n }; })} /> {label}</label>
+                    ))}
+                    <button className="btn danger" disabled={!cleaning.parts.size} onClick={() => clean(p)}>Seçilenleri sil</button>
+                  </> : <span className="muted small">Bu profilde temizlenecek bir şey yok.</span>}
+                </div>
+              )}
             </div>
           );
         })}
@@ -428,6 +485,134 @@ function Comments() {
               </div>
             );
           })}
+        </div>
+      )}
+    </section>
+  );
+}
+
+interface AdminEntry { id: string; title: string; notes: string | null; updated_at: string; user_id: string; profiles: Partial<Profile> | null }
+
+// Son incelemeler: uygunsuz incelemeyi kaldır ya da kaydı tamamen sil
+function Reviews() {
+  const { toast } = useApp();
+  const [v, setV] = useState(0);
+  const { data } = useLoad(() => q<AdminEntry[]>(sb().from("entries").select(`id, title, notes, updated_at, user_id, profiles(${PROFILE_COLS})`)
+    .not("notes", "is", null).order("updated_at", { ascending: false }).limit(40)), [v]);
+
+  async function act(e: AdminEntry, kind: "review" | "entry") {
+    const msg = kind === "review" ? `@${e.profiles?.username} kullanıcısının “${e.title}” incelemesi ve notları kaldırılsın mı?` : `@${e.profiles?.username} kullanıcısının “${e.title}” kaydı tamamen silinsin mi?`;
+    if (!confirm(msg)) return;
+    const { error } = await sb().rpc(kind === "review" ? "admin_clear_review" : "admin_delete_entry", { p_entry: e.id });
+    if (error) return toast("Olmadı: " + error.message);
+    toast(kind === "review" ? "İnceleme kaldırıldı" : "Kayıt silindi");
+    setV((x) => x + 1);
+  }
+
+  return (
+    <section className="section">
+      <div className="section-head"><h2>Son incelemeler</h2></div>
+      {!data ? <div className="loading">Yükleniyor…</div> : !data.filter((e) => e.notes?.trim()).length ? <div className="empty">Henüz inceleme yok.</div> : (
+        <div className="admin-list">
+          {data.filter((e) => e.notes?.trim()).map((e) => (
+            <div key={e.id} className="admin-item">
+              <Link href={`/u/${e.profiles?.username}`}><Avatar p={e.profiles || {}} /></Link>
+              <div className="info">
+                <span><Link href={`/u/${e.profiles?.username}`}><b><Name p={e.profiles || {}} /></b></Link> → <Link href={`/u/${e.profiles?.username}?entry=${e.id}`}>{e.title}</Link></span>
+                <p className="admin-comment">{e.notes}</p>
+                <small>{timeAgo(e.updated_at)}</small>
+              </div>
+              <div className="acts">
+                <button className="btn" onClick={() => act(e, "review")}>İncelemeyi kaldır</button>
+                <button className="btn danger" onClick={() => act(e, "entry")}>Kaydı sil</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+interface AdminPost { id: string; body: string; created_at: string; thread_id: string; profiles: Partial<Profile> | null; forum_threads: { title: string } | null }
+interface AdminThread { id: string; title: string; body: string; created_at: string; profiles: Partial<Profile> | null }
+
+// Forum: son konular ve cevaplar
+function ForumPosts() {
+  const { toast } = useApp();
+  const [v, setV] = useState(0);
+  const { data } = useLoad(async () => {
+    const [threads, posts] = await Promise.all([
+      q<AdminThread[]>(sb().from("forum_threads").select(`id, title, body, created_at, profiles(${PROFILE_COLS})`).order("created_at", { ascending: false }).limit(15)),
+      q<AdminPost[]>(sb().from("forum_posts").select(`id, body, created_at, thread_id, profiles(${PROFILE_COLS}), forum_threads(title)`).order("created_at", { ascending: false }).limit(30)),
+    ]);
+    return [
+      ...threads.map((t) => ({ kind: "thread" as const, id: t.id, link: t.id, head: t.title, body: t.body, at: t.created_at, p: t.profiles })),
+      ...posts.map((x) => ({ kind: "post" as const, id: x.id, link: x.thread_id, head: x.forum_threads?.title || "", body: x.body, at: x.created_at, p: x.profiles })),
+    ].sort((a, b) => b.at.localeCompare(a.at));
+  }, [v]);
+
+  async function remove(kind: "thread" | "post", id: string) {
+    if (!confirm(kind === "thread" ? "Bu konu bütün cevaplarıyla silinsin mi?" : "Bu cevap silinsin mi?")) return;
+    try { await q(sb().from(kind === "thread" ? "forum_threads" : "forum_posts").delete().eq("id", id)); toast("Silindi"); setV((x) => x + 1); }
+    catch (err) { toast("Olmadı: " + (err as Error).message); }
+  }
+
+  return (
+    <section className="section">
+      <div className="section-head"><h2>Forum</h2><Link href="/forum">Foruma git →</Link></div>
+      {!data ? <div className="loading">Yükleniyor…</div> : !data.length ? <div className="empty">Forumda henüz bir şey yok.</div> : (
+        <div className="admin-list">
+          {data.map((x) => (
+            <div key={x.kind + x.id} className="admin-item">
+              <Link href={`/u/${x.p?.username}`}><Avatar p={x.p || {}} /></Link>
+              <div className="info">
+                <span><Link href={`/u/${x.p?.username}`}><b><Name p={x.p || {}} /></b></Link> {x.kind === "thread" ? "konu açtı:" : "cevap yazdı:"} <Link href={`/forum/${x.link}`}>{x.head}</Link></span>
+                <p className="admin-comment">{x.body}</p>
+                <small>{timeAgo(x.at)}</small>
+              </div>
+              <div className="acts"><button className="btn danger" onClick={() => remove(x.kind, x.id)}>{x.kind === "thread" ? "Konuyu sil" : "Sil"}</button></div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+interface AdminList { id: string; title: string; description: string | null; updated_at: string; profiles: Partial<Profile> | null }
+
+// Herkese açık listeler: uygunsuz olanı sil
+function PublicLists() {
+  const { toast } = useApp();
+  const [v, setV] = useState(0);
+  const { data } = useLoad(() => q<AdminList[]>(sb().from("lists").select(`id, title, description, updated_at, profiles(${PROFILE_COLS})`)
+    .eq("is_public", true).order("updated_at", { ascending: false }).limit(30)), [v]);
+
+  async function remove(l: AdminList) {
+    if (!confirm(`@${l.profiles?.username} kullanıcısının “${l.title}” listesi silinsin mi? İçindekiler kişinin kütüphanesinde kalır.`)) return;
+    const { error } = await sb().rpc("admin_delete_list", { p_list: l.id });
+    if (error) return toast("Olmadı: " + error.message);
+    toast("Liste silindi");
+    setV((x) => x + 1);
+  }
+
+  return (
+    <section className="section">
+      <div className="section-head"><h2>Herkese açık listeler</h2></div>
+      {!data ? <div className="loading">Yükleniyor…</div> : !data.length ? <div className="empty">Henüz liste yok.</div> : (
+        <div className="admin-list">
+          {data.map((l) => (
+            <div key={l.id} className="admin-item">
+              <Link href={`/u/${l.profiles?.username}`}><Avatar p={l.profiles || {}} /></Link>
+              <div className="info">
+                <span><Link href={`/u/${l.profiles?.username}`}><b><Name p={l.profiles || {}} /></b></Link> → <Link href={`/list/${l.id}`}>{l.title}</Link></span>
+                {l.description && <p className="admin-comment">{l.description}</p>}
+                <small>{timeAgo(l.updated_at)} güncellendi</small>
+              </div>
+              <div className="acts"><button className="btn danger" onClick={() => remove(l)}>Listeyi sil</button></div>
+            </div>
+          ))}
         </div>
       )}
     </section>

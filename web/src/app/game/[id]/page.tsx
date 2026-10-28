@@ -15,6 +15,7 @@ import { useApp } from "@/components/AppProvider";
 import { Feed } from "@/components/ui";
 import { Lightbox } from "@/components/Lightbox";
 import { PageEditor } from "@/components/PageEditor";
+import { ListsWith } from "@/components/ListsWith";
 
 const names = (list?: { name: string }[]) => (list || []).map((x) => x.name);
 
@@ -141,6 +142,7 @@ export default function GamePage() {
             <div className="section-head"><h2>Ancalog&apos;da kimler logladı</h2></div>
             <Feed list={logs} empty={<div className="empty">Henüz kimse loglamadı. İlk sen ol!</div>} />
           </section>
+          <ListsWith rawgId={Number(id) || undefined} />
         </div>
       </div>
       {shown !== null && <Lightbox images={images} start={shown} onClose={() => setShown(null)} />}

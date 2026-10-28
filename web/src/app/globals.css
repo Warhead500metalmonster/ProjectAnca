@@ -1284,3 +1284,9 @@ body.fav-dragging, body.fav-dragging * { cursor: grabbing !important; user-selec
 .import-help { margin: 0 0 4px; line-height: 1.6; }
 .import-steps { margin: 8px 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; color: var(--text); }
 .import-steps .bookmarklet { display: inline-flex; margin: 6px 0 0; cursor: grab; border: 2px dashed var(--accent); }
+
+/* Yönetim: susturma ve profil temizleme */
+.muted-tag { color: #e0a040; font-weight: 600; }
+.admin-clean { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 10px 12px; border-radius: 10px; background: var(--panel-2, rgba(255,255,255,.04)); }
+.admin-item .acts select.btn { appearance: auto; }
+.admin-mod { display: flex; gap: 14px; align-items: center; justify-content: flex-end; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
