@@ -7,6 +7,7 @@ import { avgText, daysTaken, fmtDate, fmtDur, fmtHoursShort, num, playSec, score
 import { useApp } from "@/components/AppProvider";
 import { useProfile } from "@/components/ProfileShell";
 import { BadgeChips, Cover } from "@/components/ui";
+import { Goals } from "@/components/Goals";
 
 // Durum renkleri: renk körlüğü için doğrulanmış sırayla (yan yana duran dilimler ayırt edilebilsin)
 const STATUS_ORDER: Status[] = ["active", "dropped", "completed", "paused", "planned"];
@@ -65,6 +66,7 @@ export function StatsTab() {
 
   return (
     <section className="section stats-page">
+      <Goals profile={profile} entries={entries} isMe={isMe} />
       <div className="tabs">
         {([["all", "", "Tümü"], ...TYPE_KEYS.map((k) => [k, "", TYPES[k].label])] as [EntryType | "all", string, string][]).map(([k, icon, label]) => (
           <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => { setType(k); setYear(""); setFinish(""); }}>{icon} {label}</button>
@@ -149,7 +151,7 @@ export function StatsTab() {
       )}
 
       <div className="section-head" style={{ marginTop: 28 }}><h2>Rozetler</h2></div>
-      <div className="badges-box"><BadgeChips id={profile.id} showLocked={isMe} /></div>
+      <div className="badges-box"><BadgeChips id={profile.id} showLocked={isMe} entries={entries} /></div>
     </section>
   );
 }

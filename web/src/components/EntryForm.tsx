@@ -183,6 +183,14 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
     }
   }
 
+  // İncelemede seçili yazıyı ||böyle|| sarar: okuyan tıklayınca açılır
+  function spoilerize() {
+    const box = document.getElementById("f-review") as HTMLTextAreaElement | null;
+    const from = box?.selectionStart ?? review.length, to = box?.selectionEnd ?? review.length;
+    const picked = review.slice(from, to) || "spoiler buraya";
+    setReview(review.slice(0, from) + "||" + picked + "||" + review.slice(to));
+  }
+
   async function remove() {
     if (!entry || !confirm(`“${entry.title}” silinsin mi?`)) return;
     try {
@@ -334,7 +342,10 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
           </div>
         )}
         <div className="field">
-          <label htmlFor="f-review">İnceleme <span className="muted">· profilinde bu kayda tıklayanlar okuyup beğenebilir, yorum yapabilir</span></label>
+          <label htmlFor="f-review" className="review-label">
+            <span>İnceleme <span className="muted">· profilinde bu kayda tıklayanlar okuyup beğenebilir, yorum yapabilir</span></span>
+            <button type="button" className="link" onClick={spoilerize} title="Seçtiğin yazıyı spoiler olarak gizler">Spoiler gizle</button>
+          </label>
           <textarea id="f-review" rows={3} maxLength={5000} value={review} onChange={(e) => setReview(e.target.value)} />
         </div>
         {error && <p className="form-error">{error}</p>}

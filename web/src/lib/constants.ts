@@ -1,4 +1,4 @@
-import type { EntryType, Status } from "./types";
+import type { Entry, EntryType, Status } from "./types";
 
 const WATCH = ["Netflix", "Disney+", "Prime Video", "HBO Max", "Apple TV+", "YouTube", "Mubi", "Tabii", "Exxen", "Sinema", "TV"];
 
@@ -49,20 +49,24 @@ export const PROFILE_COLS = "id, username, display_name, avatar_url";
 export const ENTRY_COLS = `*, profiles!entries_user_id_fkey(${PROFILE_COLS}), likes(count), comments(count)`;
 export const LOCAL_KEY = "ancalog.v1"; // hesaplardan önceki, tarayıcıda tutulan kayıtlar
 
-// Rozetler veritabanından verilir (user_badges). active: false olanlar henüz kendiliğinden verilmiyor,
-// ama yöneticiler panelden elle verebilir; verilen rozet profilde görünür.
-export const BADGES: Record<string, { icon: string; name: string; desc: string; tone: string; active: boolean }> = {
-  owner: { icon: "♛", name: "Site Sahibi", desc: "Ancalog'un kurucusu ve sahibi", tone: "gold", active: true },
-  admin: { icon: "◆", name: "Yönetici", desc: "Ancalog'un içeriklerini düzenleyen ekipten", tone: "blue", active: true },
-  founder: { icon: "★", name: "Öncü", desc: "Ancalog'a ilk katılanlardan biri", tone: "violet", active: true },
-  critic: { icon: "◆", name: "Eleştirmen", desc: "10 inceleme yaz", tone: "", active: false },
-  completionist: { icon: "◆", name: "Tamamlayıcı", desc: "50 oyun bitir", tone: "", active: false },
-  marathon: { icon: "◆", name: "Maratoncu", desc: "Toplam 1000 saat logla", tone: "", active: false },
-  social: { icon: "◆", name: "Sosyal Kelebek", desc: "10 arkadaş edin", tone: "", active: false },
-  curator: { icon: "◆", name: "Küratör", desc: "5 açık liste oluştur", tone: "", active: false },
-  cinephile: { icon: "◆", name: "Sinefil", desc: "100 film izle", tone: "", active: false },
-  otaku: { icon: "◆", name: "Otaku", desc: "50 anime bitir", tone: "", active: false },
-  melomane: { icon: "◆", name: "Melomane", desc: "100 albüm dinle", tone: "", active: false },
+// Rozetler veritabanından verilir (user_badges). earn: hedefe ulaşınca veritabanı kendiliğinden verir
+// (supabase/migrations/009); progress, profildeki ilerleme çubuğu için kayıtlardan hesaplanır.
+// Yöneticiler panelden elle de verebilir.
+type Prog = (e: Entry[]) => number;
+const doneOf = (type: EntryType): Prog => (e) => e.filter((x) => x.type === type && x.status === "completed").length;
+const hoursOf: Prog = (e) => Math.floor(e.reduce((s, x) => s + (x.playtime_sec ?? (x.hours ? Number(x.hours) * 3600 : 0)), 0) / 3600);
+export const BADGES: Record<string, { icon: string; name: string; desc: string; tone: string; earn?: number; progress?: Prog }> = {
+  owner: { icon: "♛", name: "Site Sahibi", desc: "Ancalog'un kurucusu ve sahibi", tone: "gold" },
+  admin: { icon: "◆", name: "Yönetici", desc: "Ancalog'un içeriklerini düzenleyen ekipten", tone: "blue" },
+  founder: { icon: "★", name: "Öncü", desc: "Ancalog'a ilk katılanlardan biri", tone: "violet" },
+  critic: { icon: "◆", name: "Eleştirmen", desc: "10 inceleme yaz", tone: "", earn: 10, progress: (e) => e.filter((x) => x.notes?.trim()).length },
+  completionist: { icon: "◆", name: "Tamamlayıcı", desc: "50 oyun bitir", tone: "", earn: 50, progress: doneOf("game") },
+  marathon: { icon: "◆", name: "Maratoncu", desc: "Toplam 1000 saat logla", tone: "", earn: 1000, progress: hoursOf },
+  social: { icon: "◆", name: "Sosyal Kelebek", desc: "10 arkadaş edin (karşılıklı takip)", tone: "", earn: 10 },
+  curator: { icon: "◆", name: "Küratör", desc: "5 açık liste oluştur", tone: "", earn: 5 },
+  cinephile: { icon: "◆", name: "Sinefil", desc: "100 film izle", tone: "", earn: 100, progress: doneOf("movie") },
+  otaku: { icon: "◆", name: "Otaku", desc: "50 anime bitir", tone: "", earn: 50, progress: doneOf("anime") },
+  melomane: { icon: "◆", name: "Melomane", desc: "100 albüm / şarkı dinle", tone: "", earn: 100, progress: doneOf("music") },
 };
 
 // Profil bağlantıları: kullanıcı adı ya da tam https:// link kabul edilir

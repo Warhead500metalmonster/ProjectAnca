@@ -11,6 +11,7 @@ import { rawg } from "@/lib/rawg";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
+import { Goals } from "@/components/Goals";
 import { Avatar, EntryCard, Feed, Stars, Stats, displayName } from "@/components/ui";
 
 interface LocalEntry { title?: string; type?: string; year?: string; creator?: string; status?: string; date?: string; rating?: string; cover?: string; notes?: string; updated?: number }
@@ -193,6 +194,7 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
         </div>
       )}
       <section className="section"><div className="stats"><Stats list={mine} /></div></section>
+      <section className="section"><Goals profile={user} entries={mine} isMe /></section>
       {active.length > 0 && (
         <section className="section">
           <div className="section-head"><h2>Devam ettiklerin</h2><Link href={`/u/${user.username}`}>Kütüphanem →</Link></div>

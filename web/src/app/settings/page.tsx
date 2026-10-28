@@ -214,6 +214,7 @@ function SettingsForm({ me }: { me: Profile }) {
       </div>
       <hr style={{ border: 0, borderTop: "1px solid var(--border)", width: "100%" }} />
       <div className="actions">
+        <Link className="btn" href="/import">Steam / Letterboxd&apos;dan içe aktar</Link>
         <button type="button" className="btn" onClick={exportMine}>Verilerimi indir (JSON)</button>
         <span className="spacer" />
         <button type="button" className="btn danger" onClick={() => sb().auth.signOut()}>Çıkış yap</button>

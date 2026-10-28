@@ -6,7 +6,7 @@ import type { Comment, Entry } from "@/lib/types";
 import { PROFILE_COLS, TYPES, statusLabel } from "@/lib/constants";
 import { contentHref, cssUrl, daysTaken, fmtDate, fmtDur, itemOf, num, playSec, safeUrl, scoreText, timeAgo } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
-import { Avatar, Name, Rating } from "./ui";
+import { Avatar, Name, Rating, RichText } from "./ui";
 import { useApp } from "./AppProvider";
 
 // Bir kaydın ayrıntılarını, beğeni ve yorumlarını gösteren pencere
@@ -146,7 +146,7 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
             <div className="view-details">{details.map(([k, v]) => <div key={k}><span>{k}</span><b>{v}</b></div>)}</div>
           )}
           {e.progress && <div className="view-note"><span>Not</span>{e.progress}</div>}
-          {e.notes && <div className="view-notes"><span className="muted">İnceleme</span>{"\n"}{e.notes}</div>}
+          {e.notes && <div className="view-notes"><span className="muted">İnceleme</span>{"\n"}<RichText text={e.notes} /></div>}
 
           <div className="social-bar">
             <button type="button" className={`like ${liked ? "on" : ""}`} onClick={toggleLike} disabled={likers === null}>
@@ -164,13 +164,13 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
                     <span className="muted">{timeAgo(c.created_at)}</span>
                     {me && (me.id === c.user_id || isMine || isAdmin) && <button type="button" className="link danger" onClick={() => deleteComment(c)}>sil</button>}
                   </div>
-                  <p>{c.body}</p>
+                  <p><RichText text={c.body} /></p>
                 </div>
               </div>
             ))}
             {me ? (
               <form className="comment-form" onSubmit={sendComment}>
-                <input value={text} maxLength={1000} placeholder="Yorum yaz…" onChange={(ev) => setText(ev.target.value)} />
+                <input value={text} maxLength={1000} placeholder="Yorum yaz… (spoiler için ||böyle|| yaz)" onChange={(ev) => setText(ev.target.value)} />
                 <button className="btn primary" disabled={busy || !text.trim()}>Gönder</button>
               </form>
             ) : <p className="muted" style={{ margin: 0 }}><Link href="/login" onClick={close} className="grad">Giriş yap</Link>, yorum yaz.</p>}
