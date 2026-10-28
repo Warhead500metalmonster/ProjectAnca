@@ -13,7 +13,9 @@ export interface Profile {
   socials?: Record<string, string>;
   location?: string | null;
   pronouns?: string | null;
-  site_color?: string | null;   // sitenin rengi, sadece kendisi görür
+  site_color?: string | null;
+  bg_url?: string | null;        // profilin arkasını kaplayan resim / video (Steam'deki gibi)
+  profile_theme?: string | null; // PROFILE_THEMES anahtarı   // sitenin rengi, sadece kendisi görür
   song_url?: string | null;     // profilde arkada çalan şarkı (YouTube linki)
   song_title?: string | null;
   song_volume?: number | null;

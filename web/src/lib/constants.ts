@@ -78,4 +78,15 @@ export const SOCIALS: { key: string; label: string; hosts: string[]; url?: (v: s
   { key: "website", label: "Web sitesi", hosts: ["*"], hint: "https://…" },
 ];
 
+// Steam'deki gibi hazır profil temaları: vurgu rengi + profil kutusunun zemini
+export const PROFILE_THEMES: Record<string, { name: string; accent: string; tint: string }> = {
+  summer: { name: "Yaz", accent: "#e8a33d", tint: "rgba(58, 36, 14, .82)" },
+  midnight: { name: "Gece Yarısı", accent: "#6f8fe0", tint: "rgba(16, 22, 48, .84)" },
+  steel: { name: "Çelik", accent: "#8fa6bb", tint: "rgba(34, 42, 52, .84)" },
+  cosmic: { name: "Kozmik", accent: "#b46be0", tint: "rgba(38, 16, 58, .84)" },
+  forest: { name: "Orman", accent: "#5fb06a", tint: "rgba(16, 40, 22, .84)" },
+  rose: { name: "Gül", accent: "#e0607e", tint: "rgba(52, 14, 26, .84)" },
+  dark: { name: "Karanlık", accent: "#c9ccd3", tint: "rgba(6, 6, 8, .88)" },
+};
+
 export const ACCENTS = ["#58a98a", "#8b5cf6", "#ec4899", "#ef4444", "#f97316", "#f59e0b", "#22c55e", "#14b8a6", "#0ea5e9", "#3b82f6", "#64748b"];

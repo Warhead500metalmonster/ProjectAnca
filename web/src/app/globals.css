@@ -487,10 +487,10 @@ textarea { resize: vertical; }
 details.locked summary { cursor: pointer; color: var(--muted); font-size: 13px; }
 
 /* ---------- Profil kişiselleştirme ---------- */
-.profile[style] { --accent: var(--pa); --accent-2: color-mix(in srgb, var(--pa) 65%, white); }
-.profile[style] .profile-banner:not(.img) { background: linear-gradient(120deg, color-mix(in srgb, var(--pa) 35%, #000), var(--pa) 50%, color-mix(in srgb, var(--pa) 60%, #3fa7c9)); }
+.profile.has-pa { --accent: var(--pa); --accent-2: color-mix(in srgb, var(--pa) 65%, white); }
+.profile.has-pa .profile-banner:not(.img) { background: linear-gradient(120deg, color-mix(in srgb, var(--pa) 35%, #000), var(--pa) 50%, color-mix(in srgb, var(--pa) 60%, #3fa7c9)); }
 .profile-banner.img { background-size: cover; background-position: center; }
-.profile[style] .btn.primary { background: var(--pa); box-shadow: 0 6px 20px color-mix(in srgb, var(--pa) 40%, transparent); }
+.profile.has-pa .btn.primary { background: var(--pa); box-shadow: 0 6px 20px color-mix(in srgb, var(--pa) 40%, transparent); }
 .socials { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 24px 0; }
 .social {
   display: inline-flex; gap: 6px; align-items: center; font-size: 13px; padding: 5px 12px; border-radius: 999px;
@@ -921,3 +921,23 @@ p.count-note { margin: -4px 0 12px; }
 .song-vol svg { width: 18px; height: 18px; fill: currentColor; }
 .song-vol input { width: 80px; accent-color: var(--accent); cursor: pointer; }
 @media (max-width: 480px) { .song-vol input { width: 60px; } }
+
+/* ---------- Steam'deki gibi profil teması ve arka plan ---------- */
+.profile.themed { background: var(--ptint); border: 1px solid rgba(255, 255, 255, .06); border-radius: 22px; padding: 14px 14px 24px; box-shadow: 0 20px 60px rgba(0, 0, 0, .35); backdrop-filter: blur(6px); }
+.profile-bg { position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; object-fit: cover; background: center top / cover no-repeat; pointer-events: none; }
+.profile-bg-shade { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(to bottom, rgba(8, 12, 13, .15), rgba(8, 12, 13, .55) 60%, rgba(8, 12, 13, .85)); }
+.theme-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; }
+.theme-card { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 12px; border: 2px solid transparent; background: var(--panel-2); cursor: pointer; color: var(--text); font-size: 13px; text-align: left; }
+.theme-card.on { border-color: #fff; }
+.theme-card .prev { height: 54px; border-radius: 8px; background: var(--t-tint); border: 1px solid rgba(255, 255, 255, .08); display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding: 6px; }
+.theme-card .prev i { display: block; height: 6px; border-radius: 3px; background: var(--t-accent); }
+.theme-card .prev i + i { width: 60%; opacity: .5; background: #fff; }
+.theme-card input[type=color] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.bg-preview { height: 120px; border-radius: 12px; background: center / cover no-repeat var(--panel-2); border: 1px solid var(--border); }
+
+/* Ayarlar: hesap silme */
+.danger-zone { border: 1px solid rgba(251, 113, 133, .35); border-radius: 12px; padding: 10px 14px; }
+.danger-zone summary { cursor: pointer; color: var(--danger); font-weight: 600; }
+.danger-zone[open] { display: flex; flex-direction: column; gap: 12px; }
+.danger-zone p { margin: 0; font-size: 14px; }
+.danger-zone .btn { align-self: flex-start; }
