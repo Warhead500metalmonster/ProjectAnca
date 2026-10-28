@@ -42,6 +42,8 @@ export function LibraryTab() {
   const type = picked && (picked === "all" || entries.some((e) => e.type === picked)) ? picked : firstType;
   const setType = (t: EntryType | "all") => setPick({ pid: profile.id, t });
   const [statuses, setStatuses] = useState<Set<Status>>(new Set());
+  // Planlananlar (backlog, istek listesi) kalabalık etmesin diye ilk açılışta gizli; görmek isteyen açar
+  const [showPlanned, setShowPlanned] = useState(false);
   const [year, setYear] = useState("");
   const [finishYear, setFinishYear] = useState("");
   const [platform, setPlatform] = useState("");
@@ -62,7 +64,9 @@ export function LibraryTab() {
   }
   const toggle = <T,>(set: Set<T>, x: T) => { const n = new Set(set); if (n.has(x)) n.delete(x); else n.add(x); return n; };
 
-  const scoped = type === "all" ? entries : entries.filter((e) => e.type === type);
+  const visible = showPlanned || statuses.has("planned") ? entries : entries.filter((e) => e.status !== "planned");
+  const scoped = type === "all" ? visible : visible.filter((e) => e.type === type);
+  const plannedHere = entries.filter((e) => e.status === "planned" && (type === "all" || e.type === type)).length;
   const years = useMemo(() => uniqSorted(scoped.map((e) => e.year)), [scoped]);
   const finishYears = useMemo(() => uniqSorted(scoped.filter((e) => e.status === "completed").map((e) => e.date?.slice(0, 4))), [scoped]);
   const platforms = useMemo(() => uniqSorted(scoped.map((e) => e.platform), false), [scoped]);
@@ -85,7 +89,7 @@ export function LibraryTab() {
   const filterCount = statuses.size + [year, finishYear, platform, minRating].filter(Boolean).length + flags.size;
   const statusType = type === "all" ? null : type;
   // Sayfa sayfa göster; filtre ya da sıralama değişince baştan başla
-  const pageKey = [type, [...statuses].join(), year, finishYear, platform, minRating, [...flags].join(), sort, needle, view].join("|");
+  const pageKey = [type, showPlanned, [...statuses].join(), year, finishYear, platform, minRating, [...flags].join(), sort, needle, view].join("|");
   const [paging, setPaging] = useState({ key: pageKey, n: PAGE });
   const shown = paging.key === pageKey ? paging.n : PAGE;
   const more = () => setPaging({ key: pageKey, n: shown + PAGE });
@@ -103,7 +107,7 @@ export function LibraryTab() {
             .filter(([k]) => k === "all" || entries.some((e) => e.type === k))
             .map(([k, icon, label]) => (
               <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => { setType(k); setYear(""); setFinishYear(""); setPlatform(""); }}>
-                {icon} {label}<span className="count">{k === "all" ? entries.length : entries.filter((e) => e.type === k).length}</span>
+                {icon} {label}<span className="count">{k === "all" ? visible.length : visible.filter((e) => e.type === k).length}</span>
               </button>
             ))}
         </div>
@@ -112,6 +116,11 @@ export function LibraryTab() {
           <button className={`btn ${showFilters || filterCount ? "on" : ""}`} onClick={() => setShowFilters(!showFilters)}>
             Filtrele{filterCount ? ` (${filterCount})` : ""}
           </button>
+          {plannedHere > 0 && !statuses.has("planned") && (
+            <button className={`btn ${showPlanned ? "on" : ""}`} onClick={() => setShowPlanned(!showPlanned)}>
+              {showPlanned ? "Planlananları gizle" : `Planlananları göster (${plannedHere})`}
+            </button>
+          )}
           <select aria-label="Sırala" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
             {SORTS.map(([k, label]) => <option key={k} value={k}>↕ {label}</option>)}
           </select>

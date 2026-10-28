@@ -64,7 +64,7 @@ function HomeSection({ k }: { k: string }) {
   switch (k) {
     case "favs": return <FavoritesSection />;
     case "playing": return strip(entries.filter((e) => e.status === "active").sort(byUpdated).slice(0, 12));
-    case "recent": return strip([...entries].sort(byUpdated).slice(0, 12), `${base}/library`);
+    case "recent": return strip(entries.filter((e) => e.status !== "planned").sort(byUpdated).slice(0, 12), `${base}/library`); // planlananlar kalabalık etmesin
     case "top": return strip(entries.filter((e) => e.rating > 0).sort((a, b) => b.rating - a.rating || byUpdated(a, b)).slice(0, 12));
     case "longest": return strip(entries.filter((e) => e.type === "game" && playSec(e) > 0).sort((a, b) => playSec(b) - playSec(a)).slice(0, 12));
     case "reviews": {

@@ -1336,3 +1336,6 @@ body.fav-dragging, body.fav-dragging * { cursor: grabbing !important; user-selec
 .form-import { display: block; margin: -4px 0 14px; padding: 10px 12px; border-radius: 10px; font-size: 13px; line-height: 1.5;
   border: 1px dashed var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--text); }
 .form-import:hover { background: color-mix(in srgb, var(--accent) 20%, transparent); }
+.match-row.pair .duo { display: flex; flex: none; }
+.match-row.pair .duo .avatar + .avatar { margin-left: -12px; box-shadow: 0 0 0 2px var(--panel); }
+.match-row.pair .who a:hover { color: var(--accent-2); }
