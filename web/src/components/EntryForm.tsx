@@ -6,7 +6,7 @@ import type { Entry, EntryType, FormGame, Item, RawgGame } from "@/lib/types";
 import { STATUSES, STORES, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
 import { safeUrl, scoreText, today } from "@/lib/format";
 import { gameFromRawg, rawg } from "@/lib/rawg";
-import { type Found, findContent, searchCredit, tmdbCreator, tmdbDetail } from "@/lib/data";
+import { type Found, findContent, isLink, searchCredit, tmdbCreator, tmdbDetail } from "@/lib/data";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "./AppProvider";
 import { HmsInput } from "./ui";
@@ -83,8 +83,9 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
       const list = await findContent(type, text);
       if (seq !== searchSeq.current) return;
       setSuggestions(list);
-      setSuggestNote(list.length ? "" : isGame ? "Sonuç yok. Farklı yazmayı dene." : "");
-      if (!list.length && !isGame) setSuggestions(null); // elle yazmak serbest
+      if (!list.length && type === "music") setSuggestNote(isLink(text) ? "Bu link açılamadı. Adını elle yazabilirsin." : "Bulamadın mı? YouTube, YouTube Music ya da Spotify linkini yapıştır, bilgiler otomatik gelsin. Ya da elle yaz.");
+      else setSuggestNote(list.length ? "" : isGame ? "Sonuç yok. Farklı yazmayı dene." : "");
+      if (!list.length && !isGame && type !== "music") setSuggestions(null); // elle yazmak serbest
     } catch {
       if (seq === searchSeq.current) { setSuggestions([]); setSuggestNote("Arama şu an çalışmıyor."); }
     }
@@ -217,7 +218,7 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
             </div>
           ) : (
             <input id="f-title" maxLength={200} autoComplete="off" autoFocus value={title}
-              placeholder={isGame ? "Oyunun adını yaz ve listeden seç…" : type === "music" ? "Albüm ya da şarkı ara, listeden seç veya elle yaz…" : `${t.label} ara, listeden seç ya da elle yaz…`}
+              placeholder={isGame ? "Oyunun adını yaz ve listeden seç…" : type === "music" ? "Albüm / şarkı ara ya da YouTube, Spotify linki yapıştır…" : `${t.label} ara, listeden seç ya da elle yaz…`}
               onChange={(e) => onTitleChange(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "ArrowDown") { e.preventDefault(); (e.currentTarget.parentElement?.querySelector(".suggest button") as HTMLElement | null)?.focus(); }

@@ -78,6 +78,43 @@ export async function searchGames(text: string, limit = 6): Promise<Found[]> {
   }));
 }
 
+// Arama bulamazsa: YouTube / YouTube Music / Spotify / SoundCloud linkinden bilgileri çek
+export const isLink = (text: string) => /^https:\/\/\S+$/i.test(text.trim());
+
+export async function fromLink(link: string): Promise<Found | null> {
+  const r = await fetch(`/api/oembed?url=${encodeURIComponent(link.trim())}`);
+  if (!r.ok) return null;
+  const d: { title: string; author: string; thumbnail: string; provider: string } = await r.json();
+  const url = new URL(link.trim());
+  let title = d.title, artist = d.author.replace(/\s*-\s*Topic$/i, "").replace(/VEVO$/i, "").trim();
+  let ext: string | null = null;
+  if (d.provider === "YouTube") {
+    const v = url.searchParams.get("v") || (url.hostname === "youtu.be" ? url.pathname.slice(1) : "");
+    const list = url.searchParams.get("list");
+    ext = v ? `yt:${v}` : list ? `ytpl:${list}` : null;
+    // "Sanatçı - Şarkı (Official Video)" → "Şarkı"
+    const dash = title.indexOf(" - ");
+    if (dash > 0 && (!artist || title.slice(0, dash).toLocaleLowerCase("tr") === artist.toLocaleLowerCase("tr"))) {
+      artist ||= title.slice(0, dash);
+      title = title.slice(dash + 3);
+    }
+    title = title.replace(/\s*[([][^)\]]*(official|video|audio|lyric|klip|4k|hd|remaster|visualizer)[^)\]]*[)\]]/gi, "").trim();
+    if (title.startsWith("Album - ")) title = title.slice(8);
+  } else if (d.provider === "Spotify") {
+    const [, kind, id] = url.pathname.split("/");
+    ext = kind && id ? `spotify:${kind}:${id}` : null;
+  } else if (d.provider === "SoundCloud") {
+    // "Şarkı by Sanatçı" → "Şarkı"
+    const suffix = ` by ${artist}`;
+    if (artist && title.toLocaleLowerCase("tr").endsWith(suffix.toLocaleLowerCase("tr"))) title = title.slice(0, -suffix.length);
+  }
+  if (!title) return null;
+  return {
+    type: "music", title: title.slice(0, 200), creator: artist || null, year: null, cover: d.thumbnail || null,
+    rawg_id: null, ext_id: ext, sub: `${d.provider} linki${artist ? ` · ${artist}` : ""}`, thumb: d.thumbnail || null,
+  };
+}
+
 // ---------- Film ve dizi: TMDB (anahtar sunucuda, /api/tmdb üzerinden) ----------
 
 export const tmdbImage = (path?: string | null, size = "w500") => (path ? `https://image.tmdb.org/t/p/${size}${path}` : null);
@@ -179,7 +216,7 @@ export async function searchLogged(type: EntryType, text: string): Promise<Found
 // Bir türde içerik ara: oyunda RAWG, müzikte iTunes, film/dizide TMDB, animede AniList
 export function findContent(type: EntryType, text: string): Promise<Found[]> {
   if (type === "game") return searchGames(text);
-  if (type === "music") return searchMusic(text);
+  if (type === "music") return isLink(text) ? fromLink(text).then((f) => (f ? [f] : [])) : searchMusic(text);
   if (type === "anime") return searchAnime(text).catch(() => searchLogged(type, text));
   return searchTmdb(type, text).catch(() => searchLogged(type, text));
 }
