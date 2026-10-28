@@ -882,3 +882,22 @@ p.count-note { margin: -4px 0 12px; }
   background: rgb(var(--accent-rgb) / .08); color: #d4d8e3; font-size: 14px; line-height: 1.45;
 }
 .feed-review:hover { background: rgb(var(--accent-rgb) / .14); }
+
+/* ---------- Site duyurusu ---------- */
+.notice {
+  display: flex; align-items: center; gap: 12px; width: min(1200px, calc(100% - 32px)); margin: 14px auto 0;
+  padding: 10px 10px 10px 16px; border-radius: 12px; border: 1px solid rgb(var(--accent-rgb) / .45); background: rgb(var(--accent-rgb) / .12);
+}
+.notice.party { border-color: rgba(236, 72, 153, .45); background: linear-gradient(135deg, rgba(236, 72, 153, .14), rgba(139, 92, 246, .12)); }
+.notice.warn { border-color: rgba(245, 158, 11, .5); background: rgba(245, 158, 11, .12); }
+.notice p { flex: 1; margin: 0; white-space: pre-line; }
+.notice a { color: var(--accent-2); font-weight: 600; }
+
+.admin-notice { display: flex; flex-direction: column; gap: 10px; }
+.admin-notice textarea { width: 100%; resize: vertical; }
+.admin-item.member .avatar { width: 44px; height: 44px; }
+.badge-toggles { display: flex; gap: 4px; flex-wrap: wrap; }
+.bdg-t { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel-2); cursor: pointer; font-size: 16px; filter: grayscale(1); opacity: .45; transition: .15s; }
+.bdg-t:hover { opacity: .8; filter: none; }
+.bdg-t.on { filter: none; opacity: 1; border-color: var(--accent); background: rgb(var(--accent-rgb) / .18); }
+.admin-comment { margin: 4px 0; white-space: pre-line; overflow-wrap: anywhere; }

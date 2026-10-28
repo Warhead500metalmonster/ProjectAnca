@@ -4,16 +4,23 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { CatalogItem, EntryType, PageEdit, Profile } from "@/lib/types";
-import { TYPES, TYPE_KEYS } from "@/lib/constants";
-import { contentHref, likeEsc, safeUrl, timeAgo } from "@/lib/format";
-import { q, sb, supabaseConfigured } from "@/lib/supabase";
+import { BADGES, PROFILE_COLS, TYPES, TYPE_KEYS } from "@/lib/constants";
+import { contentHref, likeEsc, safeUrl, timeAgo, today } from "@/lib/format";
+import { countOf, q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
-import { UserRow } from "@/components/ui";
+import { Avatar, Name, UserRow } from "@/components/ui";
+import { NOTICE_TONES, type Notice, fetchNotice } from "@/components/Announcement";
+
+const TABS = [["home", "📊 Genel"], ["members", "👥 Üyeler"], ["content", "🎵 İçerikler"], ["comments", "💬 Yorumlar"]] as const;
+type Tab = (typeof TABS)[number][0];
+// Yöneticinin elle verebileceği rozetler (site sahibi / yönetici rozeti hariç)
+const GRANTABLE = Object.keys(BADGES).filter((b) => b !== "owner" && b !== "admin");
 
 // Yönetim paneli: sadece site sahibi ve yöneticiler girer (veritabanı da başkasına izin vermez)
 export default function AdminPage() {
   const { me, ready, isAdmin } = useApp();
+  const [tab, setTab] = useState<Tab>("home");
   if (!supabaseConfigured()) return <div className="empty">Supabase ayarları eksik.</div>;
   if (!ready) return <div className="loading">Yükleniyor…</div>;
   if (!me || !isAdmin) return <div className="empty">Bu sayfa sadece yöneticiler için. 🛡️</div>;
@@ -23,12 +30,15 @@ export default function AdminPage() {
         <h1>🛡️ Yönetim paneli</h1>
         <p className="muted" style={{ margin: 0 }}>
           Bir oyunun, filmin ya da albümün sayfasını düzeltmek için o sayfaya git ve <b>🛡️ Sayfayı düzenle</b>&apos;ye bas.
-          Uygunsuz yorumları kayıt penceresinden silebilirsin.
         </p>
+        <div className="tabs" style={{ marginBottom: 0 }}>
+          {TABS.map(([k, label]) => <button key={k} className={`tab ${tab === k ? "active" : ""}`} onClick={() => setTab(k)}>{label}</button>)}
+        </div>
       </section>
-      <Admins />
-      <Catalog />
-      <Edits />
+      {tab === "home" && <><Overview /><NoticeEditor /></>}
+      {tab === "members" && <><Admins /><Members /></>}
+      {tab === "content" && <><Catalog /><Edits /></>}
+      {tab === "comments" && <Comments />}
     </>
   );
 }
@@ -226,6 +236,183 @@ function Edits() {
           </div>
         ))}
       </div>
+    </section>
+  );
+}
+
+// Site geneli sayılar ve son katılanlar
+function Overview() {
+  const { version } = useApp();
+  const { data } = useLoad(async () => {
+    const db = sb();
+    const head = { count: "exact" as const, head: true };
+    const week = new Date(Date.now() - 7 * 86400000).toISOString();
+    const [members, entries, todayEntries, newMembers, comments, likes, lists, recent] = await Promise.all([
+      countOf(db.from("profiles").select("id", head)),
+      countOf(db.from("entries").select("id", head)),
+      countOf(db.from("entries").select("id", head).gte("created_at", today())),
+      countOf(db.from("profiles").select("id", head).gte("created_at", week)),
+      countOf(db.from("comments").select("id", head)),
+      countOf(db.from("likes").select("entry_id", head)),
+      countOf(db.from("lists").select("id", head)),
+      q<Profile[]>(db.from("profiles").select("*").order("created_at", { ascending: false }).limit(6)),
+    ]);
+    return { members, entries, todayEntries, newMembers, comments, likes, lists, recent };
+  }, [version]);
+
+  if (!data) return <div className="loading">Yükleniyor…</div>;
+  const tiles: [number, string][] = [
+    [data.members, "Üye"], [data.newMembers, "Bu hafta katılan"], [data.entries, "Toplam kayıt"], [data.todayEntries, "Bugün eklenen kayıt"],
+    [data.comments, "Yorum"], [data.likes, "Beğeni"], [data.lists, "Liste"],
+  ];
+  return (
+    <>
+      <section className="section"><div className="stats">{tiles.map(([n, l]) => <div className="stat" key={l}><b>{n.toLocaleString("tr")}</b><span>{l}</span></div>)}</div></section>
+      <section className="section">
+        <div className="section-head"><h2>🆕 Son katılanlar</h2></div>
+        <div className="user-list">
+          {data.recent.map((p) => <div key={p.id} className="admin-row"><UserRow p={p} /><span className="muted small">{timeAgo(p.created_at)}</span></div>)}
+        </div>
+      </section>
+    </>
+  );
+}
+
+// Herkesin sayfanın üstünde göreceği duyuru
+function NoticeEditor() {
+  const { me, toast, refresh } = useApp();
+  const [f, setF] = useState<Notice | null>(null);
+  const { data } = useLoad(fetchNotice, []);
+  const cur = f ?? data?.value ?? {};
+
+  async function save(ev: React.FormEvent) {
+    ev.preventDefault();
+    if (cur.link && !/^https?:\/\//.test(cur.link)) return toast("Bağlantı https:// ile başlamalı");
+    try {
+      const table = sb().from("site_settings");
+      if (cur.text?.trim()) {
+        await q(table.upsert({ key: "announcement", value: { text: cur.text.trim(), tone: cur.tone || "info", link: cur.link?.trim() || undefined },
+          updated_by: me?.id, updated_at: new Date().toISOString() }, { onConflict: "key" }));
+        toast("Duyuru yayında 📢");
+      } else {
+        await q(table.delete().eq("key", "announcement"));
+        toast("Duyuru kaldırıldı");
+      }
+      refresh();
+    } catch (err) {
+      toast("Olmadı: " + (err as Error).message);
+    }
+  }
+
+  return (
+    <section className="section">
+      <div className="section-head"><h2>📢 Duyuru</h2></div>
+      <form className="admin-notice" onSubmit={save}>
+        <p className="muted small" style={{ margin: 0 }}>Yazdığın şey herkesin ekranının üstünde görünür. Kaldırmak için kutuyu boşaltıp kaydet.</p>
+        <textarea className="input" rows={2} maxLength={300} placeholder="ör. Yeni özellik: profiline şarkı ekleyebilirsin! 🎵" value={cur.text || ""}
+          onChange={(e) => setF({ ...cur, text: e.target.value })} />
+        <div className="admin-add">
+          <select value={cur.tone || "info"} onChange={(e) => setF({ ...cur, tone: e.target.value as Notice["tone"] })} aria-label="Duyuru türü">
+            {NOTICE_TONES.map(([t, l]) => <option key={t} value={t}>{l}</option>)}
+          </select>
+          <input className="input" type="url" placeholder="Bağlantı (isteğe bağlı) https://…" value={cur.link || ""} onChange={(e) => setF({ ...cur, link: e.target.value })} />
+          <button className="btn primary" type="submit">Kaydet</button>
+        </div>
+      </form>
+    </section>
+  );
+}
+
+// Üye ara, rozet ver / al
+function Members() {
+  const { badges, loadBadges, toast } = useApp();
+  const [text, setText] = useState("");
+  const { data } = useLoad(() => {
+    const term = text.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
+    const req = sb().from("profiles").select("*").limit(30);
+    return q<Profile[]>(term ? req.ilike("username", `%${term}%`) : req.order("created_at", { ascending: false }));
+  }, [text]);
+
+  async function toggle(p: Profile, badge: string, on: boolean) {
+    if (!on && !confirm(`@${p.username} kullanıcısının “${BADGES[badge].name}” rozeti alınsın mı?`)) return;
+    const { error } = await sb().rpc("set_badge", { p_username: p.username, p_badge: badge, p_on: on });
+    if (error) return toast("Olmadı: " + error.message);
+    toast(on ? `@${p.username}: ${BADGES[badge].icon} ${BADGES[badge].name} verildi` : "Rozet alındı");
+    loadBadges();
+  }
+
+  return (
+    <section className="section">
+      <div className="section-head"><h2>🎖️ Üyeler ve rozetler</h2></div>
+      <p className="muted small" style={{ marginTop: 0 }}>Rozete basınca verilir, renkli olana basınca geri alınır. Verilen rozet profilinde görünür.</p>
+      <input className="input" type="search" placeholder="Kullanıcı ara…" value={text} onChange={(e) => setText(e.target.value)} style={{ width: "100%", marginBottom: 12 }} />
+      <div className="admin-list">
+        {data?.map((p) => {
+          const has = badges.get(p.id) || [];
+          return (
+            <div key={p.id} className="admin-item member">
+              <Link href={`/u/${p.username}`}><Avatar p={p} /></Link>
+              <div className="info">
+                <Link href={`/u/${p.username}`}><b><Name p={p} /></b></Link>
+                <small>@{p.username} · {timeAgo(p.created_at)} katıldı</small>
+              </div>
+              <div className="badge-toggles">
+                {GRANTABLE.map((b) => (
+                  <button key={b} className={`bdg-t ${has.includes(b) ? "on" : ""}`} title={`${BADGES[b].name}: ${BADGES[b].desc}`}
+                    onClick={() => toggle(p, b, !has.includes(b))}>{BADGES[b].icon}</button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+interface AdminComment { id: string; body: string; created_at: string; user_id: string; entry_id: string;
+  profiles: Partial<Profile> | null; entries: { title: string; user_id: string } | null }
+
+// Son yorumlar: uygunsuz olanı sil
+function Comments() {
+  const { toast } = useApp();
+  const [v, setV] = useState(0);
+  const { data } = useLoad(async () => {
+    const rows = await q<AdminComment[]>(sb().from("comments").select(`id, body, created_at, user_id, entry_id, profiles(${PROFILE_COLS}), entries(title, user_id)`)
+      .order("created_at", { ascending: false }).limit(50));
+    const ids = [...new Set(rows.map((c) => c.entries?.user_id).filter(Boolean))] as string[];
+    const owners = ids.length ? await q<Profile[]>(sb().from("profiles").select("id, username").in("id", ids)) : [];
+    return { rows, owner: new Map(owners.map((o) => [o.id, o.username])) };
+  }, [v]);
+
+  async function remove(c: AdminComment) {
+    if (!confirm(`Bu yorum silinsin mi?\n\n“${c.body.slice(0, 120)}”`)) return;
+    try { await q(sb().from("comments").delete().eq("id", c.id)); toast("Yorum silindi"); setV((x) => x + 1); } catch (err) { toast("Olmadı: " + (err as Error).message); }
+  }
+
+  if (!data) return <div className="loading">Yükleniyor…</div>;
+  return (
+    <section className="section">
+      <div className="section-head"><h2>💬 Son yorumlar</h2><span className="muted">{data.rows.length} yorum</span></div>
+      {!data.rows.length ? <div className="empty">Henüz yorum yok.</div> : (
+        <div className="admin-list">
+          {data.rows.map((c) => {
+            const owner = data.owner.get(c.entries?.user_id || "");
+            return (
+              <div key={c.id} className="admin-item">
+                <Link href={`/u/${c.profiles?.username}`}><Avatar p={c.profiles || {}} /></Link>
+                <div className="info">
+                  <span><Link href={`/u/${c.profiles?.username}`}><b><Name p={c.profiles || {}} /></b></Link>
+                    {owner && <> → <Link href={`/u/${owner}?entry=${c.entry_id}`}>@{owner} · {c.entries?.title}</Link></>}</span>
+                  <p className="admin-comment">{c.body}</p>
+                  <small>{timeAgo(c.created_at)}</small>
+                </div>
+                <div className="acts"><button className="btn danger" onClick={() => remove(c)}>Sil</button></div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }
