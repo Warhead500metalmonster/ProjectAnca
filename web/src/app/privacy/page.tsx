@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = { title: "Gizlilik ve KVKK · Ancalog" };
 
-const UPDATED = "28 Ekim 2026";
+const UPDATED = "29 Ekim 2026";
 
 export default function Privacy() {
   return (
@@ -19,7 +19,7 @@ export default function Privacy() {
           <li>E-posta adresin hiçbir yerde görünmez.</li>
           <li>Herkese açık olan: profilin, kayıtların, puanların, incelemelerin, yorumların ve açık listelerin. Gizli listelerin ve mesajların yalnızca senin (ve mesajlaştığın kişinin).</li>
           <li>Hesabını istediğin an <b>Ayarlar → Hesabımı sil</b> ile kalıcı olarak silebilir, silmeden önce <b>Verilerimi indir</b> ile bir kopyasını alabilirsin.</li>
-          <li>Steam&apos;den aktarırken Steam şifren istenmez; yalnızca herkese açık oyun listen okunur.</li>
+          <li>Başka sitelerden aktarırken hiçbir sitenin şifresi istenmez. PlayStation ve Backloggd düğmeleri ile dosyalar senin tarayıcında çalışır; sunucuya sadece sonuçtaki oyun / film listesi kaydedilir.</li>
           <li>Yetkili makamlar kanuna uygun olarak isterse, mesajlar dahil kayıtlar onlarla paylaşılır. Herkes kendi yazdığından sorumludur.</li>
         </ul>
       </div>
@@ -34,7 +34,15 @@ export default function Privacy() {
         <li><b>Profil bilgileri (hepsi isteğe bağlı):</b> hakkında yazısı, konum, zamirler, sosyal medya bağlantıları, profil fotoğrafı / kapak / arka plan linkleri, profil şarkısı, tema ve renk seçimlerin, yıllık hedeflerin.</li>
         <li><b>Kullanım içeriğin:</b> kayıtların, puanların, sürelerin, tarihlerin, notların, incelemelerin, listelerin, favorilerin, beğenilerin, yorumların, takiplerin ve rozetlerin.</li>
         <li><b>Mesajların:</b> karşılıklı takipleştiğin kişilerle yazışmaların.</li>
-        <li><b>İçe aktarma:</b> Steam&apos;den aktarırsan yalnızca oyun listen, oynama sürelerin ve son oynama tarihin; Letterboxd&apos;dan aktarırsan seçtiğin dosyadaki film adları, puanlar, tarihler ve incelemeler alınır. Steam profil linkin ve Letterboxd dosyan saklanmaz; dosya senin tarayıcında okunur, sunucuya yüklenmez.</li>
+        <li><b>İçe aktarma:</b> yalnızca senin başlattığın aktarımda ve yalnızca kütüphanene eklenecek bilgiler (içerik adı, durum, puan, süre, tarih, not, platform) alınır.
+          <ul>
+            <li>Steam: herkese açık oyun listen, oynama sürelerin, son oynama tarihin ve istersen başarım oranların (Steam Web API).</li>
+            <li>Xbox: yazdığın gamertag ile herkese açık oyun listen ve başarımların (OpenXBL aracılığıyla).</li>
+            <li>Last.fm, Spotify albüm linki, Simkl: yazdığın kullanıcı adı, link ya da bağlantı kodu ile o hizmetten liste alınır.</li>
+            <li>PlayStation ve Backloggd: düğme senin tarayıcında, senin açtığın sayfada çalışır; topladığı listeyi sen kopyalayıp yapıştırırsın. Ancalog sunucusu bu sitelere bağlanmaz.</li>
+            <li>HowLongToBeat, Playnite, Letterboxd ve Spotify dosyaları ile yapıştırılan listeler senin tarayıcında okunur, dosyanın kendisi sunucuya yüklenmez.</li>
+          </ul>
+          Profil linkin, gamertag&apos;in, kullanıcı adların, dosyaların ve yapıştırdığın metin saklanmaz; yalnızca sonuçta kütüphanene eklenen kayıtlar saklanır.</li>
         <li><b>Toplamadıklarımız:</b> gerçek adın (yazmadıkça), telefon numaran, kimlik bilgilerin, konum (GPS) bilgin, ödeme bilgin, rehberin. Siteyi kullanırken nereye tıkladığını izleyen bir analiz aracı kullanılmaz.</li>
       </ul>
 
@@ -44,7 +52,11 @@ export default function Privacy() {
         <li>Siteyi güvende tutmak, kötüye kullanımı, spam&apos;i ve kurallara aykırı içeriği önlemek: meşru menfaat (KVKK m.5/2-f). Bu amaçla kurallar nedeniyle kapatılan hesapların e-posta adresi, tekrar kayıt olunmasını engellemek için saklanabilir.</li>
         <li>Kanuni yükümlülükleri yerine getirmek, yetkili makamların hukuka uygun taleplerine yanıt vermek: kanunlarda açıkça öngörülme ve hukuki yükümlülük (KVKK m.5/2-a, ç).</li>
       </ul>
-      <p>Verilerin reklam, profilleme ya da pazarlama için kullanılmaz, satılmaz, kiralanmaz.</p>
+      <p>Verilerin reklam, profilleme ya da pazarlama için kullanılmaz, satılmaz, kiralanmaz. Uyum yüzdeleri ve sıralamalar yalnızca herkese açık kayıtlardan,
+        sitenin kendi içinde hesaplanır; kimseyle paylaşılmaz.</p>
+      <p>Ancalog kâr amacı gütmeyen, tek kişinin yürüttüğü bir hobi projesidir. Kişisel verilerini korumak için makul teknik ve idari önlemler alınır;
+        ancak profesyonel bir kurumun sunabileceği güvenlik ve süreklilik garanti edilemez. Hassas bilgilerini (kimlik, adres, telefon, sağlık bilgisi gibi)
+        siteye yazmamanı öneririz; yazdığın her şeyden sen sorumlusun.</p>
 
       <h2>3. Kimler görebilir?</h2>
       <ul>
@@ -72,7 +84,8 @@ export default function Privacy() {
         <li><a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener">Vercel</a>: sitenin barındırılması</li>
       </ul>
       <p>Arama ve bilgi için şu servislere <b>yalnızca aradığın kelime</b> gönderilir, kişisel bilgin gönderilmez: RAWG, TMDB, AniList, Apple (iTunes), Deezer.
-        Steam&apos;den aktarırken yalnızca Steam profil kimliğin Steam&apos;e sorulur. Bir profilde şarkı çaldığında oynatıcı YouTube&apos;dan yüklenir.
+        İçe aktarırken yalnızca yazdığın kimlik (Steam profil kimliği, Xbox gamertag&apos;i, Last.fm kullanıcı adı, Spotify albüm linki, Simkl kodu) ilgili hizmete
+        (Steam, OpenXBL, Last.fm, Spotify, Simkl) sorulur. Bir profilde şarkı çaldığında oynatıcı YouTube&apos;dan yüklenir. Bu hizmetlerin kendi gizlilik kuralları geçerlidir.
         Hesap oluşturarak verilerinin bu hizmetin sunulabilmesi için bu sağlayıcılara aktarılmasını kabul etmiş olursun.</p>
 
       <h2>6. Çerezler ve tarayıcı depolaması</h2>
@@ -89,7 +102,7 @@ export default function Privacy() {
         <li>Verilerin hesabın açık olduğu sürece saklanır.</li>
         <li><b>Hesabını sildiğinde</b> profilin, kayıtların, listelerin, yorumların, beğenilerin, mesajların, takiplerin ve rozetlerin hemen ve kalıcı olarak silinir. Altyapı sağlayıcısının teknik yedeklerinden de en geç birkaç hafta içinde kendiliğinden çıkar.</li>
         <li>Ortak katalogdaki içerikler (aramada olmadığı için elle eklediğin şarkılar gibi) başkaları da kullandığı için kalır; ekleyen bilgisi silinir.</li>
-        <li>Kurallar nedeniyle kapatılan hesapların e-posta adresi, tekrar kayıt olmayı engellemek için saklanabilir.</li>
+        <li>Kurallar nedeniyle kapatılan hesapların e-posta adresi, tekrar kayıt olmayı engellemek için saklanabilir. Susturma kararları süresi bitene kadar profilde tutulur.</li>
       </ul>
 
       <h2>8. Hakların (KVKK m.11)</h2>

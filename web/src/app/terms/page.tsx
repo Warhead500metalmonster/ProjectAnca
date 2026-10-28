@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = { title: "Kullanım Koşulları · Ancalog" };
 
 // Son güncelleme tarihini metin değişince güncelle
-const UPDATED = "28 Ekim 2026";
+const UPDATED = "29 Ekim 2026";
 
 export default function Terms() {
   return (
@@ -15,11 +15,12 @@ export default function Terms() {
       <div className="legal-summary">
         <b>Kısaca</b>
         <ul>
-          <li>Ancalog ücretsiz, reklamsız, arkadaşlar arasında başlamış bir hobi sitesi.</li>
+          <li>Ancalog ücretsiz, reklamsız, kâr amacı gütmeyen ve yapay zekâ desteğiyle geliştirilen bir hobi sitesi. Hiçbir garanti verilmeden, &quot;olduğu gibi&quot; sunulur; kullanımı tamamen kendi sorumluluğundadır.</li>
           <li>Yazdıkların senin; kurallara uyduğun sürece istediğini logla, puanla, incele.</li>
           <li>Herkes kendi yazdığından sorumludur. Yetkili makamlar kanuna uygun olarak isterse kayıtlar (mesajlar dahil) onlarla paylaşılır.</li>
           <li>Hakaret, taciz, nefret söylemi, müstehcenlik, başkasının kişisel bilgisi ve korsan içerik yasak.</li>
           <li>Hesabını istediğin an kendin silebilirsin.</li>
+          <li>Başka sitelerden içe aktarırken verinin sana ait olduğundan ve o sitenin kurallarına uyduğundan sen sorumlusun.</li>
           <li>Oyun, film ve albüm bilgileri ile kapakları hak sahiplerine ait; biz sadece gösteriyoruz.</li>
         </ul>
       </div>
@@ -29,7 +30,9 @@ export default function Terms() {
 
       <h2>1. Hizmet</h2>
       <p>Ancalog; oyun, film, dizi, müzik ve anime kayıtlarını tutmaya, puanlamaya, incelemeye ve arkadaşlarla paylaşmaya yarayan ücretsiz bir sitedir.
-        Site &quot;olduğu gibi&quot; sunulur; kesintisiz ya da hatasız çalışacağı, verilerin hiç kaybolmayacağı garanti edilmez.
+        Ancalog ticari bir işletme değildir; tek bir kişinin eğlence ve hobi amacıyla, kâr amacı gütmeden ve yapay zekâ araçlarının desteğiyle geliştirdiği bir projedir.
+        Site &quot;olduğu gibi&quot; ve &quot;mevcut haliyle&quot; sunulur; kesintisiz ya da hatasız çalışacağı, verilerin hiç kaybolmayacağı, gösterilen bilgilerin
+        (oyun bilgileri, süreler, istatistikler, uyum yüzdeleri, sıralamalar, içe aktarılan veriler) doğru ya da eksiksiz olacağı garanti edilmez.
         Önemli kayıtlarını <b>Ayarlar → Verilerimi indir</b> ile ara ara yedeklemeni öneririz. Site değiştirilebilir ya da kapatılabilir;
         kapatılacaksa verilerini indirebilmen için mümkün olduğunca önceden duyurulur.</p>
 
@@ -56,7 +59,9 @@ export default function Terms() {
 
       <h2>4. Denetim</h2>
       <ul>
-        <li>Yöneticiler, kurallara aykırı içeriği kaldırabilir, kullanıcı adı ya da kelime yasaklayabilir ve hesapları kapatabilir.</li>
+        <li>Yöneticiler, kurallara aykırı içeriği kaldırabilir, profil bilgilerini (görünen ad, yazı, görseller, şarkı) temizleyebilir, kullanıcıyı belli bir süre susturabilir
+          (yorum, forum ve mesaj yazamaz), kullanıcı adı ya da kelime yasaklayabilir ve hesapları kapatabilir.</li>
+        <li>Site sahibi, gerekçe göstermek zorunda olmaksızın bir hesabı askıya alma, kapatma ya da hizmeti tamamen durdurma hakkını saklı tutar.</li>
         <li>Hafif ihlallerde önce içerik kaldırılır; ağır ya da tekrarlanan ihlallerde hesap kapatılabilir ve aynı e-postayla tekrar kayıt engellenebilir.</li>
         <li>Bir kararın yanlış olduğunu düşünüyorsan aşağıdaki iletişim yolundan itiraz edebilirsin; itirazın incelenir.</li>
         <li>Kurallara aykırı bir içerik görürsen bize bildir; elimizden geldiğince hızlı bakarız.</li>
@@ -71,6 +76,21 @@ export default function Terms() {
         ücretsiz, münhasır olmayan bir izin vermiş olursun. Bu izin, içeriği ya da hesabını sildiğinde sona erer.</p>
       <p>Elle eklediğin içerik bilgileri (aramada olmayan bir şarkının adı, sanatçısı, kapağı gibi) ortak katalogda başkaları tarafından da kullanılabilir
         ve yöneticiler tarafından düzeltilebilir.</p>
+      <p>Paylaştığın içerik, içe aktardığın veriler ya da siteyi bu koşullara veya kanuna aykırı kullanman nedeniyle üçüncü kişilerin ya da resmi makamların
+        site sahibine ve yöneticilerine yönelteceği her türlü talep, şikâyet, dava ve yaptırımdan doğan zarar ve masraflardan, kanunun izin verdiği ölçüde,
+        <b> sen sorumlusun</b> ve bunları karşılamayı kabul edersin.</p>
+
+      <h2>5a. Başka sitelerden içe aktarma</h2>
+      <ul>
+        <li>İçe aktarma (Steam, PlayStation, Xbox, Epic, Nintendo, HowLongToBeat, Backloggd, Playnite, Letterboxd, Simkl, Spotify, Last.fm ve benzerleri)
+          tamamen <b>senin isteğinle ve senin adına</b> yapılır. Bu verilerin sana ait olduğunu ya da onları kullanma hakkın olduğunu kabul edersin.</li>
+        <li>PlayStation ve Backloggd düğmeleri (yer imleri) <b>senin tarayıcında, senin açtığın sayfada</b> çalışır; ekranda zaten gördüğün listeyi toplar ve
+          senin kopyalayıp yapıştırmanı bekler. Ancalog&apos;un sunucusu bu sitelere bağlanmaz, bu sitelere ait şifre ya da oturum bilgin Ancalog&apos;a gelmez.
+          Dosyalar (HowLongToBeat, Playnite, Letterboxd, Spotify) senin tarayıcında okunur.</li>
+        <li>Bu sitelerin kendi kullanım koşullarına uymak <b>senin sorumluluğundadır</b>. O sitelerin hesabına uygulayabileceği kısıtlama ya da başka sonuçlardan
+          Ancalog ve site sahibi sorumlu tutulamaz. Bir sitenin koşullarının buna izin vermediğini düşünüyorsan o yöntemi kullanma; oyun adlarını elle de ekleyebilirsin.</li>
+        <li>İçe aktarılan veriler eksik, yanlış eşleşmiş ya da hatalı olabilir; kontrol etmek ve düzeltmek sana aittir.</li>
+      </ul>
 
       <h2>6. Resmi makamlarla iş birliği</h2>
       <p>Mahkemeler, savcılıklar, kolluk kuvvetleri ve diğer yetkili kamu kurum ve kuruluşları tarafından kanuna uygun olarak talep edilmesi halinde;
@@ -83,19 +103,25 @@ export default function Terms() {
         {" "}<a href="https://anilist.co" target="_blank" rel="noopener">AniList</a>, Apple Music (iTunes) ve Deezer&apos;dan alınır. Bu site TMDB API&apos;sini kullanır ancak TMDB tarafından onaylanmış değildir.
         Steam&apos;den içe aktarma <a href="https://steamcommunity.com/dev/apiterms" target="_blank" rel="noopener">Steam Web API</a> ile yapılır.
         Profil şarkıları YouTube oynatıcısıyla çalınır; bu kullanımda <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">YouTube Hizmet Şartları</a> geçerlidir.
-        Ancalog; RAWG, TMDB, AniList, Apple, Deezer, YouTube, Google, Steam, Valve ya da Letterboxd ile bağlantılı değildir ve bu şirketler tarafından desteklenmez.
+        Ancalog; RAWG, TMDB, AniList, Apple, Deezer, YouTube, Google, Steam, Valve, Sony Interactive Entertainment (PlayStation), Microsoft (Xbox), OpenXBL,
+        Epic Games, Nintendo, HowLongToBeat, Backloggd, Playnite, Letterboxd, Simkl, Spotify ya da Last.fm ile bağlantılı değildir ve bu şirketler tarafından onaylanmaz ya da desteklenmez.
         Adı geçen tüm markalar sahiplerine aittir.</p>
       <p>Hakkını ihlal eden bir içerik gördüysen aşağıdaki iletişim yolundan; içeriğin bağlantısını ve hak sahibi olduğunu gösteren bilgiyi ileterek bildir.
         İncelenir ve haklıysan içerik kaldırılır.</p>
 
       <h2>8. Sorumluluğun sınırı</h2>
-      <p>Ancalog, kullanıcıların paylaştığı içeriklerden ve üçüncü taraf sitelere verilen bağlantılardan sorumlu değildir; bu içerikler Ancalog&apos;un görüşünü yansıtmaz.
-        Site ücretsiz sunulduğundan, kullanımından ya da kullanılamamasından doğabilecek doğrudan ya da dolaylı zararlardan, kanunun izin verdiği ölçüde,
-        sorumluluk kabul edilmez. Bu sınırlama kasıt ve ağır kusur hallerini kapsamaz.</p>
+      <p>Ancalog, kullanıcıların paylaştığı içeriklerden, kullanıcılar arasındaki yazışmalardan, içe aktarılan verilerden, üçüncü taraf hizmetlerden
+        (veri kaynakları, YouTube, altyapı sağlayıcıları) ve üçüncü taraf sitelere verilen bağlantılardan sorumlu değildir; bu içerikler Ancalog&apos;un görüşünü yansıtmaz.</p>
+      <p>Site ücretsiz ve kâr amacı gütmeden sunulduğundan; kullanımından ya da kullanılamamasından, kesintilerden, veri kaybından, hatalı bilgilerden,
+        güvenlik olaylarından ya da üçüncü kişilerin davranışlarından doğabilecek doğrudan veya dolaylı hiçbir zarardan (kâr kaybı, veri kaybı, manevi zarar dahil),
+        <b> kanunun izin verdiği en geniş ölçüde</b>, site sahibi ve yöneticiler sorumlu tutulamaz ve herhangi bir tazminat yükümlülüğü doğmaz.
+        Kanunen sınırlandırılamayan haller (kasıt ve ağır kusur gibi) bu sınırlamanın dışındadır.</p>
+      <p>Siteyi kullanmaya devam etmen, bu riskleri bildiğin ve kabul ettiğin anlamına gelir. Kabul etmiyorsan siteyi kullanmayı bırakıp hesabını silebilirsin.</p>
 
       <h2>9. Değişiklikler ve uygulanacak hukuk</h2>
       <p>Bu koşullar güncellenebilir. Önemli bir değişiklik olursa sitenin üstündeki duyuru alanında haber verilir; değişiklikten sonra siteyi kullanmaya
         devam etmen yeni koşulları kabul ettiğin anlamına gelir. Güncel hali her zaman bu sayfadadır. Koşullar Türkiye Cumhuriyeti kanunlarına tabidir.</p>
+      <p>Bu koşulların herhangi bir maddesi geçersiz sayılırsa diğer maddeler geçerliliğini korur. Site sahibinin bir hakkını kullanmaması, o haktan vazgeçtiği anlamına gelmez.</p>
 
       <h2>10. İletişim</h2>
       <p>Şikâyet, itiraz, telif bildirimi ve sorular için site yöneticisine Ancalog üzerinden ulaşabilirsin: <Link href="/u/arno4436">@arno4436</Link>.</p>

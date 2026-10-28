@@ -61,6 +61,10 @@ function Importer() {
             <p className="muted" style={{ margin: 0 }}>
               Nereden getirmek istiyorsun? Seç, adım adım anlatalım. Zaten kütüphanende olanlar tekrar eklenmez; istediğin kadar kaynaktan getirebilirsin.
             </p>
+            <p className="muted small" style={{ margin: "8px 0 0" }}>
+              İçe aktararak, getirdiğin verilerin sana ait olduğunu ve o sitenin kurallarına uymanın senin sorumluluğunda olduğunu kabul edersin.
+              {" "}<Link href="/terms">Kullanım Koşulları</Link>
+            </p>
           </section>
           <div className="import-picks">
             {picks.map((p) => (
