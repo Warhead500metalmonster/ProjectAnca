@@ -1,6 +1,6 @@
 // RAWG anahtarı sunucuda kalsın diye tarayıcı bu adrese sorar: /api/rawg?path=games&search=zelda
-const ALLOWED = /^games(\/\d+(\/screenshots)?)?$/;
-const PARAMS = ["search", "page_size", "page", "dates", "ordering", "search_precise"];
+const ALLOWED = /^(games(\/\d+(\/screenshots)?)?|genres)$/;
+const PARAMS = ["search", "page_size", "page", "dates", "ordering", "search_precise", "genres", "platforms", "developers", "publishers", "stores", "metacritic"];
 // Ortam değişkeni girilmemişse eski sitedeki (zaten herkese açık olan) anahtar kullanılır
 const KEY = process.env.RAWG_KEY || "7e702c5680bd4bc9b428ecd8409200fb";
 

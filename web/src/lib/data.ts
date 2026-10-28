@@ -1,4 +1,4 @@
-import type { Entry, EntryType, Item, RawgGame } from "./types";
+import type { CatalogItem, Entry, EntryType, Item, PageEdit, RawgGame } from "./types";
 import { ENTRY_COLS, TYPES } from "./constants";
 import { contentKey, likeEsc, norm, smallImage } from "./format";
 import { rawg } from "./rawg";
@@ -28,7 +28,8 @@ async function itunes(text: string, entity: string, limit: number): Promise<Itun
   return (await r.json()).results || [];
 }
 
-export interface Found extends Item { sub?: string; thumb?: string | null; raw?: RawgGame }
+// custom: aramadan değil elle / linkle girilen içerik; kaydedilince ortak kataloğa yazılır
+export interface Found extends Item { sub?: string; thumb?: string | null; raw?: RawgGame; custom?: boolean }
 
 interface DeezerHit { title: string; artist: { name: string }; cover_medium?: string; cover_xl?: string; album?: { title: string; cover_medium?: string; cover_xl?: string } }
 
@@ -111,7 +112,7 @@ export async function fromLink(link: string): Promise<Found | null> {
   if (!title) return null;
   return {
     type: "music", title: title.slice(0, 200), creator: artist || null, year: null, cover: d.thumbnail || null,
-    rawg_id: null, ext_id: ext, sub: `${d.provider} linki${artist ? ` · ${artist}` : ""}`, thumb: d.thumbnail || null,
+    rawg_id: null, ext_id: ext, sub: `${d.provider} linki${artist ? ` · ${artist}` : ""}`, thumb: d.thumbnail || null, custom: true,
   };
 }
 
@@ -213,12 +214,45 @@ export async function searchLogged(type: EntryType, text: string): Promise<Found
   return [...seen.values()].slice(0, 6);
 }
 
-// Bir türde içerik ara: oyunda RAWG, müzikte iTunes, film/dizide TMDB, animede AniList
-export function findContent(type: EntryType, text: string): Promise<Found[]> {
+// ---------- Ortak katalog: kullanıcıların elle / linkle eklediği içerikler (her biri bir kez) ----------
+
+export const catalogFound = (c: CatalogItem): Found => ({
+  type: c.type, title: c.title, creator: c.creator, year: c.year, cover: c.cover, rawg_id: null, ext_id: c.ext_id,
+  sub: `Ancalog'a eklenmiş${c.creator ? ` · ${c.creator}` : ""}`, thumb: c.cover, custom: true,
+});
+
+export async function searchCatalog(type: EntryType, text: string): Promise<Found[]> {
+  const rows = await q<CatalogItem[]>(sb().from("catalog").select("*").eq("type", type)
+    .ilike("title", `%${likeEsc(text)}%`).order("created_at").limit(5)).catch(() => []); // tablo yoksa (SQL çalışmadan) sessiz geç
+  return rows.map(catalogFound);
+}
+
+// Elle / linkle girilen içeriği kataloğa yaz; aynısı varsa yenisi açılmaz, var olan (yöneticinin düzelttiği hâli) döner
+export async function addCatalog(x: Item): Promise<CatalogItem> {
+  const { data, error } = await sb().rpc("add_catalog", {
+    p_type: x.type, p_title: x.title, p_creator: x.creator || null, p_year: x.year || null, p_cover: x.cover || null, p_ext_id: x.ext_id || null,
+  });
+  if (error) throw new Error(error.message);
+  return data as CatalogItem;
+}
+
+// ---------- Yöneticinin içerik sayfasında yaptığı düzeltmeler ----------
+
+// Oyunlarda g:<rawg id>, diğerlerinde tür:isim (contentKey ile aynı)
+export const fetchPageEdit = (key: string) =>
+  q<{ data: PageEdit } | null>(sb().from("content_edits").select("data").eq("key", key).maybeSingle())
+    .then((r) => r?.data || {}).catch(() => ({} as PageEdit));
+
+// Bir türde içerik ara: oyunda RAWG, müzikte iTunes + Deezer, film/dizide TMDB, animede AniList.
+// Oyun dışında kullanıcıların daha önce eklediği içerikler de en üstte çıkar (aynı şey iki kez eklenmesin diye).
+export async function findContent(type: EntryType, text: string): Promise<Found[]> {
   if (type === "game") return searchGames(text);
-  if (type === "music") return isLink(text) ? fromLink(text).then((f) => (f ? [f] : [])) : searchMusic(text);
-  if (type === "anime") return searchAnime(text).catch(() => searchLogged(type, text));
-  return searchTmdb(type, text).catch(() => searchLogged(type, text));
+  const source = type === "music" ? (isLink(text) ? fromLink(text).then((f) => (f ? [f] : [])) : searchMusic(text))
+    : type === "anime" ? searchAnime(text).catch(() => searchLogged(type, text))
+    : searchTmdb(type, text).catch(() => searchLogged(type, text));
+  const [ours, theirs] = await Promise.all([isLink(text) ? Promise.resolve([]) : searchCatalog(type, text), source]);
+  const seen = new Set(ours.map((f) => `${norm(f.title)}|${norm(f.creator)}`));
+  return [...ours, ...theirs.filter((f) => !seen.has(`${norm(f.title)}|${norm(f.creator)}`))].slice(0, 12);
 }
 export const SEARCH_CREDITS: Record<EntryType, [string, string]> = {
   game: ["RAWG", "https://rawg.io"],

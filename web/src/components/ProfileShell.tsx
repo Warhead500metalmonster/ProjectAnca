@@ -10,6 +10,7 @@ import { countOf, q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { Avatar, BadgeChips, FollowButton, Name, Socials, UserRow } from "@/components/ui";
+import { ProfileSong } from "@/components/ProfileSong";
 
 interface ProfileData { profile: Profile; entries: Entry[]; followers: number; following: number }
 const ProfileCtx = createContext<(ProfileData & { isMe: boolean }) | null>(null);
@@ -60,6 +61,7 @@ function Shell({ data, children }: { data: ProfileData; children: React.ReactNod
   const accent = /^#[0-9a-f]{6}$/i.test(profile.accent || "") ? profile.accent! : null;
   const banner = profile.banner_url && safeUrl(profile.banner_url);
   const tab = path.endsWith("/lists") ? "lists" : path.endsWith("/stats") ? "stats" : "library";
+  const song = profile.song_url || null; // profilde arkada çalan şarkı
 
   return (
     <ProfileCtx.Provider value={{ ...data, isMe }}>
@@ -94,6 +96,7 @@ function Shell({ data, children }: { data: ProfileData; children: React.ReactNod
         </nav>
         {children}
       </div>
+      {song && <ProfileSong url={song} title={profile.song_title} volume={profile.song_volume} />}
       {userList && (
         <dialog ref={listDialog} onClose={() => setUserList(null)} onClick={(e) => e.target === listDialog.current && listDialog.current?.close()}>
           <div className="dialog-head pad">

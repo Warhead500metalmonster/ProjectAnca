@@ -6,6 +6,7 @@ import type { Entry, Item, Profile, RawgGame } from "@/lib/types";
 import { BADGES } from "@/lib/constants";
 import { contentKey } from "@/lib/format";
 import { fetchEntries } from "@/lib/data";
+import { applyTheme } from "@/lib/theme";
 import { countOf, q, sb, supabaseConfigured } from "@/lib/supabase";
 import { EntryForm } from "./EntryForm";
 import { EntryView } from "./EntryView";
@@ -22,6 +23,9 @@ interface Ctx {
   mine: Entry[];            // kendi kayıtlarım: başkalarının puanlarıyla karşılaştırmak için
   myEntry: (x: Item) => Entry | undefined;
   badges: Map<string, string[]>;
+  loadBadges: () => void;
+  isAdmin: boolean;         // site sahibi ya da yönetici: içerik sayfalarını düzenler, yönetim paneline girer
+  isOwner: boolean;
   scale: 5 | 10;            // puanların gösterildiği ölçek
   unread: number;
   notifAt: string;          // en yeni bildirimin zamanı
@@ -69,6 +73,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
   const refresh = useCallback(() => setVersion((v) => v + 1), []);
 
+  const loadBadges = useCallback(() => {
+    q<{ user_id: string; badge: string }[]>(sb().from("user_badges").select("user_id, badge").order("granted_at"))
+      .then((rows) => {
+        const m = new Map<string, string[]>();
+        const order = Object.keys(BADGES); // her zaman önce
+        for (const r of rows) m.set(r.user_id, [...(m.get(r.user_id) || []), r.badge].sort((x, y) => order.indexOf(x) - order.indexOf(y)));
+        setBadges(m);
+      })
+      .catch(() => {});
+  }, []);
+
   // Okunmamış mesaj sayısı ve en yeni bildirim (beğeni, yorum, takip) zamanı
   const checkInbox = useCallback(async () => {
     const id = userId.current;
@@ -113,15 +128,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       checkInbox();
     }
 
-    q<{ user_id: string; badge: string }[]>(client.from("user_badges").select("user_id, badge").order("granted_at"))
-      .then((rows) => {
-        const m = new Map<string, string[]>();
-        const order = Object.keys(BADGES); // her zaman önce
-        for (const r of rows) m.set(r.user_id, [...(m.get(r.user_id) || []), r.badge].sort((x, y) => order.indexOf(x) - order.indexOf(y)));
-        setBadges(m);
-      })
-      .catch(() => {});
-
+    loadBadges();
     client.auth.getSession()
       .then(({ data }) => loadMe(data.session?.user.id ?? null))
       .catch(console.error)
@@ -141,7 +148,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
     const timer = setInterval(checkInbox, 30000);
     return () => { sub.subscription.unsubscribe(); clearInterval(timer); };
-  }, [router, refresh, checkInbox]);
+  }, [router, refresh, checkInbox, loadBadges]);
+
+  // Kişisel site rengi (çıkış yapınca varsayılana döner)
+  useEffect(() => { if (ready) applyTheme(me?.site_color); }, [ready, me?.site_color]);
 
   // Kayıt eklenip silindikçe kendi kütüphanemi tazele
   useEffect(() => {
@@ -176,9 +186,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return mine.find((e) => contentKey(e) === k);
   }, [mine]);
 
+  const myBadges = (me && badges.get(me.id)) || [];
   const value: Ctx = {
     me, setMe, following, followers, isFriend: (id) => following.has(id) && followers.has(id),
-    mine, myEntry, badges, scale: me?.rating_scale === 10 ? 10 : 5, unread, notifAt,
+    mine, myEntry, badges, loadBadges, isOwner: myBadges.includes("owner"), isAdmin: myBadges.some((b) => b === "owner" || b === "admin"), scale: me?.rating_scale === 10 ? 10 : 5, unread, notifAt,
     ready, version, refresh, checkInbox, toast, toggleFollow, openForm, openView: setViewing, pickList,
   };
 

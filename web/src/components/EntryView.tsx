@@ -11,7 +11,7 @@ import { useApp } from "./AppProvider";
 
 // Bir kaydın ayrıntılarını, beğeni ve yorumlarını gösteren pencere
 export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose: () => void; onEdit: (e: Entry) => void }) {
-  const { me, myEntry, scale, openForm, pickList, toast, refresh } = useApp();
+  const { me, myEntry, scale, openForm, pickList, toast, refresh, isAdmin } = useApp();
   const ref = useRef<HTMLDialogElement>(null);
   const [likers, setLikers] = useState<string[] | null>(null);
   const [comments, setComments] = useState<Comment[] | null>(null);
@@ -162,7 +162,7 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
                   <div className="comment-head">
                     <Link href={`/u/${c.profiles?.username}`} onClick={close}><b><Name p={c.profiles} /></b></Link>
                     <span className="muted">{timeAgo(c.created_at)}</span>
-                    {me && (me.id === c.user_id || isMine) && <button type="button" className="link danger" onClick={() => deleteComment(c)}>sil</button>}
+                    {me && (me.id === c.user_id || isMine || isAdmin) && <button type="button" className="link danger" onClick={() => deleteComment(c)}>sil</button>}
                   </div>
                   <p>{c.body}</p>
                 </div>

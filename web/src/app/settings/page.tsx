@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Profile } from "@/lib/types";
@@ -10,6 +10,8 @@ import { fetchEntries } from "@/lib/data";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
 import { Avatar } from "@/components/ui";
+import { youtubeId } from "@/components/ProfileSong";
+import { DEFAULT_COLOR, applyTheme } from "@/lib/theme";
 
 // Bağlantı: kullanıcı adı ya da o sitenin https:// linki. undefined = geçersiz
 function cleanSocial(key: string, raw: string): string | null | undefined {
@@ -43,6 +45,20 @@ function SettingsForm({ me }: { me: Profile }) {
   const [busy, setBusy] = useState(false);
   const [accent, setAccent] = useState(me.accent || "");
   const [scale, setScale] = useState<5 | 10>(me.rating_scale === 10 ? 10 : 5);
+  const [siteColor, setSiteColor] = useState(me.site_color || "");
+  const [song, setSong] = useState({ url: me.song_url || "", title: me.song_title || "", volume: me.song_volume || 15 });
+  // Renk seçilince site hemen o renge döner; kaydetmeden çıkarsa eskisine
+  const pickSiteColor = (c: string) => { setSiteColor(c); applyTheme(c); };
+  const saved = useRef(me.site_color);
+  useEffect(() => () => applyTheme(saved.current), []);
+
+  // Link yapıştırılınca şarkı adını kendiliğinden doldur
+  async function songLink(url: string) {
+    setSong((s) => ({ ...s, url }));
+    if (!youtubeId(url) || song.title) return;
+    const r = await fetch(`/api/oembed?url=${encodeURIComponent(url)}`).catch(() => null);
+    if (r?.ok) { const d = await r.json(); setSong((s) => (s.title ? s : { ...s, title: `${d.author.replace(/\s*-\s*Topic$/i, "")} — ${d.title}`.slice(0, 120) })); }
+  }
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -58,6 +74,7 @@ function SettingsForm({ me }: { me: Profile }) {
       if (v === undefined) return setError(`${s.label} bağlantısı geçersiz. Kullanıcı adını ya da https:// ile başlayan linki yaz.`);
       if (v) socials[s.key] = v;
     }
+    if (song.url && !youtubeId(song.url)) return setError("Profil şarkısı için bir YouTube linki yapıştır.");
     setBusy(true);
     try {
       const updated = await q<Profile>(sb().from("profiles").update({
@@ -70,8 +87,13 @@ function SettingsForm({ me }: { me: Profile }) {
         accent: /^#[0-9a-f]{6}$/i.test(accent) ? accent : null,
         rating_scale: scale,
         socials,
+        site_color: /^#[0-9a-f]{6}$/i.test(siteColor) && siteColor.toLowerCase() !== DEFAULT_COLOR ? siteColor : null,
+        song_url: song.url.trim() || null,
+        song_title: song.title.trim() || null,
+        song_volume: song.volume,
       }).eq("id", me.id).select().single());
       setMe(updated);
+      saved.current = updated.site_color;
       toast("Profil kaydedildi ✓");
       router.push(`/u/${updated.username}`);
     } catch (err) {
@@ -121,6 +143,33 @@ function SettingsForm({ me }: { me: Profile }) {
           <input type="color" value={accent || "#58a98a"} onChange={(e) => setAccent(e.target.value)} />+
         </label>
       </div>
+
+      <h3 className="set-h">Site rengi <span className="muted small">· sadece sen görürsün</span></h3>
+      <div className="swatches">
+        <button type="button" className={`swatch ${!siteColor ? "on" : ""}`} style={{ background: DEFAULT_COLOR }} onClick={() => pickSiteColor("")} title="Varsayılan (yeşil)" />
+        {ACCENTS.filter((c) => c !== DEFAULT_COLOR).map((c) => (
+          <button type="button" key={c} className={`swatch ${siteColor === c ? "on" : ""}`} style={{ background: c }} onClick={() => pickSiteColor(c)} aria-label={c} />
+        ))}
+        <label className="swatch custom" title="Kendi rengini seç">
+          <input type="color" value={siteColor || DEFAULT_COLOR} onChange={(e) => pickSiteColor(e.target.value)} />+
+        </label>
+      </div>
+      <p className="muted small">Butonlar, bağlantılar ve arka plandaki ışık bu renge döner. Seçince hemen görürsün; kalıcı olması için aşağıdan kaydet.</p>
+
+      <h3 className="set-h">Profil şarkısı</h3>
+      <div className="field">
+        <label htmlFor="p-song">YouTube linki</label>
+        <input id="p-song" type="url" placeholder="https://www.youtube.com/watch?v=…" value={song.url} onChange={(e) => songLink(e.target.value)} />
+      </div>
+      <div className="field">
+        <label htmlFor="p-song-title">Köşede yazacak isim</label>
+        <input id="p-song-title" maxLength={120} placeholder="ör. Pink Floyd — Shine On You Crazy Diamond" value={song.title} onChange={(e) => setSong((s) => ({ ...s, title: e.target.value }))} />
+      </div>
+      <div className="field">
+        <label htmlFor="p-song-vol">Ses: %{song.volume}</label>
+        <input id="p-song-vol" type="range" min={1} max={60} value={song.volume} onChange={(e) => setSong((s) => ({ ...s, volume: Number(e.target.value) }))} />
+      </div>
+      <p className="muted small">Profiline girenler bu şarkıyı arkada kısık sesle duyar, köşede adı yazar. Kaldırmak için linki silip kaydet.</p>
 
       <h3 className="set-h">Puan ölçeği</h3>
       <div className="scale-pick">
