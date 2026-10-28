@@ -20,6 +20,15 @@ export const TYPES: Record<EntryType, TypeInfo> = {
     places: ["Spotify", "Apple Music", "YouTube Music", "Deezer", "Plak", "CD", "Konser"] },
   anime: { label: "Anime", plural: "Animeler", creator: "Stüdyo", active: "İzliyorum", done: "bitirdi", doing: "izliyor",
     where: "Nerede izledin", progress: "ör. 12. bölüm", time: "İzleme süresi", places: ["Crunchyroll", "Netflix", "Prime Video", "Disney+", "YouTube"] },
+  book: { label: "Kitap", plural: "Kitaplar", creator: "Yazar", active: "Okuyorum", done: "okudu", doing: "okuyor",
+    where: "Nerede okudun", progress: "ör. 120. sayfadayım, ilk bölüm çok iyi", time: "Okuma süresi",
+    places: ["Basılı kitap", "Kindle", "E-kitap", "Sesli kitap", "Kütüphane", "Ödünç"] },
+  place: { label: "Yer", plural: "Yerler", creator: "Ülke", active: "Şu an buradayım", done: "gitti", doing: "geziyor",
+    where: "Nasıl gittin", progress: "ör. 5 gün kaldım, en güzeli sabah yürüyüşüydü", time: "Kalış süresi",
+    places: ["Uçak", "Araba", "Tren", "Otobüs", "Gemi", "Yürüyerek", "Bisiklet"] },
+  food: { label: "Yemek", plural: "Yemekler", creator: "Mutfak / mekân", active: "Yiyorum", done: "yedi", doing: "yiyor", square: true,
+    where: "Nerede yedin", progress: "ör. acılı istedim, tatlısı da harikaydı", time: "Süre",
+    places: ["Restoran", "Ev yapımı", "Sokak lezzeti", "Kafe", "Seyahatte", "Davette"] },
 };
 export const TYPE_KEYS = Object.keys(TYPES) as EntryType[];
 

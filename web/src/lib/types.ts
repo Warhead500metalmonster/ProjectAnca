@@ -1,4 +1,4 @@
-export type EntryType = "game" | "movie" | "show" | "music" | "anime";
+export type EntryType = "game" | "movie" | "show" | "music" | "anime" | "book" | "place" | "food";
 export type Status = "completed" | "active" | "planned" | "paused" | "dropped";
 
 export interface Profile {
@@ -45,6 +45,7 @@ export interface Entry {
   hours?: number | null;    // eski alan; yerini playtime_sec aldı
   playtime_sec?: number | null;
   progress_sec?: number | null;
+  episodes?: Record<string, number[]> | null; // izlenen bölümler: sezon -> bölüm numaraları
   progress: string | null;  // kısa not
   emulated?: boolean;
   favorite?: boolean;

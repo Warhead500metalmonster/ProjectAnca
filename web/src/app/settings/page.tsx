@@ -38,7 +38,10 @@ export default function Settings() {
   return <SettingsForm key={me.id} me={me} />;
 }
 
+const TABS = [["profil", "Profil"], ["gorunum", "Görünüm"], ["baglantilar", "Bağlantılar"], ["sarki", "Şarkı"], ["veri", "Hesap ve veri"]] as const;
+
 function SettingsForm({ me }: { me: Profile }) {
+  const [tab, setTab] = useState<(typeof TABS)[number][0]>("profil");
   const { setMe, toast } = useApp();
   const router = useRouter();
   const [error, setError] = useState("");
@@ -118,109 +121,111 @@ function SettingsForm({ me }: { me: Profile }) {
   }
 
   return (
-    <form className="auth settings" onSubmit={submit}>
-      <h1>Profili düzenle</h1>
-      <div className="view-user"><Avatar p={me} /> <span>@{me.username}</span></div>
+    <div className="set-page">
+      <header className="set-top">
+        <h1>Ayarlar</h1>
+        <Link className="set-me" href={`/u/${me.username}`}><Avatar p={me} /> <span>@{me.username}</span></Link>
+      </header>
+      <nav className="set-tabs" aria-label="Ayar bölümleri">
+        {TABS.map(([k, label]) => <button key={k} type="button" className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{label}</button>)}
+      </nav>
 
-      <h3 className="set-h">Profil</h3>
-      <div className="field"><label htmlFor="p-name">Görünen ad</label><input id="p-name" name="name" maxLength={40} defaultValue={me.display_name || ""} /></div>
-      <div className="field"><label htmlFor="p-bio">Hakkımda</label><textarea id="p-bio" name="bio" rows={3} maxLength={300} defaultValue={me.bio || ""} /></div>
-      <div className="row">
-        <div className="field grow"><label htmlFor="p-pronouns">Zamirler</label><input id="p-pronouns" name="pronouns" maxLength={20} placeholder="ör. o/onun" defaultValue={me.pronouns || ""} /></div>
-        <div className="field grow"><label htmlFor="p-location">Konum</label><input id="p-location" name="location" maxLength={40} placeholder="ör. İstanbul" defaultValue={me.location || ""} /></div>
-      </div>
-      <div className="field">
-        <label htmlFor="p-avatar">Profil fotoğrafı (https:// ile başlayan resim linki)</label>
-        <input id="p-avatar" name="avatar" type="url" defaultValue={me.avatar_url || ""} placeholder="https://…" />
-      </div>
-      <div className="field">
-        <label htmlFor="p-banner">Kapak görseli (profilin üstündeki geniş resim, https://)</label>
-        <input id="p-banner" name="banner" type="url" defaultValue={me.banner_url || ""} placeholder="https://…" />
-      </div>
+      <form onSubmit={submit}>
+        {/* Bütün bölümler açık kalır (sadece gizlenir), kaydederken hepsi gönderilsin */}
+        <section className="set-card" hidden={tab !== "profil"}>
+          <h2>Profil</h2><p className="set-sub">Profilinde görünen bilgiler.</p>
+          <Row title="Görünen ad" desc="Adının yanında @kullanıcı adın görünür."><input id="p-name" name="name" maxLength={40} defaultValue={me.display_name || ""} /></Row>
+          <Row title="Hakkımda" desc="En fazla 300 karakter." wide><textarea id="p-bio" name="bio" rows={3} maxLength={300} defaultValue={me.bio || ""} /></Row>
+          <Row title="Zamirler"><input id="p-pronouns" name="pronouns" maxLength={20} placeholder="ör. o/onun" defaultValue={me.pronouns || ""} /></Row>
+          <Row title="Konum"><input id="p-location" name="location" maxLength={40} placeholder="ör. İstanbul" defaultValue={me.location || ""} /></Row>
+          <Row title="Profil fotoğrafı" desc="https:// ile başlayan resim linki."><input id="p-avatar" name="avatar" type="url" defaultValue={me.avatar_url || ""} placeholder="https://…" /></Row>
+          <Row title="Kapak görseli" desc="Profilinin üstündeki geniş resim. Boşsa kapaklarından şerit çıkar."><input id="p-banner" name="banner" type="url" defaultValue={me.banner_url || ""} placeholder="https://…" /></Row>
+        </section>
 
-      <h3 className="set-h">Profil teması <span className="muted small">· profiline girenler görür</span></h3>
-      <div className="theme-cards">
-        <button type="button" className={`theme-card ${!theme && !accent ? "on" : ""}`} onClick={() => { setTheme(""); setAccent(""); }}
-          style={{ "--t-tint": "var(--panel)", "--t-accent": "#58a98a" } as React.CSSProperties}>
-          <span className="prev"><i /><i /></span>Varsayılan
-        </button>
-        {Object.entries(PROFILE_THEMES).map(([k, t]) => (
-          <button type="button" key={k} className={`theme-card ${theme === k ? "on" : ""}`} onClick={() => { setTheme(k); setAccent(""); }}
-            style={{ "--t-tint": t.tint, "--t-accent": t.accent } as React.CSSProperties}>
-            <span className="prev"><i /><i /></span>{t.name}
-          </button>
-        ))}
-        <label className={`theme-card ${!theme && accent ? "on" : ""}`}
-          style={{ "--t-tint": `color-mix(in srgb, ${accent || "#8b5cf6"} 14%, rgba(10, 12, 14, .86))`, "--t-accent": accent || "#8b5cf6" } as React.CSSProperties}>
-          <span className="prev"><i /><i /></span>Özel renk
-          <input type="color" value={accent || "#8b5cf6"} onChange={(e) => { setTheme(""); setAccent(e.target.value); }} />
-        </label>
-      </div>
+        <section className="set-card" hidden={tab !== "gorunum"}>
+          <h2>Görünüm</h2><p className="set-sub">Profilin ve sitenin nasıl görüneceği.</p>
+          <Row title="Profil teması" desc="Profiline girenler görür." wide>
+            <div className="theme-cards">
+              <button type="button" className={`theme-card ${!theme && !accent ? "on" : ""}`} onClick={() => { setTheme(""); setAccent(""); }}
+                style={{ "--t-tint": "var(--panel)", "--t-accent": "#58a98a" } as React.CSSProperties}>
+                <span className="prev"><i /><i /></span>Varsayılan
+              </button>
+              {Object.entries(PROFILE_THEMES).map(([k, t]) => (
+                <button type="button" key={k} className={`theme-card ${theme === k ? "on" : ""}`} onClick={() => { setTheme(k); setAccent(""); }}
+                  style={{ "--t-tint": t.tint, "--t-accent": t.accent } as React.CSSProperties}>
+                  <span className="prev"><i /><i /></span>{t.name}
+                </button>
+              ))}
+              <label className={`theme-card ${!theme && accent ? "on" : ""}`}
+                style={{ "--t-tint": `color-mix(in srgb, ${accent || "#8b5cf6"} 14%, rgba(10, 12, 14, .86))`, "--t-accent": accent || "#8b5cf6" } as React.CSSProperties}>
+                <span className="prev"><i /><i /></span>Özel renk
+                <input type="color" value={accent || "#8b5cf6"} onChange={(e) => { setTheme(""); setAccent(e.target.value); }} />
+              </label>
+            </div>
+          </Row>
+          <Row title="Arka plan resmi" desc="Profilinin arkasını kaplar: resim, GIF ya da .mp4 / .webm linki." wide>
+            <input id="p-bg" type="url" placeholder="https://…" value={bgUrl} onChange={(e) => setBgUrl(e.target.value)} />
+            {bgUrl.trim().startsWith("https://") && !/\.(mp4|webm)(\?|$)/i.test(bgUrl) && <div className="bg-preview" style={{ backgroundImage: cssUrl(bgUrl.trim()) }} />}
+          </Row>
+          <Row title="Site rengi" desc="Butonlar, bağlantılar ve ışık bu renge döner. Sadece sen görürsün.">
+            <div className="swatches">
+              <button type="button" className={`swatch ${!siteColor ? "on" : ""}`} style={{ background: DEFAULT_COLOR }} onClick={() => pickSiteColor("")} title="Varsayılan (yeşil)" />
+              {ACCENTS.filter((c) => c !== DEFAULT_COLOR).map((c) => (
+                <button type="button" key={c} className={`swatch ${siteColor === c ? "on" : ""}`} style={{ background: c }} onClick={() => pickSiteColor(c)} aria-label={c} />
+              ))}
+              <label className="swatch custom" title="Kendi rengini seç">
+                <input type="color" value={siteColor || DEFAULT_COLOR} onChange={(e) => pickSiteColor(e.target.value)} />+
+              </label>
+            </div>
+          </Row>
+          <Row title="Puan ölçeği" desc="Herkesin puanı senin ölçeğinde görünür: 10'luk 7, 5'likte 3,5 yıldız olur.">
+            <div className="set-seg">
+              <button type="button" className={scale === 5 ? "on" : ""} onClick={() => setScale(5)}>5 üzerinden</button>
+              <button type="button" className={scale === 10 ? "on" : ""} onClick={() => setScale(10)}>10 üzerinden</button>
+            </div>
+          </Row>
+        </section>
 
-      <div className="field">
-        <label htmlFor="p-bg">Arka plan resmi <span className="muted">· Steam&apos;deki gibi profilinin arkasını kaplar (resim, GIF ya da .mp4 / .webm linki)</span></label>
-        <input id="p-bg" type="url" placeholder="https://…" value={bgUrl} onChange={(e) => setBgUrl(e.target.value)} />
-      </div>
-      {bgUrl.trim().startsWith("https://") && !/\.(mp4|webm)(\?|$)/i.test(bgUrl) && <div className="bg-preview" style={{ backgroundImage: cssUrl(bgUrl.trim()) }} />}
+        <section className="set-card" hidden={tab !== "baglantilar"}>
+          <h2>Bağlantılar</h2><p className="set-sub">Profilinde rozet olarak görünür. Kullanıcı adını ya da https:// linkini yaz.</p>
+          {SOCIALS.map((s) => (
+            <Row key={s.key} title={s.label}><input id={`s-${s.key}`} name={`s-${s.key}`} maxLength={200} placeholder={s.hint} defaultValue={me.socials?.[s.key] || ""} /></Row>
+          ))}
+        </section>
 
-      <h3 className="set-h">Site rengi <span className="muted small">· sadece sen görürsün</span></h3>
-      <div className="swatches">
-        <button type="button" className={`swatch ${!siteColor ? "on" : ""}`} style={{ background: DEFAULT_COLOR }} onClick={() => pickSiteColor("")} title="Varsayılan (yeşil)" />
-        {ACCENTS.filter((c) => c !== DEFAULT_COLOR).map((c) => (
-          <button type="button" key={c} className={`swatch ${siteColor === c ? "on" : ""}`} style={{ background: c }} onClick={() => pickSiteColor(c)} aria-label={c} />
-        ))}
-        <label className="swatch custom" title="Kendi rengini seç">
-          <input type="color" value={siteColor || DEFAULT_COLOR} onChange={(e) => pickSiteColor(e.target.value)} />+
-        </label>
-      </div>
-      <p className="muted small">Butonlar, bağlantılar ve arka plandaki ışık bu renge döner. Seçince hemen görürsün; kalıcı olması için aşağıdan kaydet.</p>
+        <section className="set-card" hidden={tab !== "sarki"}>
+          <h2>Profil şarkısı</h2><p className="set-sub">Profiline girenler bu şarkıyı arkada kısık sesle duyar. Kaldırmak için linki silip kaydet.</p>
+          <Row title="YouTube linki"><input id="p-song" type="url" placeholder="https://www.youtube.com/watch?v=…" value={song.url} onChange={(e) => songLink(e.target.value)} /></Row>
+          <Row title="Köşede yazacak isim" desc="Link yapıştırınca kendiliğinden dolar."><input id="p-song-title" maxLength={120} placeholder="ör. Pink Floyd — Shine On You Crazy Diamond" value={song.title} onChange={(e) => setSong((x) => ({ ...x, title: e.target.value }))} /></Row>
+          <Row title={`Ses: %${song.volume}`}><input id="p-song-vol" type="range" min={1} max={60} value={song.volume} onChange={(e) => setSong((x) => ({ ...x, volume: Number(e.target.value) }))} /></Row>
+        </section>
 
-      <h3 className="set-h">Profil şarkısı</h3>
-      <div className="field">
-        <label htmlFor="p-song">YouTube linki</label>
-        <input id="p-song" type="url" placeholder="https://www.youtube.com/watch?v=…" value={song.url} onChange={(e) => songLink(e.target.value)} />
-      </div>
-      <div className="field">
-        <label htmlFor="p-song-title">Köşede yazacak isim</label>
-        <input id="p-song-title" maxLength={120} placeholder="ör. Pink Floyd — Shine On You Crazy Diamond" value={song.title} onChange={(e) => setSong((s) => ({ ...s, title: e.target.value }))} />
-      </div>
-      <div className="field">
-        <label htmlFor="p-song-vol">Ses: %{song.volume}</label>
-        <input id="p-song-vol" type="range" min={1} max={60} value={song.volume} onChange={(e) => setSong((s) => ({ ...s, volume: Number(e.target.value) }))} />
-      </div>
-      <p className="muted small">Profiline girenler bu şarkıyı arkada kısık sesle duyar, köşede adı yazar. Kaldırmak için linki silip kaydet.</p>
+        <section className="set-card" hidden={tab !== "veri"}>
+          <h2>Hesap ve veri</h2><p className="set-sub">Kayıtların senin, istediğin zaman alıp gidebilirsin.</p>
+          <Row title="İçe aktar" desc="Steam ya da Letterboxd'dan kayıtlarını getir."><Link className="btn" href="/import">İçe aktar</Link></Row>
+          <Row title="Verilerimi indir" desc="Bütün kayıtların JSON dosyası olarak."><button type="button" className="btn" onClick={exportMine}>İndir (JSON)</button></Row>
+          <Row title="Çıkış yap" desc="Bu cihazdaki oturumu kapatır."><button type="button" className="btn danger" onClick={() => sb().auth.signOut()}>Çıkış yap</button></Row>
+          <DeleteAccount me={me} />
+        </section>
 
-      <h3 className="set-h">Puan ölçeği</h3>
-      <div className="scale-pick">
-        <label className={scale === 5 ? "on" : ""}><input type="radio" name="scale" checked={scale === 5} onChange={() => setScale(5)} /> <b>5 üzerinden</b> <span>★★★½ gibi yarım yıldızlar</span></label>
-        <label className={scale === 10 ? "on" : ""}><input type="radio" name="scale" checked={scale === 10} onChange={() => setScale(10)} /> <b>10 üzerinden</b> <span>7,5/10 gibi</span></label>
-      </div>
-      <p className="muted small">Herkesin puanı senin seçtiğin ölçekte görünür. Ör: biri 10&apos;luk ölçekte 7 verdiyse sen 5&apos;likte 3,5 yıldız görürsün; 5&apos;likte 2,75 verilen bir puanı 10&apos;lukta 5,5 görürsün.</p>
+        <div className="set-save">
+          {error ? <p className="form-error">{error}</p> : <span className="muted small">Değişiklikler kaydedene kadar sadece bu sayfada durur.</span>}
+          <span className="spacer" />
+          <Link className="btn ghost" href={`/u/${me.username}`}>Profilime dön</Link>
+          <button className="btn primary" disabled={busy}>Kaydet</button>
+        </div>
+      </form>
+    </div>
+  );
+}
 
-      <h3 className="set-h">Bağlantılar</h3>
-      <div className="socials-form">
-        {SOCIALS.map((s) => (
-          <div className="field" key={s.key}>
-            <label htmlFor={`s-${s.key}`}>{s.label}</label>
-            <input id={`s-${s.key}`} name={`s-${s.key}`} maxLength={200} placeholder={s.hint} defaultValue={me.socials?.[s.key] || ""} />
-          </div>
-        ))}
-      </div>
-
-      {error && <p className="form-error">{error}</p>}
-      <div className="actions">
-        <button className="btn primary" disabled={busy}>Kaydet</button>
-        <Link className="btn ghost" href={`/u/${me.username}`}>Profilime dön</Link>
-      </div>
-      <hr style={{ border: 0, borderTop: "1px solid var(--border)", width: "100%" }} />
-      <div className="actions">
-        <Link className="btn" href="/import">Steam / Letterboxd&apos;dan içe aktar</Link>
-        <button type="button" className="btn" onClick={exportMine}>Verilerimi indir (JSON)</button>
-        <span className="spacer" />
-        <button type="button" className="btn danger" onClick={() => sb().auth.signOut()}>Çıkış yap</button>
-      </div>
-      <DeleteAccount me={me} />
-    </form>
+// Ayarlarda her satır: solda başlık ve açıklama, sağda kontrol (stack: altına tam genişlik)
+function Row({ title, desc, wide = false, children }: { title: string; desc?: string; wide?: boolean; children: React.ReactNode }) {
+  return (
+    <div className={`set-row ${wide ? "wide" : ""}`}>
+      <div className="set-txt"><b>{title}</b>{desc && <span>{desc}</span>}</div>
+      <div className="set-ctl">{children}</div>
+    </div>
   );
 }
 

@@ -21,6 +21,8 @@ export function Topbar() {
   const active = (key: string) => ({
     home: path === "/",
     search: path.startsWith("/search"),
+    games: path.startsWith("/games") || path.startsWith("/game/"),
+    watch: path.startsWith("/watch") || path.startsWith("/c/"),
     community: path.startsWith("/community"),
     chat: path.startsWith("/chat"),
     me: path === mine || path.startsWith(mine + "/") || path === "/settings",
@@ -39,15 +41,14 @@ export function Topbar() {
         <Link href="/" className={active("home")}>
           <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg><span>Ana Sayfa</span>
         </Link>
+        <Link href="/games" className={active("games")}>
+          <svg viewBox="0 0 24 24"><path fillRule="evenodd" d="M6 7h12a4 4 0 0 1 4 4v3a3 3 0 0 1-5.4 1.8L15.2 14H8.8l-1.4 1.8A3 3 0 0 1 2 14v-3a4 4 0 0 1 4-4zM7 9.5V11H5.5v1.5H7V14h1.5v-1.5H10V11H8.5V9.5H7zm9.5 1.2a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm2.5-1.7a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" /></svg><span>Oyunlar</span>
+        </Link>
+        <Link href="/watch" className={active("watch")}>
+          <svg viewBox="0 0 24 24"><path fillRule="evenodd" d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm5.5 3v8l6.5-4-6.5-4z" /></svg><span>İzle</span>
+        </Link>
         <Link href="/community" className={active("community")}>
           <svg viewBox="0 0 24 24"><path d="M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4zm8 0c-.3 0-.7 0-1.1.1 1.3.9 2.1 2.2 2.1 3.9v2h7v-2c0-2.7-5.3-4-8-4z" /></svg><span>Topluluk</span>
-        </Link>
-        <Link href="/chat" className={active("chat")}>
-          <svg viewBox="0 0 24 24"><path d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm3 6v2h2V9zm4 0v2h2V9zm4 0v2h2V9z" /></svg>
-          <span>Mesajlar</span>{unread > 0 && <b className="nav-badge">{unread > 9 ? "9+" : unread}</b>}
-        </Link>
-        <Link href={mine} className={active("me")}>
-          <svg viewBox="0 0 24 24"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zm0 2c-3 0-9 1.5-9 4.5V21h18v-2.5c0-3-6-4.5-9-4.5z" /></svg><span>Profilim</span>
         </Link>
       </nav>
       <form className="top-search" onSubmit={search} role="search">
@@ -57,6 +58,10 @@ export function Topbar() {
         {me ? (
           <>
             {isAdmin && <Link className="icon-link" href="/admin" title="Yönetim paneli"></Link>}
+            <Link className={`icon-link ${active("chat")}`} href="/chat" title="Mesajlar">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+              {unread > 0 && <b className="nav-badge">{unread > 9 ? "9+" : unread}</b>}
+            </Link>
             <Link className="icon-link" href="/notifications" title="Bildirimler">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
               {notifAt && notifAt > seen && <span className="dot" />}

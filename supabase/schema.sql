@@ -16,7 +16,7 @@ create table public.profiles (
 create table public.entries (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references public.profiles on delete cascade,
-  type text not null check (type in ('game', 'movie', 'show', 'music', 'anime')),
+  type text not null check (type in ('game', 'movie', 'show', 'music', 'anime', 'book', 'place', 'food')),
   title text not null check (char_length(title) between 1 and 200),
   year int check (year between 1800 and 2100),
   creator text check (char_length(creator) <= 200),

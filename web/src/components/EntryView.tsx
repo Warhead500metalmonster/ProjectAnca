@@ -7,6 +7,7 @@ import { PROFILE_COLS, TYPES, statusLabel } from "@/lib/constants";
 import { contentHref, cssUrl, daysTaken, fmtDate, fmtDur, itemOf, num, playSec, safeUrl, scoreText, timeAgo } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
 import { Avatar, Name, Rating, RichText } from "./ui";
+import { EpisodeTracker } from "./EpisodeTracker";
 import { useApp } from "./AppProvider";
 
 // Bir kaydın ayrıntılarını, beğeni ve yorumlarını gösteren pencere
@@ -145,6 +146,7 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
           {details.length > 0 && (
             <div className="view-details">{details.map(([k, v]) => <div key={k}><span>{k}</span><b>{v}</b></div>)}</div>
           )}
+          {(e.type === "show" || e.type === "anime") && <EpisodeTracker e={e} mine={me?.id === e.user_id} />}
           {e.progress && <div className="view-note"><span>Not</span>{e.progress}</div>}
           {e.notes && <div className="view-notes"><span className="muted">İnceleme</span>{"\n"}<RichText text={e.notes} /></div>}
 

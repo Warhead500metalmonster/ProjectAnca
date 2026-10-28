@@ -202,6 +202,60 @@ export const aniDetail = (extId: string) => anilist<{ Media: AniDetail }>(
     bannerImage coverImage { extraLarge } genres averageScore startDate { year } studios(isMain: true) { nodes { name } } format status } }`,
   { id: Number(extId.split(":")[1]) }).then((d) => d.Media);
 
+// ---------- Kitap: Open Library (anahtarsız, kotasız) ----------
+
+export async function searchBooks(text: string): Promise<Found[]> {
+  const r = await fetch(`https://openlibrary.org/search.json?${new URLSearchParams({ q: text, limit: "8", fields: "key,title,author_name,first_publish_year,cover_i" })}`);
+  if (!r.ok) throw new Error(String(r.status));
+  const d: { docs?: { key: string; title: string; author_name?: string[]; first_publish_year?: number; cover_i?: number }[] } = await r.json();
+  const img = (id: number | undefined, size: "M" | "L") => (id ? `https://covers.openlibrary.org/b/id/${id}-${size}.jpg` : null);
+  return (d.docs || []).map((b) => ({
+    type: "book" as const, title: b.title, creator: b.author_name?.slice(0, 2).join(", ") || null, year: b.first_publish_year || null,
+    cover: img(b.cover_i, "L"), rawg_id: null, ext_id: `ol:${b.key}`, thumb: img(b.cover_i, "M"),
+  }));
+}
+
+// ---------- Yer: OpenStreetMap Nominatim + Wikipedia görseli (anahtarsız) ----------
+
+export async function searchPlaces(text: string): Promise<Found[]> {
+  const r = await fetch(`https://nominatim.openstreetmap.org/search?${new URLSearchParams({
+    q: text, format: "jsonv2", limit: "7", addressdetails: "1", extratags: "1", "accept-language": "tr" })}`);
+  if (!r.ok) throw new Error(String(r.status));
+  const hits: { name?: string; display_name: string; osm_type: string; osm_id: number; address?: Record<string, string>; extratags?: { wikipedia?: string } }[] = await r.json();
+  const list = hits.filter((h) => h.name || h.display_name).map((h) => {
+    const title = h.name || h.display_name.split(",")[0];
+    const a = h.address || {};
+    const region = a.state || a.province || a.city || "";
+    return { h, f: {
+      type: "place" as const, title, creator: a.country || null, year: null, cover: null as string | null, rawg_id: null, ext_id: `osm:${h.osm_type}:${h.osm_id}`,
+      sub: [region !== title ? region : "", a.country].filter(Boolean).join(", ") || undefined, thumb: null as string | null,
+    } };
+  });
+  // Wikipedia'da sayfası olan yerlere kapak görseli (olmazsa kapaksız kalır)
+  await Promise.all(list.map(async ({ h, f }) => {
+    const [lang, ...rest] = (h.extratags?.wikipedia || "").split(":");
+    if (!rest.length) return;
+    try {
+      const w = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(rest.join(":"))}`);
+      const d: { thumbnail?: { source?: string } } = w.ok ? await w.json() : {};
+      f.cover = f.thumb = d.thumbnail?.source || null;
+    } catch { /* görselsiz devam */ }
+  }));
+  return list.map((x) => x.f);
+}
+
+// ---------- Yemek: TheMealDB (anahtarsız, İngilizce isimler; Türkçe için elle yazılır) ----------
+
+export async function searchFood(text: string): Promise<Found[]> {
+  const r = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(text)}`);
+  if (!r.ok) throw new Error(String(r.status));
+  const d: { meals: { idMeal: string; strMeal: string; strMealThumb: string; strArea?: string }[] | null } = await r.json();
+  return (d.meals || []).slice(0, 7).map((m) => ({
+    type: "food" as const, title: m.strMeal, creator: m.strArea ? `${m.strArea} mutfağı` : null, year: null,
+    cover: m.strMealThumb, rawg_id: null, ext_id: `meal:${m.idMeal}`, sub: m.strArea, thumb: `${m.strMealThumb}/small`,
+  }));
+}
+
 // Ancalog'da loglanmış isimlerden öner (dış kaynak yoksa ya da çalışmıyorsa)
 export async function searchLogged(type: EntryType, text: string): Promise<Found[]> {
   const rows = await q<Entry[]>(sb().from("entries").select("type, title, year, creator, cover, rawg_id, ext_id")
@@ -249,12 +303,18 @@ export async function findContent(type: EntryType, text: string): Promise<Found[
   if (type === "game") return searchGames(text);
   const source = type === "music" ? (isLink(text) ? fromLink(text).then((f) => (f ? [f] : [])) : searchMusic(text))
     : type === "anime" ? searchAnime(text).catch(() => searchLogged(type, text))
+    : type === "book" ? searchBooks(text).catch(() => searchLogged(type, text))
+    : type === "place" ? searchPlaces(text).catch(() => searchLogged(type, text))
+    : type === "food" ? searchFood(text).catch(() => searchLogged(type, text))
     : searchTmdb(type, text).catch(() => searchLogged(type, text));
   const [ours, theirs] = await Promise.all([isLink(text) ? Promise.resolve([]) : searchCatalog(type, text), source]);
   const seen = new Set(ours.map((f) => `${norm(f.title)}|${norm(f.creator)}`));
   return [...ours, ...theirs.filter((f) => !seen.has(`${norm(f.title)}|${norm(f.creator)}`))].slice(0, 12);
 }
 export const SEARCH_CREDITS: Record<EntryType, [string, string]> = {
+  book: ["Open Library", "https://openlibrary.org"],
+  place: ["OpenStreetMap · Wikipedia", "https://www.openstreetmap.org"],
+  food: ["TheMealDB", "https://www.themealdb.com"],
   game: ["RAWG", "https://rawg.io"],
   music: ["Apple Music · Deezer", "https://www.deezer.com"],
   movie: ["TMDB", "https://www.themoviedb.org"],

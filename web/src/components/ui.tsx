@@ -7,6 +7,7 @@ import type { Entry, Profile } from "@/lib/types";
 import { BADGES, SOCIALS, TYPES, activityVerb, statusLabel } from "@/lib/constants";
 import { daysTaken, fmtDur, fmtHoursShort, num, playSec, safeUrl, scoreShort, scoreText, timeAgo, avgText } from "@/lib/format";
 import { useApp } from "./AppProvider";
+import { countEps } from "@/lib/episodes";
 
 type Who = Partial<Pick<Profile, "id" | "username" | "display_name" | "avatar_url">> | null | undefined;
 export const displayName = (p: Who) => p?.display_name || p?.username || "?";
@@ -170,12 +171,14 @@ export const commentCount = (e: Entry) => e.comments?.[0]?.count || 0;
 // Kayıtla ilgili kısa etiketler: platform, emülatör, mağaza, ilerleme, süre, kaç günde bitti
 export function entryTags(e: Entry, { store = false, time = true } = {}) {
   const days = daysTaken(e);
+  const eps = countEps(e.episodes);
   return [
     e.platform,
     e.emulated ? "Emülatör" : "",
     store ? e.store : "",
     e.status === "active" && e.progress_sec ? `▶ ${fmtDur(e.progress_sec)}` : "",
     time && playSec(e) ? fmtDur(playSec(e)) : "",
+    eps ? `${eps} bölüm` : "",
     days ? `${days} günde` : "",
   ].filter(Boolean) as string[];
 }

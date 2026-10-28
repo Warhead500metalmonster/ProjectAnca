@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Entry, EntryType, Item, Profile, RawgGame } from "@/lib/types";
 import { TYPES, TYPE_KEYS } from "@/lib/constants";
 import { avgText, contentHref, contentKey, likeEsc, smallImage } from "@/lib/format";
-import { anilist, searchMusic, tmdb, tmdbImage, SEARCH_CREDITS } from "@/lib/data";
+import { anilist, findContent, searchMusic, tmdb, tmdbImage, SEARCH_CREDITS } from "@/lib/data";
 import { rawg } from "@/lib/rawg";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
@@ -237,6 +237,7 @@ async function findExternal(text: string, type: EntryType | "all", from: string,
       }));
     }
     if (type === "music" && t) return (await searchMusic(t)).filter((m) => inRange(m.year));
+    if (t && (type === "book" || type === "place" || type === "food")) return (await findContent(type, t)).filter((m) => inRange(m.year));
   } catch { /* dış kaynak çalışmazsa sadece Ancalog sonuçları görünür */ }
   return [];
 }

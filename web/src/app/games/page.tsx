@@ -8,6 +8,7 @@ import { smallImage } from "@/lib/format";
 import { rawg } from "@/lib/rawg";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
+import { useApp } from "@/components/AppProvider";
 import { Cover } from "@/components/ui";
 
 // Oyun sayfasında türe, platforma, geliştiriciye, yayıncıya ya da mağazaya tıklanınca gelinen liste
@@ -16,6 +17,7 @@ const SORTS: [string, string][] = [["-added", "En popüler"], ["-metacritic", "M
 const PAGE = 24;
 
 export default function GamesPage() {
+  const { openForm } = useApp();
   const params = useSearchParams();
   const router = useRouter();
   const path = usePathname();
@@ -81,7 +83,7 @@ export default function GamesPage() {
             <>
               <div className="grid">
                 {data.list.map((g) => (
-                  <Link key={g.id} className="card" href={`/game/${g.id}`}>
+                  <div key={g.id} className="qwrap"><Link className="card" href={`/game/${g.id}`}>
                     <div className="poster">
                       <div className="ph"></div><Cover src={g.background_image ? smallImage(g.background_image) : null} />
                       {data.counts.get(g.id) ? <span className="rating">{data.counts.get(g.id)}</span> : g.metacritic ? <span className="rating">MC {g.metacritic}</span> : null}
@@ -89,6 +91,8 @@ export default function GamesPage() {
                     <div className="card-title">{g.name}</div>
                     <div className="card-meta">{[g.released?.slice(0, 4), g.genres?.slice(0, 2).map((x) => x.name).join(", ")].filter(Boolean).join(" · ")}</div>
                   </Link>
+                  <button className="qadd" title="Kütüphaneme ekle" aria-label={`${g.name} ekle`} onClick={() => openForm(null, { game: g })}>+</button>
+                  </div>
                 ))}
               </div>
               {data.list.length < data.total && pages < 8 && (

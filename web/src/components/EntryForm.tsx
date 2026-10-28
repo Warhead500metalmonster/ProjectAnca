@@ -210,151 +210,181 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
   // 5'lik ölçekte 5 yıldız (her yarım = 1 puan), 10'lukta 10 yıldız (her yarım = 0,5 puan)
   const n = scale === 10 ? 10 : 5, step = 10 / n;
 
+  const previewCover = safeUrl(isGame ? picked?.cover : cover);
+  const previewTitle = (isGame ? picked?.title : title.trim()) || "";
+
   return (
-    <dialog ref={ref} onClose={onClose}>
-      <form id="form" onSubmit={submit}>
-        <div className="dialog-head">
+    <dialog ref={ref} onClose={onClose} className="ef">
+      <form id="form" className="ef-form" onSubmit={submit}>
+        <header className="ef-head">
           <h2>{entry ? "Kaydı düzenle" : "Yeni kayıt"}</h2>
           <button type="button" className="icon-btn" aria-label="Kapat" onClick={() => ref.current?.close()}>✕</button>
-        </div>
-        <div className="field">
-          <label>Tür</label>
-          <div className="type-picker">
-            {TYPE_KEYS.map((k) => (
-              <button type="button" key={k} className={type === k ? "active" : ""} onClick={() => changeType(k)}>{TYPES[k].label}</button>
-            ))}
-          </div>
-        </div>
-        <div className="field suggest-wrap">
-          <label htmlFor="f-title">{isGame ? "Oyun ara" : type === "music" ? "Albüm / şarkı" : "İsim"}</label>
-          {isGame && picked ? (
-            <div className="picked">
-              {safeUrl(picked.cover) ? <img src={picked.cover!} alt="" /> : <span className="noimg" />}
-              <div className="info"><b>{picked.title}</b><span>{[picked.year, picked.creator].filter(Boolean).join(" · ")}</span></div>
-              <button type="button" className="btn" onClick={() => { setPicked(null); setTitle(""); }}>Değiştir</button>
+        </header>
+
+        <div className="ef-body">
+          <aside className="ef-side">
+            <div className={`ef-cover ${t.square ? "square" : ""}`}>
+              {previewCover ? <img src={previewCover} alt="" onError={(e) => e.currentTarget.remove()} /> : null}<span>{t.label}</span>
             </div>
-          ) : (
-            <input id="f-title" maxLength={200} autoComplete="off" autoFocus value={title}
-              placeholder={isGame ? "Oyunun adını yaz ve listeden seç…" : type === "music" ? "Albüm / şarkı ara ya da YouTube, Spotify linki yapıştır…" : `${t.label} ara, listeden seç ya da elle yaz…`}
-              onChange={(e) => onTitleChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "ArrowDown") { e.preventDefault(); (e.currentTarget.parentElement?.querySelector(".suggest button") as HTMLElement | null)?.focus(); }
-              }} />
-          )}
-          {suggestions && (
-            <div className="suggest" onKeyDown={(e) => {
-              const b = document.activeElement as HTMLElement;
-              if (e.key === "ArrowDown") { e.preventDefault(); (b.nextElementSibling as HTMLElement | null)?.focus?.(); }
-              if (e.key === "ArrowUp") { e.preventDefault(); ((b.previousElementSibling as HTMLElement | null) || document.getElementById("f-title"))?.focus(); }
-              if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); setSuggestions(null); document.getElementById("f-title")?.focus(); }
-            }}>
-              {suggestions.map((f, i) => (
-                <button type="button" key={i} onClick={() => pick(f)}>
-                  {f.thumb
-                    ? <img className={TYPES[f.type].square ? "sq" : ""} src={f.thumb} alt="" onError={(e) => (e.currentTarget.style.visibility = "hidden")} />
-                    : <span className="noimg" />}
-                  <span className="name">{f.title}{f.sub && <small>{f.sub}</small>}</span>
-                  <span className="year">{f.year || ""}</span>
-                </button>
-              ))}
-              {suggestNote && <div className="note">{suggestNote}</div>}
-              <span className="credit">Veri: <a href={credit[1]} target="_blank" rel="noopener">{credit[0]}</a></span>
+            {previewTitle && <b className="ef-ptitle">{previewTitle}</b>}
+            <div className="ef-rating">
+              <div className="ef-h">Puan {rating ? <span>{scoreText(rating, scale)}</span> : null}</div>
+              <div className={`stars input ${n === 10 ? "ten" : ""}`}>
+                {Array.from({ length: n }, (_, j) => j + 1).map((i) => {
+                  const v = rating - (i - 1) * step;
+                  return (
+                    <span key={i} className={`star ${v >= step ? "full" : v >= step / 2 ? "half" : ""}`}
+                      onClick={(e) => setRating((i - (e.nativeEvent.offsetX < e.currentTarget.offsetWidth / 2 ? 0.5 : 0)) * step)}>★</span>
+                  );
+                })}
+              </div>
+              {rating > 0 && <button type="button" className="link clear" onClick={() => setRating(0)}>puanı temizle</button>}
             </div>
-          )}
-        </div>
-        {!isGame && (
-          <div className="row">
-            <div className="field grow">
-              <label htmlFor="f-creator">{t.creator}</label>
-              <input id="f-creator" maxLength={200} value={creator} onChange={(e) => setCreator(e.target.value)} />
+            <label className={`ef-fav ${favorite ? "on" : ""}`}>
+              <input type="checkbox" checked={favorite} onChange={(e) => setFavorite(e.target.checked)} />
+              <span>♥ Favorilerime ekle</span>
+              <small>her kategoride en fazla 10</small>
+            </label>
+          </aside>
+
+          <div className="ef-main">
+            <div className="ef-sec">
+              <div className="ef-h">Tür</div>
+              <div className="seg-pills">
+                {TYPE_KEYS.map((k) => (
+                  <button type="button" key={k} className={type === k ? "on" : ""} onClick={() => changeType(k)}>{TYPES[k].label}</button>
+                ))}
+              </div>
             </div>
-            <div className="field small">
-              <label htmlFor="f-year">Yıl</label>
-              <input id="f-year" type="number" min={1800} max={2100} value={year} onChange={(e) => setYear(e.target.value)} />
+
+            <div className="ef-sec suggest-wrap">
+              <label className="ef-h" htmlFor="f-title">{isGame ? "Oyun" : type === "music" ? "Albüm / şarkı" : "İsim"}</label>
+              {isGame && picked ? (
+                <div className="picked">
+                  <div className="info"><b>{picked.title}</b><span>{[picked.year, picked.creator].filter(Boolean).join(" · ")}</span></div>
+                  <button type="button" className="btn" onClick={() => { setPicked(null); setTitle(""); }}>Değiştir</button>
+                </div>
+              ) : (
+                <input id="f-title" className="ef-big" maxLength={200} autoComplete="off" autoFocus value={title}
+                  placeholder={isGame ? "Oyunun adını yaz ve listeden seç…" : type === "music" ? "Albüm / şarkı ara ya da YouTube, Spotify linki yapıştır…" : `${t.label} ara, listeden seç ya da elle yaz…`}
+                  onChange={(e) => onTitleChange(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowDown") { e.preventDefault(); (e.currentTarget.parentElement?.querySelector(".suggest button") as HTMLElement | null)?.focus(); }
+                  }} />
+              )}
+              {suggestions && (
+                <div className="suggest" onKeyDown={(e) => {
+                  const b = document.activeElement as HTMLElement;
+                  if (e.key === "ArrowDown") { e.preventDefault(); (b.nextElementSibling as HTMLElement | null)?.focus?.(); }
+                  if (e.key === "ArrowUp") { e.preventDefault(); ((b.previousElementSibling as HTMLElement | null) || document.getElementById("f-title"))?.focus(); }
+                  if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); setSuggestions(null); document.getElementById("f-title")?.focus(); }
+                }}>
+                  {suggestions.map((f, i) => (
+                    <button type="button" key={i} onClick={() => pick(f)}>
+                      {f.thumb
+                        ? <img className={TYPES[f.type].square ? "sq" : ""} src={f.thumb} alt="" onError={(e) => (e.currentTarget.style.visibility = "hidden")} />
+                        : <span className="noimg" />}
+                      <span className="name">{f.title}{f.sub && <small>{f.sub}</small>}</span>
+                      <span className="year">{f.year || ""}</span>
+                    </button>
+                  ))}
+                  {suggestNote && <div className="note">{suggestNote}</div>}
+                  <span className="credit">Veri: <a href={credit[1]} target="_blank" rel="noopener">{credit[0]}</a></span>
+                </div>
+              )}
+            </div>
+
+            {!isGame && (
+              <div className="row">
+                <div className="field grow">
+                  <label htmlFor="f-creator">{t.creator}</label>
+                  <input id="f-creator" maxLength={200} value={creator} onChange={(e) => setCreator(e.target.value)} />
+                </div>
+                <div className="field small">
+                  <label htmlFor="f-year">Yıl</label>
+                  <input id="f-year" type="number" min={1800} max={2100} value={year} onChange={(e) => setYear(e.target.value)} />
+                </div>
+              </div>
+            )}
+
+            <div className="ef-sec">
+              <div className="ef-h">Durum</div>
+              <div className="seg-pills">
+                {STATUSES.map((s) => (
+                  <button type="button" key={s} className={status === s ? "on" : ""} onClick={() => setStatus(s)}>{statusLabel(s, type)}</button>
+                ))}
+              </div>
+            </div>
+
+            <div className="row">
+              <div className="field grow">
+                <label htmlFor="f-platform">{t.where}</label>
+                <input id="f-platform" list="platformList" maxLength={60} autoComplete="off" value={platform} onChange={(e) => setPlatform(e.target.value)} />
+                <datalist id="platformList">{places.map((p) => <option key={p} value={p} />)}</datalist>
+              </div>
+              {isGame && (
+                <div className="field grow">
+                  <label htmlFor="f-store">Mağaza</label>
+                  <input id="f-store" list="storeList" maxLength={60} autoComplete="off" value={store} onChange={(e) => setStore(e.target.value)} />
+                  <datalist id="storeList">{stores.map((s) => <option key={s} value={s} />)}</datalist>
+                </div>
+              )}
+            </div>
+            {isGame && (
+              <label className="check"><input type="checkbox" checked={emulated} onChange={(e) => setEmulated(e.target.checked)} /> Emülatörde oynadım</label>
+            )}
+
+            <div className="row">
+              <div className="field grow">
+                <label>{t.time}</label>
+                <HmsInput value={playtime} onChange={setPlaytime} label={t.time} />
+              </div>
+              <div className="field grow">
+                <label>Şu anki ilerleme</label>
+                <HmsInput value={progressSec} onChange={setProgressSec} label="Şu anki ilerleme" />
+              </div>
+            </div>
+
+            <div className="row">
+              <div className="field grow">
+                <label htmlFor="f-start">Başlama tarihi</label>
+                <input id="f-start" type="date" value={started} onChange={(e) => setStarted(e.target.value)} />
+              </div>
+              <div className="field grow">
+                <label htmlFor="f-date">Bitirme tarihi</label>
+                <input id="f-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="field">
+              <label htmlFor="f-note">Not <span className="muted">· akışta görünmez, kayda tıklayan görür</span></label>
+              <input id="f-note" maxLength={200} placeholder={t.progress} value={note} onChange={(e) => setNote(e.target.value)} />
+            </div>
+
+            {!isGame && (
+              <div className="field">
+                <label htmlFor="f-cover">Kapak görseli (URL)</label>
+                <input id="f-cover" type="url" placeholder="https://…" value={cover} onChange={(e) => setCover(e.target.value)} />
+              </div>
+            )}
+
+            <div className="field">
+              <label htmlFor="f-review" className="review-label">
+                <span>İnceleme <span className="muted">· kayda tıklayanlar okuyup beğenebilir, yorum yapabilir</span></span>
+                <button type="button" className="link" onClick={spoilerize} title="Seçtiğin yazıyı spoiler olarak gizler">Spoiler gizle</button>
+              </label>
+              <textarea id="f-review" rows={4} maxLength={5000} value={review} onChange={(e) => setReview(e.target.value)} />
             </div>
           </div>
-        )}
-        <div className="row">
-          <div className="field grow">
-            <label htmlFor="f-status">Durum</label>
-            <select id="f-status" value={status} onChange={(e) => setStatus(e.target.value as Entry["status"])}>
-              {STATUSES.map((s) => <option key={s} value={s}>{statusLabel(s, type)}</option>)}
-            </select>
-          </div>
-          <div className="field grow">
-            <label htmlFor="f-platform">{t.where}</label>
-            <input id="f-platform" list="platformList" maxLength={60} autoComplete="off" value={platform} onChange={(e) => setPlatform(e.target.value)} />
-            <datalist id="platformList">{places.map((p) => <option key={p} value={p} />)}</datalist>
-          </div>
         </div>
-        {isGame && (
-          <div className="row">
-            <div className="field grow">
-              <label htmlFor="f-store">Mağaza</label>
-              <input id="f-store" list="storeList" maxLength={60} autoComplete="off" value={store} onChange={(e) => setStore(e.target.value)} />
-              <datalist id="storeList">{stores.map((s) => <option key={s} value={s} />)}</datalist>
-            </div>
-            <label className="check grow"><input type="checkbox" checked={emulated} onChange={(e) => setEmulated(e.target.checked)} /> Emülatörde oynadım</label>
-          </div>
-        )}
-        <div className="row">
-          <div className="field grow">
-            <label>{t.time}</label>
-            <HmsInput value={playtime} onChange={setPlaytime} label={t.time} />
-          </div>
-          <div className="field grow">
-            <label>Şu anki ilerleme</label>
-            <HmsInput value={progressSec} onChange={setProgressSec} label="Şu anki ilerleme" />
-          </div>
-        </div>
-        <div className="row">
-          <div className="field grow">
-            <label htmlFor="f-start">Başlama tarihi</label>
-            <input id="f-start" type="date" value={started} onChange={(e) => setStarted(e.target.value)} />
-          </div>
-          <div className="field grow">
-            <label htmlFor="f-date">Bitirme tarihi</label>
-            <input id="f-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          </div>
-        </div>
-        <div className="field">
-          <label htmlFor="f-note">Not <span className="muted">· akışta görünmez, kayda tıklayan görür</span></label>
-          <input id="f-note" maxLength={200} placeholder={t.progress} value={note} onChange={(e) => setNote(e.target.value)} />
-        </div>
-        <div className="field">
-          <label>Puan <span className="muted">{rating ? `(${scoreText(rating, scale)})` : ""}</span></label>
-          <div className={`stars input ${n === 10 ? "ten" : ""}`}>
-            {Array.from({ length: n }, (_, j) => j + 1).map((i) => {
-              const v = rating - (i - 1) * step;
-              return (
-                <span key={i} className={`star ${v >= step ? "full" : v >= step / 2 ? "half" : ""}`}
-                  onClick={(e) => setRating((i - (e.nativeEvent.offsetX < e.currentTarget.offsetWidth / 2 ? 0.5 : 0)) * step)}>★</span>
-              );
-            })}
-            <button type="button" className="link clear" onClick={() => setRating(0)}>temizle</button>
-          </div>
-        </div>
-        <label className="check"><input type="checkbox" checked={favorite} onChange={(e) => setFavorite(e.target.checked)} /> ♥ Favorilerime ekle <span className="muted">(her kategoride en fazla 10)</span></label>
-        {!isGame && (
-          <div className="field">
-            <label htmlFor="f-cover">Kapak görseli (URL)</label>
-            <input id="f-cover" type="url" placeholder="https://…" value={cover} onChange={(e) => setCover(e.target.value)} />
-          </div>
-        )}
-        <div className="field">
-          <label htmlFor="f-review" className="review-label">
-            <span>İnceleme <span className="muted">· profilinde bu kayda tıklayanlar okuyup beğenebilir, yorum yapabilir</span></span>
-            <button type="button" className="link" onClick={spoilerize} title="Seçtiğin yazıyı spoiler olarak gizler">Spoiler gizle</button>
-          </label>
-          <textarea id="f-review" rows={3} maxLength={5000} value={review} onChange={(e) => setReview(e.target.value)} />
-        </div>
-        {error && <p className="form-error">{error}</p>}
-        <div className="actions">
+
+        <footer className="ef-foot">
+          {error && <p className="form-error">{error}</p>}
           {entry && <button type="button" className="btn danger" onClick={remove}>Sil</button>}
           <span className="spacer" />
           <button type="button" className="btn" onClick={() => ref.current?.close()}>Vazgeç</button>
           <button type="submit" className="btn primary" disabled={saving}>Kaydet</button>
-        </div>
+        </footer>
       </form>
     </dialog>
   );
