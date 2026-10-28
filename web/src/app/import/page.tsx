@@ -22,7 +22,6 @@ export default function ImportPage() {
         <p className="muted" style={{ margin: 0 }}>Başka yerdeki kütüphaneni tek seferde Ancalog&apos;a taşı. Zaten kütüphanende olanlar tekrar eklenmez.</p>
       </section>
       <Steam />
-      <AccountGames kind="psn" />
       <AccountGames kind="xbox" />
       <ListImport />
       <Letterboxd />
@@ -519,10 +518,15 @@ function Spotify() {
   );
 }
 
-// ---------- PlayStation, Xbox, Epic, Switch, HowLongToBeat, Playnite: liste ya da CSV ----------
+// ---------- PlayStation, Epic, Switch, HowLongToBeat, Playnite: liste ya da CSV ----------
 
 // Bu mağazaların herkese açık kütüphane bağlantısı yok; oyun adlarını yapıştırmak ya da CSV seçmek yeterli
 const SOURCES: Record<string, { name: string; platform: string; store: string; help: React.ReactNode }> = {
+  ps: { name: "PlayStation", platform: "PlayStation 5", store: "PlayStation Store", help: <>
+    <a className="grad" href="https://library.playstation.com/played" target="_blank" rel="noreferrer">PlayStation oyun kütüphanendeki Oynananlar</a> sayfasını
+    (ya da <a className="grad" href="https://library.playstation.com/recently-purchased" target="_blank" rel="noreferrer">Satın Alınanlar</a>&apos;ı) aç,
+    sayfanın tamamını seç (Ctrl+A), kopyala (Ctrl+C) ve aşağıya yapıştır. &quot;İndir&quot;, &quot;PS5&quot; gibi yazılar kendiliğinden ayıklanır.
+    Sayfa sayfa gösteriyorsa her sayfayı alt alta yapıştırabilirsin. PS4 oyunlarıysa yukarıdan platformu değiştir.</> },
   epic: { name: "Epic Games", platform: "PC", store: "Epic Games Store", help: <>
     <a className="grad" href="https://www.epicgames.com/account/transactions" target="_blank" rel="noreferrer">Epic satın alma geçmişini</a> ya da
     Epic Launcher&apos;daki <b>Kütüphane</b>&apos;yi aç, sayfanın tamamını seçip (Ctrl+A) kopyala ve yapıştır.</> },
@@ -534,9 +538,6 @@ const SOURCES: Record<string, { name: string; platform: string; store: string; h
   playnite: { name: "Playnite / diğer", platform: "", store: "", help: <>
     Playnite ya da başka bir uygulamadan dışa aktardığın <b>.csv</b> dosyasını seç. &quot;Name&quot; ya da &quot;Title&quot; sütunu olması yeter;
     durum, puan, süre, platform sütunları varsa onlar da okunur.</> },
-  ps: { name: "PlayStation (liste)", platform: "PlayStation 5", store: "PlayStation Store", help: <>
-    <a className="grad" href="https://library.playstation.com/recently-purchased" target="_blank" rel="noreferrer">PlayStation oyun kütüphaneni</a> aç,
-    oyun adlarını seçip kopyala ve aşağıya yapıştır (her satıra bir oyun). PS4 oyunlarıysa yukarıdan platformu değiştir.</> },
   xbox: { name: "Xbox (liste)", platform: "Xbox Series X|S", store: "Xbox Store", help: <>
     <a className="grad" href="https://www.xbox.com/play/library" target="_blank" rel="noreferrer">Xbox oyun kütüphaneni</a> ya da
     <a className="grad" href="https://account.xbox.com/Profile?activetab=main:mainTab2" target="_blank" rel="noreferrer"> Xbox profilindeki Oyunlar</a> sekmesini aç,
@@ -623,8 +624,8 @@ function storeFrom(s: string) {
 
 function ListImport() {
   const { me, mine, toast, refresh } = useApp();
-  const [src, setSrc] = useState("epic");
-  const [platform, setPlatform] = useState(SOURCES.epic.platform);
+  const [src, setSrc] = useState("ps");
+  const [platform, setPlatform] = useState(SOURCES.ps.platform);
   const [status, setStatus] = useState<Status>("completed");
   const [text, setText] = useState("");
   const [csv, setCsv] = useState<ListGame[] | null>(null);
@@ -725,6 +726,7 @@ function ListImport() {
           playtime_sec: g.sec, hours: g.sec ? Math.round(g.sec / 360) / 10 : null, date: g.date,
           started_on: g.started, notes: g.notes || null,
           platform: (g.platform || platform || "").slice(0, 60) || null, store: (g.store || s.store || "").slice(0, 60) || null,
+          ...(src === "ps" && !hit && { ext_id: `psn:${looseKey(g.title)}`.slice(0, 60) }),
           updated_at: new Date(g.date ? g.date + "T12:00" : Date.now()).toISOString(),
         };
       }, (done) => setStep({ done, total: unique.length }))).filter(Boolean) as Row[];
@@ -752,7 +754,7 @@ function ListImport() {
 
   return (
     <section className="section import-card">
-      <div className="section-head"><h2>Epic, Switch ve diğerleri</h2></div>
+      <div className="section-head"><h2>PlayStation, Epic, Switch ve diğerleri</h2></div>
       <div className="chips" style={{ marginBottom: 12 }}>
         {Object.entries(SOURCES).map(([k, v]) => <button key={k} className={`chip ${src === k ? "active" : ""}`} onClick={() => pick(k)}>{v.name}</button>)}
       </div>
@@ -815,21 +817,11 @@ function ListImport() {
   );
 }
 
-// ---------- PlayStation ve Xbox: sadece kullanıcı adını yaz ----------
+// ---------- Xbox: sadece gamertag'i yaz ----------
 
 interface RemoteGame { id: string; name: string; platform: string; minutes: number; last: string | null; progress: number | null; done: boolean; cover: string | null }
 
 const ACCOUNT = {
-  psn: {
-    title: "PlayStation", placeholder: "PSN kullanıcı adın (ör. arno4436)", store: "PlayStation Store", doneText: "Platin aldığım ya da %100 bitirdiğim oyunları",
-    help: <>PSN kullanıcı adını yaz; kupası olan bütün oyunların ve PS4 / PS5 oynama sürelerin gelir. Kupaların herkese açık olmalı:
-      konsolda <b>Ayarlar → Kullanıcılar ve Hesaplar → Gizlilik → Oyun → Kupalar: Herkes</b>.</>,
-    errors: {
-      "not-found": "Bu PSN kullanıcı adı bulunamadı. Yazımını kontrol et.",
-      private: "Kupaların gizli görünüyor. Konsolda Ayarlar → Kullanıcılar ve Hesaplar → Gizlilik → Oyun → Kupalar: Herkes yap, sonra tekrar dene.",
-      busy: "PlayStation şu an cevap vermiyor. Bir dakika sonra tekrar dene.",
-    } as Record<string, string>,
-  },
   xbox: {
     title: "Xbox ve Xbox PC", placeholder: "Gamertag'in", store: "Xbox Store", doneText: "Bütün başarımlarını açtığım oyunları",
     help: <>Gamertag&apos;ini yaz; Xbox konsolunda ve bilgisayardaki Xbox uygulamasında (Game Pass dahil) oynadığın oyunlar gelir.
@@ -842,7 +834,7 @@ const ACCOUNT = {
   },
 };
 
-function AccountGames({ kind }: { kind: "psn" | "xbox" }) {
+function AccountGames({ kind }: { kind: "xbox" }) {
   const cfg = ACCOUNT[kind];
   const { me, mine, toast, refresh } = useApp();
   const [user, setUser] = useState("");
@@ -866,8 +858,7 @@ function AccountGames({ kind }: { kind: "psn" | "xbox" }) {
       const d = await r.json().catch(() => ({}));
       if (!r.ok) {
         return setError(cfg.errors[d.error] || {
-          "no-key": "Bu bağlantı henüz kurulmadı. Şimdilik aşağıdaki \"Epic, Switch ve diğerleri\" bölümünden oyun adlarını yapıştırabilirsin.",
-          expired: "PlayStation bağlantısının süresi dolmuş. Site sahibine haber ver; o sırada oyun adlarını aşağıdan yapıştırabilirsin.",
+          "no-key": "Bu bağlantı henüz kurulmadı. Şimdilik aşağıdaki \"PlayStation, Epic, Switch ve diğerleri\" bölümünden oyun adlarını yapıştırabilirsin.",
           "bad-user": "Kullanıcı adını doğru yaz.",
         }[d.error as string] || "Bağlanılamadı, biraz sonra tekrar dene.");
       }
@@ -1081,17 +1072,21 @@ function AlbumImport({ mode }: { mode: "link" | "lastfm" }) {
 }
 
 // Mağaza sayfasından kopyalanan metindeki fiyat, tarih, düğme yazısı gibi gereksiz satırları ayıkla
-const NOISE = /^(satın al(ındı)?|purchased|owned|sahip olunan|yükle(ndi)?|install(ed)?|oyna|play|indir|download|güncelle|update|kütüphane|library|kitaplığım|my games|oyunlarım|sırala|sort|filtre|filter|ara|search|tümü|all|favoriler|favorites|ücretsiz|free|ödendi|paid|iade|refund|detaylar|details|daha fazla|more|games?|oyunlar|apps?|uygulamalar|hepsi|yüklü|hazır|ready|ps5|ps4|pc|xbox( series x\|s| one)?|nintendo switch|dlc|eklenti|add-?on|demo|beta|trial)$/i;
+const NOISE = /^(konsola indir|indirme durumunu görüntüle|view download status|download to (your )?console|gta\+|ps plus|playstation plus|oyun kütüphanesi|game library|satın alınanlar|oynananlar|indirilenler|purchased|played|collection|koleksiyon|ps vr2?|satın al(ındı)?|purchased|owned|sahip olunan|yükle(ndi)?|install(ed)?|oyna|play|indir|download|güncelle|update|kütüphane|library|kitaplığım|my games|oyunlarım|sırala|sort|filtre|filter|ara|search|tümü|all|favoriler|favorites|ücretsiz|free|ödendi|paid|iade|refund|detaylar|details|daha fazla|more|games?|oyunlar|apps?|uygulamalar|hepsi|yüklü|hazır|ready|ps5|ps4|pc|xbox( series x\|s| one)?|nintendo switch|dlc|eklenti|add-?on|demo|beta|trial)$/i;
 function cleanPaste(text: string) {
   const seen = new Set<string>();
   return text.split(/\r?\n/)
     .map((l) => l.replace(/[™®©]/g, "").replace(/^\s*(?:[-*•]\s*|\d{1,4}[.)]\s+)/, "").replace(/\s+/g, " ").trim())
     .filter((l) => {
       if (l.length < 2 || l.length > 120) return false;
-      if (NOISE.test(l)) return false;
+      const low = l.toLocaleLowerCase("tr"); // "İndir" de "indir" sayılsın
+      if (NOISE.test(l) || NOISE.test(low)) return false;
+      if (/^(indirilenler|downloads?|bildirimler|notifications?)\s*\d*$/.test(low)) return false;
       if (/^[\d\s.,:/%-]+$/.test(l)) return false;                              // sayı, tarih, yüzde
       if (/(₺|tl\b|\$|€|£|usd|eur|try)\s*\d|\d\s*(₺|tl\b|\$|€|£)/i.test(l)) return false; // fiyat
       if (/^(order|sipariş|fatura|invoice|işlem|transaction)\b/i.test(l)) return false;
+      if (/^(satın alınanlar|oynananlar|purchased|played)\s*\(/i.test(l)) return false; // "Satın Alınanlar (1 - 24/693)"
+      if (/^(ps[45]|ps vr2?|gta\+|ps plus)(\s+(ps[45]|ps vr2?|gta\+|ps plus))*$/i.test(l)) return false;
       if (/^\d+\s*(saat|sa|dk|dakika|hours?|hrs?|mins?|minutes?)\b/i.test(l)) return false;
       if (/^(son oynama|last played|oynama süresi|play time|eklendi|added)\b/i.test(l)) return false;
       const k = l.toLowerCase();
