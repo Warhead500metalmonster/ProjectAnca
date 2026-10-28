@@ -39,7 +39,7 @@ export default function Settings() {
 }
 
 function SettingsForm({ me }: { me: Profile }) {
-  const { setMe, toast, isOwner } = useApp();
+  const { setMe, toast } = useApp();
   const router = useRouter();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -88,7 +88,9 @@ function SettingsForm({ me }: { me: Profile }) {
         rating_scale: scale,
         socials,
         site_color: /^#[0-9a-f]{6}$/i.test(siteColor) && siteColor.toLowerCase() !== DEFAULT_COLOR ? siteColor : null,
-        ...(isOwner ? { song_url: song.url.trim() || null, song_title: song.title.trim() || null, song_volume: song.volume } : {}),
+        song_url: song.url.trim() || null,
+        song_title: song.title.trim() || null,
+        song_volume: song.volume,
       }).eq("id", me.id).select().single());
       setMe(updated);
       saved.current = updated.site_color;
@@ -154,24 +156,20 @@ function SettingsForm({ me }: { me: Profile }) {
       </div>
       <p className="muted small">Butonlar, bağlantılar ve arka plandaki ışık bu renge döner. Seçince hemen görürsün; kalıcı olması için aşağıdan kaydet.</p>
 
-      {isOwner && (
-        <>
-          <h3 className="set-h">🎵 Profil şarkısı <span className="muted small">· 👑 sadece sana özel</span></h3>
-          <div className="field">
-            <label htmlFor="p-song">YouTube linki</label>
-            <input id="p-song" type="url" placeholder="https://www.youtube.com/watch?v=…" value={song.url} onChange={(e) => songLink(e.target.value)} />
-          </div>
-          <div className="field">
-            <label htmlFor="p-song-title">Köşede yazacak isim</label>
-            <input id="p-song-title" maxLength={120} placeholder="ör. Pink Floyd — Shine On You Crazy Diamond" value={song.title} onChange={(e) => setSong((s) => ({ ...s, title: e.target.value }))} />
-          </div>
-          <div className="field">
-            <label htmlFor="p-song-vol">Ses: %{song.volume}</label>
-            <input id="p-song-vol" type="range" min={1} max={60} value={song.volume} onChange={(e) => setSong((s) => ({ ...s, volume: Number(e.target.value) }))} />
-          </div>
-          <p className="muted small">Profiline girenler bu şarkıyı arkada kısık sesle duyar. Kaldırmak için linki silip kaydet.</p>
-        </>
-      )}
+      <h3 className="set-h">🎵 Profil şarkısı</h3>
+      <div className="field">
+        <label htmlFor="p-song">YouTube linki</label>
+        <input id="p-song" type="url" placeholder="https://www.youtube.com/watch?v=…" value={song.url} onChange={(e) => songLink(e.target.value)} />
+      </div>
+      <div className="field">
+        <label htmlFor="p-song-title">Köşede yazacak isim</label>
+        <input id="p-song-title" maxLength={120} placeholder="ör. Pink Floyd — Shine On You Crazy Diamond" value={song.title} onChange={(e) => setSong((s) => ({ ...s, title: e.target.value }))} />
+      </div>
+      <div className="field">
+        <label htmlFor="p-song-vol">Ses: %{song.volume}</label>
+        <input id="p-song-vol" type="range" min={1} max={60} value={song.volume} onChange={(e) => setSong((s) => ({ ...s, volume: Number(e.target.value) }))} />
+      </div>
+      <p className="muted small">Profiline girenler bu şarkıyı arkada kısık sesle duyar, köşede adı yazar. Kaldırmak için linki silip kaydet.</p>
 
       <h3 className="set-h">⭐ Puan ölçeği</h3>
       <div className="scale-pick">

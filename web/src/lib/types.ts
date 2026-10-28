@@ -14,7 +14,7 @@ export interface Profile {
   location?: string | null;
   pronouns?: string | null;
   site_color?: string | null;   // sitenin rengi, sadece kendisi görür
-  song_url?: string | null;     // profilde arkada çalan şarkı (şimdilik sadece site sahibi)
+  song_url?: string | null;     // profilde arkada çalan şarkı (YouTube linki)
   song_title?: string | null;
   song_volume?: number | null;
   created_at: string;

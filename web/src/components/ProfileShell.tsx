@@ -41,7 +41,7 @@ export function ProfileShell({ children }: { children: React.ReactNode }) {
 }
 
 function Shell({ data, children }: { data: ProfileData; children: React.ReactNode }) {
-  const { me, openForm, isFriend, badges } = useApp();
+  const { me, openForm, isFriend } = useApp();
   const path = usePathname();
   const { profile, entries, followers, following } = data;
   const isMe = me?.id === profile.id;
@@ -61,8 +61,7 @@ function Shell({ data, children }: { data: ProfileData; children: React.ReactNod
   const accent = /^#[0-9a-f]{6}$/i.test(profile.accent || "") ? profile.accent! : null;
   const banner = profile.banner_url && safeUrl(profile.banner_url);
   const tab = path.endsWith("/lists") ? "lists" : path.endsWith("/stats") ? "stats" : "library";
-  // Profil şarkısı şimdilik sadece site sahibinde (veritabanı da başkasına izin vermiyor)
-  const song = profile.song_url && badges.get(profile.id)?.includes("owner") ? profile.song_url : null;
+  const song = profile.song_url || null; // profilde arkada çalan şarkı
 
   return (
     <ProfileCtx.Provider value={{ ...data, isMe }}>
