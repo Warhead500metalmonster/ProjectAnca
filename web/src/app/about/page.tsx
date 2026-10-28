@@ -22,6 +22,11 @@ export default function AboutPage() {
         sade, emojisiz görünümü onun elinden çıktı.
       </p>
 
+      <p className="about-note">
+        Ancalog tamamen kâr amacı gütmeyen bir hobi projesidir. Eğlence için, yapay zekâ desteğiyle geliştiriliyor;
+        reklam almıyor, para kazanmıyor ve kimseye ücret ödetmiyor.
+      </p>
+
       <h2>Ancalog neden var?</h2>
       <p>
         Oynadığım oyunları, izlediğim film ve dizileri, dinlediğim albümleri yıllardır farklı yerlerde tutuyordum. Her biri ayrı bir site,
