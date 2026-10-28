@@ -20,7 +20,7 @@ create table public.entries (
   title text not null check (char_length(title) between 1 and 200),
   year int check (year between 1800 and 2100),
   creator text check (char_length(creator) <= 200),
-  status text not null check (status in ('completed', 'active', 'planned', 'paused', 'dropped')),
+  status text not null check (status in ('completed', 'active', 'planned', 'paused', 'dropped', 'owned')),
   date date,
   rating int not null default 0 check (rating between 0 and 10),
   cover text check (cover ~ '^https?://'),
