@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Entry, EntryType, Status } from "@/lib/types";
 import { STATUSES, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
 import { daysTaken, fmtDate, fmtDur, num, playSec } from "@/lib/format";
@@ -24,7 +24,7 @@ const SORTS: [Sort, string, (a: Entry, b: Entry) => number][] = [
   ["fastest", "En hızlı bitirilen", (a, b) => (daysTaken(a) ?? 1e9) - (daysTaken(b) ?? 1e9)],
 ];
 
-const PAGE = 60; // bir seferde gösterilen kayıt: yüzlerce kapak aynı anda yüklenip sayfayı yavaşlatmasın
+const PAGE = 24; // bir seferde gösterilen kayıt: devamı "Daha fazla göster" ile gelir, sayfa kasmasın
 
 const uniqSorted = (list: (string | number | null | undefined)[], desc = true) =>
   [...new Set(list.filter((x) => x !== null && x !== undefined && x !== ""))].sort((a, b) =>
@@ -90,15 +90,7 @@ export function LibraryTab() {
   const [paging, setPaging] = useState({ key: pageKey, n: PAGE });
   const shown = paging.key === pageKey ? paging.n : PAGE;
   const more = () => setPaging({ key: pageKey, n: shown + PAGE });
-  const sentinel = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = sentinel.current;
-    if (!el || shown >= list.length) return;
-    // Aşağı inince kendiliğinden devamını yükle
-    const io = new IntersectionObserver(([x]) => { if (x.isIntersecting) more(); }, { rootMargin: "600px" });
-    io.observe(el);
-    return () => io.disconnect();
-  });
+
   const favTypes = TYPE_KEYS.filter((k) => favs.some((e) => e.type === k));
   const favType = favTypes.includes(favTab as EntryType) ? (favTab as EntryType) : favTypes[0];
 
@@ -202,8 +194,8 @@ export function LibraryTab() {
           </div>
         )}
         {shown < list.length && (
-          <div ref={sentinel} className="load-more">
-            <button className="btn" onClick={more}>Daha fazla göster ({list.length - shown})</button>
+          <div className="load-more">
+            <button className="btn" onClick={more}>Daha fazla göster ({Math.min(PAGE, list.length - shown)} / {list.length - shown} kaldı)</button>
           </div>
         )}
       </section>
