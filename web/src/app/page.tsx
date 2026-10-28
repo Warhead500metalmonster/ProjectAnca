@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState } from "react";
@@ -10,7 +11,7 @@ import { rawg } from "@/lib/rawg";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
-import { Cover, EntryCard, Feed, Stats, displayName } from "@/components/ui";
+import { Avatar, EntryCard, Feed, Stars, Stats, displayName } from "@/components/ui";
 
 interface LocalEntry { title?: string; type?: string; year?: string; creator?: string; status?: string; date?: string; rating?: string; cover?: string; notes?: string; updated?: number }
 
@@ -25,13 +26,32 @@ export default function Home() {
   return me ? <Dashboard key={me.id} version={version} followingIds={[...following]} /> : <Landing version={version} />;
 }
 
+function Ico({ children }: { children: React.ReactNode }) {
+  return <svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{children}</svg>;
+}
+
 function Landing({ version }: { version: number }) {
-  const { data, error } = useLoad(() => fetchFeed({ limit: 10 }), [version]);
+  const { data, error } = useLoad(() => fetchFeed({ limit: 40 }), [version]);
   if (error) return <div className="empty">Bir şeyler ters gitti: {error}</div>;
+
+  const covers = [...new Set((data || []).map((e) => safeUrl(e.cover)).filter(Boolean))];
+  // Kapak azsa tekrarlayarak şeridi doldur
+  const fill = (list: string[]) => (list.length ? Array.from({ length: Math.max(list.length, 12) }, (_, i) => list[i % list.length]) : []);
+  const rowA = fill(covers.filter((_, i) => i % 2 === 0));
+  const rowB = fill(covers.filter((_, i) => i % 2 === 1));
+  const people = [...new Map((data || []).filter((e) => e.profiles?.username).map((e) => [e.profiles!.username, e.profiles])).values()].slice(0, 5);
+
   return (
     <>
-      <section className="hero">
-        <div>
+      <section className="hero2">
+        <div className="marquee" aria-hidden>
+          {[rowA, rowB].map((row, r) => (
+            <div className={`mq-row ${r ? "rev" : ""}`} key={r}>
+              {[...row, ...row].map((c, i) => <img key={i} src={c} alt="" onError={(e) => e.currentTarget.remove()} />)}
+            </div>
+          ))}
+        </div>
+        <div className="hero2-text">
           <h1>Oynadığın, izlediğin, dinlediğin <span className="grad">her şey</span> tek yerde.</h1>
           <p>Oyunlarını, filmlerini, dizilerini, müziklerini ve animelerini logla. Puanla, not al, arkadaşlarının neyle uğraştığını gör.</p>
           <div className="hero-actions">
@@ -39,21 +59,44 @@ function Landing({ version }: { version: number }) {
             <Link className="btn big ghost" href="/login">Giriş yap</Link>
           </div>
         </div>
-        <div className="hero-art">
-          {Object.values(TYPES).map((t, i) => <div className="tile" key={t.label}>{t.label}<Cover src={data?.find((e, j) => j % 5 === i && e.cover)?.cover} /></div>)}
-        </div>
       </section>
-      <div className="features">
-        <div className="feature"><svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></svg><b>Her şeyi logla</b><span>Oyun, film, dizi, müzik ve anime tek kütüphanede. Platform, süre, tarih ve notlarınla.</span></div>
-        <div className="feature"><svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z" /></svg><b>5 ya da 10 üzerinden puanla</b><span>Hangi ölçeği seversen. İncelemelerini arkadaşların beğenip yorumlayabilir.</span></div>
-        <div className="feature"><svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg><b>Listeler yap</b><span>Herkese açık ya da gizli listeler; hangilerini bitirdiğini yüzdesiyle gör.</span></div>
-        <div className="feature"><svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10M12 20V4M6 20v-6" /></svg><b>Tüm zamanların istatistikleri</b><span>Yıla, türe ve çıkış tarihine göre süzülebilen ayrıntılı istatistikler.</span></div>
-        <div className="feature"><svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg><b>Arkadaşlarınla</b><span>Takip et, akışı izle, puanlarınızı karşılaştırın, karşılıklı takipleşince mesajlaşın.</span></div>
-        <div className="feature"><svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg><b>Favoriler ve rozetler</b><span>Her kategoriden 10 favorini profilinde sergile, kendi rengini ve kapağını seç.</span></div>
+
+      <div className="bento">
+        <div className="tile big">
+          <Ico><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></Ico>
+          <b>Her şeyi logla</b>
+          <span>Oyun, film, dizi, müzik ve anime tek kütüphanede. Platform, süre, tarih ve notlarınla.</span>
+          {data ? <Feed list={data.slice(0, 3)} /> : <div className="loading">Yükleniyor…</div>}
+        </div>
+        <div className="tile">
+          <Ico><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z" /></Ico>
+          <b>5 ya da 10 üzerinden puanla</b>
+          <span>Hangi ölçeği seversen. İncelemelerini arkadaşların beğenip yorumlayabilir.</span>
+          <Stars r={9} style={{ fontSize: 26, marginTop: "auto" }} />
+        </div>
+        <div className="tile">
+          <Ico><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></Ico>
+          <b>Listeler yap</b>
+          <span>Herkese açık ya da gizli; hangilerini bitirdiğini yüzdesiyle gör.</span>
+          <div className="mini-collage">{covers.slice(0, 4).map((c) => <img key={c} src={c} alt="" loading="lazy" />)}</div>
+        </div>
+        <div className="tile">
+          <Ico><path d="M18 20V10M12 20V4M6 20v-6" /></Ico>
+          <b>İstatistikler</b>
+          <span>Yıla, türe ve çıkış tarihine göre süzülebilen ayrıntılı rakamlar.</span>
+          <div className="mini-bars" aria-hidden>{[30, 55, 40, 80, 65, 95, 70].map((h, i) => <i key={i} style={{ height: `${h}%` }} />)}</div>
+        </div>
+        <div className="tile">
+          <Ico><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></Ico>
+          <b>Arkadaşlar, favoriler, rozetler</b>
+          <span>Takip et, mesajlaş, puanlarınızı karşılaştır. Her kategoriden 10 favorini sergile.</span>
+          <div className="avatar-stack">{people.map((p) => <Avatar key={p!.username} p={p} />)}</div>
+        </div>
       </div>
+
       <section className="section">
         <div className="section-head"><h2>Toplulukta son hareketler</h2><Link href="/community">Tümü →</Link></div>
-        {data ? <Feed list={data} /> : <div className="loading">Yükleniyor…</div>}
+        {data ? <Feed list={data.slice(3, 13)} /> : <div className="loading">Yükleniyor…</div>}
       </section>
     </>
   );

@@ -39,9 +39,6 @@ export function Topbar() {
         <Link href="/" className={active("home")}>
           <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg><span>Ana Sayfa</span>
         </Link>
-        <Link href="/search" className={active("search")}>
-          <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 0 1 6.32 12.9l5.39 5.4-1.41 1.41-5.4-5.39A8 8 0 1 1 10 2zm0 2a6 6 0 1 0 0 12 6 6 0 0 0 0-12z" /></svg><span>Keşfet</span>
-        </Link>
         <Link href="/community" className={active("community")}>
           <svg viewBox="0 0 24 24"><path d="M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4zm8 0c-.3 0-.7 0-1.1.1 1.3.9 2.1 2.2 2.1 3.9v2h7v-2c0-2.7-5.3-4-8-4z" /></svg><span>Topluluk</span>
         </Link>
@@ -68,8 +65,8 @@ export function Topbar() {
           </>
         ) : (
           <>
-            <Link className="btn ghost" href="/login">Giriş yap</Link>
-            <Link className="btn primary" href="/signup">Kayıt ol</Link>
+            <Link className="top-link" href="/login">Giriş yap</Link>
+            <Link className="btn primary" href="/signup">Katıl</Link>
           </>
         )}
       </div>
