@@ -8,8 +8,12 @@ export async function GET(request: Request) {
   if (!key) return Response.json({ error: "no-key" }, { status: 503 });
   const raw = (new URL(request.url).searchParams.get("profile") || "").trim().slice(0, 200);
 
-  // Profil linki, 17 haneli Steam kimliği ya da özel ad kabul edilir
+  // Profil linki, 17 haneli Steam kimliği, telefondaki "Profili paylaş" linki (s.team/p/...), arkadaş kodu ya da özel ad kabul edilir
   let id = raw.match(/(?:profiles\/)?(\d{17})/)?.[1] || "";
+  const share = raw.match(/s\.team\/p\/([a-z-]+)/i)?.[1];
+  const friendCode = share ? parseInt([...share.replace(/-/g, "").toLowerCase()].map((c) => "0123456789abcdef"["bcdfghjkmnpqrtvw".indexOf(c)]).join(""), 16)
+    : /^\d{1,10}$/.test(raw) ? Number(raw) : NaN;
+  if (!id && friendCode > 0) id = (BigInt("76561197960265728") + BigInt(friendCode)).toString();
   if (!id) {
     const vanity = raw.match(/\/id\/([\w-]+)/)?.[1] || (/^[\w-]{2,32}$/.test(raw) ? raw : "");
     if (!vanity) return Response.json({ error: "bad-profile" }, { status: 400 });
