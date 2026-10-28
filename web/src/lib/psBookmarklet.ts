@@ -3,6 +3,11 @@
 // Hiçbir yere veri göndermez; toplanan yazı Ancalog'daki liste kutusuna yapıştırılır ve orada ayıklanır.
 const SCRIPT = `
 (async function () {
+  if (!/playstation\\.com$/.test(location.hostname)) {
+    alert('Bu düğmeyi PlayStation oyun kütüphanendeyken kullan. Önce library.playstation.com sayfasını aç, sonra bu yer imine orada bas.');
+    if (confirm('PlayStation oyun kütüphanesi şimdi açılsın mı?')) location.href = 'https://library.playstation.com/recently-purchased';
+    return;
+  }
   var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
   var note = document.createElement('div');
   note.style.cssText = 'position:fixed;top:12px;right:12px;z-index:2147483647;background:#111;color:#fff;padding:10px 14px;border-radius:10px;font:15px sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.4)';

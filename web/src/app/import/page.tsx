@@ -677,7 +677,8 @@ function ListImport() {
   }
 
   const ps = src === "ps" ? psParse(text) : null; // PlayStation sayfası: sadece altında PS4 / PS5 etiketi olan satırlar oyundur
-  const pasted: ListGame[] = ps?.length ? ps : cleanPaste(text)
+  const ownPage = /Ancalog'a kopyala|PlayStation, Epic, Switch ve diğerleri|Başka yerdeki kütüphaneni/.test(text); // yanlışlıkla Ancalog'un kendi sayfası yapıştırıldı
+  const pasted: ListGame[] = ps?.length ? ps : ownPage ? [] : cleanPaste(text)
     .map((title) => ({ title, status: null, rating: 0, sec: null, date: null, started: null, platform: "", store: "", notes: "" }));
   const all = fileMode ? csv || [] : pasted;
   const seen = new Set<string>();
@@ -801,7 +802,10 @@ function ListImport() {
       {fileMode ? (
         !csv && <label className="btn file-btn">CSV dosyasını seç<input type="file" accept=".csv,text/csv" multiple onChange={(e) => read(e.target.files)} /></label>
       ) : (
+        <>
+        {ownPage && !ps?.length && <p className="form-error">Bu yazı Ancalog&apos;un kendi sayfası. PlayStation kütüphane sayfasından kopyalayıp öyle yapıştır.</p>}
         <textarea className="input import-paste" rows={7} placeholder={"Her satıra bir oyun ya da sayfanın tamamı:\nElden Ring\nGod of War Ragnarök\nHalo Infinite\n(fiyat, tarih, düğme yazıları kendiliğinden ayıklanır)"} value={text} onChange={(e) => setText(e.target.value)} />
+        </>
       )}
       {all.length > 0 && (
         <>
