@@ -28,8 +28,10 @@ export const STORES = ["Steam", "Epic Games Store", "PlayStation Store", "Xbox S
 
 export const STATUSES: Status[] = ["completed", "active", "planned", "paused", "dropped", "owned"];
 
+// "Bitti" yerine türe göre: oyunda Oynandı, film / dizi / animede İzlendi, müzikte Dinlendi
+const DONE_LABEL: Record<EntryType, string> = { game: "Oynandı", movie: "İzlendi", show: "İzlendi", anime: "İzlendi", music: "Dinlendi" };
 export const statusLabel = (s: Status, type?: EntryType | null) => ({
-  completed: "Bitti",
+  completed: type ? DONE_LABEL[type] : "Tamamlandı",
   active: type ? TYPES[type].active : "Devam ediyor",
   planned: "Planlandı",
   paused: "Ara verdim",

@@ -20,7 +20,7 @@ const SORTS: [Sort, string, (a: Entry, b: Entry) => number][] = [
   ["year", "Çıkış yılı (yeni)", (a, b) => (b.year || 0) - (a.year || 0)],
   ["year_asc", "Çıkış yılı (eski)", (a, b) => (a.year || 9999) - (b.year || 9999)],
   ["finished", "Bitirme tarihi (yeni)", (a, b) => (b.status === "completed" ? b.date || "" : "").localeCompare(a.status === "completed" ? a.date || "" : "")],
-  ["time", "Süre (uzun)", (a, b) => playSec(b) - playSec(a)],
+  ["time", "Oynama süresi (uzun)", (a, b) => playSec(b) - playSec(a) || b.updated_at.localeCompare(a.updated_at)],
   ["fastest", "En hızlı bitirilen", (a, b) => (daysTaken(a) ?? 1e9) - (daysTaken(b) ?? 1e9)],
 ];
 
@@ -46,7 +46,9 @@ export function LibraryTab() {
   const [platform, setPlatform] = useState("");
   const [minRating, setMinRating] = useState("");
   const [flags, setFlags] = useState<Set<"fav" | "review" | "emu">>(new Set());
-  const [sort, setSort] = useState<Sort>("updated");
+  // Oyunlar oynama süresine göre, diğer türler son güncellenene göre sıralı açılır; kişi değiştirirse onun seçimi geçerli
+  const [sortPick, setSort] = useState<Sort | null>(null);
+  const sort: Sort = sortPick ?? (type === "game" ? "time" : "updated");
   const [text, setText] = useState("");
   const [view, setView] = useState<View>("grid");
   const [showFilters, setShowFilters] = useState(false);

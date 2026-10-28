@@ -7,13 +7,29 @@ import type { List, Profile } from "@/lib/types";
 import { PROFILE_COLS } from "@/lib/constants";
 import { ListCard } from "@/components/ListCard";
 import { safeUrl } from "@/lib/format";
-import { fetchFeed } from "@/lib/data";
+import { fetchAll, fetchFeed } from "@/lib/data";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { Cover, Feed, UserRow } from "@/components/ui";
 
 interface Slim { rawg_id: number | null; title: string; cover: string | null; rating: number }
+
+// En çok loglanan oyunlar: her oyunu kaç farklı kişinin loglandığına göre sırala
+async function popularGames(): Promise<(Slim & { n: number })[]> {
+  const rows = await fetchAll<{ rawg_id: number; user_id: string }>((from, to) =>
+    sb().from("entries").select("rawg_id, user_id").eq("type", "game").not("rawg_id", "is", null).order("id").range(from, to), 30000);
+  const people = new Map<number, Set<string>>();
+  for (const r of rows) (people.get(r.rawg_id) || people.set(r.rawg_id, new Set()).get(r.rawg_id)!).add(r.user_id);
+  const top = [...people].map(([id, s]) => [id, s.size] as const).sort((a, b) => b[1] - a[1]).slice(0, 12);
+  if (!top.length) return [];
+  const info = await q<Slim[]>(sb().from("entries").select("rawg_id, title, cover, rating").in("rawg_id", top.map(([id]) => id)).limit(500));
+  return top.map(([id, n]) => {
+    const all = info.filter((x) => x.rawg_id === id);
+    const g = all.find((x) => x.cover) || all[0];
+    return g ? { ...g, n } : null;
+  }).filter(Boolean) as (Slim & { n: number })[];
+}
 
 export default function Community() {
   const { version } = useApp();
@@ -22,7 +38,7 @@ export default function Community() {
     const [feed, members, games, lists] = await Promise.all([
       fetchFeed({ limit: 40 }),
       q<Profile[]>(db.from("profiles").select("*").order("created_at", { ascending: false }).limit(30)),
-      q<Slim[]>(db.from("entries").select("rawg_id, title, cover, rating").eq("type", "game").in("status", ["active", "completed"]).order("updated_at", { ascending: false }).limit(300)),
+      popularGames(),
       q<List[]>(db.from("lists").select(`*, profiles(${PROFILE_COLS}), list_items(id, type, title, cover, rawg_id, position)`)
         .eq("is_public", true).order("updated_at", { ascending: false }).limit(12)).catch(() => [] as List[]),
     ]);
@@ -47,14 +63,7 @@ export default function Community() {
   if (!data) return <div className="loading">Yükleniyor…</div>;
   const { feed, members, games, lists } = data;
 
-  // Son kayıtlarda en çok oynanan ve bitirilen oyunlar (planlanan / bırakılan sayılmaz)
-  const byGame = new Map<number, Slim & { n: number }>();
-  for (const g of games.filter((g) => g.rawg_id)) {
-    const s = byGame.get(g.rawg_id!) || { ...g, n: 0 };
-    s.n++;
-    byGame.set(g.rawg_id!, s);
-  }
-  const popular = [...byGame.values()].sort((a, b) => b.n - a.n).slice(0, 12);
+  const popular = games; // en çok loglanan oyunlar (kişi sayısına göre)
 
   const unique = [...new Set([...games, ...feed].map((e) => safeUrl(e.cover)).filter(Boolean))].slice(0, 30);
   const covers = unique.length ? Array.from({ length: 30 }, (_, i) => unique[i % unique.length]) : []; // az kapak varsa tekrarla
@@ -68,11 +77,11 @@ export default function Community() {
       </section>
       {popular.length > 0 && (
         <section className="section">
-          <div className="section-head"><h2>Popüler oyunlar</h2><span className="muted">şu an oynanan ve bitirilenler</span></div>
+          <div className="section-head"><h2>Popüler oyunlar</h2><span className="muted">en çok loglananlar</span></div>
           <div className="strip">
             {popular.map((g) => (
               <Link className="card" href={`/game/${g.rawg_id}`} key={g.rawg_id}>
-                <div className="poster"><div className="ph">Oyun</div><Cover src={g.cover} /><span className="rating" title="Oynayan ya da bitiren">{g.n}</span></div>
+                <div className="poster"><div className="ph">Oyun</div><Cover src={g.cover} /><span className="rating" title="Bu oyunu loglayan kişi sayısı">{g.n} kişi</span></div>
                 <div className="card-title">{g.title}</div>
               </Link>
             ))}

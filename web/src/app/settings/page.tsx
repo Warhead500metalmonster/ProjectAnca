@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { Profile } from "@/lib/types";
-import { ACCENTS, PROFILE_THEMES, SOCIALS, TYPES, statusLabel } from "@/lib/constants";
+import type { EntryType, Profile } from "@/lib/types";
+import { ACCENTS, PROFILE_THEMES, SOCIALS, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
 import { cssUrl, today } from "@/lib/format";
 import { fetchEntries } from "@/lib/data";
 import { q, sb } from "@/lib/supabase";
@@ -294,15 +294,20 @@ function ExportData({ me }: { me: Profile }) {
 function DeleteAllLogs({ me }: { me: Profile }) {
   const { mine, toast, refresh } = useApp();
   const [busy, setBusy] = useState(false);
+  const [kind, setKind] = useState<EntryType | "all">("all"); // hepsi ya da sadece bir tür (oyun, film, dizi...)
+  const target = kind === "all" ? mine : mine.filter((e) => e.type === kind);
+  const what = kind === "all" ? "kaydın" : `${TYPES[kind].label.toLocaleLowerCase("tr")} kaydının`;
 
   async function wipe() {
-    if (!mine.length) return toast("Silinecek kaydın yok.");
-    if (!confirm(`Kütüphanendeki ${mine.length} kaydın tamamı silinecek (puanlar, incelemeler, süreler, favoriler ve bunlara gelen beğeni ve yorumlar dahil). Emin misin?`)) return;
-    if (!confirm("Gerçekten emin misin? Bu işlem geri alınamaz. Hesabın, listelerin ve takiplerin kalır, kayıtların tamamen silinir.")) return;
+    if (!target.length) return toast("Silinecek kaydın yok.");
+    if (!confirm(`Kütüphanendeki ${target.length} ${what} tamamı silinecek (puanlar, incelemeler, süreler, favoriler ve bunlara gelen beğeni ve yorumlar dahil). Emin misin?`)) return;
+    if (!confirm(`Gerçekten emin misin? Bu işlem geri alınamaz. ${kind === "all" ? "Hesabın, listelerin ve takiplerin kalır, kayıtların tamamen silinir." : "Diğer türlerdeki kayıtların, hesabın ve listelerin kalır."}`)) return;
     setBusy(true);
     try {
-      await q(sb().from("entries").delete().eq("user_id", me.id));
-      toast("Bütün kayıtların silindi. Sıfırdan başlayabilirsin.");
+      let req = sb().from("entries").delete().eq("user_id", me.id);
+      if (kind !== "all") req = req.eq("type", kind);
+      await q(req);
+      toast(kind === "all" ? "Bütün kayıtların silindi. Sıfırdan başlayabilirsin." : `${TYPES[kind].plural} kayıtların silindi.`);
       refresh();
     } catch (err) {
       toast("Silinemedi: " + (err as Error).message);
@@ -313,9 +318,20 @@ function DeleteAllLogs({ me }: { me: Profile }) {
 
   return (
     <details className="danger-zone">
-      <summary>Bütün kayıtlarımı sil (sıfırdan başla)</summary>
-      <p>Hesabın açık kalır; kütüphanendeki <b>{mine.length}</b> kaydın tamamı silinir. İstersen önce yukarıdaki <b>Verilerimi indir</b> ile yedek al.</p>
-      <button type="button" className="btn danger" disabled={busy} onClick={wipe}>{busy ? "Siliniyor…" : "Bütün kayıtlarımı sil"}</button>
+      <summary>Kayıtlarımı sil (hepsini ya da sadece bir türü)</summary>
+      <p>Hesabın açık kalır. İstersen bütün kayıtlarını, istersen sadece oyun, film, dizi, müzik ya da anime kayıtlarını silebilirsin.
+        Önce yukarıdaki <b>Verilerimi indir</b> ile yedek almanı öneririz.</p>
+      <div className="chips" style={{ marginBottom: 10 }}>
+        <button type="button" className={`chip ${kind === "all" ? "active" : ""}`} onClick={() => setKind("all")}>Hepsi ({mine.length})</button>
+        {TYPE_KEYS.filter((t) => mine.some((e) => e.type === t)).map((t) => (
+          <button type="button" key={t} className={`chip ${kind === t ? "active" : ""}`} onClick={() => setKind(t)}>
+            Sadece {TYPES[t].plural.toLocaleLowerCase("tr")} ({mine.filter((e) => e.type === t).length})
+          </button>
+        ))}
+      </div>
+      <button type="button" className="btn danger" disabled={busy || !target.length} onClick={wipe}>
+        {busy ? "Siliniyor…" : kind === "all" ? `Bütün kayıtlarımı sil (${target.length})` : `${TYPES[kind].plural} kayıtlarımı sil (${target.length})`}
+      </button>
     </details>
   );
 }

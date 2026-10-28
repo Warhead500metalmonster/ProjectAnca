@@ -215,7 +215,7 @@ function Steam() {
       });
       setStep({ done: 0, total: changes.length });
       await pool(changes, ({ id, patch }) => q(sb().from("entries").update(patch).eq("id", id)), (done) => setStep({ done, total: changes.length }));
-      toast(changes.length ? `${timed} oyunun süresi güncellendi${finished ? `, ${finished} oyun Bitti yapıldı` : ""}.` : "Her şey zaten güncel.");
+      toast(changes.length ? `${timed} oyunun süresi güncellendi${finished ? `, ${finished} oyun Oynandı yapıldı` : ""}.` : "Her şey zaten güncel.");
       refresh();
     } catch (err) {
       toast("Güncellenemedi: " + (err as Error).message);
@@ -247,7 +247,7 @@ function Steam() {
             <button className="link" onClick={() => setPicked(new Set())}>Hiçbiri</button>
             {games.length > fresh.length && <button className="btn" disabled={busy} onClick={resync}>Kütüphanemdekileri güncelle</button>}
           </div>
-          <label className="check-line"><input type="checkbox" checked={useAch} disabled={busy} onChange={(e) => setUseAch(e.target.checked)} /> Bütün başarımlarını açtığım oyunları <b>Bitti</b> yap (isteğe bağlı)</label>
+          <label className="check-line"><input type="checkbox" checked={useAch} disabled={busy} onChange={(e) => setUseAch(e.target.checked)} /> Bütün başarımlarını açtığım oyunları <b>Oynandı</b> yap (isteğe bağlı)</label>
           <div className="import-list">
             {games.map((g) => (
               <label key={g.appid} className={already(g) ? "off" : ""}>
@@ -273,16 +273,21 @@ function Steam() {
 
 // Basit CSV okuyucu: tırnak içindeki virgül ve satır sonlarını doğru böler
 function parseCsv(text: string): Record<string, string>[] {
+  text = text.replace(/^\uFEFF/, "");
+  // Ayırıcıyı ilk satırdan anla: virgül, noktalı virgül ya da sekme
+  const first = text.slice(0, text.search(/\r?\n/) >>> 0 || text.length);
+  const sep = [",", ";", "\t"].map((d) => [d, first.split(d).length] as const).sort((a, b) => b[1] - a[1])[0][0];
   const rows: string[][] = [];
   let row: string[] = [], cell = "", quoted = false;
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
     if (quoted) {
       if (c === '"' && text[i + 1] === '"') { cell += '"'; i++; }
-      else if (c === '"') quoted = false;
+      // Tırnak ancak hücre bitiyorsa kapanır; ad içinde kalan tek tırnak (ör. 12" Vinyl) yazının parçası sayılır
+      else if (c === '"' && (i + 1 >= text.length || text[i + 1] === sep || text[i + 1] === "\n" || text[i + 1] === "\r")) quoted = false;
       else cell += c;
-    } else if (c === '"') quoted = true;
-    else if (c === ",") { row.push(cell); cell = ""; }
+    } else if (c === '"' && cell === "") quoted = true; // tırnak sadece hücre başında açılır
+    else if (c === sep) { row.push(cell); cell = ""; }
     else if (c === "\n" || c === "\r") {
       if (c === "\r" && text[i + 1] === "\n") i++;
       row.push(cell); rows.push(row); row = []; cell = "";
@@ -557,7 +562,7 @@ interface ListGame { title: string; status: Status | null; cat?: string | null; 
 const col = (r: Record<string, string>, ...names: string[]) => {
   for (const n of names) {
     const k = Object.keys(r).find((x) => x.toLowerCase().replace(/[^a-z]/g, "") === n);
-    if (k && r[k]) return r[k];
+    if (k && r[k] && r[k] !== "--") return r[k]; // HowLongToBeat boş değeri "--" yazar
   }
   return "";
 };
@@ -576,21 +581,22 @@ function seconds(s: string, unitSec = false) {
   return n > 0 ? Math.round(unitSec ? n : n * 3600) : null;
 }
 const NOT_CATEGORY = /^(title|name|game|gamename|oyun|platforms?|storefront|source|store|library|progress|mainstory|mainextras|mainplusextras|completionist|speed.*|review.*|notes?|not|rating|userscore|score|puan|playtime|timeplayed|sure|.*date|addedon|started|finished|lastactivity|completionstatus|status|durum|id|.*id|genres?|developers?|publishers?|releasedate|year|hours?)$/;
-const KNOWN_CATEGORY = /^(completed|playing|retired|backlog)$/;
+const KNOWN_CATEGORY = /^(completed|playing|retired|backlog|onhold)$/;
+const FLAG = /^(x|1|true|yes|evet|✓|✔)$/i;
 function categoryColumns(rows: Record<string, string>[]) {
   const heads = Object.keys(rows[0] || {});
   return heads.filter((h) => {
     const k = h.toLowerCase().replace(/[^a-z0-9]/g, "");
     if (!k || NOT_CATEGORY.test(k) || KNOWN_CATEGORY.test(k)) return false;
-    const vals = rows.map((x) => x[h]).filter((v) => v && v !== "0" && v.toLowerCase() !== "false");
-    return vals.length > 0 && vals.every((v) => v.length <= 5); // işaret gibi kısa değerler (X, 1, true...)
+    const vals = rows.map((x) => x[h]).filter((v) => v && v !== "0" && v !== "--" && v.toLowerCase() !== "false");
+    return vals.length > 0 && vals.every((v) => FLAG.test(v)); // sadece işaret değerleri (X, 1, true...)
   });
 }
 // Durum yazısı tanınmayan satırın ham kategorisi (Playnite'ta yazı, HLTB'de işaretli sütun adı)
 function categoryOf(r: Record<string, string>, cols: string[]) {
   const text = col(r, "completionstatus", "status", "durum");
   if (text) return text;
-  return cols.find((h) => { const v = r[h]; return !!v && v !== "0" && v.toLowerCase() !== "false"; }) || null;
+  return cols.find((h) => FLAG.test(r[h] || "")) || null;
 }
 
 function statusFrom(r: Record<string, string>): Status | null {
@@ -603,9 +609,10 @@ function statusFrom(r: Record<string, string>): Status | null {
     if (/plan|backlog|not played|wish/.test(s)) return "planned";
   }
   // HowLongToBeat: her durum ayrı sütun, işaretliyse dolu
-  const on = (n: string) => { const v = col(r, n); return !!v && v !== "0" && v.toLowerCase() !== "false"; };
+  const on = (n: string) => FLAG.test(col(r, n));
   if (on("completed")) return "completed";
   if (on("playing")) return "active";
+  if (on("onhold")) return "paused";
   if (on("retired")) return "dropped";
   if (on("backlog")) return "planned";
   return null;
@@ -633,7 +640,8 @@ function ListImport() {
   const [text, setText] = useState("");
   const [csv, setCsv] = useState<ListGame[] | null>(null);
   const [catMap, setCatMap] = useState<Record<string, Status | "skip">>({}); // bizde olmayan kategori → durum
-  const [fixRatings, setFixRatings] = useState(false); // eski aktarımda yanlış gelen puanları dosyadakiyle değiştir
+  const [fixRatings, setFixRatings] = useState(false);
+  const [fileInfo, setFileInfo] = useState(""); // "dosyada 812 satır, 812 oyun okundu" // eski aktarımda yanlış gelen puanları dosyadakiyle değiştir
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState<{ done: number; total: number } | null>(null);
   const s = SOURCES[src];
@@ -651,8 +659,12 @@ function ListImport() {
   async function read(files: FileList | null) {
     if (!files?.length) return;
     const list: ListGame[] = [];
+    let lines = 0, rowsRead = 0;
     for (const f of [...files]) {
-      const rowsOf = parseCsv(await f.text());
+      const raw = await f.text();
+      lines += raw.split(/\r?\n/).filter((l) => l.trim()).length - 1;
+      const rowsOf = parseCsv(raw);
+      rowsRead += rowsOf.length;
       const cats = categoryColumns(rowsOf);
       const scoreOf = (r: Record<string, string>) => Number(col(r, "review", "userscore", "rating", "score", "puan").replace(",", ".")) || 0;
       const outOf100 = src === "hltb" || src === "playnite" || rowsOf.some((r) => scoreOf(r) > 10);
@@ -663,7 +675,7 @@ function ListImport() {
         const known = statusFrom(r);
         list.push({
           title, status: known, cat: known ? null : categoryOf(r, cats), rating: Math.max(0, Math.min(10, Math.round(outOf100 ? score / 10 : score))),
-          sec: seconds(col(r, "progress", "playtime", "timeplayed", "sure"), !!col(r, "playtime") && src === "playnite"),
+          sec: seconds(col(r, "progress", "playtime", "timeplayed", "sure", "mainstory", "mainsides", "completionist"), !!col(r, "playtime") && src === "playnite"),
           date: isoDate(col(r, "completiondate", "completed", "lastactivity", "finished", "date")),
           started: isoDate(col(r, "startdate", "started")),
           platform: platformFrom(col(r, "platform", "platforms")), store: storeFrom(col(r, "storefront", "source", "store", "library")),
@@ -672,6 +684,7 @@ function ListImport() {
       }
     }
     if (!list.length) return toast("Dosyada oyun bulunamadı. İçinde \"Title\" ya da \"Name\" sütunu olan bir .csv seç.");
+    setFileInfo(`${files.length > 1 ? `${files.length} dosyada` : "Dosyada"} yaklaşık ${lines.toLocaleString("tr")} satır vardı, ${rowsRead.toLocaleString("tr")} satır okundu, ${list.length.toLocaleString("tr")} oyun bulundu.`);
     setCatMap(Object.fromEntries([...new Set(list.map((g) => g.cat).filter(Boolean) as string[])].map((c) => [c, "owned" as Status])));
     setCsv(list);
   }
@@ -681,8 +694,22 @@ function ListImport() {
   const pasted: ListGame[] = ps?.length ? ps : ownPage ? [] : cleanPaste(text)
     .map((title) => ({ title, status: null, rating: 0, sec: null, date: null, started: null, platform: "", store: "", notes: "" }));
   const all = fileMode ? csv || [] : pasted;
-  const seen = new Set<string>();
-  const unique = all.filter((g) => { const k = looseKey(g.title); if (!k || seen.has(k) || fileStatus(g) === "skip") return false; seen.add(k); return true; });
+  // Aynı oyunun birden fazla satırı (HLTB'de her yeniden oynayış ayrı satır) tek kayıtta birleşir:
+  // süreler toplanır, en son bitirme tarihi ve en yüksek puan alınır, biri bitmişse oyun bitmiş sayılır
+  const merged = new Map<string, ListGame>();
+  for (const g of all) {
+    const k = looseKey(g.title);
+    if (!k || fileStatus(g) === "skip") continue;
+    const o = merged.get(k);
+    if (!o) { merged.set(k, { ...g }); continue; }
+    o.sec = (o.sec || 0) + (g.sec || 0) || null;
+    o.rating = Math.max(o.rating, g.rating);
+    if (g.date && (!o.date || g.date > o.date)) o.date = g.date;
+    if (g.started && (!o.started || g.started < o.started)) o.started = g.started;
+    if (g.status === "completed" || (!o.status && g.status)) { o.status = g.status; o.cat = null; }
+    if (!o.notes && g.notes) o.notes = g.notes;
+  }
+  const unique = [...merged.values()];
   const cats = Object.keys(catMap);
   const catCount = (c: string) => all.filter((g) => !g.status && g.cat === c).length;
   const known = unique.filter((g) => byKey.has(looseKey(g.title))).length; // ada göre kütüphanede olanlar
@@ -809,6 +836,7 @@ function ListImport() {
       )}
       {all.length > 0 && (
         <>
+          {fileMode && fileInfo && <p className="muted small" style={{ margin: "10px 0 0" }}>{fileInfo}</p>}
           <div className="import-bar" style={{ marginTop: 10 }}>
             <span><b>{unique.length}</b> oyun{known ? ` · ${known} tanesi zaten kütüphanende: tekrar eklenmez, boş kalan tarih, puan ve süreleri doldurulur` : ""}</span>
           </div>
@@ -940,7 +968,7 @@ function AccountGames({ kind }: { kind: "xbox" }) {
             <button className="link" onClick={() => setPicked(new Set())}>Hiçbiri</button>
           </div>
           {games.some((g) => g.done) && (
-            <label className="check-line"><input type="checkbox" checked={markDone} disabled={busy} onChange={(e) => setMarkDone(e.target.checked)} /> {cfg.doneText} <b>Bitti</b> yap (isteğe bağlı)</label>
+            <label className="check-line"><input type="checkbox" checked={markDone} disabled={busy} onChange={(e) => setMarkDone(e.target.checked)} /> {cfg.doneText} <b>Oynandı</b> yap (isteğe bağlı)</label>
           )}
           <div className="import-list">
             {games.map((g) => (
