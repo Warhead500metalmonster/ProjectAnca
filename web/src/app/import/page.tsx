@@ -827,6 +827,7 @@ const ACCOUNT = {
     errors: {
       "not-found": "Bu PSN kullanıcı adı bulunamadı. Yazımını kontrol et.",
       private: "Kupaların gizli görünüyor. Konsolda Ayarlar → Kullanıcılar ve Hesaplar → Gizlilik → Oyun → Kupalar: Herkes yap, sonra tekrar dene.",
+      busy: "PlayStation şu an cevap vermiyor. Bir dakika sonra tekrar dene.",
     } as Record<string, string>,
   },
   xbox: {

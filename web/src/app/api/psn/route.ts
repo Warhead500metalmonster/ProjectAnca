@@ -8,15 +8,36 @@ import {
 } from "psn-api";
 
 let auth: { accessToken: string; refreshToken: string; expires: number; refreshExpires: number } | null = null;
+let pending: Promise<{ accessToken: string }> | null = null; // aynı anda gelen istekler tek girişi paylaşsın
+
+async function login(npsso: string) {
+  const now = Date.now();
+  if (auth && auth.refreshExpires > now + 60000) {
+    try {
+      const t = await exchangeRefreshTokenForAuthTokens(auth.refreshToken);
+      auth = { accessToken: t.accessToken, refreshToken: t.refreshToken, expires: now + t.expiresIn * 1000, refreshExpires: now + t.refreshTokenExpiresIn * 1000 };
+      return { accessToken: t.accessToken };
+    } catch { auth = null; }
+  }
+  // Sony bazen girişi geçici olarak geri çeviriyor: birkaç kez dene; hepsi kod hatasıyla düşerse kodun süresi dolmuştur
+  let lastNpsso = false;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const t = await exchangeAccessCodeForAuthTokens(await exchangeNpssoForAccessCode(npsso));
+      auth = { accessToken: t.accessToken, refreshToken: t.refreshToken, expires: Date.now() + t.expiresIn * 1000, refreshExpires: Date.now() + t.refreshTokenExpiresIn * 1000 };
+      return { accessToken: t.accessToken };
+    } catch (e) {
+      lastNpsso = /NPSSO/i.test((e as Error).message);
+      await new Promise((ok) => setTimeout(ok, 1500 * (i + 1)));
+    }
+  }
+  throw new Error(lastNpsso ? "expired" : "busy");
+}
 
 async function token(npsso: string) {
-  const now = Date.now();
-  if (auth && auth.expires > now + 60000) return { accessToken: auth.accessToken };
-  const t = auth && auth.refreshExpires > now + 60000
-    ? await exchangeRefreshTokenForAuthTokens(auth.refreshToken)
-    : await exchangeAccessCodeForAuthTokens(await exchangeNpssoForAccessCode(npsso));
-  auth = { accessToken: t.accessToken, refreshToken: t.refreshToken, expires: now + t.expiresIn * 1000, refreshExpires: now + t.refreshTokenExpiresIn * 1000 };
-  return { accessToken: t.accessToken };
+  if (auth && auth.expires > Date.now() + 60000) return { accessToken: auth.accessToken };
+  pending ??= login(npsso).finally(() => { pending = null; });
+  return pending;
 }
 
 const clean = (s: string) => s.replace(/[™®©]/g, "").replace(/\s+/g, " ").trim();
@@ -38,7 +59,12 @@ export async function GET(request: Request) {
   if (!/^[A-Za-z][\w-]{2,15}$/.test(user)) return Response.json({ error: "bad-user" }, { status: 400 });
 
   let a: { accessToken: string };
-  try { a = await token(npsso); } catch { auth = null; return Response.json({ error: "expired" }, { status: 503 }); }
+  try { a = await token(npsso); } catch (e) {
+    auth = null;
+    return (e as Error).message === "expired"
+      ? Response.json({ error: "expired" }, { status: 503 })
+      : Response.json({ error: "busy" }, { status: 503 });
+  }
 
   const accountId = await getProfileFromUserName(a, user).then((p) => p.profile.accountId).catch(() => "");
   if (!accountId) return Response.json({ error: "not-found" }, { status: 404 });
