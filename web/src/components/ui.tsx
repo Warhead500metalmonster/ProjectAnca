@@ -32,14 +32,14 @@ export function Name({ p }: { p: Who }) {
   return (
     <>
       {displayName(p)}
-      {mine.filter((b) => BADGES[b]?.active).map((b) => <span key={b} className="bdg-i" title={BADGES[b].name}>{BADGES[b].icon}</span>)}
+      {mine.filter((b) => BADGES[b]).map((b) => <span key={b} className="bdg-i" title={BADGES[b].name}>{BADGES[b].icon}</span>)}
     </>
   );
 }
 
 export function BadgeChips({ id, showLocked = false }: { id: string; showLocked?: boolean }) {
   const { badges } = useApp();
-  const mine = (badges.get(id) || []).filter((b) => BADGES[b]?.active);
+  const mine = (badges.get(id) || []).filter((b) => BADGES[b]);
   const locked = Object.keys(BADGES).filter((b) => !mine.includes(b) && !BADGES[b].active);
   if (!mine.length && !showLocked) return null;
   return (

@@ -49,7 +49,8 @@ export const PROFILE_COLS = "id, username, display_name, avatar_url";
 export const ENTRY_COLS = `*, profiles!entries_user_id_fkey(${PROFILE_COLS}), likes(count), comments(count)`;
 export const LOCAL_KEY = "ancalog.v1"; // hesaplardan önceki, tarayıcıda tutulan kayıtlar
 
-// Rozetler veritabanından verilir (user_badges). active: false olanlar henüz kimseye verilmiyor, ileride açılacak.
+// Rozetler veritabanından verilir (user_badges). active: false olanlar henüz kendiliğinden verilmiyor,
+// ama yöneticiler panelden elle verebilir; verilen rozet profilde görünür.
 export const BADGES: Record<string, { icon: string; name: string; desc: string; tone: string; active: boolean }> = {
   owner: { icon: "♛", name: "Site Sahibi", desc: "Ancalog'un kurucusu ve sahibi", tone: "gold", active: true },
   admin: { icon: "◆", name: "Yönetici", desc: "Ancalog'un içeriklerini düzenleyen ekipten", tone: "blue", active: true },

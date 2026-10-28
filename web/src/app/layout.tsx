@@ -4,6 +4,7 @@ import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "@/components/AppProvider";
 import { Topbar } from "@/components/Topbar";
+import { Announcement } from "@/components/Announcement";
 import { themeBootScript } from "@/lib/theme";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin", "latin-ext"] });
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <AppProvider>
           <Suspense fallback={null}><Topbar /></Suspense>
+          <Announcement />
           <main className="app"><Suspense fallback={<div className="loading">Yükleniyor…</div>}>{children}</Suspense></main>
           <footer className="footer">
             <span>Ancalog</span>

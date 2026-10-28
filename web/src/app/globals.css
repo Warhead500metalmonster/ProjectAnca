@@ -857,6 +857,24 @@ p.count-note { margin: -4px 0 12px; }
 }
 .feed-review:hover { background: rgb(var(--accent-rgb) / .14); }
 
+/* ---------- Site duyurusu ---------- */
+.notice {
+  display: flex; align-items: center; gap: 12px; width: min(1200px, calc(100% - 32px)); margin: 14px auto 0;
+  padding: 10px 10px 10px 16px; border-radius: 12px; border: 1px solid rgb(var(--accent-rgb) / .45); background: rgb(var(--accent-rgb) / .12);
+}
+.notice.party { border-color: rgba(236, 72, 153, .45); background: linear-gradient(135deg, rgba(236, 72, 153, .14), rgba(139, 92, 246, .12)); }
+.notice.warn { border-color: rgba(245, 158, 11, .5); background: rgba(245, 158, 11, .12); }
+.notice p { flex: 1; margin: 0; white-space: pre-line; }
+.notice a { color: var(--accent-2); font-weight: 600; }
+
+.admin-notice { display: flex; flex-direction: column; gap: 10px; }
+.admin-notice textarea { width: 100%; resize: vertical; }
+.admin-item.member .avatar { width: 44px; height: 44px; }
+.badge-toggles { display: flex; gap: 4px; flex-wrap: wrap; }
+.bdg-t { padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; transition: .15s; }
+.bdg-t:hover { color: var(--text); border-color: var(--muted); }
+.bdg-t.on { color: var(--text); border-color: var(--accent); background: rgb(var(--accent-rgb) / .18); }
+.admin-comment { margin: 4px 0; white-space: pre-line; overflow-wrap: anywhere; }
 /* ---------- Karşılama: tam genişlikte kayan kapak duvarı ---------- */
 .hero2 { position: relative; width: 100vw; margin: -24px calc(50% - 50vw) 0; min-height: 600px; display: grid; place-items: center; overflow: hidden; }
 .marquee { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 12px; transform: rotate(-4deg) scale(1.15); opacity: .5; }
@@ -895,3 +913,11 @@ p.count-note { margin: -4px 0 12px; }
 .hero2.compact .hero2-text { padding: 90px 16px 70px; }
 .hero2.compact h1 { font-size: clamp(34px, 5.5vw, 64px); }
 .hero2.compact p { margin: 14px auto 24px; }
+
+/* Profil şarkısında ziyaretçinin ses ayarı */
+.song-vol { display: flex; align-items: center; gap: 4px; flex: none; }
+.song-vol button { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 4px; display: grid; place-items: center; }
+.song-vol button:hover { color: var(--text); }
+.song-vol svg { width: 18px; height: 18px; fill: currentColor; }
+.song-vol input { width: 80px; accent-color: var(--accent); cursor: pointer; }
+@media (max-width: 480px) { .song-vol input { width: 60px; } }
