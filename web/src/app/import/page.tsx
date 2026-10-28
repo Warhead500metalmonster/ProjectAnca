@@ -10,6 +10,7 @@ import { rawg } from "@/lib/rawg";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
 import { psBookmarklet } from "@/lib/psBookmarklet";
+import { BL_MARK, backloggdBookmarklet } from "@/lib/backloggdBookmarklet";
 
 // Başka sitelerden kütüphane aktarma: Steam, PlayStation, Xbox, Epic / Switch / HowLongToBeat listeleri, Letterboxd, Simkl, Spotify ve Last.fm
 export default function ImportPage() {
@@ -532,7 +533,17 @@ const SOURCES: Record<string, { name: string; platform: string; store: string; h
     <a className="grad" href="https://library.playstation.com/recently-purchased" target="_blank" rel="noreferrer">PlayStation oyun kütüphaneni</a> aç
     (oynadıkların için üstteki <b>Oynananlar</b> sekmesine geç),
     sayfanın tamamını seç (Ctrl+A), kopyala (Ctrl+C) ve aşağıya yapıştır. Menü, &quot;İndir&quot; gibi yazılar elenir; PS4 / PS5 kendiliğinden anlaşılır.
-    <PsCopyLink /></> },
+    <CopyLink make={psBookmarklet} lead="Çok sayfa mı var?">
+      Sonra PlayStation kütüphanende bu yer imine bas: bütün sayfaları kendisi toplar, sen çıkan kutudaki <b>Kopyala</b>&apos;ya basıp buraya yapıştırırsın.
+    </CopyLink></> },
+  backloggd: { name: "Backloggd", platform: "", store: "", help: <>
+    Backloggd&apos;un dışa aktarma özelliği yok; bu düğme senin yerine oyun listeni okur.
+    <CopyLink make={backloggdBookmarklet} lead="1.">
+      2. <a className="grad" href="https://backloggd.com/" target="_blank" rel="noreferrer">Backloggd</a>&apos;da kendi profilini aç ve bu yer imine bas.
+      Played, Playing, Backlog ve Wishlist sekmelerindeki bütün oyunlarını puanlarıyla toplar.
+      3. Çıkan kutudaki <b>Kopyala</b>&apos;ya bas, buraya dön ve aşağıya yapıştır.
+      Played olanlar <b>Oynandı</b>, Playing <b>Oynuyorum</b>, Backlog ve Wishlist <b>Planlandı</b> olarak gelir.
+    </CopyLink></> },
   epic: { name: "Epic Games", platform: "PC", store: "Epic Games Store", help: <>
     <a className="grad" href="https://www.epicgames.com/account/transactions" target="_blank" rel="noreferrer">Epic satın alma geçmişini</a> ya da
     Epic Launcher&apos;daki <b>Kütüphane</b>&apos;yi aç, sayfanın tamamını seçip (Ctrl+A) kopyala ve yapıştır.</> },
@@ -667,7 +678,7 @@ function ListImport() {
   function pick(k: string) {
     setSrc(k);
     setCsv(null);
-    if (SOURCES[k].platform) setPlatform(SOURCES[k].platform);
+    setPlatform(SOURCES[k].platform);
   }
 
   async function read(files: FileList | null) {
@@ -708,7 +719,8 @@ function ListImport() {
 
   const ps = src === "ps" ? psParse(text) : null; // PlayStation sayfası: sadece altında PS4 / PS5 etiketi olan satırlar oyundur
   const ownPage = /Ancalog'a kopyala|PlayStation, Epic, Switch ve diğerleri|Başka yerdeki kütüphaneni/.test(text); // yanlışlıkla Ancalog'un kendi sayfası yapıştırıldı
-  const pasted: ListGame[] = ps?.length ? ps : ownPage ? [] : cleanPaste(text)
+  const bl = src === "backloggd" ? blParse(text) : null; // Backloggd yer iminin topladığı liste (durum ve puanlarıyla)
+  const pasted: ListGame[] = ps?.length ? ps : bl?.length ? bl : ownPage ? [] : cleanPaste(text)
     .map((title) => ({ title, status: null, rating: 0, sec: null, date: null, started: null, platform: "", store: "", notes: "" }));
   const all = fileMode ? csv || [] : pasted;
   // Aynı oyunun birden fazla satırı (HLTB'de her yeniden oynayış ayrı satır) tek kayıtta birleşir:
@@ -865,7 +877,7 @@ function ListImport() {
           <div className="import-bar" style={{ marginTop: 10 }}>
             <span><b>{unique.length}</b> oyun{known ? ` · ${known} tanesi zaten kütüphanende: tekrar eklenmez, boş kalan tarih, puan ve süreleri doldurulur` : ""}</span>
           </div>
-          {fileMode && (
+          {(fileMode || !!bl?.length) && (
             <div className="import-list">
               {unique.slice(0, 300).map((g) => (
                 <label key={g.title} className={byKey.has(looseKey(g.title)) ? "off" : ""}><span className="name">{g.title}</span>
@@ -1142,18 +1154,35 @@ function AlbumImport({ mode }: { mode: "link" | "lastfm" }) {
 // Mağaza sayfasından kopyalanan metindeki fiyat, tarih, düğme yazısı gibi gereksiz satırları ayıkla
 const NOISE = /^(konsola indir|indirme durumunu görüntüle|view download status|download to (your )?console|gta\+|ps plus|playstation plus|oyun kütüphanesi|game library|satın alınanlar|oynananlar|indirilenler|purchased|played|collection|koleksiyon|ps vr2?|satın al(ındı)?|purchased|owned|sahip olunan|yükle(ndi)?|install(ed)?|oyna|play|indir|download|güncelle|update|kütüphane|library|kitaplığım|my games|oyunlarım|sırala|sort|filtre|filter|ara|search|tümü|all|favoriler|favorites|ücretsiz|free|ödendi|paid|iade|refund|detaylar|details|daha fazla|more|games?|oyunlar|apps?|uygulamalar|hepsi|yüklü|hazır|ready|ps5|ps4|pc|xbox( series x\|s| one)?|nintendo switch|dlc|eklenti|add-?on|demo|beta|trial)$/i;
 // Sayfa sayfa kopyalamak yerine: yer imleri çubuğuna sürüklenen düğme, PlayStation'da bütün sayfaları kendisi toplar
-function PsCopyLink() {
+// Yer imi düğmesi: kişi fareyle tutup tarayıcının yer imleri çubuğuna sürükler, sonra ilgili sitede basar
+function CopyLink({ make, lead, children }: { make: () => string; lead: string; children: React.ReactNode }) {
   const { toast } = useApp();
   const link = useRef<HTMLAnchorElement>(null);
   // React "javascript:" linklerini engellediği için adres sayfa açıldıktan sonra verilir
-  useEffect(() => { link.current?.setAttribute("href", psBookmarklet()); }, []);
+  useEffect(() => { link.current?.setAttribute("href", make()); }, [make]);
   return (
     <span className="ps-helper">
-      <b>Çok sayfa mı var?</b> Şu düğmeyi fareyle tutup tarayıcının yer imleri çubuğuna sürükle (çubuk görünmüyorsa Ctrl+Shift+B):
+      <b>{lead}</b> Şu düğmeyi fareyle tutup tarayıcının yer imleri çubuğuna sürükle (çubuk görünmüyorsa Ctrl+Shift+B):
       <a ref={link} className="btn bookmarklet" draggable onClick={(e) => { e.preventDefault(); toast("Buna basma; fareyle tutup yer imleri çubuğuna sürükle."); }}>Ancalog&apos;a kopyala</a>
-      Sonra PlayStation kütüphanende bu yer imine bas: bütün sayfaları kendisi toplar, sen çıkan kutudaki <b>Kopyala</b>&apos;ya basıp buraya yapıştırırsın.
+      {children}
     </span>
   );
+}
+
+// Backloggd yer iminin topladığı liste: ANCALOG_BACKLOGGD:[["Oyun", "played", 8], ...]
+const BL_STATUS: Record<string, Status> = { played: "completed", playing: "active", backlog: "planned", wishlist: "planned" };
+function blParse(text: string): ListGame[] {
+  const i = text.indexOf(BL_MARK);
+  if (i < 0) return [];
+  try {
+    const rows = JSON.parse(text.slice(i + BL_MARK.length).trim()) as [string, string, number][];
+    return rows.filter((x) => Array.isArray(x) && typeof x[0] === "string" && x[0].trim()).map(([title, tab, rating]) => ({
+      title: title.trim().slice(0, 200), status: BL_STATUS[tab] || null, rating: Math.max(0, Math.min(10, Math.round(Number(rating) || 0))),
+      sec: null, date: null, started: null, platform: "", store: "", notes: "",
+    }));
+  } catch {
+    return [];
+  }
 }
 
 // PlayStation kütüphane sayfasından kopyalanan metin: her oyunun adının hemen altında platform etiketi (PS5, PS4...) olur.
