@@ -57,7 +57,7 @@ export default function GamesPage() {
     <>
       <section className="search-hero">
         <div className="crumbs"><Link href="/search?type=game">Oyunlar</Link>{filter ? ` / ${filter[1]}` : ""}</div>
-        <h1>🎮 {heading}</h1>
+        <h1>{heading}</h1>
         {filter && <p className="muted" style={{ margin: 0 }}>{filter[1]}: {heading}{data ? ` · ${data.total.toLocaleString("tr")} oyun` : ""}</p>}
         <div className="filters">
           <select value={ordering} onChange={(e) => set({ ordering: e.target.value === "-added" ? null : e.target.value })} aria-label="Sırala">
@@ -83,8 +83,8 @@ export default function GamesPage() {
                 {data.list.map((g) => (
                   <Link key={g.id} className="card" href={`/game/${g.id}`}>
                     <div className="poster">
-                      <div className="ph">🎮</div><Cover src={g.background_image ? smallImage(g.background_image) : null} />
-                      {data.counts.get(g.id) ? <span className="rating">👤 {data.counts.get(g.id)}</span> : g.metacritic ? <span className="rating">MC {g.metacritic}</span> : null}
+                      <div className="ph"></div><Cover src={g.background_image ? smallImage(g.background_image) : null} />
+                      {data.counts.get(g.id) ? <span className="rating">{data.counts.get(g.id)}</span> : g.metacritic ? <span className="rating">MC {g.metacritic}</span> : null}
                     </div>
                     <div className="card-title">{g.name}</div>
                     <div className="card-meta">{[g.released?.slice(0, 4), g.genres?.slice(0, 2).map((x) => x.name).join(", ")].filter(Boolean).join(" · ")}</div>

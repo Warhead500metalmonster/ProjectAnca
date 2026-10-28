@@ -66,18 +66,18 @@ export function StatsTab() {
   return (
     <section className="section stats-page">
       <div className="tabs">
-        {([["all", "✨", "Tümü"], ...TYPE_KEYS.map((k) => [k, TYPES[k].icon, TYPES[k].label])] as [EntryType | "all", string, string][]).map(([k, icon, label]) => (
+        {([["all", "", "Tümü"], ...TYPE_KEYS.map((k) => [k, "", TYPES[k].label])] as [EntryType | "all", string, string][]).map(([k, icon, label]) => (
           <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => { setType(k); setYear(""); setFinish(""); }}>{icon} {label}</button>
         ))}
       </div>
       <div className="filters">
         <select value={year} onChange={(e) => setYear(e.target.value)} aria-label="Çıkış yılı">
-          <option value="">📅 Çıkış yılı: hepsi</option>
+          <option value="">Çıkış yılı: hepsi</option>
           {years.map((y) => <option key={y} value={y}>{y} çıkışlı içerikler</option>)}
         </select>
         <select value={finish} onChange={(e) => setFinish(e.target.value)} aria-label="Bitirme yılı">
-          <option value="">🏁 Bitirme yılı: tüm zamanlar</option>
-          {finishYears.map((y) => <option key={y} value={y}>🏁 {y} yılında bitirdiklerim</option>)}
+          <option value="">Bitirme yılı: tüm zamanlar</option>
+          {finishYears.map((y) => <option key={y} value={y}>{y} yılında bitirdiklerim</option>)}
         </select>
         {(year || finish) && <button className="link" onClick={() => { setYear(""); setFinish(""); }}>Temizle</button>}
       </div>
@@ -123,14 +123,14 @@ export function StatsTab() {
           <div className="chart-grid">
             {timeline.length > 0 && <Columns title={finish ? `${finish} yılında aylara göre bitirilenler` : "Yıllara göre bitirilenler"} data={timeline} />}
             {rated.length > 0 && <Columns title={`Puan dağılımı (${scale} üzerinden)`} data={bins} />}
-            {type === "all" && <Bars title="Türler" data={TYPE_KEYS.map((k) => [`${TYPES[k].icon} ${TYPES[k].label}`, list.filter((e) => e.type === k).length] as [string, number]).filter(([, n]) => n).sort((a, b) => b[1] - a[1])} />}
+            {type === "all" && <Bars title="Türler" data={TYPE_KEYS.map((k) => [`$${TYPES[k].label}`, list.filter((e) => e.type === k).length] as [string, number]).filter(([, n]) => n).sort((a, b) => b[1] - a[1])} />}
             <Bars title="Platform / nerede" data={countBy(list, (e) => e.platform).slice(0, 8)} />
             {(type === "all" || type === "game") && <Bars title="Mağazalar" data={countBy(list, (e) => e.store).slice(0, 8)} />}
             <Bars title="En çok kimden" data={countBy(list, (e) => e.creator?.split(",")[0].trim()).slice(0, 8)} />
             <Bars title="Çıkış dönemine göre" data={decades} />
           </div>
 
-          <div className="section-head" style={{ marginTop: 28 }}><h2>🏅 Rekorlar</h2></div>
+          <div className="section-head" style={{ marginTop: 28 }}><h2>Rekorlar</h2></div>
           <div className="records">
             {([
               ["En yüksek puan", best, best && scoreText(Number(best.rating), scale)],
@@ -140,7 +140,7 @@ export function StatsTab() {
               ["En son bitirilen", latest, latest?.date && fmtDate(latest.date)],
             ] as [string, Entry | undefined, string | number | undefined][]).filter(([, e]) => e).map(([label, e, val]) => (
               <button key={label} className="record" onClick={() => openView(e!)}>
-                <div className={`poster ${TYPES[e!.type].square ? "square" : ""}`}><div className="ph">{TYPES[e!.type].icon}</div><Cover src={e!.cover} /></div>
+                <div className={`poster ${TYPES[e!.type].square ? "square" : ""}`}><div className="ph">{TYPES[e!.type].label}</div><Cover src={e!.cover} /></div>
                 <div><span className="muted">{label}</span><b>{e!.title}</b><span>{val}</span></div>
               </button>
             ))}
@@ -148,7 +148,7 @@ export function StatsTab() {
         </>
       )}
 
-      <div className="section-head" style={{ marginTop: 28 }}><h2>🎖️ Rozetler</h2></div>
+      <div className="section-head" style={{ marginTop: 28 }}><h2>Rozetler</h2></div>
       <div className="badges-box"><BadgeChips id={profile.id} showLocked={isMe} /></div>
     </section>
   );

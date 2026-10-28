@@ -94,11 +94,11 @@ export function LibraryTab() {
       {favs.length > 0 && (
         <section className="section favs">
           <div className="section-head">
-            <h2>❤ Favoriler</h2>
+            <h2>♥ Favoriler</h2>
             {favTypes.length > 1 && (
               <div className="mini-tabs">
                 {favTypes.map((k) => (
-                  <button key={k} className={favType === k ? "active" : ""} onClick={() => setFavTab(k)} title={TYPES[k].plural}>{TYPES[k].icon} {TYPES[k].label}</button>
+                  <button key={k} className={favType === k ? "active" : ""} onClick={() => setFavTab(k)} title={TYPES[k].plural}>{TYPES[k].label}</button>
                 ))}
               </div>
             )}
@@ -108,7 +108,7 @@ export function LibraryTab() {
       )}
       <section className="section">
         <div className="tabs">
-          {([["all", "✨", "Tümü"], ...TYPE_KEYS.map((k) => [k, TYPES[k].icon, TYPES[k].label])] as [EntryType | "all", string, string][])
+          {([["all", "", "Tümü"], ...TYPE_KEYS.map((k) => [k, "", TYPES[k].label])] as [EntryType | "all", string, string][])
             .filter(([k]) => k === "all" || entries.some((e) => e.type === k))
             .map(([k, icon, label]) => (
               <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => { setType(k); setYear(""); setFinishYear(""); setPlatform(""); }}>
@@ -119,7 +119,7 @@ export function LibraryTab() {
         <div className="lib-bar">
           <input className="input" type="search" placeholder="Kütüphanede ara…" value={text} autoComplete="off" onChange={(e) => setText(e.target.value)} />
           <button className={`btn ${showFilters || filterCount ? "on" : ""}`} onClick={() => setShowFilters(!showFilters)}>
-            🔍 Filtrele{filterCount ? ` (${filterCount})` : ""}
+            Filtrele{filterCount ? ` (${filterCount})` : ""}
           </button>
           <select aria-label="Sırala" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
             {SORTS.map(([k, label]) => <option key={k} value={k}>↕ {label}</option>)}
@@ -143,19 +143,19 @@ export function LibraryTab() {
               <span className="fp-label">Ayrıntı</span>
               <div className="chips">
                 <select value={year} onChange={(e) => setYear(e.target.value)} aria-label="Çıkış yılı">
-                  <option value="">📅 Çıkış yılı: hepsi</option>
-                  {years.map((y) => <option key={y} value={y}>📅 Çıkış yılı: {y}</option>)}
+                  <option value="">Çıkış yılı: hepsi</option>
+                  {years.map((y) => <option key={y} value={y}>Çıkış yılı: {y}</option>)}
                 </select>
                 <select value={finishYear} onChange={(e) => setFinishYear(e.target.value)} aria-label="Bitirme yılı">
-                  <option value="">🏁 Bitirme yılı: hepsi</option>
-                  {finishYears.map((y) => <option key={y} value={y}>🏁 Bitirme yılı: {y}</option>)}
+                  <option value="">Bitirme yılı: hepsi</option>
+                  {finishYears.map((y) => <option key={y} value={y}>Bitirme yılı: {y}</option>)}
                 </select>
                 <select value={platform} onChange={(e) => setPlatform(e.target.value)} aria-label="Platform">
-                  <option value="">🖥️ Platform: hepsi</option>
+                  <option value="">Platform: hepsi</option>
                   {platforms.map((p) => <option key={p} value={p}>{p}</option>)}
                 </select>
                 <select value={minRating} onChange={(e) => setMinRating(e.target.value)} aria-label="Puan">
-                  <option value="">⭐ Puan: hepsi</option>
+                  <option value="">Puan: hepsi</option>
                   {ratingSteps.map((r) => <option key={r} value={r}>{scale === 10 ? `${r}/10 ve üstü` : `${num(r / 2)} yıldız ve üstü`}</option>)}
                   <option value="none">Puansız</option>
                 </select>
@@ -164,9 +164,9 @@ export function LibraryTab() {
             <div className="fp-row">
               <span className="fp-label">Sadece</span>
               <div className="chips">
-                <button className={`chip ${flags.has("fav") ? "active" : ""}`} onClick={() => setFlags(toggle(flags, "fav"))}>❤ Favoriler</button>
-                <button className={`chip ${flags.has("review") ? "active" : ""}`} onClick={() => setFlags(toggle(flags, "review"))}>📝 İncelemeli</button>
-                <button className={`chip ${flags.has("emu") ? "active" : ""}`} onClick={() => setFlags(toggle(flags, "emu"))}>🕹️ Emülatör</button>
+                <button className={`chip ${flags.has("fav") ? "active" : ""}`} onClick={() => setFlags(toggle(flags, "fav"))}>♥ Favoriler</button>
+                <button className={`chip ${flags.has("review") ? "active" : ""}`} onClick={() => setFlags(toggle(flags, "review"))}>İncelemeli</button>
+                <button className={`chip ${flags.has("emu") ? "active" : ""}`} onClick={() => setFlags(toggle(flags, "emu"))}>Emülatör</button>
               </div>
             </div>
             {filterCount > 0 && <button className="link" onClick={clear}>Filtreleri temizle</button>}
@@ -198,24 +198,24 @@ function Row({ e, isMe }: { e: Entry; isMe: boolean }) {
   return (
     <div className="lrow">
       <button className={`lrow-cover poster ${t.square ? "square" : ""}`} onClick={() => openView(e)}>
-        <div className="ph">{t.icon}</div><Cover src={e.cover} />
+        <div className="ph">{t.label}</div><Cover src={e.cover} />
       </button>
       <div className="lrow-main">
         <div className="lrow-head">
-          <button className="lrow-title" onClick={() => openView(e)}>{e.favorite ? "❤ " : ""}{e.title}{e.year ? <> <span className="muted">({e.year})</span></> : null}</button>
+          <button className="lrow-title" onClick={() => openView(e)}>{e.favorite ? "♥ " : ""}{e.title}{e.year ? <> <span className="muted">({e.year})</span></> : null}</button>
           <div className="lrow-tags">
             <span className={`pill ${e.status}`}>{statusLabel(e.status, e.type)}</span>
-            {entryTags(e, { store: true }).filter((x) => !x.startsWith("⏱")).map((x) => <span className="tag" key={x}>{x}</span>)}
+            {entryTags(e, { store: true, time: false }).map((x) => <span className="tag" key={x}>{x}</span>)}
           </div>
         </div>
-        {e.progress && <div className="lrow-progress">📌 {e.progress}</div>}
+        {e.progress && <div className="lrow-progress">{e.progress}</div>}
         <div className="lrow-foot">
           {e.rating ? <Rating r={e.rating} /> : <span className="muted">Puan yok</span>}
-          {playSec(e) ? <span>⏱ {fmtDur(playSec(e))}</span> : null}
-          {dates && <span>📅 {dates}</span>}
-          {e.notes && <span>📝 İnceleme</span>}
+          {playSec(e) ? <span>{fmtDur(playSec(e))}</span> : null}
+          {dates && <span>{dates}</span>}
+          {e.notes && <span>İnceleme</span>}
           {likes > 0 && <span>♥ {likes}</span>}
-          {comments > 0 && <span>💬 {comments}</span>}
+          {comments > 0 && <span>{comments}</span>}
         </div>
       </div>
       {isMe && <button className="icon-btn lrow-edit" title="Düzenle" onClick={() => openForm(e)}>✎</button>}

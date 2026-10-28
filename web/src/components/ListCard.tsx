@@ -12,13 +12,13 @@ export function ListCard({ l, owner = false }: { l: List; owner?: boolean }) {
     <Link className="list-card" href={`/list/${l.id}`}>
       <div className="collage">
         {Array.from({ length: 4 }, (_, i) => items[i]).map((it, i) => (
-          <div key={i} className="cell">{it ? <><span className="ph">{TYPES[it.type].icon}</span><Cover src={it.cover} /></> : null}</div>
+          <div key={i} className="cell">{it ? <><span className="ph">{TYPES[it.type].label}</span><Cover src={it.cover} /></> : null}</div>
         ))}
       </div>
       <div className="list-card-body">
         <b>{l.title}</b>
         <span className="muted">
-          {items.length} içerik{l.is_public ? "" : " · 🔒 gizli"}
+          {items.length} içerik{l.is_public ? "" : " · gizli"}
           {owner && l.profiles?.username ? ` · @${l.profiles.username}` : ""}
         </span>
       </div>

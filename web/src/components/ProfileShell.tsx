@@ -76,7 +76,7 @@ function Shell({ data, children }: { data: ProfileData; children: React.ReactNod
           <div className="profile-actions">
             {isMe
               ? <><Link className="btn" href="/settings">Profili düzenle</Link><button className="btn primary" onClick={() => openForm(null)}>+ Ekle</button></>
-              : <>{isFriend(profile.id) && <Link className="btn" href={`/chat/${profile.username}`}>💬 Mesaj</Link>}<FollowButton id={profile.id} /></>}
+              : <>{isFriend(profile.id) && <Link className="btn" href={`/chat/${profile.username}`}>Mesaj</Link>}<FollowButton id={profile.id} /></>}
           </div>
         </div>
         <BadgeChips id={profile.id} />
@@ -85,14 +85,14 @@ function Shell({ data, children }: { data: ProfileData; children: React.ReactNod
           <span><b>{entries.length}</b> kayıt</span>
           <button onClick={() => openUserList("followers")}><b>{followers}</b> takipçi</button>
           <button onClick={() => openUserList("following")}><b>{following}</b> takip</button>
-          {profile.location && <span>📍 {profile.location}</span>}
-          <span>📅 {fmtDate(profile.created_at.slice(0, 10))} tarihinde katıldı</span>
+          {profile.location && <span>{profile.location}</span>}
+          <span>{fmtDate(profile.created_at.slice(0, 10))} tarihinde katıldı</span>
         </div>
         <Socials socials={profile.socials} />
         <nav className="subnav">
-          <Link href={base} className={tab === "library" ? "active" : ""}>📚 Kütüphane</Link>
-          <Link href={`${base}/lists`} className={tab === "lists" ? "active" : ""}>📝 Listeler</Link>
-          <Link href={`${base}/stats`} className={tab === "stats" ? "active" : ""}>📊 İstatistikler</Link>
+          <Link href={base} className={tab === "library" ? "active" : ""}>Kütüphane</Link>
+          <Link href={`${base}/lists`} className={tab === "lists" ? "active" : ""}>Listeler</Link>
+          <Link href={`${base}/stats`} className={tab === "stats" ? "active" : ""}>İstatistikler</Link>
         </nav>
         {children}
       </div>

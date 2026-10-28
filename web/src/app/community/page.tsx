@@ -68,11 +68,11 @@ export default function Community() {
       </section>
       {popular.length > 0 && (
         <section className="section">
-          <div className="section-head"><h2>🔥 Popüler oyunlar</h2><span className="muted">şu an oynanan ve bitirilenler</span></div>
+          <div className="section-head"><h2>Popüler oyunlar</h2><span className="muted">şu an oynanan ve bitirilenler</span></div>
           <div className="strip">
             {popular.map((g) => (
               <Link className="card" href={`/game/${g.rawg_id}`} key={g.rawg_id}>
-                <div className="poster"><div className="ph">🎮</div><Cover src={g.cover} /><span className="rating" title="Oynayan ya da bitiren">🎮 {g.n}</span></div>
+                <div className="poster"><div className="ph">Oyun</div><Cover src={g.cover} /><span className="rating" title="Oynayan ya da bitiren">{g.n}</span></div>
                 <div className="card-title">{g.title}</div>
               </Link>
             ))}
@@ -81,7 +81,7 @@ export default function Community() {
       )}
       {lists.length > 0 && (
         <section className="section">
-          <div className="section-head"><h2>📚 Yeni listeler</h2></div>
+          <div className="section-head"><h2>Yeni listeler</h2></div>
           <div className="list-grid">{lists.slice(0, 8).map((l) => <ListCard key={l.id} l={l} owner />)}</div>
         </section>
       )}

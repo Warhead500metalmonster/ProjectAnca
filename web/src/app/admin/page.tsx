@@ -12,7 +12,7 @@ import { useApp } from "@/components/AppProvider";
 import { Avatar, Name, UserRow } from "@/components/ui";
 import { NOTICE_TONES, type Notice, fetchNotice } from "@/components/Announcement";
 
-const TABS = [["home", "📊 Genel"], ["members", "👥 Üyeler"], ["content", "🎵 İçerikler"], ["comments", "💬 Yorumlar"]] as const;
+const TABS = [["home", "Genel"], ["members", "Üyeler"], ["content", "İçerikler"], ["comments", "Yorumlar"]] as const;
 type Tab = (typeof TABS)[number][0];
 // Yöneticinin elle verebileceği rozetler (site sahibi / yönetici rozeti hariç)
 const GRANTABLE = Object.keys(BADGES).filter((b) => b !== "owner" && b !== "admin");
@@ -23,13 +23,14 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>("home");
   if (!supabaseConfigured()) return <div className="empty">Supabase ayarları eksik.</div>;
   if (!ready) return <div className="loading">Yükleniyor…</div>;
-  if (!me || !isAdmin) return <div className="empty">Bu sayfa sadece yöneticiler için. 🛡️</div>;
+  if (!me || !isAdmin) return <div className="empty">Bu sayfa sadece yöneticiler için. </div>;
   return (
     <>
       <section className="search-hero">
-        <h1>🛡️ Yönetim paneli</h1>
+        <h1>Yönetim paneli</h1>
         <p className="muted" style={{ margin: 0 }}>
-          Bir oyunun, filmin ya da albümün sayfasını düzeltmek için o sayfaya git ve <b>🛡️ Sayfayı düzenle</b>&apos;ye bas.
+          Bir oyunun, filmin ya da albümün sayfasını düzeltmek için o sayfaya git ve <b>Sayfayı düzenle</b>&apos;ye bas.
+          Uygunsuz yorumları kayıt penceresinden silebilirsin.
         </p>
         <div className="tabs" style={{ marginBottom: 0 }}>
           {TABS.map(([k, label]) => <button key={k} className={`tab ${tab === k ? "active" : ""}`} onClick={() => setTab(k)}>{label}</button>)}
@@ -58,7 +59,7 @@ function Admins() {
     if (!on && !confirm(`@${username} artık yönetici olmasın mı?`)) return;
     const { error } = await sb().rpc("set_admin", { p_username: username, p_on: on });
     if (error) return toast("Olmadı: " + error.message);
-    toast(on ? `@${username} artık yönetici 🛡️` : `@${username} yöneticilikten çıkarıldı`);
+    toast(on ? `@${username} artık yönetici ` : `@${username} yöneticilikten çıkarıldı`);
     setName("");
     setV((x) => x + 1);
     loadBadges();
@@ -66,7 +67,7 @@ function Admins() {
 
   return (
     <section className="section">
-      <div className="section-head"><h2>👥 Yöneticiler</h2></div>
+      <div className="section-head"><h2>Yöneticiler</h2></div>
       {isOwner && (
         <form className="admin-add" onSubmit={(e) => { e.preventDefault(); if (name.trim()) set(name.trim().replace(/^@/, ""), true); }}>
           <input className="input" placeholder="Kullanıcı adı (ör. bensezar)" value={name} onChange={(e) => setName(e.target.value)} />
@@ -77,7 +78,7 @@ function Admins() {
         {data?.map(({ p, owner }) => (
           <div key={p.id} className="admin-row">
             <UserRow p={p} />
-            {owner ? <span className="tag">👑 Site sahibi</span>
+            {owner ? <span className="tag">Site sahibi</span>
               : isOwner ? <button className="btn danger" onClick={() => set(p.username, false)}>Çıkar</button> : null}
           </div>
         ))}
@@ -123,20 +124,20 @@ function Catalog() {
 
   return (
     <section className="section">
-      <div className="section-head"><h2>🎵 Kullanıcıların eklediği içerikler</h2><span className="muted">{data ? `${data.rows.length} içerik` : ""}</span></div>
+      <div className="section-head"><h2>Kullanıcıların eklediği içerikler</h2><span className="muted">{data ? `${data.rows.length} içerik` : ""}</span></div>
       <p className="muted" style={{ marginTop: 0, fontSize: 14 }}>
         Aramada çıkmayıp elle ya da linkle eklenen şarkılar, albümler… Her biri bir kez kaydedilir, başkası aynısını eklemek isteyince bu kayıt çıkar.
         Burada adını düzeltirsen onu loglayan herkesin kaydı da düzelir.
       </p>
       <div className="tabs">
         {TYPE_KEYS.filter((k) => k !== "game").map((k) => (
-          <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => { setType(k); setMerging(null); }}>{TYPES[k].icon} {TYPES[k].label}</button>
+          <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => { setType(k); setMerging(null); }}>{TYPES[k].label}</button>
         ))}
       </div>
       <input className="input" type="search" placeholder="Ara…" value={text} onChange={(e) => setText(e.target.value)} style={{ width: "100%", margin: "12px 0" }} />
       {merging && (
         <div className="banner">
-          <span>🔗 <b>{merging.title}</b> hangi içerikle birleşsin? Aşağıdan asıl olanın yanındaki <b>Buna birleştir</b>&apos;e bas.</span>
+          <span><b>{merging.title}</b> hangi içerikle birleşsin? Aşağıdan asıl olanın yanındaki <b>Buna birleştir</b>&apos;e bas.</span>
           <button className="btn ghost" onClick={() => setMerging(null)}>Vazgeç</button>
         </div>
       )}
@@ -146,7 +147,7 @@ function Catalog() {
           <div className="admin-list">
             {data.rows.map((c) => editing?.id === c.id ? <CatalogEditor key={c.id} c={c} onDone={(saved) => { setEditing(null); if (saved) reload(); }} /> : (
               <div key={c.id} className={`admin-item ${merging?.id === c.id ? "sel" : ""}`}>
-                {safeUrl(c.cover) ? <img src={c.cover!} alt="" /> : <span className="noimg">{TYPES[c.type].icon}</span>}
+                {safeUrl(c.cover) ? <img src={c.cover!} alt="" /> : <span className="noimg"></span>}
                 <div className="info">
                   <Link href={contentHref(c)}><b>{c.title}</b></Link>
                   <span>{[c.creator, c.year, c.ext_id.split(":")[0] === "cat" ? "elle eklendi" : "linkle eklendi"].filter(Boolean).join(" · ")}</span>
@@ -222,11 +223,11 @@ function Edits() {
   if (!data?.length) return null;
   return (
     <section className="section">
-      <div className="section-head"><h2>✏️ Düzenlenmiş sayfalar</h2></div>
+      <div className="section-head"><h2>Düzenlenmiş sayfalar</h2></div>
       <div className="admin-list">
         {data.map((e) => (
           <div key={e.key} className="admin-item">
-            <span className="noimg">{e.key.startsWith("g:") ? "🎮" : TYPES[e.key.split(":")[0] as EntryType]?.icon || "📄"}</span>
+            <span className="noimg">{e.key.startsWith("g:") ? "" : TYPES[e.key.split(":")[0] as EntryType]?.label || ""}</span>
             <div className="info">
               <Link href={href(e.key)}><b>{e.data.title || e.key.slice(e.key.indexOf(":") + 1)}</b></Link>
               <span>Değişenler: {Object.keys(e.data).map((k) => ({ title: "ad", creator: "yapımcı", year: "yıl", cover: "kapak", backdrop: "arka plan", description: "açıklama", genres: "türler" })[k] || k).join(", ")}</span>
@@ -269,7 +270,7 @@ function Overview() {
     <>
       <section className="section"><div className="stats">{tiles.map(([n, l]) => <div className="stat" key={l}><b>{n.toLocaleString("tr")}</b><span>{l}</span></div>)}</div></section>
       <section className="section">
-        <div className="section-head"><h2>🆕 Son katılanlar</h2></div>
+        <div className="section-head"><h2>Son katılanlar</h2></div>
         <div className="user-list">
           {data.recent.map((p) => <div key={p.id} className="admin-row"><UserRow p={p} /><span className="muted small">{timeAgo(p.created_at)}</span></div>)}
         </div>
@@ -293,7 +294,7 @@ function NoticeEditor() {
       if (cur.text?.trim()) {
         await q(table.upsert({ key: "announcement", value: { text: cur.text.trim(), tone: cur.tone || "info", link: cur.link?.trim() || undefined },
           updated_by: me?.id, updated_at: new Date().toISOString() }, { onConflict: "key" }));
-        toast("Duyuru yayında 📢");
+        toast("Duyuru yayında ✓");
       } else {
         await q(table.delete().eq("key", "announcement"));
         toast("Duyuru kaldırıldı");
@@ -306,10 +307,10 @@ function NoticeEditor() {
 
   return (
     <section className="section">
-      <div className="section-head"><h2>📢 Duyuru</h2></div>
+      <div className="section-head"><h2>Duyuru</h2></div>
       <form className="admin-notice" onSubmit={save}>
         <p className="muted small" style={{ margin: 0 }}>Yazdığın şey herkesin ekranının üstünde görünür. Kaldırmak için kutuyu boşaltıp kaydet.</p>
-        <textarea className="input" rows={2} maxLength={300} placeholder="ör. Yeni özellik: profiline şarkı ekleyebilirsin! 🎵" value={cur.text || ""}
+        <textarea className="input" rows={2} maxLength={300} placeholder="ör. Yeni özellik: profiline şarkı ekleyebilirsin!" value={cur.text || ""}
           onChange={(e) => setF({ ...cur, text: e.target.value })} />
         <div className="admin-add">
           <select value={cur.tone || "info"} onChange={(e) => setF({ ...cur, tone: e.target.value as Notice["tone"] })} aria-label="Duyuru türü">
@@ -337,13 +338,13 @@ function Members() {
     if (!on && !confirm(`@${p.username} kullanıcısının “${BADGES[badge].name}” rozeti alınsın mı?`)) return;
     const { error } = await sb().rpc("set_badge", { p_username: p.username, p_badge: badge, p_on: on });
     if (error) return toast("Olmadı: " + error.message);
-    toast(on ? `@${p.username}: ${BADGES[badge].icon} ${BADGES[badge].name} verildi` : "Rozet alındı");
+    toast(on ? `@${p.username}: ${BADGES[badge].name} rozeti verildi` : "Rozet alındı");
     loadBadges();
   }
 
   return (
     <section className="section">
-      <div className="section-head"><h2>🎖️ Üyeler ve rozetler</h2></div>
+      <div className="section-head"><h2>Üyeler ve rozetler</h2></div>
       <p className="muted small" style={{ marginTop: 0 }}>Rozete basınca verilir, renkli olana basınca geri alınır. Verilen rozet profilinde görünür.</p>
       <input className="input" type="search" placeholder="Kullanıcı ara…" value={text} onChange={(e) => setText(e.target.value)} style={{ width: "100%", marginBottom: 12 }} />
       <div className="admin-list">
@@ -359,7 +360,7 @@ function Members() {
               <div className="badge-toggles">
                 {GRANTABLE.map((b) => (
                   <button key={b} className={`bdg-t ${has.includes(b) ? "on" : ""}`} title={`${BADGES[b].name}: ${BADGES[b].desc}`}
-                    onClick={() => toggle(p, b, !has.includes(b))}>{BADGES[b].icon}</button>
+                    onClick={() => toggle(p, b, !has.includes(b))}>{BADGES[b].name}</button>
                 ))}
               </div>
             </div>
@@ -393,7 +394,7 @@ function Comments() {
   if (!data) return <div className="loading">Yükleniyor…</div>;
   return (
     <section className="section">
-      <div className="section-head"><h2>💬 Son yorumlar</h2><span className="muted">{data.rows.length} yorum</span></div>
+      <div className="section-head"><h2>Son yorumlar</h2><span className="muted">{data.rows.length} yorum</span></div>
       {!data.rows.length ? <div className="empty">Henüz yorum yok.</div> : (
         <div className="admin-list">
           {data.rows.map((c) => {

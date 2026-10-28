@@ -90,7 +90,7 @@ export function ProfileSong({ url, title, volume }: { url: string; title?: strin
   return (
     <div className={`song ${state}`}>
       <div className="song-frame" ref={host} aria-hidden="true" />
-      <span className="song-play">{state === "playing" ? <span className="eq"><i /><i /><i /></span> : "♪"}</span>
+      <span className="song-play">{state === "playing" ? <span className="eq"><i /><i /><i /></span> : ""}</span>
       <div className="song-text">
         <small>{state === "playing" ? "Şu an çalıyor" : "Profil şarkısı"}</small>
         <b title={title || ""}>{title || "Profil şarkısı"}</b>

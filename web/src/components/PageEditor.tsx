@@ -69,7 +69,7 @@ export function PageEditor({ editKey, edit, source, creatorLabel, onClose }: Pro
     <dialog ref={ref} onClose={onClose}>
       <form className="dialog-form" onSubmit={save}>
         <div className="dialog-head">
-          <h2>🛡️ Sayfayı düzenle</h2>
+          <h2>Sayfayı düzenle</h2>
           <button type="button" className="icon-btn" aria-label="Kapat" onClick={() => ref.current?.close()}>✕</button>
         </div>
         <p className="muted" style={{ margin: 0, fontSize: 14 }}>Boş bıraktığın alan kaynaktan (RAWG, TMDB…) gelmeye devam eder. Değişikliği herkes görür.</p>

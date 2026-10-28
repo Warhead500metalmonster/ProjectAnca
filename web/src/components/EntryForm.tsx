@@ -213,7 +213,7 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
           <label>Tür</label>
           <div className="type-picker">
             {TYPE_KEYS.map((k) => (
-              <button type="button" key={k} className={type === k ? "active" : ""} onClick={() => changeType(k)}>{TYPES[k].icon} {TYPES[k].label}</button>
+              <button type="button" key={k} className={type === k ? "active" : ""} onClick={() => changeType(k)}>{TYPES[k].label}</button>
             ))}
           </div>
         </div>
@@ -286,7 +286,7 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
               <input id="f-store" list="storeList" maxLength={60} autoComplete="off" value={store} onChange={(e) => setStore(e.target.value)} />
               <datalist id="storeList">{stores.map((s) => <option key={s} value={s} />)}</datalist>
             </div>
-            <label className="check grow"><input type="checkbox" checked={emulated} onChange={(e) => setEmulated(e.target.checked)} /> 🕹️ Emülatörde oynadım</label>
+            <label className="check grow"><input type="checkbox" checked={emulated} onChange={(e) => setEmulated(e.target.checked)} /> Emülatörde oynadım</label>
           </div>
         )}
         <div className="row">
@@ -326,7 +326,7 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
             <button type="button" className="link clear" onClick={() => setRating(0)}>temizle</button>
           </div>
         </div>
-        <label className="check"><input type="checkbox" checked={favorite} onChange={(e) => setFavorite(e.target.checked)} /> ❤️ Favorilerime ekle <span className="muted">(her kategoride en fazla 10)</span></label>
+        <label className="check"><input type="checkbox" checked={favorite} onChange={(e) => setFavorite(e.target.checked)} /> ♥ Favorilerime ekle <span className="muted">(her kategoride en fazla 10)</span></label>
         {!isGame && (
           <div className="field">
             <label htmlFor="f-cover">Kapak görseli (URL)</label>

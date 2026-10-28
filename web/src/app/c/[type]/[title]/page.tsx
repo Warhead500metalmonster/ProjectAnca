@@ -119,18 +119,18 @@ export default function ContentPage() {
         <div className="gh-bg" style={backdrop ? { backgroundImage: cssUrl(backdrop) } : undefined} />
         <div className="gh-inner">
           <div className="gh-left">
-            <div className={`gh-cover ${t.square ? "square" : ""}`}>{cover ? <button className="zoom" onClick={() => setZoom(true)} aria-label="Büyüt"><img src={cover} alt="" /></button> : <div className="ph">{t.icon}</div>}</div>
+            <div className={`gh-cover ${t.square ? "square" : ""}`}>{cover ? <button className="zoom" onClick={() => setZoom(true)} aria-label="Büyüt"><img src={cover} alt="" /></button> : <div className="ph">{t.label}</div>}</div>
             <div className="gh-counts">
-              <span title="Kütüphanesine ekleyen">📚 {logs.length}</span>
-              <span title={t.active}>▶ {count("active")}</span>
-              <span title="Bitirdi">🏆 {count("completed")}</span>
-              <span title="Planlıyor">📋 {count("planned")}</span>
+              <span>{logs.length} kayıt</span>
+              <span>{count("active")} devam</span>
+              <span>{count("completed")} bitirdi</span>
+              <span>{count("planned")} planlı</span>
             </div>
             {!me ? <Link className="btn primary wide" href="/login">+ Kütüphaneme ekle</Link>
-              : mine ? <button className="btn primary wide" onClick={() => openForm(mine)}>{t.icon} {statusLabel(mine.status, type)} · Düzenle</button>
+              : mine ? <button className="btn primary wide" onClick={() => openForm(mine)}>{statusLabel(mine.status, type)} · Düzenle</button>
               : <button className="btn primary wide" onClick={() => openForm(null, { item })}>+ Kütüphaneme ekle</button>}
-            <button className="btn wide" onClick={() => pickList(item)}>📚 Listeye ekle</button>
-            {isAdmin && <button className="btn wide ghost" onClick={() => setEditing(true)}>🛡️ Sayfayı düzenle</button>}
+            <button className="btn wide" onClick={() => pickList(item)}>Listeye ekle</button>
+            {isAdmin && <button className="btn wide ghost" onClick={() => setEditing(true)}>Sayfayı düzenle</button>}
           </div>
           <div className="gh-main">
             <div className="crumbs"><Link href={`/search?type=${type}`}>{t.plural}</Link> / {title}</div>

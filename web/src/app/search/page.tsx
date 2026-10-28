@@ -102,12 +102,12 @@ export default function SearchPage() {
         <h1>Keşfet</h1>
         <input className="input big" type="search" autoFocus value={text} placeholder="Oyun, film, dizi, albüm, anime ya da kişi ara…" onChange={(e) => setText(e.target.value)} />
         <div className="tabs">
-          {([["all", "✨", "Tümü"], ...TYPE_KEYS.map((k) => [k, TYPES[k].icon, TYPES[k].label])] as [EntryType | "all", string, string][]).map(([k, icon, label]) => (
+          {([["all", "", "Tümü"], ...TYPE_KEYS.map((k) => [k, "", TYPES[k].label])] as [EntryType | "all", string, string][]).map(([k, icon, label]) => (
             <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => setType(k)}>{icon} {label}</button>
           ))}
         </div>
         <div className="filters">
-          <label className="inline">📅 Çıkış yılı
+          <label className="inline">Çıkış yılı
             <input className="input year" inputMode="numeric" maxLength={4} placeholder="2006" value={from} onChange={(e) => setFrom(e.target.value.replace(/\D/g, ""))} />
             –
             <input className="input year" inputMode="numeric" maxLength={4} placeholder="2006" value={to} onChange={(e) => setTo(e.target.value.replace(/\D/g, ""))} />
@@ -122,25 +122,25 @@ export default function SearchPage() {
 
       {users.length > 0 && (
         <section className="section">
-          <div className="section-head"><h2>👥 Kişiler</h2></div>
+          <div className="section-head"><h2>Kişiler</h2></div>
           <div className="members">{users.map((p) => <UserRow key={p.id} p={p} />)}</div>
         </section>
       )}
 
       <section className="section">
-        <div className="section-head"><h2>📒 Ancalog&apos;da</h2><span className="muted">{local ? `${local.length} içerik` : ""}</span></div>
+        <div className="section-head"><h2>Ancalog&apos;da</h2><span className="muted">{local ? `${local.length} içerik` : ""}</span></div>
         {local === null ? <div className="loading">Aranıyor…</div>
           : local.length ? (
             <div className="grid">
               {local.map((a) => (
                 <Link key={contentKey(a)} className="card" href={contentHref(a)}>
                   <div className={`poster ${TYPES[a.type].square ? "square" : ""}`}>
-                    <div className="ph">{TYPES[a.type].icon}</div><Cover src={a.cover} />
-                    {type === "all" && <span className="kind">{TYPES[a.type].icon}</span>}
+                    <div className="ph">{TYPES[a.type].label}</div><Cover src={a.cover} />
+                    {type === "all" && <span className="kind">{TYPES[a.type].label}</span>}
                     {a.avg ? <span className="rating">★ {avgText(a.avg, scale).split("/")[0]}</span> : null}
                   </div>
                   <div className="card-title">{a.title}</div>
-                  <div className="card-meta">👤 {a.n} · 🏆 {a.done}{a.active ? ` · ▶ ${a.active}` : ""}{a.year ? ` · ${a.year}` : ""}</div>
+                  <div className="card-meta">{a.n} kişi · {a.done} bitirdi{a.active ? ` · ${a.active} devam` : ""}{a.year ? ` · ${a.year}` : ""}</div>
                 </Link>
               ))}
             </div>
@@ -150,14 +150,14 @@ export default function SearchPage() {
       {(external === null || external.length > 0) && (
         <section className="section">
           <div className="section-head">
-            <h2>🌐 {type === "all" ? "Oyunlar (RAWG)" : `${TYPES[type].plural} (${credit[0]})`}</h2>
+            <h2>{type === "all" ? "Oyunlar (RAWG)" : `${TYPES[type].plural} (${credit[0]})`}</h2>
             <a href={credit[1]} target="_blank" rel="noopener" className="muted">Veri: {credit[0]}</a>
           </div>
           {external === null ? <div className="loading">Aranıyor…</div> : (
             <div className="grid">
               {external.map((x, i) => (
                 <Link key={i} className="card" href={contentHref(x)}>
-                  <div className={`poster ${TYPES[x.type].square ? "square" : ""}`}><div className="ph">{TYPES[x.type].icon}</div><Cover src={x.cover} /></div>
+                  <div className={`poster ${TYPES[x.type].square ? "square" : ""}`}><div className="ph">{TYPES[x.type].label}</div><Cover src={x.cover} /></div>
                   <div className="card-title">{x.title}</div>
                   <div className="card-meta">{[x.sub, x.year].filter(Boolean).join(" · ")}</div>
                 </Link>

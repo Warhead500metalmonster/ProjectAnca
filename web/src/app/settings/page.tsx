@@ -117,7 +117,7 @@ function SettingsForm({ me }: { me: Profile }) {
       <h1>Profili düzenle</h1>
       <div className="view-user"><Avatar p={me} /> <span>@{me.username}</span></div>
 
-      <h3 className="set-h">👤 Profil</h3>
+      <h3 className="set-h">Profil</h3>
       <div className="field"><label htmlFor="p-name">Görünen ad</label><input id="p-name" name="name" maxLength={40} defaultValue={me.display_name || ""} /></div>
       <div className="field"><label htmlFor="p-bio">Hakkımda</label><textarea id="p-bio" name="bio" rows={3} maxLength={300} defaultValue={me.bio || ""} /></div>
       <div className="row">
@@ -133,30 +133,30 @@ function SettingsForm({ me }: { me: Profile }) {
         <input id="p-banner" name="banner" type="url" defaultValue={me.banner_url || ""} placeholder="https://…" />
       </div>
 
-      <h3 className="set-h">🎨 Profil rengi</h3>
+      <h3 className="set-h">Profil rengi</h3>
       <div className="swatches">
         <button type="button" className={`swatch none ${!accent ? "on" : ""}`} onClick={() => setAccent("")} title="Varsayılan">✕</button>
         {ACCENTS.map((c) => (
           <button type="button" key={c} className={`swatch ${accent === c ? "on" : ""}`} style={{ background: c }} onClick={() => setAccent(c)} aria-label={c} />
         ))}
         <label className="swatch custom" title="Kendi rengini seç">
-          <input type="color" value={accent || "#58a98a"} onChange={(e) => setAccent(e.target.value)} />🎨
+          <input type="color" value={accent || "#58a98a"} onChange={(e) => setAccent(e.target.value)} />+
         </label>
       </div>
 
-      <h3 className="set-h">🌈 Site rengi <span className="muted small">· sadece sen görürsün</span></h3>
+      <h3 className="set-h">Site rengi <span className="muted small">· sadece sen görürsün</span></h3>
       <div className="swatches">
         <button type="button" className={`swatch ${!siteColor ? "on" : ""}`} style={{ background: DEFAULT_COLOR }} onClick={() => pickSiteColor("")} title="Varsayılan (yeşil)" />
         {ACCENTS.filter((c) => c !== DEFAULT_COLOR).map((c) => (
           <button type="button" key={c} className={`swatch ${siteColor === c ? "on" : ""}`} style={{ background: c }} onClick={() => pickSiteColor(c)} aria-label={c} />
         ))}
         <label className="swatch custom" title="Kendi rengini seç">
-          <input type="color" value={siteColor || DEFAULT_COLOR} onChange={(e) => pickSiteColor(e.target.value)} />🎨
+          <input type="color" value={siteColor || DEFAULT_COLOR} onChange={(e) => pickSiteColor(e.target.value)} />+
         </label>
       </div>
       <p className="muted small">Butonlar, bağlantılar ve arka plandaki ışık bu renge döner. Seçince hemen görürsün; kalıcı olması için aşağıdan kaydet.</p>
 
-      <h3 className="set-h">🎵 Profil şarkısı</h3>
+      <h3 className="set-h">Profil şarkısı</h3>
       <div className="field">
         <label htmlFor="p-song">YouTube linki</label>
         <input id="p-song" type="url" placeholder="https://www.youtube.com/watch?v=…" value={song.url} onChange={(e) => songLink(e.target.value)} />
@@ -171,18 +171,18 @@ function SettingsForm({ me }: { me: Profile }) {
       </div>
       <p className="muted small">Profiline girenler bu şarkıyı arkada kısık sesle duyar, köşede adı yazar. Kaldırmak için linki silip kaydet.</p>
 
-      <h3 className="set-h">⭐ Puan ölçeği</h3>
+      <h3 className="set-h">Puan ölçeği</h3>
       <div className="scale-pick">
         <label className={scale === 5 ? "on" : ""}><input type="radio" name="scale" checked={scale === 5} onChange={() => setScale(5)} /> <b>5 üzerinden</b> <span>★★★½ gibi yarım yıldızlar</span></label>
         <label className={scale === 10 ? "on" : ""}><input type="radio" name="scale" checked={scale === 10} onChange={() => setScale(10)} /> <b>10 üzerinden</b> <span>7,5/10 gibi</span></label>
       </div>
       <p className="muted small">Herkesin puanı senin seçtiğin ölçekte görünür. Ör: biri 10&apos;luk ölçekte 7 verdiyse sen 5&apos;likte 3,5 yıldız görürsün; 5&apos;likte 2,75 verilen bir puanı 10&apos;lukta 5,5 görürsün.</p>
 
-      <h3 className="set-h">🔗 Bağlantılar</h3>
+      <h3 className="set-h">Bağlantılar</h3>
       <div className="socials-form">
         {SOCIALS.map((s) => (
           <div className="field" key={s.key}>
-            <label htmlFor={`s-${s.key}`}>{s.icon} {s.label}</label>
+            <label htmlFor={`s-${s.key}`}>{s.label}</label>
             <input id={`s-${s.key}`} name={`s-${s.key}`} maxLength={200} placeholder={s.hint} defaultValue={me.socials?.[s.key] || ""} />
           </div>
         ))}

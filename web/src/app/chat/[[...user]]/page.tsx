@@ -120,7 +120,7 @@ export default function ChatPage() {
                     {showTime && <small>{timeAgo(m.created_at)}{mine && m.read_at ? " · görüldü" : ""}</small>}
                   </div>
                 );
-              }) : <p className="muted center">İlk mesajı sen yaz 👋</p>}
+              }) : <p className="muted center">İlk mesajı sen yaz </p>}
             </div>
             <form className="chat-form" onSubmit={send}>
               <input value={text} maxLength={2000} autoFocus placeholder="Mesaj yaz…" onChange={(e) => setText(e.target.value)} />

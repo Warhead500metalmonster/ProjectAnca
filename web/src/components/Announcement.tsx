@@ -7,7 +7,7 @@ import { useApp } from "./AppProvider";
 
 // Yöneticinin yazdığı, herkesin sayfanın üstünde gördüğü duyuru. Kapatan bir daha görmez (yeni duyuru gelene kadar).
 export interface Notice { text?: string; tone?: "info" | "party" | "warn"; link?: string }
-export const NOTICE_TONES: [Notice["tone"], string][] = [["info", "📢 Bilgi"], ["party", "🎉 Kutlama"], ["warn", "⚠️ Uyarı"]];
+export const NOTICE_TONES: [Notice["tone"], string][] = [["info", "Bilgi"], ["party", "Kutlama"], ["warn", "Uyarı"]];
 const CLOSED = "ancalog.noticeClosed";
 
 export const fetchNotice = () =>
@@ -23,7 +23,6 @@ export function Announcement() {
 
   if (!data?.value.text || closed === null || closed === data.updated_at) return null;
   const { text, tone = "info", link } = data.value;
-  const icon = NOTICE_TONES.find(([t]) => t === tone)?.[1].split(" ")[0] || "📢";
 
   function close() {
     try { localStorage.setItem(CLOSED, data!.updated_at); } catch { /* yok say */ }
@@ -32,7 +31,6 @@ export function Announcement() {
 
   return (
     <div className={`notice ${tone}`} role="status">
-      <span>{icon}</span>
       <p>{text}{link && /^https?:\/\//.test(link) && <> <a href={link} target="_blank" rel="noopener">Bağlantı →</a></>}</p>
       <button className="icon-btn" aria-label="Duyuruyu kapat" onClick={close}>✕</button>
     </div>

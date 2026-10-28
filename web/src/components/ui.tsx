@@ -25,7 +25,7 @@ export function Avatar({ p, cls = "" }: { p: Who; cls?: string }) {
   );
 }
 
-// İsim + kazanılmış rozetlerin küçük simgeleri (👑 site sahibi, 🌟 öncü)
+// İsim + kazanılmış rozetlerin küçük simgeleri (site sahibi, öncü)
 export function Name({ p }: { p: Who }) {
   const { badges } = useApp();
   const mine = (p?.id && badges.get(p.id)) || [];
@@ -49,7 +49,7 @@ export function BadgeChips({ id, showLocked = false }: { id: string; showLocked?
       ))}
       {showLocked && locked.length > 0 && (
         <details className="locked">
-          <summary>🔒 Yakında gelecek rozetler ({locked.length})</summary>
+          <summary>Yakında gelecek rozetler ({locked.length})</summary>
           <div className="badge-row">
             {locked.map((b) => <span key={b} className="bdg off" title={BADGES[b].desc}>{BADGES[b].icon} {BADGES[b].name} <small>{BADGES[b].desc}</small></span>)}
           </div>
@@ -76,12 +76,12 @@ export function Socials({ socials }: { socials?: Record<string, string> }) {
           return (
             <button key={s.key} className="social" title="Kopyala"
               onClick={() => navigator.clipboard?.writeText(v).then(() => toast("Discord adı kopyalandı ✓"), () => {})}>
-              {s.icon} {v}
+              {v}
             </button>
           );
         }
         const href = socialUrl(s.key, v);
-        return href ? <a key={s.key} className="social" href={href} target="_blank" rel="noopener nofollow">{s.icon} {s.label}</a> : null;
+        return href ? <a key={s.key} className="social" href={href} target="_blank" rel="noopener nofollow">{s.label}</a> : null;
       })}
     </div>
   );
@@ -127,7 +127,7 @@ export function Stats({ list }: { list: Entry[] }) {
     [list.filter((i) => i.status === "active").length, "Devam eden"],
     [list.filter((i) => i.status === "completed" && (i.date || "").startsWith(year)).length, "Bu yıl bitirilen"],
     [avg ? `★ ${avgText(avg, scale)}` : "–", "Ortalama puan"],
-    ...(secs ? [[`⏱ ${fmtHoursShort(secs)}`, "Toplam süre"] as [string, string]] : []),
+    ...(secs ? [[`${fmtHoursShort(secs)}`, "Toplam süre"] as [string, string]] : []),
   ];
   return <>{items.map(([b, s]) => <div className="stat" key={s}><b>{b}</b><span>{s}</span></div>)}</>;
 }
@@ -139,10 +139,10 @@ export function EntryCard({ e, kind = false, edit = false, wall = false }: { e: 
   return (
     <button className="card" onClick={() => (edit ? openForm(e) : openView(e))}>
       <div className={`poster ${t.square ? "square" : ""}`}>
-        <div className="ph">{t.icon}</div>
+        <div className="ph">{t.label}</div>
         <Cover src={e.cover} />
-        {kind && <span className="kind">{t.icon}</span>}
-        {e.favorite && <span className="fav" title="Favori">❤</span>}
+        {kind && <span className="kind">{t.label}</span>}
+        {e.favorite && <span className="fav" title="Favori">♥</span>}
         <span className={`st badge ${e.status}`}>{statusLabel(e.status, e.type)}</span>
         {e.rating ? <span className="rating">★ {scoreShort(e.rating, scale)}</span> : null}
         {wall && <div className="hover"><b>{e.title}</b>{meta && <span>{meta}</span>}</div>}
@@ -157,15 +157,15 @@ export const likeCount = (e: Entry) => e.likes?.[0]?.count || 0;
 export const commentCount = (e: Entry) => e.comments?.[0]?.count || 0;
 
 // Kayıtla ilgili kısa etiketler: platform, emülatör, mağaza, ilerleme, süre, kaç günde bitti
-export function entryTags(e: Entry, { store = false } = {}) {
+export function entryTags(e: Entry, { store = false, time = true } = {}) {
   const days = daysTaken(e);
   return [
     e.platform,
-    e.emulated ? "🕹️ Emülatör" : "",
+    e.emulated ? "Emülatör" : "",
     store ? e.store : "",
     e.status === "active" && e.progress_sec ? `▶ ${fmtDur(e.progress_sec)}` : "",
-    playSec(e) ? `⏱ ${fmtDur(playSec(e))}` : "",
-    days ? `🏁 ${days} günde` : "",
+    time && playSec(e) ? fmtDur(playSec(e)) : "",
+    days ? `${days} günde` : "",
   ].filter(Boolean) as string[];
 }
 
@@ -186,21 +186,21 @@ export function FeedItem({ e }: { e: Entry }) {
           <Link className="title-link" href={link}>{e.title}</Link>
         </div>
         <div className="sub">
-          <span>{t.icon} {t.label}</span>
+          <span>{t.label}</span>
           <Rating r={e.rating} />
           <span>{timeAgo(e.updated_at)}</span>
           {likes > 0 && <span title="Beğeni">♥ {likes}</span>}
-          {comments > 0 && <span title="Yorum">💬 {comments}</span>}
+          {comments > 0 && <span title="Yorum">{comments}</span>}
         </div>
         {(extra.length > 0 || e.favorite) && (
           <div className="chips-row">
             {extra.map((x) => <span className="tag" key={x}>{x}</span>)}
-            {e.favorite && <span className="tag fav">❤ favori</span>}
+            {e.favorite && <span className="tag fav">♥ favori</span>}
           </div>
         )}
         {e.notes && <Link className="feed-review" href={link} title="İncelemenin tamamı">{e.notes}</Link>}
       </div>
-      <Link className="thumb" href={link}>{t.icon}<Cover src={e.cover} /></Link>
+      <Link className="thumb" href={link}>{t.label}<Cover src={e.cover} /></Link>
     </div>
   );
 }
