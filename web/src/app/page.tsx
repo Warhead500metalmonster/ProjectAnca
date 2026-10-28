@@ -15,6 +15,7 @@ import { CoverMarquee } from "@/components/CoverMarquee";
 import { Goals } from "@/components/Goals";
 import { NextBadges } from "@/components/profile/BadgesTab";
 import { GettingStarted } from "@/components/GettingStarted";
+import { ImportPromo } from "@/components/ImportPromo";
 import { Avatar, EntryCard, Feed, Stars, Stats, displayName } from "@/components/ui";
 
 interface LocalEntry { title?: string; type?: string; year?: string; creator?: string; status?: string; date?: string; rating?: string; cover?: string; notes?: string; updated?: number }
@@ -54,6 +55,8 @@ function Landing({ version }: { version: number }) {
           </div>
         </div>
       </section>
+
+      <ImportPromo signedIn={false} />
 
       <div className="bento">
         <div className="tile big">
@@ -183,6 +186,7 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
         </div>
       )}
       <GettingStarted user={user} mine={mine} />
+      {mine.length < 30 && <ImportPromo signedIn compact />}
       <section className="section"><div className="stats"><Stats list={mine} /></div></section>
       <section className="section home-goals">
         <Goals profile={user} entries={mine} isMe />

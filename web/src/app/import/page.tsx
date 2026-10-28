@@ -8,6 +8,7 @@ import { musicMeta, tmdb, tmdbImage } from "@/lib/data";
 import { STATUSES, STORES, TYPES, statusLabel } from "@/lib/constants";
 import { rawg } from "@/lib/rawg";
 import { q, sb } from "@/lib/supabase";
+import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { psBookmarklet } from "@/lib/psBookmarklet";
 import { BL_MARK, backloggdBookmarklet } from "@/lib/backloggdBookmarklet";
@@ -17,18 +18,77 @@ export default function ImportPage() {
   const { me, ready } = useApp();
   if (!ready) return <div className="loading">Yükleniyor…</div>;
   if (!me) return <div className="empty">Bu sayfa için giriş yapmalısın. <br /><Link className="btn" href="/login">Giriş yap</Link></div>;
+  return <Importer />;
+}
+
+// Nereden getirileceği: önce kaynak seçilir, sonra sadece onun adımları görünür (uzun sayfada kaybolmasın)
+const IMPORT_PICKS: { key: string; name: string; how: string; gets: string }[] = [
+  { key: "steam", name: "Steam", how: "Profil linkini yapıştır", gets: "Oyunların ve oynama sürelerin" },
+  { key: "ps", name: "PlayStation", how: "Tarayıcı düğmesiyle", gets: "Satın aldığın ve oynadığın oyunlar" },
+  { key: "xbox", name: "Xbox", how: "Gamertag'ini yaz", gets: "Oyunların ve başarımların" },
+  { key: "backloggd", name: "Backloggd", how: "Tarayıcı düğmesiyle", gets: "Durumların ve puanların" },
+  { key: "hltb", name: "HowLongToBeat", how: "Dosyanı seç", gets: "Süreler, puanlar, notlar, tarihler" },
+  { key: "letterboxd", name: "Letterboxd", how: "Dosyanı seç", gets: "Filmler, puanlar, incelemeler" },
+  { key: "music", name: "Spotify ve Last.fm", how: "Kullanıcı adı ya da dosya", gets: "Albümlerin ve sanatçıların" },
+  { key: "epic", name: "Epic Games", how: "Listeyi kopyala, yapıştır", gets: "Oyunların" },
+  { key: "switch", name: "Nintendo Switch", how: "Listeyi kopyala, yapıştır", gets: "Oyunların" },
+  { key: "playnite", name: "Playnite ya da başka CSV", how: "Dosyanı seç", gets: "Durum, puan, süre: ne varsa" },
+];
+// Simkl ancak sunucuda anahtarı (SIMKL_ID) varsa listede görünür
+const SIMKL_PICK = { key: "simkl", name: "Simkl", how: "Koduyla bağlan", gets: "Dizilerin, filmlerin, animelerin" };
+
+function Importer() {
+  // /import?from=backloggd gibi bağlantılar doğrudan o kaynağı açar
+  const [pick, setPick] = useState<string | null>(() => {
+    const k = new URLSearchParams(location.search).get("from");
+    return k === "simkl" || IMPORT_PICKS.some((p) => p.key === k) ? k : null;
+  });
+  const { data: simklOn } = useLoad(() => fetch("/api/simkl").then((x) => x.json()).then((j) => j.error !== "no-key").catch(() => false), []);
+  const picks = simklOn ? [...IMPORT_PICKS, SIMKL_PICK] : IMPORT_PICKS;
+  function choose(k: string | null) {
+    setPick(k);
+    history.replaceState(null, "", k ? `/import?from=${k}` : "/import");
+    window.scrollTo({ top: 0 });
+  }
+  const chosen = [...IMPORT_PICKS, SIMKL_PICK].find((p) => p.key === pick);
+
   return (
     <div className="import-page">
-      <section className="search-hero">
-        <h1>İçe aktar</h1>
-        <p className="muted" style={{ margin: 0 }}>Başka yerdeki kütüphaneni tek seferde Ancalog&apos;a taşı. Zaten kütüphanende olanlar tekrar eklenmez.</p>
-      </section>
-      <Steam />
-      <AccountGames kind="xbox" />
-      <ListImport />
-      <Letterboxd />
-      <Simkl />
-      <Music />
+      {!chosen ? (
+        <>
+          <section className="search-hero">
+            <h1>Kütüphaneni getir</h1>
+            <p className="muted" style={{ margin: 0 }}>
+              Nereden getirmek istiyorsun? Seç, adım adım anlatalım. Zaten kütüphanende olanlar tekrar eklenmez; istediğin kadar kaynaktan getirebilirsin.
+            </p>
+          </section>
+          <div className="import-picks">
+            {picks.map((p) => (
+              <button key={p.key} className="import-pick" onClick={() => choose(p.key)}>
+                <b>{p.name}</b>
+                <span>{p.gets}</span>
+                <small>{p.how}</small>
+              </button>
+            ))}
+          </div>
+          <p className="muted small" style={{ textAlign: "center" }}>
+            Listede yok mu? <button className="link" onClick={() => choose("epic")}>Oyun adlarını kopyalayıp yapıştır</button>, gerisini biz ayıklarız.
+          </p>
+        </>
+      ) : (
+        <>
+          <div className="import-back">
+            <button className="btn" onClick={() => choose(null)}>← Başka bir yerden getir</button>
+            <h1>{chosen.name}</h1>
+          </div>
+          {pick === "steam" ? <Steam />
+            : pick === "xbox" ? <AccountGames kind="xbox" />
+            : pick === "letterboxd" ? <Letterboxd />
+            : pick === "music" ? <Music />
+            : pick === "simkl" ? <Simkl />
+            : <ListImport key={pick} initial={pick!} />}
+        </>
+      )}
     </div>
   );
 }
@@ -537,13 +597,15 @@ const SOURCES: Record<string, { name: string; platform: string; store: string; h
       Sonra PlayStation kütüphanende bu yer imine bas: bütün sayfaları kendisi toplar, sen çıkan kutudaki <b>Kopyala</b>&apos;ya basıp buraya yapıştırırsın.
     </CopyLink></> },
   backloggd: { name: "Backloggd", platform: "", store: "", help: <>
-    Backloggd&apos;un dışa aktarma özelliği yok; bu düğme senin yerine oyun listeni okur.
-    <CopyLink make={backloggdBookmarklet} name="Ancalog'a ekle Backloggd" lead="1.">
-      2. <a className="grad" href="https://backloggd.com/" target="_blank" rel="noreferrer">Backloggd</a>&apos;da kendi profilini aç ve bu yer imine bas.
-      Played, Playing, Backlog ve Wishlist sekmelerindeki bütün oyunlarını puanlarıyla toplar.
-      3. Çıkan kutudaki <b>Kopyala</b>&apos;ya bas, buraya dön ve aşağıya yapıştır.
-      Played olanlar <b>Oynandı</b>, Playing <b>Oynuyorum</b>, Backlog ve Wishlist <b>Planlandı</b> olarak gelir.
-    </CopyLink></> },
+    Backloggd&apos;un dışa aktarma özelliği yok; bu düğme senin yerine oyun listeni okur. Üç adım:
+    <ol className="import-steps">
+      <li>Şu düğmeyi fareyle tutup tarayıcının yer imleri çubuğuna sürükle (çubuk görünmüyorsa Ctrl+Shift+B):
+        <BookmarkButton make={backloggdBookmarklet} name="Ancalog'a ekle Backloggd" /></li>
+      <li><a className="grad" href="https://backloggd.com/" target="_blank" rel="noreferrer">Backloggd</a>&apos;da kendi profilini aç ve bu yer imine bas.
+        Bütün oyunlarını (Played, Playing, Backlog, Wishlist) puanlarıyla kendisi toplar; sonunda kaç oyun bulduğunu yazar.</li>
+      <li>Çıkan kutudaki <b>Kopyala</b>&apos;ya bas, buraya dön ve aşağıdaki kutuya yapıştır (Ctrl+V).</li>
+    </ol>
+    Played olanlar <b>Oynandı</b>, Playing <b>Oynuyorum</b>, Backlog ve Wishlist <b>Planlandı</b> olarak gelir.</> },
   epic: { name: "Epic Games", platform: "PC", store: "Epic Games Store", help: <>
     <a className="grad" href="https://www.epicgames.com/account/transactions" target="_blank" rel="noreferrer">Epic satın alma geçmişini</a> ya da
     Epic Launcher&apos;daki <b>Kütüphane</b>&apos;yi aç, sayfanın tamamını seçip (Ctrl+A) kopyala ve yapıştır.</> },
@@ -657,10 +719,10 @@ function storeFrom(s: string) {
   return STORES.find((x) => p.includes(x.toLowerCase().split(" ")[0])) || "";
 }
 
-function ListImport() {
+function ListImport({ initial }: { initial: string }) {
   const { me, mine, toast, refresh } = useApp();
-  const [src, setSrc] = useState("ps");
-  const [platform, setPlatform] = useState(SOURCES.ps.platform);
+  const [src, setSrc] = useState(SOURCES[initial] ? initial : "ps");
+  const [platform, setPlatform] = useState(SOURCES[initial]?.platform ?? "");
   const [status, setStatus] = useState<Status>("completed");
   const [text, setText] = useState("");
   const [csv, setCsv] = useState<ListGame[] | null>(null);
@@ -826,12 +888,15 @@ function ListImport() {
 
   return (
     <section className="section import-card">
-      <div className="section-head"><h2>PlayStation, Epic, Switch ve diğerleri</h2></div>
-      <div className="chips" style={{ marginBottom: 12 }}>
-        {Object.entries(SOURCES).map(([k, v]) => <button key={k} className={`chip ${src === k ? "active" : ""}`} onClick={() => pick(k)}>{v.name}</button>)}
-      </div>
-      <p className="muted small" style={{ marginTop: 0 }}>{s.help}</p>
-      <div className="import-opts">
+      {/* Yapıştırılan listeler birbirine benzediği için aynı kutuda kaynak değiştirilebilir */}
+      {["epic", "switch", "xbox", "xboxpc"].includes(src) && (
+        <div className="chips" style={{ marginBottom: 12 }}>
+          {["epic", "switch", "xbox", "xboxpc"].map((k) => <button key={k} className={`chip ${src === k ? "active" : ""}`} onClick={() => pick(k)}>{SOURCES[k].name}</button>)}
+        </div>
+      )}
+      <div className="muted small import-help">{s.help}</div>
+      {/* Backloggd'da durum ve puan her oyunla birlikte gelir; platform / toplu durum seçmeye gerek yok */}
+      {src !== "backloggd" && <div className="import-opts">
         <label>Platform
           <select value={platform} onChange={(e) => setPlatform(e.target.value)}>
             <option value="">Belirtme</option>
@@ -843,7 +908,7 @@ function ListImport() {
             {STATUSES.map((x) => <option key={x} value={x}>{statusLabel(x, "game")}</option>)}
           </select>
         </label>
-      </div>
+      </div>}
       {fileMode && cats.length > 0 && (
         <div className="cat-map">
           <b>Bizde karşılığı olmayan kategoriler</b>
@@ -868,7 +933,7 @@ function ListImport() {
       ) : (
         <>
         {ownPage && !ps?.length && <p className="form-error">Bu yazı Ancalog&apos;un kendi sayfası. PlayStation kütüphane sayfasından kopyalayıp öyle yapıştır.</p>}
-        <textarea className="input import-paste" rows={7} placeholder={"Her satıra bir oyun ya da sayfanın tamamı:\nElden Ring\nGod of War Ragnarök\nHalo Infinite\n(fiyat, tarih, düğme yazıları kendiliğinden ayıklanır)"} value={text} onChange={(e) => setText(e.target.value)} />
+        <textarea className="input import-paste" rows={7} placeholder={src === "backloggd" ? "Backloggd'daki düğmenin kopyaladığı yazıyı buraya yapıştır (Ctrl+V)" : "Her satıra bir oyun ya da sayfanın tamamı:\nElden Ring\nGod of War Ragnarök\nHalo Infinite\n(fiyat, tarih, düğme yazıları kendiliğinden ayıklanır)"} value={text} onChange={(e) => setText(e.target.value)} />
         </>
       )}
       {all.length > 0 && (
@@ -1155,23 +1220,29 @@ function AlbumImport({ mode }: { mode: "link" | "lastfm" }) {
 const NOISE = /^(konsola indir|indirme durumunu görüntüle|view download status|download to (your )?console|gta\+|ps plus|playstation plus|oyun kütüphanesi|game library|satın alınanlar|oynananlar|indirilenler|purchased|played|collection|koleksiyon|ps vr2?|satın al(ındı)?|purchased|owned|sahip olunan|yükle(ndi)?|install(ed)?|oyna|play|indir|download|güncelle|update|kütüphane|library|kitaplığım|my games|oyunlarım|sırala|sort|filtre|filter|ara|search|tümü|all|favoriler|favorites|ücretsiz|free|ödendi|paid|iade|refund|detaylar|details|daha fazla|more|games?|oyunlar|apps?|uygulamalar|hepsi|yüklü|hazır|ready|ps5|ps4|pc|xbox( series x\|s| one)?|nintendo switch|dlc|eklenti|add-?on|demo|beta|trial)$/i;
 // Sayfa sayfa kopyalamak yerine: yer imleri çubuğuna sürüklenen düğme, PlayStation'da bütün sayfaları kendisi toplar
 // Yer imi düğmesi: kişi fareyle tutup tarayıcının yer imleri çubuğuna sürükler, sonra ilgili sitede basar
+// Yer imi düğmesi: kişi fareyle tutup tarayıcının yer imleri çubuğuna sürükler, sonra ilgili sitede basar.
 // name: yer iminin adı olur (sürüklenince çubukta bu yazar)
-function CopyLink({ make, name, lead, children }: { make: () => string; name: string; lead: string; children: React.ReactNode }) {
+function BookmarkButton({ make, name }: { make: () => string; name: string }) {
   const { toast } = useApp();
   const link = useRef<HTMLAnchorElement>(null);
   // React "javascript:" linklerini engellediği için adres sayfa açıldıktan sonra verilir
   useEffect(() => { link.current?.setAttribute("href", make()); }, [make]);
+  return <a ref={link} className="btn bookmarklet" draggable onClick={(e) => { e.preventDefault(); toast("Buna basma; fareyle tutup yer imleri çubuğuna sürükle."); }}>{name}</a>;
+}
+
+function CopyLink({ make, name, lead, children }: { make: () => string; name: string; lead: string; children: React.ReactNode }) {
   return (
     <span className="ps-helper">
       <b>{lead}</b> Şu düğmeyi fareyle tutup tarayıcının yer imleri çubuğuna sürükle (çubuk görünmüyorsa Ctrl+Shift+B):
-      <a ref={link} className="btn bookmarklet" draggable onClick={(e) => { e.preventDefault(); toast("Buna basma; fareyle tutup yer imleri çubuğuna sürükle."); }}>{name}</a>
+      <BookmarkButton make={make} name={name} />
       {children}
     </span>
   );
 }
 
 // Backloggd yer iminin topladığı liste: ANCALOG_BACKLOGGD:[["Oyun", "played", 8], ...]
-const BL_STATUS: Record<string, Status> = { played: "completed", playing: "active", backlog: "planned", wishlist: "planned" };
+// logged: dört sekmenin hiçbirinde olmayan ama loglanmış oyun
+const BL_STATUS: Record<string, Status> = { played: "completed", playing: "active", backlog: "planned", wishlist: "planned", logged: "completed" };
 function blParse(text: string): ListGame[] {
   const i = text.indexOf(BL_MARK);
   if (i < 0) return [];

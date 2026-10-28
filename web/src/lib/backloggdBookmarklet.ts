@@ -17,26 +17,46 @@ const SCRIPT = `
   var note = document.createElement('div');
   note.style.cssText = 'position:fixed;top:12px;right:12px;z-index:2147483647;background:#111;color:#fff;padding:10px 14px;border-radius:10px;font:15px sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.4)';
   document.body.appendChild(note);
-  var games = [], seen = {}, tabs = ['played', 'playing', 'backlog', 'wishlist'];
+  var games = [], seen = {}, failed = 0, counts = {};
+  var tabs = ['played', 'playing', 'backlog', 'wishlist', ''];
+  var names = { played: 'Played', playing: 'Playing', backlog: 'Backlog', wishlist: 'Wishlist', '': 'Diğer' };
+  var get = async function (url) {
+    for (var tryNo = 0; tryNo < 5; tryNo++) {
+      try {
+        var res = await fetch(url, { credentials: 'include' });
+        if (res.ok) return new DOMParser().parseFromString(await res.text(), 'text/html');
+      } catch (e) {}
+      note.textContent = 'Ancalog: Backloggd yavaşlattı, biraz bekleyip tekrar deniyorum…';
+      await wait(3000 * (tryNo + 1));
+    }
+    return null;
+  };
   for (var t = 0; t < tabs.length; t++) {
-    for (var page = 1; page < 200; page++) {
-      note.textContent = 'Ancalog: ' + tabs[t] + ' ' + page + '. sayfa okunuyor… (' + games.length + ' oyun)';
-      var res = await fetch('/u/' + user + '/games/' + tabs[t] + '/?page=' + page, { credentials: 'include' });
-      if (!res.ok) break;
-      var doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+    var tab = tabs[t];
+    counts[tab] = 0;
+    var miss = 0;
+    for (var page = 1; page < 300; page++) {
+      note.textContent = 'Ancalog: ' + names[tab] + ' ' + page + '. sayfa okunuyor… (' + games.length + ' oyun)';
+      var doc = await get('/u/' + user + '/games/' + (tab ? tab + '/' : '') + '?page=' + page);
+      if (!doc) { failed++; if (++miss >= 3) break; continue; }
+      miss = 0;
       var cards = doc.querySelectorAll('.game-cover');
       if (!cards.length) break;
+      var any = 0;
       cards.forEach(function (c) {
         var img = c.querySelector('img');
         var name = ((img && img.getAttribute('alt')) || (c.querySelector('.game-text-centered') || {}).textContent || '').trim();
         var link = c.querySelector('a.cover-link');
         var slug = (link && link.getAttribute('href')) || name;
-        if (!name || seen[slug]) return;
+        if (!name) return;
+        if (!seen[tab + slug]) { seen[tab + slug] = 1; any++; }
+        if (seen[slug]) return;
         seen[slug] = 1;
-        games.push([name, tabs[t], Number(c.getAttribute('data-rating')) || 0]);
+        counts[tab]++;
+        games.push([name, tab || 'logged', Number(c.getAttribute('data-rating')) || 0]);
       });
-      if (!doc.querySelector('a[href*="page=' + (page + 1) + '"]')) break;
-      await wait(500);
+      if (!any) break;
+      await wait(400);
     }
   }
   note.remove();
@@ -44,7 +64,9 @@ const SCRIPT = `
   var box = document.createElement('div');
   box.style.cssText = 'position:fixed;inset:24px;z-index:2147483647;background:#111;color:#fff;padding:18px;border-radius:14px;display:flex;flex-direction:column;gap:10px;font:16px sans-serif;box-shadow:0 10px 40px rgba(0,0,0,.6)';
   var title = document.createElement('b');
-  title.textContent = games.length + ' oyun toplandı. Aşağıdaki "Kopyala"ya bas, sonra Ancalog\\'daki kutuya yapıştır.';
+  title.textContent = games.length + ' oyun toplandı (' + tabs.filter(function (k) { return counts[k]; }).map(function (k) { return names[k] + ': ' + counts[k]; }).join(', ') + ').'
+    + (failed ? ' ' + failed + ' sayfa okunamadı; eksik varsa birazdan düğmeye tekrar bas.' : '')
+    + ' Aşağıdaki "Kopyala"ya bas, sonra Ancalog\\'daki kutuya yapıştır.';
   var ta = document.createElement('textarea');
   ta.value = '${BL_MARK}' + JSON.stringify(games);
   ta.style.cssText = 'flex:1;width:100%;background:#000;color:#ddd;border-radius:8px;padding:8px';
