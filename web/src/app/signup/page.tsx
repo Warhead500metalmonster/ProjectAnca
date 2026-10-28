@@ -58,6 +58,9 @@ export default function Signup() {
       <div className="field"><label htmlFor="s-pass">Şifre</label><input id="s-pass" name="password" type="password" required minLength={6} autoComplete="new-password" /></div>
       {error && <p className="form-error">{error}</p>}
       <button className="btn primary big" disabled={busy}>Hesap oluştur</button>
+      <p className="muted small" style={{ margin: 0, textAlign: "center" }}>
+        Kayıt olarak <Link href="/terms">Kullanım Koşulları</Link>&apos;nı kabul etmiş ve <Link href="/privacy">Gizlilik ve KVKK Aydınlatma Metni</Link>&apos;ni okumuş olursun. En az 13 yaşında olmalısın.
+      </p>
       <div className="alt">Zaten hesabın var mı? <Link href="/login">Giriş yap</Link></div>
     </form>
   );

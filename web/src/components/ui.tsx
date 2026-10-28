@@ -37,10 +37,11 @@ export function Name({ p }: { p: Who }) {
   );
 }
 
-export function BadgeChips({ id, showLocked = false }: { id: string; showLocked?: boolean }) {
+// entries verilirse kazanılmamış rozetlerde ilerleme gösterilir (ör. Eleştirmen 4/10)
+export function BadgeChips({ id, showLocked = false, entries }: { id: string; showLocked?: boolean; entries?: Entry[] }) {
   const { badges } = useApp();
   const mine = (badges.get(id) || []).filter((b) => BADGES[b]);
-  const locked = Object.keys(BADGES).filter((b) => !mine.includes(b) && !BADGES[b].active);
+  const locked = Object.keys(BADGES).filter((b) => !mine.includes(b) && BADGES[b].earn);
   if (!mine.length && !showLocked) return null;
   return (
     <div className="badge-row">
@@ -49,9 +50,19 @@ export function BadgeChips({ id, showLocked = false }: { id: string; showLocked?
       ))}
       {showLocked && locked.length > 0 && (
         <details className="locked">
-          <summary>Yakında gelecek rozetler ({locked.length})</summary>
-          <div className="badge-row">
-            {locked.map((b) => <span key={b} className="bdg off" title={BADGES[b].desc}>{BADGES[b].icon} {BADGES[b].name} <small>{BADGES[b].desc}</small></span>)}
+          <summary>Kazanabileceğin rozetler ({locked.length})</summary>
+          <div className="badge-goals">
+            {locked.map((b) => {
+              const { icon, name, desc, earn = 1, progress } = BADGES[b];
+              const n = entries && progress ? Math.min(earn, progress(entries)) : null;
+              return (
+                <div key={b} className="badge-goal">
+                  <span className="bdg off">{icon} {name}</span>
+                  <small>{desc}{n !== null ? ` · ${n.toLocaleString("tr")}/${earn.toLocaleString("tr")}` : ""}</small>
+                  {n !== null && <i style={{ width: `${(n / earn) * 100}%` }} />}
+                </div>
+              );
+            })}
           </div>
         </details>
       )}
@@ -198,7 +209,7 @@ export function FeedItem({ e }: { e: Entry }) {
             {e.favorite && <span className="tag fav">♥ favori</span>}
           </div>
         )}
-        {e.notes && <Link className="feed-review" href={link} title="İncelemenin tamamı">{e.notes}</Link>}
+        {e.notes && <Link className="feed-review" href={link} title="İncelemenin tamamı"><RichText text={e.notes} /></Link>}
       </div>
       <Link className="thumb" href={link}>{t.label}<Cover src={e.cover} /></Link>
     </div>
@@ -285,5 +296,20 @@ export function HmsInput({ value, onChange, label }: { value: number | null; onC
       <label><input inputMode="numeric" value={m} placeholder="0" onChange={(e) => set("m", e.target.value)} aria-label={`${label}: dakika`} /><span>dk</span></label>
       <label><input inputMode="numeric" value={s} placeholder="0" onChange={(e) => set("s", e.target.value)} aria-label={`${label}: saniye`} /><span>sn</span></label>
     </div>
+  );
+}
+
+// İncelemede ve yorumda ||böyle|| yazılan yer spoiler olarak gizlenir, tıklayınca açılır
+export function RichText({ text }: { text: string }) {
+  const parts = text.split(/\|\|([\s\S]+?)\|\|/);
+  return <>{parts.map((p, i) => (i % 2 ? <Spoiler key={i} text={p} /> : p))}</>;
+}
+
+function Spoiler({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span className={`spoiler ${open ? "open" : ""}`} role="button" tabIndex={0} title={open ? undefined : "Spoiler: görmek için tıkla"}
+      onClick={(e) => { if (!open) { e.preventDefault(); e.stopPropagation(); setOpen(true); } }}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(true); } }}>{text}</span>
   );
 }

@@ -264,3 +264,12 @@ export const SEARCH_CREDITS: Record<EntryType, [string, string]> = {
 export const searchCredit = (type: EntryType) => SEARCH_CREDITS[type];
 
 export const typeLabel = (t: EntryType) => TYPES[t].label;
+
+// Akıllı bildirim: takip ettiklerin, senin planladığın bir şeyi bitirdi ya da başladı
+export async function friendsOnMyPlans(following: string[], mine: Entry[]): Promise<Entry[]> {
+  const planned = new Set(mine.filter((e) => e.status === "planned").map(contentKey));
+  if (!following.length || !planned.size) return [];
+  const rows = await q<Entry[]>(sb().from("entries").select(ENTRY_COLS).in("user_id", following).in("status", ["completed", "active"])
+    .order("updated_at", { ascending: false }).limit(150));
+  return rows.filter((e) => planned.has(contentKey(e)));
+}

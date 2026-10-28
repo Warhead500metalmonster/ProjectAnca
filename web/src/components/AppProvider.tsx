@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Entry, Item, Profile, RawgGame } from "@/lib/types";
 import { BADGES } from "@/lib/constants";
 import { contentKey } from "@/lib/format";
-import { fetchEntries } from "@/lib/data";
+import { fetchEntries, friendsOnMyPlans } from "@/lib/data";
 import { applyTheme } from "@/lib/theme";
 import { countOf, q, sb, supabaseConfigured } from "@/lib/supabase";
 import { EntryForm } from "./EntryForm";
@@ -64,6 +64,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [viewing, setViewing] = useState<Entry | null>(null);
   const [picking, setPicking] = useState<Item | null>(null);
   const userId = useRef<string | null>(null);
+  const plansRef = useRef<{ following: string[]; mine: Entry[] }>({ following: [], mine: [] }); // akıllı bildirim için
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const toast = useCallback((msg: string) => {
@@ -90,15 +91,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!id) return;
     const db = sb();
     try {
-      const [count, like, comment, follow] = await Promise.all([
+      const [count, like, comment, follow, plans] = await Promise.all([
         countOf(db.from("messages").select("id", { count: "exact", head: true }).eq("receiver_id", id).is("read_at", null)),
         q<{ created_at: string }[]>(db.from("likes").select("created_at, entries!inner(user_id)").eq("entries.user_id", id).neq("user_id", id).order("created_at", { ascending: false }).limit(1)),
         q<{ created_at: string }[]>(db.from("comments").select("created_at, entries!inner(user_id)").eq("entries.user_id", id).neq("user_id", id).order("created_at", { ascending: false }).limit(1)),
         q<{ created_at: string }[]>(db.from("follows").select("created_at").eq("following_id", id).order("created_at", { ascending: false }).limit(1)),
+        friendsOnMyPlans(plansRef.current.following, plansRef.current.mine).catch(() => [] as Entry[]),
       ]);
       if (userId.current !== id) return;
       setUnread(count);
-      setNotifAt([like, comment, follow].map((r) => r[0]?.created_at || "").sort().pop() || "");
+      setNotifAt([like[0]?.created_at, comment[0]?.created_at, follow[0]?.created_at, plans[0]?.updated_at].map((x) => x || "").sort().pop() || "");
     } catch { /* bir sonraki denemede */ }
   }, []);
 
@@ -149,6 +151,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const timer = setInterval(checkInbox, 30000);
     return () => { sub.subscription.unsubscribe(); clearInterval(timer); };
   }, [router, refresh, checkInbox, loadBadges]);
+
+  useEffect(() => { plansRef.current = { following: [...following], mine }; }, [following, mine]);
 
   // Kişisel site rengi (çıkış yapınca varsayılana döner)
   useEffect(() => { if (ready) applyTheme(me?.site_color); }, [ready, me?.site_color]);

@@ -37,7 +37,7 @@ export default function AdminPage() {
         </div>
       </section>
       {tab === "home" && <><Overview /><NoticeEditor /></>}
-      {tab === "members" && <><Admins /><Members /></>}
+      {tab === "members" && <><Admins /><Members /><BlockedWords /></>}
       {tab === "content" && <><Catalog /><Edits /></>}
       {tab === "comments" && <Comments />}
     </>
@@ -326,13 +326,28 @@ function NoticeEditor() {
 
 // Üye ara, rozet ver / al
 function Members() {
-  const { badges, loadBadges, toast } = useApp();
+  const { badges, loadBadges, toast, isOwner } = useApp();
   const [text, setText] = useState("");
+  const [v, setV] = useState(0);
   const { data } = useLoad(() => {
     const term = text.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
     const req = sb().from("profiles").select("*").limit(30);
     return q<Profile[]>(term ? req.ilike("username", `%${term}%`) : req.order("created_at", { ascending: false }));
-  }, [text]);
+  }, [text, v]);
+
+  // Sadece site sahibi: hesabı ve her şeyini siler, istenirse e-postasıyla tekrar kayıt olmasını da engeller
+  async function removeUser(p: Profile) {
+    if (prompt(`@${p.username} hesabı ve bütün kayıtları, yorumları, mesajları KALICI olarak silinecek.
+Onaylamak için kullanıcı adını yaz:`)?.trim().toLowerCase() !== p.username) return;
+    const ban = confirm(`@${p.username} aynı e-postayla tekrar kayıt olamasın mı?
+
+Tamam = engelle, İptal = sadece sil`);
+    const { error } = await sb().rpc("admin_delete_user", { p_username: p.username, p_ban: ban });
+    if (error) return toast("Olmadı: " + error.message);
+    toast(`@${p.username} silindi${ban ? " ve engellendi" : ""}`);
+    setV((x) => x + 1);
+    loadBadges();
+  }
 
   async function toggle(p: Profile, badge: string, on: boolean) {
     if (!on && !confirm(`@${p.username} kullanıcısının “${BADGES[badge].name}” rozeti alınsın mı?`)) return;
@@ -363,6 +378,7 @@ function Members() {
                     onClick={() => toggle(p, b, !has.includes(b))}>{BADGES[b].name}</button>
                 ))}
               </div>
+              {isOwner && !has.includes("owner") && <div className="acts"><button className="btn danger" onClick={() => removeUser(p)}>Hesabı sil</button></div>}
             </div>
           );
         })}
@@ -413,6 +429,45 @@ function Comments() {
             );
           })}
         </div>
+      )}
+    </section>
+  );
+}
+
+// Kullanıcı adında ve görünen adda geçemeyecek kelimeler
+function BlockedWords() {
+  const { toast } = useApp();
+  const [word, setWord] = useState("");
+  const [v, setV] = useState(0);
+  const { data } = useLoad(() => q<{ word: string }[]>(sb().from("blocked_words").select("word").order("created_at", { ascending: false })).catch(() => null), [v]);
+  const clean = (w: string) => w.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  async function add(ev: React.FormEvent) {
+    ev.preventDefault();
+    const w = clean(word);
+    if (w.length < 2) return toast("En az 2 harf yaz");
+    try { await q(sb().from("blocked_words").insert({ word: w })); setWord(""); setV((x) => x + 1); toast(`“${w}” yasaklandı`); }
+    catch (err) { toast("Olmadı: " + (err as Error).message); }
+  }
+  async function remove(w: string) {
+    try { await q(sb().from("blocked_words").delete().eq("word", w)); setV((x) => x + 1); } catch (err) { toast("Olmadı: " + (err as Error).message); }
+  }
+
+  return (
+    <section className="section">
+      <div className="section-head"><h2>Yasaklı kelimeler</h2></div>
+      <p className="muted small" style={{ marginTop: 0 }}>Bu kelimeler kullanıcı adında ya da görünen adda geçerse kayıt olunamaz, ad değiştirilemez. Boşluk ve alt çizgi yok sayılır.</p>
+      {data === null ? <div className="empty">Önce 008 SQL&apos;ini çalıştır.</div> : (
+        <>
+          <form className="admin-add" onSubmit={add}>
+            <input className="input" placeholder="ör. küfür ya da isim" value={word} onChange={(e) => setWord(e.target.value)} maxLength={30} />
+            <button className="btn primary" type="submit">Yasakla</button>
+          </form>
+          <div className="chips">
+            {data?.map(({ word: w }) => <button key={w} className="chip" title="Yasağı kaldır" onClick={() => remove(w)}>{w} ✕</button>)}
+            {data?.length === 0 && <span className="muted small">Henüz yasaklı kelime yok.</span>}
+          </div>
+        </>
       )}
     </section>
   );

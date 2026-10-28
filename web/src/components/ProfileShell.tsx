@@ -6,6 +6,8 @@ import { useParams, usePathname } from "next/navigation";
 import type { Entry, Profile } from "@/lib/types";
 import { fmtDate, cssUrl, safeUrl } from "@/lib/format";
 import { fetchEntries } from "@/lib/data";
+import { PROFILE_THEMES } from "@/lib/constants";
+import { compat } from "@/lib/compat";
 import { countOf, q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
@@ -42,7 +44,7 @@ export function ProfileShell({ children }: { children: React.ReactNode }) {
 }
 
 function Shell({ data, children }: { data: ProfileData; children: React.ReactNode }) {
-  const { me, openForm, isFriend } = useApp();
+  const { me, openForm, isFriend, mine } = useApp();
   const path = usePathname();
   const { profile, entries, followers, following } = data;
   const isMe = me?.id === profile.id;
@@ -59,14 +61,24 @@ function Shell({ data, children }: { data: ProfileData; children: React.ReactNod
     setUserList({ kind, users });
   }
 
-  const accent = /^#[0-9a-f]{6}$/i.test(profile.accent || "") ? profile.accent! : null;
+  // Steam'deki gibi: hazır tema ya da özel renk, profil kutusunun zemini ve sayfanın arkasındaki resim
+  const theme = PROFILE_THEMES[profile.profile_theme || ""];
+  const accent = theme?.accent || (/^#[0-9a-f]{6}$/i.test(profile.accent || "") ? profile.accent! : null);
+  const bg = profile.bg_url?.startsWith("https://") ? profile.bg_url : null;
+  const tint = theme?.tint || (accent ? `color-mix(in srgb, ${accent} 14%, rgba(10, 12, 14, .86))` : bg ? "rgba(10, 12, 14, .84)" : null);
+  const vars = { ...(accent && { "--pa": accent }), ...(tint && { "--ptint": tint }) } as React.CSSProperties;
   const banner = profile.banner_url && safeUrl(profile.banner_url);
-  const tab = path.endsWith("/lists") ? "lists" : path.endsWith("/stats") ? "stats" : "library";
+  const tab = path.endsWith("/lists") ? "lists" : path.endsWith("/stats") ? "stats" : path.endsWith("/compare") ? "compare" : "library";
   const song = profile.song_url || null; // profilde arkada çalan şarkı
+  const match = me && !isMe ? compat(mine, entries).score : null;
 
   return (
     <ProfileCtx.Provider value={{ ...data, isMe }}>
-      <div className="profile" style={accent ? ({ "--pa": accent } as React.CSSProperties) : undefined}>
+      {bg && (/\.(mp4|webm)(\?|$)/i.test(bg)
+        ? <video className="profile-bg" src={bg} autoPlay muted loop playsInline aria-hidden="true" />
+        : <div className="profile-bg" style={{ backgroundImage: cssUrl(bg) }} aria-hidden="true" />)}
+      {bg && <div className="profile-bg-shade" aria-hidden="true" />}
+      <div className={`profile ${accent ? "has-pa" : ""} ${tint ? "themed" : ""}`} style={vars}>
         <div className={`profile-banner ${banner ? "img" : ""}`} style={banner ? { backgroundImage: cssUrl(banner) } : undefined}>
           {!banner && <CoverMarquee covers={[...new Set(entries.map((e) => safeUrl(e.cover)).filter(Boolean))].slice(0, 24)} />}
         </div>
@@ -79,7 +91,10 @@ function Shell({ data, children }: { data: ProfileData; children: React.ReactNod
           <div className="profile-actions">
             {isMe
               ? <><Link className="btn" href="/settings">Profili düzenle</Link><button className="btn primary" onClick={() => openForm(null)}>+ Ekle</button></>
-              : <>{isFriend(profile.id) && <Link className="btn" href={`/chat/${profile.username}`}>Mesaj</Link>}<FollowButton id={profile.id} /></>}
+              : <>
+                {match !== null && <Link className="match-pill" href={`/u/${profile.username}/compare`} title="Zevkleriniz ne kadar uyuşuyor">Uyum %{match}</Link>}
+                {isFriend(profile.id) && <Link className="btn" href={`/chat/${profile.username}`}>Mesaj</Link>}<FollowButton id={profile.id} />
+              </>}
           </div>
         </div>
         <BadgeChips id={profile.id} />
@@ -96,6 +111,7 @@ function Shell({ data, children }: { data: ProfileData; children: React.ReactNod
           <Link href={base} className={tab === "library" ? "active" : ""}>Kütüphane</Link>
           <Link href={`${base}/lists`} className={tab === "lists" ? "active" : ""}>Listeler</Link>
           <Link href={`${base}/stats`} className={tab === "stats" ? "active" : ""}>İstatistikler</Link>
+          {me && !isMe && <Link href={`${base}/compare`} className={tab === "compare" ? "active" : ""}>Uyum</Link>}
         </nav>
         {children}
       </div>

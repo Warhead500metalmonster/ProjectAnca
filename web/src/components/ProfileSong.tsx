@@ -64,7 +64,7 @@ export function ProfileSong({ url, title, volume }: { url: string; title?: strin
     loadYouTube().then((YT) => {
       if (dead) return;
       player.current = new YT.Player(target, {
-        videoId: id, width: 200, height: 200,
+        videoId: id, width: 200, height: 200, host: "https://www.youtube-nocookie.com",
         // Sessiz otomatik oynatmaya her tarayıcı izin verir
         playerVars: { autoplay: 1, mute: 1, loop: 1, playlist: id, controls: 0, disablekb: 1, playsinline: 1, rel: 0 },
         events: {

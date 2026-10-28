@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Profile } from "@/lib/types";
-import { ACCENTS, SOCIALS } from "@/lib/constants";
-import { today } from "@/lib/format";
+import { ACCENTS, PROFILE_THEMES, SOCIALS } from "@/lib/constants";
+import { cssUrl, today } from "@/lib/format";
 import { fetchEntries } from "@/lib/data";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
@@ -44,6 +44,8 @@ function SettingsForm({ me }: { me: Profile }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [accent, setAccent] = useState(me.accent || "");
+  const [theme, setTheme] = useState(me.profile_theme && PROFILE_THEMES[me.profile_theme] ? me.profile_theme : "");
+  const [bgUrl, setBgUrl] = useState(me.bg_url || "");
   const [scale, setScale] = useState<5 | 10>(me.rating_scale === 10 ? 10 : 5);
   const [siteColor, setSiteColor] = useState(me.site_color || "");
   const [song, setSong] = useState({ url: me.song_url || "", title: me.song_title || "", volume: me.song_volume || 15 });
@@ -65,6 +67,7 @@ function SettingsForm({ me }: { me: Profile }) {
     const f = new FormData(e.currentTarget);
     const str = (k: string) => String(f.get(k) || "").trim();
     setError("");
+    if (bgUrl.trim() && !bgUrl.trim().startsWith("https://")) return setError("Arka plan linki https:// ile başlamalı.");
     for (const k of ["avatar", "banner"]) {
       if (str(k) && !str(k).startsWith("https://")) return setError(`${k === "avatar" ? "Fotoğraf" : "Kapak"} linki https:// ile başlamalı.`);
     }
@@ -84,7 +87,9 @@ function SettingsForm({ me }: { me: Profile }) {
         banner_url: str("banner") || null,
         pronouns: str("pronouns") || null,
         location: str("location") || null,
-        accent: /^#[0-9a-f]{6}$/i.test(accent) ? accent : null,
+        accent: !theme && /^#[0-9a-f]{6}$/i.test(accent) ? accent : null,
+        profile_theme: theme || null,
+        bg_url: bgUrl.trim() || null,
         rating_scale: scale,
         socials,
         site_color: /^#[0-9a-f]{6}$/i.test(siteColor) && siteColor.toLowerCase() !== DEFAULT_COLOR ? siteColor : null,
@@ -133,16 +138,30 @@ function SettingsForm({ me }: { me: Profile }) {
         <input id="p-banner" name="banner" type="url" defaultValue={me.banner_url || ""} placeholder="https://…" />
       </div>
 
-      <h3 className="set-h">Profil rengi</h3>
-      <div className="swatches">
-        <button type="button" className={`swatch none ${!accent ? "on" : ""}`} onClick={() => setAccent("")} title="Varsayılan">✕</button>
-        {ACCENTS.map((c) => (
-          <button type="button" key={c} className={`swatch ${accent === c ? "on" : ""}`} style={{ background: c }} onClick={() => setAccent(c)} aria-label={c} />
+      <h3 className="set-h">Profil teması <span className="muted small">· profiline girenler görür</span></h3>
+      <div className="theme-cards">
+        <button type="button" className={`theme-card ${!theme && !accent ? "on" : ""}`} onClick={() => { setTheme(""); setAccent(""); }}
+          style={{ "--t-tint": "var(--panel)", "--t-accent": "#58a98a" } as React.CSSProperties}>
+          <span className="prev"><i /><i /></span>Varsayılan
+        </button>
+        {Object.entries(PROFILE_THEMES).map(([k, t]) => (
+          <button type="button" key={k} className={`theme-card ${theme === k ? "on" : ""}`} onClick={() => { setTheme(k); setAccent(""); }}
+            style={{ "--t-tint": t.tint, "--t-accent": t.accent } as React.CSSProperties}>
+            <span className="prev"><i /><i /></span>{t.name}
+          </button>
         ))}
-        <label className="swatch custom" title="Kendi rengini seç">
-          <input type="color" value={accent || "#58a98a"} onChange={(e) => setAccent(e.target.value)} />+
+        <label className={`theme-card ${!theme && accent ? "on" : ""}`}
+          style={{ "--t-tint": `color-mix(in srgb, ${accent || "#8b5cf6"} 14%, rgba(10, 12, 14, .86))`, "--t-accent": accent || "#8b5cf6" } as React.CSSProperties}>
+          <span className="prev"><i /><i /></span>Özel renk
+          <input type="color" value={accent || "#8b5cf6"} onChange={(e) => { setTheme(""); setAccent(e.target.value); }} />
         </label>
       </div>
+
+      <div className="field">
+        <label htmlFor="p-bg">Arka plan resmi <span className="muted">· Steam&apos;deki gibi profilinin arkasını kaplar (resim, GIF ya da .mp4 / .webm linki)</span></label>
+        <input id="p-bg" type="url" placeholder="https://…" value={bgUrl} onChange={(e) => setBgUrl(e.target.value)} />
+      </div>
+      {bgUrl.trim().startsWith("https://") && !/\.(mp4|webm)(\?|$)/i.test(bgUrl) && <div className="bg-preview" style={{ backgroundImage: cssUrl(bgUrl.trim()) }} />}
 
       <h3 className="set-h">Site rengi <span className="muted small">· sadece sen görürsün</span></h3>
       <div className="swatches">
@@ -195,10 +214,51 @@ function SettingsForm({ me }: { me: Profile }) {
       </div>
       <hr style={{ border: 0, borderTop: "1px solid var(--border)", width: "100%" }} />
       <div className="actions">
+        <Link className="btn" href="/import">Steam / Letterboxd&apos;dan içe aktar</Link>
         <button type="button" className="btn" onClick={exportMine}>Verilerimi indir (JSON)</button>
         <span className="spacer" />
         <button type="button" className="btn danger" onClick={() => sb().auth.signOut()}>Çıkış yap</button>
       </div>
+      <DeleteAccount me={me} />
     </form>
+  );
+}
+
+// Hesabı kalıcı olarak silme: yanlışlıkla basılmasın diye kullanıcı adını yazmak gerekir
+function DeleteAccount({ me }: { me: Profile }) {
+  const { toast, isOwner } = useApp();
+  const router = useRouter();
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function remove() {
+    if (text.trim().toLowerCase() !== me.username) return;
+    setBusy(true);
+    const { error } = await sb().rpc("delete_account");
+    if (error) { setBusy(false); return setError("Silinemedi: " + error.message); }
+    await sb().auth.signOut().catch(() => {});
+    toast("Hesabın silindi. Görüşmek üzere.");
+    router.replace("/");
+  }
+
+  return (
+    <details className="danger-zone">
+      <summary>Hesabımı sil</summary>
+      {isOwner ? <p className="muted">Site sahibinin hesabı silinemez.</p> : (
+        <>
+          <p>Hesabın; kayıtların, listelerin, beğenilerin, yorumların, mesajların ve takiplerinle birlikte <b>kalıcı olarak</b> silinir. Bu geri alınamaz.
+            İstersen önce yukarıdaki <b>Verilerimi indir</b> ile kayıtlarını bilgisayarına kaydet.</p>
+          <div className="field">
+            <label htmlFor="del-confirm">Onaylamak için kullanıcı adını yaz: <b>{me.username}</b></label>
+            <input id="del-confirm" autoComplete="off" value={text} onChange={(e) => setText(e.target.value)} />
+          </div>
+          {error && <p className="form-error">{error}</p>}
+          <button type="button" className="btn danger" disabled={busy || text.trim().toLowerCase() !== me.username} onClick={remove}>
+            {busy ? "Siliniyor…" : "Hesabımı kalıcı olarak sil"}
+          </button>
+        </>
+      )}
+    </details>
   );
 }
