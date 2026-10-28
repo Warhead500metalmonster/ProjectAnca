@@ -4,6 +4,7 @@ import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "@/components/AppProvider";
 import { Topbar } from "@/components/Topbar";
+import { themeBootScript } from "@/lib/theme";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin", "latin-ext"] });
 const outfit = Outfit({ variable: "--font-outfit", subsets: ["latin", "latin-ext"], weight: ["600", "700", "800"] });
@@ -16,7 +17,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="tr" className={`${inter.variable} ${outfit.variable}`}>
+    <html lang="tr" className={`${inter.variable} ${outfit.variable}`} suppressHydrationWarning>
+      <head><script dangerouslySetInnerHTML={{ __html: themeBootScript }} /></head>
       <body>
         <AppProvider>
           <Suspense fallback={null}><Topbar /></Suspense>

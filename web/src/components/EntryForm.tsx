@@ -6,7 +6,7 @@ import type { Entry, EntryType, FormGame, Item, RawgGame } from "@/lib/types";
 import { STATUSES, STORES, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
 import { safeUrl, scoreText, today } from "@/lib/format";
 import { gameFromRawg, rawg } from "@/lib/rawg";
-import { type Found, findContent, isLink, searchCredit, tmdbCreator, tmdbDetail } from "@/lib/data";
+import { type Found, addCatalog, findContent, isLink, searchCredit, tmdbCreator, tmdbDetail } from "@/lib/data";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "./AppProvider";
 import { HmsInput } from "./ui";
@@ -31,6 +31,7 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
   const [creator, setCreator] = useState(src?.creator || "");
   const [cover, setCover] = useState(src?.cover || "");
   const [extId, setExtId] = useState(src?.ext_id || null); // seçilen film/dizi/animenin dış kaynak kimliği
+  const [custom, setCustom] = useState(false);              // elle / linkle girildi: kaydedince ortak kataloğa yazılır
   const [status, setStatus] = useState(entry?.status || "completed");
   const [platform, setPlatform] = useState(entry?.platform || "");
   const [store, setStore] = useState(entry?.store || "");
@@ -69,6 +70,7 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
   function onTitleChange(text: string) {
     setTitle(text);
     setExtId(null); // elle değiştirilen isim artık seçilen içerik değil
+    setCustom(true);
     clearTimeout(searchTimer.current);
     searchSeq.current++;
     setSuggestions(null);
@@ -83,7 +85,7 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
       const list = await findContent(type, text);
       if (seq !== searchSeq.current) return;
       setSuggestions(list);
-      if (!list.length && type === "music") setSuggestNote(isLink(text) ? "Bu link açılamadı. Adını elle yazabilirsin." : "Bulamadın mı? YouTube, YouTube Music ya da Spotify linkini yapıştır, bilgiler otomatik gelsin. Ya da elle yaz.");
+      if (!list.length && type === "music") setSuggestNote(isLink(text) ? "Bu link açılamadı. Adını elle yazabilirsin." : "Bulamadın mı? YouTube, YouTube Music ya da Spotify linkini yapıştır, bilgiler otomatik gelsin. Ya da adını ve sanatçısını elle yaz, herkes için Ancalog'a eklenir.");
       else setSuggestNote(list.length ? "" : isGame ? "Sonuç yok. Farklı yazmayı dene." : "");
       if (!list.length && !isGame && type !== "music") setSuggestions(null); // elle yazmak serbest
     } catch {
@@ -106,6 +108,7 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
     setYear(f.year ? String(f.year) : "");
     setCover(f.cover || "");
     setExtId(f.ext_id || null);
+    setCustom(!!f.custom);
     // TMDB aramasında yönetmen yok, ayrıntıdan gelir
     if (f.ext_id?.startsWith("tmdb:")) {
       tmdbDetail(f.ext_id).then((d) => { const c = tmdbCreator(d); if (c) setCreator((cur) => cur || c); }).catch(() => {});
@@ -157,6 +160,12 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
     setSaving(true);
     try {
       const db = sb();
+      // Aramada olmayan içerik ortak kataloğa bir kez yazılır; aynısı varsa kayıt ona bağlanır (aynı şarkı iki kez açılmaz)
+      if (!isGame && custom) {
+        const c = await addCatalog({ type, title: data.title!, creator: data.creator ?? null, year: data.year ?? null, cover: data.cover ?? null, rawg_id: null, ext_id: data.ext_id })
+          .catch(() => null); // katalog çalışmazsa kayıt yine de kaydedilsin
+        if (c) Object.assign(data, { title: c.title, creator: c.creator, year: c.year, cover: c.cover, ext_id: c.ext_id });
+      }
       if (data.rawg_id && entry?.rawg_id !== data.rawg_id) {
         const dupe = await q<{ id: string }[]>(db.from("entries").select("id").eq("user_id", me.id).eq("rawg_id", data.rawg_id).limit(1));
         if (dupe.length) return setError("Bu oyun zaten kütüphanende var.");

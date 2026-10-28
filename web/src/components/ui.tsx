@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import type { Entry, Profile } from "@/lib/types";
 import { BADGES, SOCIALS, TYPES, activityVerb, statusLabel } from "@/lib/constants";
@@ -168,7 +169,7 @@ export function entryTags(e: Entry, { store = false } = {}) {
   ].filter(Boolean) as string[];
 }
 
-// Akışta notlar ve incelemeler gösterilmez; kayda tıklayan, sahibinin profilinde kaydı açar.
+// Akışta incelemenin ilk satırları görünür; tamamını, beğeni ve yorumları kayda tıklayan sahibinin profilinde açar.
 export function FeedItem({ e }: { e: Entry }) {
   const p = e.profiles || {};
   const t = TYPES[e.type];
@@ -191,23 +192,29 @@ export function FeedItem({ e }: { e: Entry }) {
           {likes > 0 && <span title="Beğeni">♥ {likes}</span>}
           {comments > 0 && <span title="Yorum">💬 {comments}</span>}
         </div>
-        {(extra.length > 0 || e.notes || e.favorite) && (
+        {(extra.length > 0 || e.favorite) && (
           <div className="chips-row">
             {extra.map((x) => <span className="tag" key={x}>{x}</span>)}
             {e.favorite && <span className="tag fav">❤ favori</span>}
-            {e.notes && <span className="tag ghost">📝 inceleme</span>}
           </div>
         )}
+        {e.notes && <Link className="feed-review" href={link} title="İncelemenin tamamı">{e.notes}</Link>}
       </div>
       <Link className="thumb" href={link}>{t.icon}<Cover src={e.cover} /></Link>
     </div>
   );
 }
 
-export function Feed({ list, empty }: { list: Entry[]; empty?: React.ReactNode }) {
-  return list.length
-    ? <div className="feed">{list.map((e) => <FeedItem key={e.id} e={e} />)}</div>
-    : <>{empty ?? <div className="empty">Henüz hareket yok.</div>}</>;
+// Uzun akışlar sayfanın sonuna kadar uzamasın: önce birkaçı, istenirse devamı
+export function Feed({ list, empty, step = 8 }: { list: Entry[]; empty?: React.ReactNode; step?: number }) {
+  const [shown, setShown] = useState(step);
+  if (!list.length) return <>{empty ?? <div className="empty">Henüz hareket yok.</div>}</>;
+  return (
+    <div className="feed">
+      {list.slice(0, shown).map((e) => <FeedItem key={e.id} e={e} />)}
+      {list.length > shown && <button className="feed-more" onClick={() => setShown((n) => n + step * 2)}>Daha fazla göster ({list.length - shown})</button>}
+    </div>
+  );
 }
 
 export function FollowButton({ id }: { id: string }) {

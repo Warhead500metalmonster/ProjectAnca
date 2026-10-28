@@ -52,6 +52,7 @@ export const LOCAL_KEY = "ancalog.v1"; // hesaplardan önceki, tarayıcıda tutu
 // Rozetler veritabanından verilir (user_badges). active: false olanlar henüz kimseye verilmiyor, ileride açılacak.
 export const BADGES: Record<string, { icon: string; name: string; desc: string; tone: string; active: boolean }> = {
   owner: { icon: "👑", name: "Site Sahibi", desc: "Ancalog'un kurucusu ve sahibi", tone: "gold", active: true },
+  admin: { icon: "🛡️", name: "Yönetici", desc: "Ancalog'un içeriklerini düzenleyen ekipten", tone: "blue", active: true },
   founder: { icon: "🌟", name: "Öncü", desc: "Ancalog'a ilk katılanlardan biri", tone: "violet", active: true },
   critic: { icon: "✍️", name: "Eleştirmen", desc: "10 inceleme yaz", tone: "", active: false },
   completionist: { icon: "🏆", name: "Tamamlayıcı", desc: "50 oyun bitir", tone: "", active: false },

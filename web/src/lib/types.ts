@@ -13,6 +13,10 @@ export interface Profile {
   socials?: Record<string, string>;
   location?: string | null;
   pronouns?: string | null;
+  site_color?: string | null;   // sitenin rengi, sadece kendisi görür
+  song_url?: string | null;     // profilde arkada çalan şarkı (şimdilik sadece site sahibi)
+  song_title?: string | null;
+  song_volume?: number | null;
   created_at: string;
 }
 
@@ -96,6 +100,25 @@ export interface Message {
   read_at: string | null;
 }
 
+// Aramada çıkmayıp kullanıcıların eklediği, herkesin ortak kullandığı içerik
+export interface CatalogItem extends Item {
+  id: string;
+  ext_id: string;
+  created_by: string | null;
+  created_at: string;
+}
+
+// Yöneticinin bir içerik sayfasında değiştirdiği bilgiler (boş olanlar kaynaktan gelir)
+export interface PageEdit {
+  title?: string;
+  creator?: string;
+  year?: number;
+  cover?: string;
+  backdrop?: string;
+  description?: string;
+  genres?: string[];
+}
+
 // RAWG cevabından kullandığımız alanlar
 export interface RawgGame {
   id: number;
@@ -109,12 +132,14 @@ export interface RawgGame {
   rating?: number;
   added?: number;
   esrb_rating?: { name: string } | null;
-  developers?: { name: string }[];
-  publishers?: { name: string }[];
-  genres?: { name: string }[];
-  platforms?: { platform: { name: string } }[];
-  stores?: { store: { name: string } }[];
+  developers?: RawgRef[];
+  publishers?: RawgRef[];
+  genres?: RawgRef[];
+  platforms?: { platform: RawgRef }[];
+  stores?: { store: RawgRef }[];
 }
+
+export interface RawgRef { id: number; name: string; slug: string }
 
 export interface FormGame {
   rawg_id: number;

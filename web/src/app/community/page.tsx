@@ -22,7 +22,7 @@ export default function Community() {
     const [feed, members, games, lists] = await Promise.all([
       fetchFeed({ limit: 40 }),
       q<Profile[]>(db.from("profiles").select("*").order("created_at", { ascending: false }).limit(30)),
-      q<Slim[]>(db.from("entries").select("rawg_id, title, cover, rating").eq("type", "game").order("updated_at", { ascending: false }).limit(300)),
+      q<Slim[]>(db.from("entries").select("rawg_id, title, cover, rating").eq("type", "game").in("status", ["active", "completed"]).order("updated_at", { ascending: false }).limit(300)),
       q<List[]>(db.from("lists").select(`*, profiles(${PROFILE_COLS}), list_items(id, type, title, cover, rawg_id, position)`)
         .eq("is_public", true).order("updated_at", { ascending: false }).limit(12)).catch(() => [] as List[]),
     ]);
@@ -47,7 +47,7 @@ export default function Community() {
   if (!data) return <div className="loading">Yükleniyor…</div>;
   const { feed, members, games, lists } = data;
 
-  // Son kayıtlarda en çok loglanan oyunlar
+  // Son kayıtlarda en çok oynanan ve bitirilen oyunlar (planlanan / bırakılan sayılmaz)
   const byGame = new Map<number, Slim & { n: number }>();
   for (const g of games.filter((g) => g.rawg_id)) {
     const s = byGame.get(g.rawg_id!) || { ...g, n: 0 };
@@ -68,11 +68,11 @@ export default function Community() {
       </section>
       {popular.length > 0 && (
         <section className="section">
-          <div className="section-head"><h2>🔥 Popüler oyunlar</h2></div>
+          <div className="section-head"><h2>🔥 Popüler oyunlar</h2><span className="muted">şu an oynanan ve bitirilenler</span></div>
           <div className="strip">
             {popular.map((g) => (
               <Link className="card" href={`/game/${g.rawg_id}`} key={g.rawg_id}>
-                <div className="poster"><div className="ph">🎮</div><Cover src={g.cover} /><span className="rating">👤 {g.n}</span></div>
+                <div className="poster"><div className="ph">🎮</div><Cover src={g.cover} /><span className="rating" title="Oynayan ya da bitiren">🎮 {g.n}</span></div>
                 <div className="card-title">{g.title}</div>
               </Link>
             ))}

@@ -9,7 +9,7 @@ import { useApp } from "./AppProvider";
 export const NOTIF_SEEN = "ancalog.notifSeen";
 
 export function Topbar() {
-  const { me, openForm, unread, notifAt } = useApp();
+  const { me, openForm, unread, notifAt, isAdmin } = useApp();
   const path = usePathname();
   const router = useRouter();
   const [seen, setSeen] = useState("");
@@ -59,6 +59,7 @@ export function Topbar() {
       <div className="top-actions">
         {me ? (
           <>
+            {isAdmin && <Link className="icon-link" href="/admin" title="Yönetim paneli">🛡️</Link>}
             <Link className="icon-link" href="/notifications" title="Bildirimler">
               🔔{notifAt && notifAt > seen && <span className="dot" />}
             </Link>

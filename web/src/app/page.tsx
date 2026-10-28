@@ -116,6 +116,7 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
   if (!data) return <div className="loading">Yükleniyor…</div>;
   const { mine, friends, community } = data;
   const active = mine.filter((e) => e.status === "active");
+  const backlog = mine.filter((e) => e.status === "planned").sort((a, b) => a.created_at.localeCompare(b.created_at)); // en eski bekleyen önce
   const hour = new Date().getHours();
   const hello = hour < 6 ? "İyi geceler" : hour < 12 ? "Günaydın" : hour < 18 ? "Selam" : "İyi akşamlar";
 
@@ -143,6 +144,12 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
         <section className="section">
           <div className="section-head"><h2>Devam ettiklerin</h2><Link href={`/u/${user.username}`}>Kütüphanem →</Link></div>
           <div className="strip">{active.map((e) => <EntryCard key={e.id} e={e} kind edit />)}</div>
+        </section>
+      )}
+      {backlog.length > 0 && (
+        <section className="section">
+          <div className="section-head"><h2>📋 Backlog&apos;un <span className="muted small">· {backlog.length} bekleyen</span></h2><Link href={`/u/${user.username}`}>Kütüphanem →</Link></div>
+          <div className="strip">{backlog.map((e) => <EntryCard key={e.id} e={e} kind edit />)}</div>
         </section>
       )}
       {mine.length > 0 && (
