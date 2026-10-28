@@ -1039,3 +1039,5 @@ p.count-note { margin: -4px 0 12px; }
 .legal ul { padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
 .legal a { color: var(--accent-2); }
 .auth .muted.small a { color: var(--accent-2); }
+.legal-summary { margin: 18px 0 8px; padding: 14px 18px; border-radius: var(--radius); background: rgb(var(--accent-rgb) / .1); border: 1px solid rgb(var(--accent-rgb) / .35); }
+.legal-summary ul { margin: 8px 0 0; }
