@@ -23,9 +23,14 @@ export async function GET(request: Request) {
   if (!keyEnv) return Response.json({ error: "no-key" }, { status: 503 });
   const user = (new URL(request.url).searchParams.get("user") || "").trim();
   if (!/^[A-Za-z0-9 ]{1,15}(#\d{1,4})?$/.test(user)) return Response.json({ error: "bad-user" }, { status: 400 });
+  const seen: string[] = []; // hangi adres ne döndü: sorun çıkarsa sebebini görmek için (anahtar yazılmaz)
   const get = (path: string) => fetch(`${API}${path}`, {
-    headers: { "X-Authorization": keyEnv, Accept: "application/json", "Accept-Language": "tr-TR" }, cache: "no-store",
-  }).then(async (r) => (r.status === 429 ? Promise.reject(new Error("busy")) : r.ok ? r.json() : null)).catch((e) => (e.message === "busy" ? Promise.reject(e) : null));
+    headers: { "X-Authorization": keyEnv.trim(), Accept: "application/json", "Accept-Language": "tr-TR" }, cache: "no-store",
+  }).then(async (r) => {
+    seen.push(`${path.split("/")[1]} ${r.status}`);
+    if (r.status === 429) throw new Error("busy");
+    return r.ok ? r.json() : null;
+  }).catch((e) => (e.message === "busy" ? Promise.reject(e) : null));
 
   try {
     // Gamertag → xuid
@@ -36,11 +41,11 @@ export async function GET(request: Request) {
       const alt = await get(`/friends/search?gt=${encodeURIComponent(user)}`);
       xuid = alt?.profileUsers?.[0]?.id;
     }
-    if (!xuid) return Response.json({ error: "not-found" }, { status: 404 });
+    if (!xuid) return Response.json({ error: "not-found", detail: seen }, { status: 404 });
 
     const data = (await get(`/achievements/player/${xuid}`)) || (await get(`/player/titleHistory/${xuid}`));
     const titles: Title[] = data?.titles || [];
-    if (!titles.length) return Response.json({ error: "private" }, { status: 404 });
+    if (!titles.length) return Response.json({ error: "private", detail: seen }, { status: 404 });
 
     const games = titles
       .filter((t) => t.name && (!t.type || t.type === "Game") && !(t.devices?.length === 1 && t.devices[0] === "Mobile"))
