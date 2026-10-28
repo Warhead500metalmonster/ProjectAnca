@@ -57,6 +57,7 @@ export async function GET(request: Request) {
     }
     url = d.next;
   }
-  if (!any) return Response.json({ error: "not-found" }, { status: 404 });
+  // Şubat 2026'dan beri Spotify listelerin içini sadece sahibinin kendi girişine veriyor
+  if (!any || !albums.size) return Response.json({ error: "playlist-blocked" }, { status: 403 });
   return Response.json({ albums: [...albums.values()].sort((a, b) => b.tracks - a.tracks) });
 }

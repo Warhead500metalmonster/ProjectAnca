@@ -356,7 +356,7 @@ function Letterboxd() {
 
 // ---------- Spotify ----------
 
-interface Album { artist: string; title: string; kind: "album" | "track"; uri: string; ms: number; last: string | null }
+interface Album { artist: string; title: string; kind: "album" | "track"; uri: string; ms: number; last: string | null; keep?: boolean }
 
 // Spotify'ın "Hesap verileri" dışa aktarması: YourLibrary.json (kaydedilen albüm ve şarkılar)
 // ve isteğe bağlı dinleme geçmişi (Streaming_History_Audio_*.json / StreamingHistory_music_*.json → dinleme süresi)
@@ -376,6 +376,7 @@ function Spotify() {
       if (!a.title || !a.artist) return;
       const k = `${a.kind}|${key(a)}`;
       const x = map.get(k) || { ...a, ms: 0, last: null };
+      if (a.keep) x.keep = true;
       x.ms += ms;
       if (last && (!x.last || last > x.last)) x.last = last;
       map.set(k, x);
@@ -400,8 +401,18 @@ function Spotify() {
           if (album) add({ artist, title: album, kind: "album", uri: "" }, 0, null);
         }
       } else if (data && typeof data === "object") {
-        const lib = data as { albums?: { artist: string; album: string; uri: string }[]; tracks?: { artist: string; album: string; track: string; uri: string }[] };
+        const lib = data as {
+          albums?: { artist: string; album: string; uri: string }[]; tracks?: { artist: string; album: string; track: string; uri: string }[];
+          playlists?: { items?: { track?: { artistName?: string; albumName?: string } | null }[] }[];
+        };
         for (const a of lib.albums || []) add({ artist: a.artist, title: a.album, kind: "album", uri: a.uri });
+        // Çalma listelerindeki şarkıların albümleri
+        for (const p of lib.playlists || []) {
+          for (const it of p.items || []) {
+            const t = it.track;
+            if (t?.albumName && t.artistName) add({ artist: t.artistName, title: t.albumName, kind: "album", uri: "", keep: true });
+          }
+        }
         for (const t of lib.tracks || []) add({ artist: t.artist, title: t.track, kind: "track", uri: t.uri });
       }
     }
@@ -410,10 +421,10 @@ function Spotify() {
       if (a.kind !== "album") continue;
       const h = history.get(key(a));
       if (h) { a.ms = h.ms; a.last = h.last; }
-      if (!a.uri && a.ms < 1800000) map.delete(k);
+      if (!a.uri && !a.keep && a.ms < 1800000) map.delete(k);
     }
     const list = [...map.values()].sort((a, b) => b.ms - a.ms);
-    if (!list.length) return toast("Bu dosyalarda albüm ya da şarkı bulunamadı. Spotify'dan gelen YourLibrary.json dosyasını seç.");
+    if (!list.length) return toast("Bu dosyalarda albüm ya da şarkı bulunamadı. Spotify'dan gelen YourLibrary.json ya da Playlist dosyalarını seç.");
     setItems(list);
   }
 
@@ -454,7 +465,7 @@ function Spotify() {
       <ol className="muted small import-steps">
         <li><a className="grad" href="https://www.spotify.com/account/privacy/" target="_blank" rel="noreferrer">Spotify gizlilik sayfasını</a> aç, en altta <b>Hesap verileri</b>ni seçip <b>Veri iste</b>&apos;ye bas.</li>
         <li>Spotify birkaç gün içinde e-postana bir zip gönderir. Zip&apos;i aç.</li>
-        <li>İçindeki <b>YourLibrary.json</b> dosyasını (dinleme süreleri de gelsin istersen <b>StreamingHistory</b> dosyalarını da) aşağıdan seç.</li>
+        <li>İçindeki <b>YourLibrary.json</b> ve çalma listelerin için <b>Playlist</b> dosyalarını (dinleme süreleri de gelsin istersen <b>StreamingHistory</b> dosyalarını da) aşağıdan seç.</li>
       </ol>
       {!items ? (
         <label className="btn file-btn">JSON dosyalarını seç<input type="file" accept=".json,application/json" multiple onChange={(e) => read(e.target.files)} /></label>
@@ -835,14 +846,14 @@ function AccountGames({ kind }: { kind: "psn" | "xbox" }) {
 interface RemoteAlbum { title: string; artist: string; cover: string | null; year?: number | null; plays?: number; tracks?: number; id?: string }
 
 function Music() {
-  const [mode, setMode] = useState<"link" | "lastfm" | "file">("link");
+  const [mode, setMode] = useState<"link" | "lastfm" | "file">("lastfm");
   return (
     <section className="section import-card">
       <div className="section-head"><h2>Spotify ve Last.fm</h2></div>
       <div className="chips" style={{ marginBottom: 12 }}>
-        <button className={`chip ${mode === "link" ? "active" : ""}`} onClick={() => setMode("link")}>Spotify listesi linki</button>
         <button className={`chip ${mode === "lastfm" ? "active" : ""}`} onClick={() => setMode("lastfm")}>Last.fm</button>
         <button className={`chip ${mode === "file" ? "active" : ""}`} onClick={() => setMode("file")}>Spotify veri dosyası</button>
+        <button className={`chip ${mode === "link" ? "active" : ""}`} onClick={() => setMode("link")}>Spotify albüm linki</button>
       </div>
       {mode === "file" ? <Spotify /> : <AlbumImport key={mode} mode={mode} />}
     </section>
@@ -871,9 +882,10 @@ function AlbumImport({ mode }: { mode: "link" | "lastfm" }) {
       if (!r.ok) {
         return setError({
           "no-key": "Bu bağlantı henüz kurulmadı. Şimdilik \"Spotify veri dosyası\" seçeneğini kullanabilirsin.",
-          "bad-link": "Spotify'da listeye sağ tıkla (telefonda üç nokta) → Paylaş → Bağlantıyı kopyala, sonra buraya yapıştır.",
+          "bad-link": "Spotify'da albüme sağ tıkla (telefonda üç nokta) → Paylaş → Albüm bağlantısını kopyala, sonra buraya yapıştır.",
+          "playlist-blocked": "Spotify artık çalma listelerinin içini başka sitelere göstermiyor. Listeni almak için Last.fm'i ya da \"Spotify veri dosyası\"nı kullan.",
           "bad-user": "Last.fm kullanıcı adını doğru yaz.",
-          "not-found": lastfm ? "Bu Last.fm kullanıcısı bulunamadı." : "Liste bulunamadı. Listenin herkese açık olduğundan emin ol (Spotify'ın kendi hazırladığı listeler okunamıyor).",
+          "not-found": lastfm ? "Bu Last.fm kullanıcısı bulunamadı." : "Albüm bulunamadı. Linki kontrol et.",
           empty: "Bu Last.fm hesabında dinleme kaydı yok.",
         }[d.error as string] || "Bağlanılamadı, biraz sonra tekrar dene.");
       }
@@ -915,11 +927,11 @@ function AlbumImport({ mode }: { mode: "link" | "lastfm" }) {
       <p className="muted small" style={{ marginTop: 0 }}>
         {lastfm
           ? <>Last.fm kullanıcı adını yaz; en çok dinlediğin albümler dinleme sayılarıyla gelir. Spotify&apos;ı Last.fm&apos;e bağladıysan bütün geçmişin oradadır.</>
-          : <>Spotify&apos;da bir çalma listesinin ya da albümün linkini yapıştır (Paylaş → Bağlantıyı kopyala). Listedeki şarkıların albümleri eklenir. Liste herkese açık olmalı.</>}
+          : <>Spotify&apos;da bir albümün linkini yapıştır (Paylaş → Albüm bağlantısını kopyala). Çalma listeleri için Last.fm&apos;i ya da veri dosyasını kullan; Spotify listelerin içini artık başka sitelere vermiyor.</>}
       </p>
       {!albums ? (
         <form className="admin-add" onSubmit={load}>
-          <input className="input" placeholder={lastfm ? "Last.fm kullanıcı adın" : "https://open.spotify.com/playlist/…"} value={text} onChange={(e) => setText(e.target.value)} />
+          <input className="input" placeholder={lastfm ? "Last.fm kullanıcı adın" : "https://open.spotify.com/album/…"} value={text} onChange={(e) => setText(e.target.value)} />
           <button className="btn primary" disabled={busy || !text.trim()}>{busy ? "Getiriliyor…" : "Albümleri getir"}</button>
         </form>
       ) : (
