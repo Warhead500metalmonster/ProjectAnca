@@ -14,19 +14,19 @@ declare
   done_of int;
 begin
   if p_user is null then return; end if;
-  if (select count(*) from public.entries where user_id = p_user and btrim(coalesce(notes, '')) <> '') >= 10 then got := got || 'critic'; end if;
-  if (select count(*) from public.entries where user_id = p_user and type = 'game' and status = 'completed') >= 50 then got := got || 'completionist'; end if;
-  if (select coalesce(sum(coalesce(playtime_sec, round(hours * 3600))), 0) from public.entries where user_id = p_user) >= 3600000 then got := got || 'marathon'; end if;
+  if (select count(*) from public.entries where user_id = p_user and btrim(coalesce(notes, '')) <> '') >= 10 then got := array_append(got, 'critic'); end if;
+  if (select count(*) from public.entries where user_id = p_user and type = 'game' and status = 'completed') >= 50 then got := array_append(got, 'completionist'); end if;
+  if (select coalesce(sum(coalesce(playtime_sec, round(hours * 3600))), 0) from public.entries where user_id = p_user) >= 3600000 then got := array_append(got, 'marathon'); end if;
   if (select count(*) from public.follows a
       join public.follows b on b.follower_id = a.following_id and b.following_id = a.follower_id
-      where a.follower_id = p_user) >= 10 then got := got || 'social'; end if;
-  if (select count(*) from public.lists where user_id = p_user and is_public) >= 5 then got := got || 'curator'; end if;
+      where a.follower_id = p_user) >= 10 then got := array_append(got, 'social'); end if;
+  if (select count(*) from public.lists where user_id = p_user and is_public) >= 5 then got := array_append(got, 'curator'); end if;
   select count(*) into done_of from public.entries where user_id = p_user and type = 'movie' and status = 'completed';
-  if done_of >= 100 then got := got || 'cinephile'; end if;
+  if done_of >= 100 then got := array_append(got, 'cinephile'); end if;
   select count(*) into done_of from public.entries where user_id = p_user and type = 'anime' and status = 'completed';
-  if done_of >= 50 then got := got || 'otaku'; end if;
+  if done_of >= 50 then got := array_append(got, 'otaku'); end if;
   select count(*) into done_of from public.entries where user_id = p_user and type = 'music' and status = 'completed';
-  if done_of >= 100 then got := got || 'melomane'; end if;
+  if done_of >= 100 then got := array_append(got, 'melomane'); end if;
   if cardinality(got) > 0 then
     insert into public.user_badges (user_id, badge) select p_user, unnest(got) on conflict do nothing;
   end if;
