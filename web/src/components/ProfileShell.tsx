@@ -44,7 +44,7 @@ export function ProfileShell({ children }: { children: React.ReactNode }) {
 }
 
 function Shell({ data, children }: { data: ProfileData; children: React.ReactNode }) {
-  const { me, openForm, isFriend, mine } = useApp();
+  const { me, openForm, isFriend, mine, isOwner, badges } = useApp();
   const path = usePathname();
   const { profile, entries, followers, following } = data;
   const isMe = me?.id === profile.id;
@@ -97,7 +97,8 @@ function Shell({ data, children }: { data: ProfileData; children: React.ReactNod
               ? <><Link className="btn" href="/settings">Profili düzenle</Link><button className="btn primary" onClick={() => openForm(null)}>+ Ekle</button></>
               : <>
                 {match !== null && <Link className="match-pill" href={`/u/${profile.username}/compare`} title="Zevkleriniz ne kadar uyuşuyor">Uyum %{match}</Link>}
-                {isFriend(profile.id) && <Link className="btn" href={`/chat/${profile.username}`}>Mesaj</Link>}<FollowButton id={profile.id} />
+                {/* Arkadaşlar birbirine; site sahibi herkese, herkes de site sahibine yazabilir */}
+                {(isFriend(profile.id) || isOwner || badges.get(profile.id)?.includes("owner")) && <Link className="btn" href={`/chat/${profile.username}`}>Mesaj</Link>}<FollowButton id={profile.id} />
               </>}
           </div>
         </div>

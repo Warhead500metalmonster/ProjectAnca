@@ -6,13 +6,20 @@ export default function AboutPage() {
   return (
     <div className="legal about">
       <h1>Biz kimiz?</h1>
-      <p className="muted">Aslında &quot;biz&quot; değil, &quot;ben&quot;.</p>
+      <p className="muted">Küçük bir ekibiz: ben ve arkadaşım Wulfa.</p>
 
       <h2>Merhaba, ben Anıl</h2>
       <p>
-        Sitede <Link className="grad" href="/u/arno4436">@arno4436</Link> olarak bulabilirsin. Ancalog&apos;u tek başıma, hobi olarak yapıyorum:
-        tasarımı, kodu, veritabanı ve sunucu tarafı, yasal metinler, hepsi benim elimden çıkıyor. Bu yüzden bir şey bozulursa da,
+        Sitede <Link className="grad" href="/u/arno4436">@arno4436</Link> olarak bulabilirsin. Ancalog&apos;u hobi olarak yapıyorum ve sitenin sahibiyim:
+        kodun, veritabanının ve sunucu tarafının büyük kısmı, yasal metinler ve kullanıcı istekleri benden geçiyor. Bu yüzden bir şey bozulursa da,
         güzel bir şey eklenirse de muhatabın doğrudan benim.
+      </p>
+
+      <h2>Wulfa</h2>
+      <p>
+        <Link className="grad" href="/u/wulfa">@wulfa</Link> sitenin geliştirilmesinde benimle birlikte çalışan arkadaşım. Ancalog&apos;un bugünkü
+        sürümünü ilk o başlattı; ana sayfanın kendi kapaklarınla kayan üst kısmı, profil ve oyun sayfalarının tasarımı, gruplanmış akış ve sitenin
+        sade, emojisiz görünümü onun elinden çıktı.
       </p>
 
       <h2>Ancalog neden var?</h2>

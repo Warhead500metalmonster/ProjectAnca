@@ -1211,3 +1211,5 @@ p.count-note { margin: -4px 0 12px; }
 .user-menu .menu a:hover, .user-menu .menu button:hover { background: var(--panel-2); }
 .user-menu .menu hr { border: 0; border-top: 1px solid var(--border); margin: 4px 0; width: 100%; }
 .user-menu .menu .danger { color: var(--danger); }
+.pin-box { display: grid; justify-items: start; gap: 8px; }
+.pin-box .pin { font-size: 34px; letter-spacing: .18em; font-family: var(--head); padding: 6px 16px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--border); }

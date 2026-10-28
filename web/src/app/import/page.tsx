@@ -1,16 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Entry, RawgGame, Status } from "@/lib/types";
 import { norm, smallImage } from "@/lib/format";
 import { musicMeta, tmdb, tmdbImage } from "@/lib/data";
-import { STATUSES, STORES, statusLabel } from "@/lib/constants";
+import { STATUSES, STORES, TYPES, statusLabel } from "@/lib/constants";
 import { rawg } from "@/lib/rawg";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
 
-// Başka sitelerden kütüphane aktarma: Steam, PlayStation, Xbox, Epic / Switch / HowLongToBeat listeleri, Letterboxd, Spotify ve Last.fm
+// Başka sitelerden kütüphane aktarma: Steam, PlayStation, Xbox, Epic / Switch / HowLongToBeat listeleri, Letterboxd, Simkl, Spotify ve Last.fm
 export default function ImportPage() {
   const { me, ready } = useApp();
   if (!ready) return <div className="loading">Yükleniyor…</div>;
@@ -26,6 +26,7 @@ export default function ImportPage() {
       <AccountGames kind="xbox" />
       <ListImport />
       <Letterboxd />
+      <Simkl />
       <Music />
     </div>
   );
@@ -1053,4 +1054,116 @@ function cleanPaste(text: string) {
       seen.add(k);
       return true;
     });
+}
+
+// ---------- Simkl: dizi, film ve anime (kodla bağlan) ----------
+
+interface SimklItem { type: "show" | "movie" | "anime"; title: string; year: number | null; status: Status; rating: number; date: string | null; cover: string | null; ext_id: string | null; progress: string | null }
+
+function Simkl() {
+  const { me, mine, toast, refresh } = useApp();
+  const [code, setCode] = useState<{ code: string; url: string } | null>(null);
+  const [items, setItems] = useState<SimklItem[] | null>(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [step, setStep] = useState<{ done: number; total: number } | null>(null);
+  const have = new Set(mine.map((e) => `${e.type}|${norm(e.title)}`));
+  const haveExt = new Set(mine.map((e) => e.ext_id).filter(Boolean));
+  const isNew = (x: SimklItem) => !have.has(`${x.type}|${norm(x.title)}`) && !(x.ext_id && haveExt.has(x.ext_id));
+
+  // Kod alındıktan sonra birkaç saniyede bir "onaylandı mı?" diye sor (en fazla 15 dakika)
+  useEffect(() => {
+    if (!code) return;
+    let stop = false, tries = 0;
+    const tick = async () => {
+      if (stop || tries++ > 180) return;
+      const d = await fetch(`/api/simkl?code=${code.code}`).then((r) => r.json()).catch(() => ({ pending: true }));
+      if (stop) return;
+      if (d.items) { setItems(d.items); setCode(null); return; }
+      if (d.error) { setError("Simkl'dan veri alınamadı, biraz sonra tekrar dene."); setCode(null); return; }
+      setTimeout(tick, 5000);
+    };
+    const t = setTimeout(tick, 5000);
+    return () => { stop = true; clearTimeout(t); };
+  }, [code]);
+
+  async function start() {
+    setError("");
+    setBusy(true);
+    try {
+      const r = await fetch("/api/simkl?start=1");
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) return setError(d.error === "no-key" ? "Simkl bağlantısı henüz kurulmadı. Site sahibine haber ver." : "Simkl'a ulaşılamadı, biraz sonra tekrar dene.");
+      setCode({ code: d.code, url: d.url });
+      window.open(d.url, "_blank", "noopener");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const fresh = (items || []).filter(isNew);
+  const count = (t: SimklItem["type"]) => (items || []).filter((x) => x.type === t).length;
+
+  async function run() {
+    if (!me || !fresh.length) return;
+    setBusy(true);
+    setStep({ done: 0, total: fresh.length });
+    try {
+      const rows: Row[] = fresh.map((x) => ({
+        type: x.type, title: x.title.slice(0, 200), year: x.year, creator: null, cover: x.cover, rawg_id: null, ext_id: x.ext_id,
+        status: x.status, rating: x.rating, date: x.date, progress: x.progress,
+        updated_at: new Date(x.date ? x.date + "T12:00" : Date.now()).toISOString(),
+      }));
+      const failed = await insertAll(rows, me.id);
+      toast(`${rows.length - failed} kayıt eklendi${failed ? `, ${failed} tanesi kaydedilemedi` : ""}`);
+      setItems(null);
+      refresh();
+    } catch (err) {
+      toast("Aktarılamadı: " + (err as Error).message);
+    } finally {
+      setBusy(false);
+      setStep(null);
+    }
+  }
+
+  return (
+    <section className="section import-card">
+      <div className="section-head"><h2>Simkl</h2></div>
+      <p className="muted small" style={{ marginTop: 0 }}>
+        Simkl&apos;daki dizilerin, filmlerin ve animelerin durumları, puanların ve izleme tarihleriyle gelir. Şifreni girmezsin:
+        bir kod alırsın, Simkl sitesinde onaylarsın, o kadar.
+      </p>
+      {items ? (
+        <>
+          <div className="import-bar">
+            <span><b>{count("show")}</b> dizi, <b>{count("movie")}</b> film, <b>{count("anime")}</b> anime bulundu
+              {items.length - fresh.length ? ` · ${items.length - fresh.length} tanesi zaten kütüphanende` : ""}</span>
+          </div>
+          <div className="import-list">
+            {fresh.slice(0, 300).map((x) => (
+              <label key={`${x.type}|${x.title}`}><span className="name">{x.title}{x.year ? ` (${x.year})` : ""}</span>
+                <small>{TYPES[x.type].label} · {statusLabel(x.status, x.type)}{x.rating ? ` · ${x.rating}/10` : ""}</small></label>
+            ))}
+            {fresh.length > 300 && <label className="off"><span className="name muted">…ve {fresh.length - 300} kayıt daha (hepsi aktarılır)</span></label>}
+          </div>
+          {step && <Progress done={step.done} total={step.total} label="Ekleniyor…" />}
+          <div className="actions">
+            <button className="btn" disabled={busy} onClick={() => setItems(null)}>Vazgeç</button>
+            <button className="btn primary" disabled={busy || !fresh.length} onClick={run}>{busy ? "Ekleniyor…" : `${fresh.length} kaydı ekle`}</button>
+          </div>
+        </>
+      ) : code ? (
+        <div className="pin-box">
+          <span className="muted small">Simkl sayfası yeni sekmede açıldı. Orada bu kodu gir ve onayla:</span>
+          <b className="pin">{code.code}</b>
+          <a className="grad" href={code.url} target="_blank" rel="noreferrer">Simkl sayfası açılmadıysa buraya bas</a>
+          <span className="muted small">Onaylayınca listen burada kendiliğinden belirecek…</span>
+          <button className="link" onClick={() => setCode(null)}>Vazgeç</button>
+        </div>
+      ) : (
+        <button className="btn primary" disabled={busy} onClick={start}>{busy ? "Bağlanılıyor…" : "Simkl'a bağlan"}</button>
+      )}
+      {error && <p className="form-error">{error}</p>}
+    </section>
+  );
 }
