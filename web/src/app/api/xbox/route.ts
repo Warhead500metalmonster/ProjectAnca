@@ -47,7 +47,10 @@ export async function GET(request: Request) {
 
     const data = (await get(`/achievements/player/${xuid}`)) || (await get(`/player/titleHistory/${xuid}`));
     const titles: Title[] = data?.titles || [];
-    if (!titles.length) return Response.json({ error: "private", detail: seen }, { status: 404 });
+    if (!titles.length) {
+      if (seen.some((x) => / 5\d\d$/.test(x))) return Response.json({ error: "busy", detail: seen }, { status: 429 });
+      return Response.json({ error: "private", detail: seen }, { status: 404 });
+    }
 
     const games = titles
       .filter((t) => t.name && (!t.type || t.type === "Game") && !(t.devices?.length === 1 && t.devices[0] === "Mobile"))
@@ -57,7 +60,7 @@ export async function GET(request: Request) {
         return {
           id: String(t.titleId), name: clean(t.name), platform: platformOf(t.devices), minutes: 0,
           last: t.titleHistory?.lastTimePlayed || null, progress, done: progress === 100 && (a.totalGamerscore || 1) > 0,
-          cover: t.displayImage || null,
+          cover: t.displayImage ? t.displayImage.replace(/^http:/, "https:") : null,
         };
       });
     return Response.json({ user, games });
