@@ -62,11 +62,13 @@ export function Topbar() {
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
               {notifAt && notifAt > seen && <span className="dot" />}
             </Link>
+            <Link className="btn import-top" href="/import" title="Steam, PlayStation, Backloggd, Letterboxd... bütün kütüphaneni getir">İçe aktar</Link>
             <button className="btn primary" onClick={() => openForm(null)}>+ Ekle</button>
             <UserMenu mine={mine} isAdmin={isAdmin} />
           </>
         ) : (
           <>
+            <Link className="btn import-top" href="/signup" title="Steam, PlayStation, Backloggd, Letterboxd... bütün kütüphaneni getir">Kütüphaneni getir</Link>
             <Link className="top-link" href="/login">Giriş yap</Link>
             <Link className="btn primary" href="/signup">Katıl</Link>
           </>

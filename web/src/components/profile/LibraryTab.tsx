@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import type { Entry, EntryType, Status } from "@/lib/types";
 import { STATUSES, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
 import { daysTaken, fmtDate, fmtDur, num, playSec } from "@/lib/format";
@@ -171,7 +172,9 @@ export function LibraryTab() {
         ) : (
           <div className="empty">
             {entries.length ? "Bu filtreye uyan kayıt yok." : isMe
-              ? <>Henüz hiçbir şey loglamadın.<br /><button className="btn primary" onClick={() => openForm(null, { type: statusType ?? undefined })}>+ İlk kaydını ekle</button></>
+              ? <>Henüz hiçbir şey loglamadın. Başka sitelerdeki kütüphaneni birkaç dakikada getirebilirsin.<br />
+                <Link className="btn primary" href="/import">Kütüphanemi getir</Link>{" "}
+                <button className="btn" onClick={() => openForm(null, { type: statusType ?? undefined })}>+ Tek tek ekle</button></>
               : "Burada henüz kayıt yok."}
           </div>
         )}

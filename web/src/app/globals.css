@@ -1328,3 +1328,11 @@ body.fav-dragging, body.fav-dragging * { cursor: grabbing !important; user-selec
 .rank-list .score small { color: var(--muted); font-size: 12px; }
 .rank-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
 .rank-bar select { margin-left: 6px; }
+
+/* İçe aktarma her yerde: üst menü düğmesi ve yeni kayıt penceresindeki kısayol */
+.btn.import-top { border: 1px solid var(--accent); color: var(--accent-2); background: color-mix(in srgb, var(--accent) 14%, transparent); font-weight: 700; }
+.btn.import-top:hover { background: color-mix(in srgb, var(--accent) 26%, transparent); }
+@media (max-width: 860px) { .btn.import-top { display: none; } }
+.form-import { display: block; margin: -4px 0 14px; padding: 10px 12px; border-radius: 10px; font-size: 13px; line-height: 1.5;
+  border: 1px dashed var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--text); }
+.form-import:hover { background: color-mix(in srgb, var(--accent) 20%, transparent); }

@@ -187,7 +187,7 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
         </div>
       )}
       <GettingStarted user={user} mine={mine} />
-      {mine.length < 30 && <ImportPromo signedIn compact />}
+      {mine.length < 30 && <ImportPromo signedIn compact={mine.length > 0} />}
       <section className="section"><div className="stats"><Stats list={mine} /></div></section>
       <section className="section home-goals">
         <Goals profile={user} entries={mine} isMe />

@@ -42,6 +42,7 @@ export default function Signup() {
       <div className="auth">
         <h1>Neredeyse tamam </h1>
         <p>E-postana bir onay linki gönderdik. Linke tıkladıktan sonra giriş yapabilirsin.</p>
+        <p className="signup-import"><b>Giriş yapınca ilk iş:</b> Steam, PlayStation, Backloggd, Letterboxd... bütün kütüphaneni <b>İçe aktar</b>&apos;dan birkaç dakikada getir.</p>
         <Link className="btn primary" href="/login">Giriş sayfasına git</Link>
       </div>
     );

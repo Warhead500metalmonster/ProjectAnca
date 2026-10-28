@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import type { Entry, EntryType, FormGame, Item, RawgGame } from "@/lib/types";
 import { STATUSES, STORES, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
 import { safeUrl, scoreText, today } from "@/lib/format";
@@ -222,6 +223,11 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
           <h2>{entry ? "Kaydı düzenle" : "Yeni kayıt"}</h2>
           <button type="button" className="icon-btn" aria-label="Kapat" onClick={() => ref.current?.close()}>✕</button>
         </div>
+        {!entry && !item && !game && (
+          <Link className="form-import" href="/import" onClick={() => ref.current?.close()}>
+            <b>Tek tek uğraşma.</b> Steam, PlayStation, Backloggd, Letterboxd... bütün kütüphaneni tek seferde getir →
+          </Link>
+        )}
         <div className="field">
           <label>Tür</label>
           <div className="type-picker">
