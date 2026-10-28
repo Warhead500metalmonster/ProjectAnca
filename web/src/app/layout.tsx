@@ -29,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AppProvider>
           <Suspense fallback={null}><Topbar /></Suspense>
           <Announcement />
-          <GuestBar />
+          <Suspense fallback={null}><GuestBar /></Suspense>
           <main className="app"><Suspense fallback={<div className="loading">Yükleniyor…</div>}>{children}</Suspense></main>
           <footer className="footer">
             <span>Ancalog</span>
