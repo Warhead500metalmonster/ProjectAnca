@@ -11,6 +11,7 @@ import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { Avatar, BadgeChips, FollowButton, Name, Socials, UserRow } from "@/components/ui";
 import { ProfileSong } from "@/components/ProfileSong";
+import { CoverMarquee } from "@/components/CoverMarquee";
 
 interface ProfileData { profile: Profile; entries: Entry[]; followers: number; following: number }
 const ProfileCtx = createContext<(ProfileData & { isMe: boolean }) | null>(null);
@@ -66,7 +67,9 @@ function Shell({ data, children }: { data: ProfileData; children: React.ReactNod
   return (
     <ProfileCtx.Provider value={{ ...data, isMe }}>
       <div className="profile" style={accent ? ({ "--pa": accent } as React.CSSProperties) : undefined}>
-        <div className={`profile-banner ${banner ? "img" : ""}`} style={banner ? { backgroundImage: cssUrl(banner) } : undefined} />
+        <div className={`profile-banner ${banner ? "img" : ""}`} style={banner ? { backgroundImage: cssUrl(banner) } : undefined}>
+          {!banner && <CoverMarquee covers={[...new Set(entries.map((e) => safeUrl(e.cover)).filter(Boolean))].slice(0, 24)} />}
+        </div>
         <div className="profile-head">
           <Avatar p={profile} cls="lg" />
           <div className="profile-info">

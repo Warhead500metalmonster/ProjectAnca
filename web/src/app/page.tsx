@@ -11,6 +11,7 @@ import { rawg } from "@/lib/rawg";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
+import { CoverMarquee } from "@/components/CoverMarquee";
 import { Avatar, EntryCard, Feed, Stars, Stats, displayName } from "@/components/ui";
 
 interface LocalEntry { title?: string; type?: string; year?: string; creator?: string; status?: string; date?: string; rating?: string; cover?: string; notes?: string; updated?: number }
@@ -28,22 +29,6 @@ export default function Home() {
 
 function Ico({ children }: { children: React.ReactNode }) {
   return <svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{children}</svg>;
-}
-
-// Tam genişlikte, iki sıra halinde zıt yönlerde kayan kapaklar
-function CoverMarquee({ covers }: { covers: string[] }) {
-  // Kapak azsa tekrarlayarak şeridi doldur
-  const fill = (list: string[]) => (list.length ? Array.from({ length: Math.max(list.length, 12) }, (_, i) => list[i % list.length]) : []);
-  const rows = [fill(covers.filter((_, i) => i % 2 === 0)), fill(covers.filter((_, i) => i % 2 === 1))];
-  return (
-    <div className="marquee" aria-hidden>
-      {rows.map((row, r) => (
-        <div className={`mq-row ${r ? "rev" : ""}`} key={r}>
-          {[...row, ...row].map((c, i) => <img key={i} src={c} alt="" onError={(e) => e.currentTarget.remove()} />)}
-        </div>
-      ))}
-    </div>
-  );
 }
 
 function Landing({ version }: { version: number }) {
@@ -113,12 +98,13 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
   const user = me!;
   const [localCount, setLocalCount] = useState(() => localEntries().length);
   const [importing, setImporting] = useState(false);
+  const [tab, setTab] = useState<"friends" | "all" | null>(null); // null: arkadaş akışı doluysa o, değilse herkes
 
   const { data, error } = useLoad(async () => {
     const [mine, friends, community] = await Promise.all([
       fetchEntries(user.id),
-      followingIds.length ? fetchFeed({ users: followingIds, limit: 15 }) : Promise.resolve([] as Entry[]),
-      fetchFeed({ limit: 10 }),
+      followingIds.length ? fetchFeed({ users: followingIds, limit: 40 }) : Promise.resolve([] as Entry[]),
+      fetchFeed({ limit: 40 }),
     ]);
     return { mine: mine.map((e) => ({ ...e, profiles: user })), friends, community };
   }, [version, followingIds.join(",")]);
@@ -164,6 +150,7 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
   if (error) return <div className="empty">Bir şeyler ters gitti: {error}</div>;
   if (!data) return <div className="loading">Yükleniyor…</div>;
   const { mine, friends, community } = data;
+  const view = tab ?? (friends.length ? "friends" : "all");
   const active = mine.filter((e) => e.status === "active");
   const backlog = mine.filter((e) => e.status === "planned").sort((a, b) => a.created_at.localeCompare(b.created_at)); // en eski bekleyen önce
   // Önce kendi kapakların; azsa topluluğunkilerle tamamla
@@ -211,21 +198,23 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
           <div className="wall">{mine.slice(0, 24).map((e) => <EntryCard key={e.id} e={e} kind wall />)}</div>
         </section>
       )}
-      <div className="cols section">
-        <section>
-          <div className="section-head"><h2>Arkadaşlarından</h2></div>
+      <section className="section feed-col">
+        <div className="section-head">
+          <h2>Akış</h2>
+          <div className="tabs" style={{ margin: 0 }}>
+            <button className={`tab ${view === "friends" ? "active" : ""}`} onClick={() => setTab("friends")}>Arkadaşlar</button>
+            <button className={`tab ${view === "all" ? "active" : ""}`} onClick={() => setTab("all")}>Herkes</button>
+          </div>
+        </div>
+        {view === "friends" ? (
           <Feed list={friends} empty={
             <div className="empty">
               {followingIds.length ? "Takip ettiklerin henüz bir şey loglamadı." : "Henüz kimseyi takip etmiyorsun."}<br />
               <Link className="btn" href="/community">Topluluğa göz at</Link>
             </div>
           } />
-        </section>
-        <section>
-          <div className="section-head"><h2>Toplulukta</h2><Link href="/community">Tümü →</Link></div>
-          <Feed list={community} />
-        </section>
-      </div>
+        ) : <Feed list={community} />}
+      </section>
     </>
   );
 }

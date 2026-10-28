@@ -244,14 +244,15 @@ select, .input {
 
 /* ---------- Profil ---------- */
 .profile-banner {
-  height: 160px; border-radius: 20px;
+  height: 280px; margin: -24px calc(50% - 50vw) 0;
   background: linear-gradient(120deg, #0f3d3a, #2f7f6b 45%, #2a6f9a 100%);
   position: relative; overflow: hidden;
 }
-.profile-banner::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 80% 20%, rgba(255,255,255,.2), transparent 50%); }
-.profile-head { display: flex; gap: 20px; align-items: flex-end; padding: 0 24px; margin-top: -56px; position: relative; flex-wrap: wrap; }
+.profile-banner::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to bottom, rgba(8, 12, 13, .35), var(--bg) 96%); }
+.profile-banner .mq-row img { width: 96px; }
+.profile-head { display: flex; gap: 20px; align-items: flex-end; padding: 0 24px; margin-top: -72px; position: relative; z-index: 1; flex-wrap: wrap; }
 .profile-info { flex: 1; min-width: 220px; padding-bottom: 6px; }
-.profile-info h1 { font-size: 30px; }
+.profile-info h1 { font-size: 40px; font-weight: 600; letter-spacing: -.04em; }
 .profile-info .handle { color: var(--muted); }
 .profile-bio { margin: 16px 24px 0; max-width: 640px; white-space: pre-wrap; }
 .profile-meta { display: flex; gap: 20px; margin: 12px 24px 0; flex-wrap: wrap; color: var(--muted); font-size: 14px; }
@@ -291,7 +292,7 @@ select, .input {
 .gh-main { min-width: 0; padding-top: 4px; }
 .crumbs { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
 .crumbs a:hover { color: var(--text); }
-.gh-main h1 { font-size: clamp(30px, 4.5vw, 48px); line-height: 1.05; }
+.gh-main h1 { font-size: clamp(32px, 5vw, 60px); line-height: 1; font-weight: 600; letter-spacing: -.04em; }
 .gh-main h1 small { font-size: 16px; color: var(--muted); font-weight: 500; font-family: var(--font-inter), sans-serif; }
 .gh-dev { font-family: var(--head); font-weight: 600; font-size: 20px; color: #b9bfd0; margin-top: 4px; }
 .gh-desc { color: #c9cddb; white-space: pre-wrap; margin: 14px 0 4px; }
@@ -921,3 +922,14 @@ p.count-note { margin: -4px 0 12px; }
 .song-vol svg { width: 18px; height: 18px; fill: currentColor; }
 .song-vol input { width: 80px; accent-color: var(--accent); cursor: pointer; }
 @media (max-width: 480px) { .song-vol input { width: 60px; } }
+
+/* Akışta gruplanmış kart + tek sütun akış */
+.feed-item.group { align-items: flex-start; }
+.grp-n { color: var(--muted); font-size: 13px; margin-left: 4px; }
+.grp-covers { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.grp-cover, .grp-more { width: 84px; aspect-ratio: 2 / 3; border-radius: 10px; flex: none; }
+.grp-cover { position: relative; overflow: hidden; display: grid; place-items: center; background: var(--panel-2); font-size: 10px; color: var(--muted); border: 1px solid var(--border); }
+.grp-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.grp-cover:hover { border-color: var(--accent); }
+.grp-more { display: grid; place-items: center; border: 1px dashed var(--border); color: var(--muted); font-size: 14px; }
+.feed-col { max-width: 860px; margin-inline: auto; }

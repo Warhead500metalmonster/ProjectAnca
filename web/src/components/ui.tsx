@@ -205,14 +205,48 @@ export function FeedItem({ e }: { e: Entry }) {
   );
 }
 
+// Aynı kişinin art arda yaptığı aynı eylem tek kartta toplanır
+function groupFeed(list: Entry[]) {
+  const out: Entry[][] = [];
+  for (const e of list) {
+    const last = out[out.length - 1];
+    if (last && last[0].user_id === e.user_id && activityVerb(last[0]) === activityVerb(e)) last.push(e);
+    else out.push([e]);
+  }
+  return out;
+}
+
+function FeedGroup({ list }: { list: Entry[] }) {
+  const p = list[0].profiles || {};
+  const profile = `/u/${p.username}`;
+  const types = [...new Set(list.map((e) => TYPES[e.type].label))].join(", ");
+  const shown = list.slice(0, 8);
+  return (
+    <div className="feed-item group">
+      <Link href={profile}><Avatar p={p} /></Link>
+      <div className="text">
+        <div className="line"><Link href={profile}><b><Name p={p} /></b></Link> {activityVerb(list[0])} <span className="grp-n">{list.length} içerik</span></div>
+        <div className="sub"><span>{types}</span><span>{timeAgo(list[0].updated_at)}</span></div>
+        <div className="grp-covers">
+          {shown.map((e) => (
+            <Link key={e.id} href={`${profile}?entry=${e.id}`} title={e.title} className="grp-cover"><span>{TYPES[e.type].label}</span><Cover src={e.cover} /></Link>
+          ))}
+          {list.length > shown.length && <span className="grp-more">+{list.length - shown.length}</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Uzun akışlar sayfanın sonuna kadar uzamasın: önce birkaçı, istenirse devamı
 export function Feed({ list, empty, step = 8 }: { list: Entry[]; empty?: React.ReactNode; step?: number }) {
   const [shown, setShown] = useState(step);
   if (!list.length) return <>{empty ?? <div className="empty">Henüz hareket yok.</div>}</>;
+  const rows = groupFeed(list);
   return (
     <div className="feed">
-      {list.slice(0, shown).map((e) => <FeedItem key={e.id} e={e} />)}
-      {list.length > shown && <button className="feed-more" onClick={() => setShown((n) => n + step * 2)}>Daha fazla göster ({list.length - shown})</button>}
+      {rows.slice(0, shown).map((g) => (g.length > 1 ? <FeedGroup key={g[0].id} list={g} /> : <FeedItem key={g[0].id} e={g[0]} />))}
+      {rows.length > shown && <button className="feed-more" onClick={() => setShown((n) => n + step * 2)}>Daha fazla göster ({rows.length - shown})</button>}
     </div>
   );
 }
