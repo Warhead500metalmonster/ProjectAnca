@@ -37,11 +37,13 @@ export async function GET(request: Request) {
     const found = await get(`/search/${encodeURIComponent(user)}`);
     const people: { xuid?: string; gamertag?: string }[] = found?.people || [];
     let xuid = (people.find((p) => p.gamertag?.toLowerCase() === user.toLowerCase()) || people[0])?.xuid;
+    let alt0: unknown = null;
     if (!xuid) {
       const alt = await get(`/friends/search?gt=${encodeURIComponent(user)}`);
+      alt0 = alt;
       xuid = alt?.profileUsers?.[0]?.id;
     }
-    if (!xuid) return Response.json({ error: "not-found", detail: seen }, { status: 404 });
+    if (!xuid) return Response.json({ error: "not-found", detail: seen, shape: [JSON.stringify(found).slice(0, 400), JSON.stringify(alt0).slice(0, 400)] }, { status: 404 });
 
     const data = (await get(`/achievements/player/${xuid}`)) || (await get(`/player/titleHistory/${xuid}`));
     const titles: Title[] = data?.titles || [];
