@@ -44,11 +44,13 @@ export async function GET(request: Request) {
   let url: string | null = `${API}/playlists/${m[2]}/tracks?limit=100&market=TR&fields=next,items(track(album(id,name,release_date,images,artists(name))))`;
   let pages = 0, any = false;
   while (url && pages++ < 30) {
-    const d: { next: string | null; items?: { track?: { album?: SpAlbum } | null }[] } | null = await get(url);
+    let d: { next: string | null; items?: { track?: { album?: SpAlbum } | null; item?: { album?: SpAlbum } | null }[] } | null = await get(url);
+    // Yeni Spotify uygulamalarında liste şarkıları /items adresinden okunuyor
+    if (!d && !any && url.includes("/tracks?")) { url = url.replace("/tracks?", "/items?").replace("items(track(", "items(item("); d = await get(url); }
     if (!d) break;
     any = true;
     for (const it of d.items || []) {
-      const a = it.track?.album;
+      const a = (it.track || it.item)?.album;
       if (!a?.id) continue;
       const old = albums.get(a.id);
       if (old) old.tracks++; else albums.set(a.id, pick(a));
