@@ -4,7 +4,8 @@ import Link from "next/link";
 import type { Entry } from "@/lib/types";
 import { TYPES } from "@/lib/constants";
 import { contentHref, itemOf, scoreShort } from "@/lib/format";
-import { compat, type Pair } from "@/lib/compat";
+import { useState } from "react";
+import { compat, compatByType, type Pair } from "@/lib/compat";
 import { useApp } from "@/components/AppProvider";
 import { Cover, displayName } from "@/components/ui";
 import { useProfile } from "@/components/ProfileShell";
@@ -13,6 +14,7 @@ import { useProfile } from "@/components/ProfileShell";
 export function CompareTab() {
   const { entries, profile, isMe } = useProfile();
   const { me, mine, scale, openForm } = useApp();
+  const [byType, setByType] = useState(false);
 
   if (!me) return <div className="empty">Uyumunuzu görmek için giriş yap.<br /><Link className="btn" href="/login">Giriş yap</Link></div>;
   if (isMe) return <div className="empty">Burası başkasının profilinde açılır: arkadaşının profiline gir, &quot;Uyum&quot;a bas.</div>;
@@ -37,8 +39,16 @@ export function CompareTab() {
         <div>
           <h2>{c.score === null ? "Henüz ortak bir şeyiniz yok" : word}</h2>
           <p className="muted">{c.common.length} ortak içerik · {c.loved.length} tanesini ikiniz de sevdiniz</p>
+          {c.score !== null && <button className="link" onClick={() => setByType(!byType)}>{byType ? "Kategorileri gizle" : "Kategorilere göre gör"}</button>}
         </div>
       </div>
+      {byType && (
+        <div className="match-types">
+          {compatByType(mine, entries).map((x) => (
+            <div key={x.type}><b>%{x.score}</b><span>{TYPES[x.type].label} uyumu</span><small>{x.common} ortak</small></div>
+          ))}
+        </div>
+      )}
 
       {c.loved.length > 0 && (
         <>

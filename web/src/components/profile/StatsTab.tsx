@@ -6,7 +6,7 @@ import { TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
 import { avgText, daysTaken, fmtDate, fmtDur, fmtHoursShort, num, playSec, scoreText } from "@/lib/format";
 import { useApp } from "@/components/AppProvider";
 import { useProfile } from "@/components/ProfileShell";
-import { Cover } from "@/components/ui";
+import { Cover, commentCount, likeCount } from "@/components/ui";
 import { Goals } from "@/components/Goals";
 
 // Durum renkleri: renk körlüğü için doğrulanmış sırayla (yan yana duran dilimler ayırt edilebilsin)
@@ -61,6 +61,16 @@ export function StatsTab() {
   const fastest = [...done].filter((e) => daysTaken(e) !== null).sort((a, b) => daysTaken(a)! - daysTaken(b)!)[0];
   const oldest = [...list].filter((e) => e.year).sort((a, b) => a.year! - b.year!)[0];
   const latest = [...done].filter((e) => e.date).sort((a, b) => b.date!.localeCompare(a.date!))[0];
+  // Tersleri ve diğerleri
+  const worst = [...rated].sort((a, b) => a.rating - b.rating)[0];
+  const shortest = [...list].filter((e) => playSec(e) > 0).sort((a, b) => playSec(a) - playSec(b))[0];
+  const slowest = [...done].filter((e) => daysTaken(e) !== null).sort((a, b) => daysTaken(b)! - daysTaken(a)!)[0];
+  const newest = [...list].filter((e) => e.year).sort((a, b) => b.year! - a.year!)[0];
+  const first = [...done].filter((e) => e.date).sort((a, b) => a.date!.localeCompare(b.date!))[0];
+  const waiting = [...list].filter((e) => e.status === "planned").sort((a, b) => a.created_at.localeCompare(b.created_at))[0];
+  const liked = [...list].filter((e) => likeCount(e) > 0).sort((a, b) => likeCount(b) - likeCount(a))[0];
+  const talked = [...list].filter((e) => commentCount(e) > 0).sort((a, b) => commentCount(b) - commentCount(a))[0];
+  const longReview = [...list].filter((e) => e.notes?.trim()).sort((a, b) => b.notes!.length - a.notes!.length)[0];
 
   const scope = [type !== "all" && TYPES[type].plural, year && `${year} çıkışlı`, finish && `${finish} yılında bitirilen`].filter(Boolean).join(" · ") || "Tüm zamanlar";
 
@@ -136,10 +146,19 @@ export function StatsTab() {
           <div className="records">
             {([
               ["En yüksek puan", best, best && scoreText(Number(best.rating), scale)],
+              ["En düşük puan", worst !== best ? worst : undefined, worst && scoreText(Number(worst.rating), scale)],
               ["En uzun süre", longest && playSec(longest) ? longest : undefined, longest && fmtDur(playSec(longest))],
+              ["En kısa süre", shortest !== longest ? shortest : undefined, shortest && fmtDur(playSec(shortest))],
               ["En hızlı bitirilen", fastest, fastest && `${daysTaken(fastest)} günde`],
+              ["En yavaş bitirilen", slowest !== fastest ? slowest : undefined, slowest && `${daysTaken(slowest)} günde`],
               ["En eski içerik", oldest, oldest?.year],
+              ["En yeni içerik", newest !== oldest ? newest : undefined, newest?.year],
+              ["İlk bitirilen", first !== latest ? first : undefined, first?.date && fmtDate(first.date)],
               ["En son bitirilen", latest, latest?.date && fmtDate(latest.date)],
+              ["En uzun süredir bekleyen", waiting, waiting && `${fmtDate(waiting.created_at.slice(0, 10))} tarihinden beri planda`],
+              ["En çok beğenilen", liked, liked && `${likeCount(liked)} beğeni`],
+              ["En çok yorum alan", talked, talked && `${commentCount(talked)} yorum`],
+              ["En uzun inceleme", longReview, longReview && `${longReview.notes!.trim().split(/\s+/).length} kelime`],
             ] as [string, Entry | undefined, string | number | undefined][]).filter(([, e]) => e).map(([label, e, val]) => (
               <button key={label} className="record" onClick={() => openView(e!)}>
                 <div className={`poster ${TYPES[e!.type].square ? "square" : ""}`}><div className="ph">{TYPES[e!.type].label}</div><Cover src={e!.cover} /></div>

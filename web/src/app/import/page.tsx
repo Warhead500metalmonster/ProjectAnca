@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { Entry, RawgGame, Status } from "@/lib/types";
 import { norm, smallImage } from "@/lib/format";
@@ -735,7 +735,7 @@ function ListImport({ initial }: { initial: string }) {
   const fileMode = src === "hltb" || src === "playnite";
   const myGames = mine.filter((e) => e.type === "game");
   const fileStatus = (g: ListGame): Status | "skip" | null => g.status || (g.cat ? catMap[g.cat] ?? "owned" : null);
-  const byKey = new Map(myGames.map((e) => [looseKey(e.title), e]));
+  const byKey = useMemo(() => new Map(mine.filter((e) => e.type === "game").map((e) => [looseKey(e.title), e])), [mine]);
 
   function pick(k: string) {
     setSrc(k);
@@ -779,32 +779,36 @@ function ListImport({ initial }: { initial: string }) {
     setCsv(list);
   }
 
-  const ps = src === "ps" ? psParse(text) : null; // PlayStation sayfası: sadece altında PS4 / PS5 etiketi olan satırlar oyundur
-  const ownPage = /Ancalog'a (kopyala|ekle)|PlayStation, Epic, Switch ve diğerleri|Başka yerdeki kütüphaneni/.test(text); // yanlışlıkla Ancalog'un kendi sayfası yapıştırıldı
-  const bl = src === "backloggd" ? blParse(text) : null; // Backloggd yer iminin topladığı liste (durum ve puanlarıyla)
-  const pasted: ListGame[] = ps?.length ? ps : bl?.length ? bl : ownPage ? [] : cleanPaste(text)
-    .map((title) => ({ title, status: null, rating: 0, sec: null, date: null, started: null, platform: "", store: "", notes: "" }));
-  const all = fileMode ? csv || [] : pasted;
-  // Aynı oyunun birden fazla satırı (HLTB'de her yeniden oynayış ayrı satır) tek kayıtta birleşir:
-  // süreler toplanır, en son bitirme tarihi ve en yüksek puan alınır, biri bitmişse oyun bitmiş sayılır
-  const merged = new Map<string, ListGame>();
-  for (const g of all) {
-    const k = looseKey(g.title);
-    if (!k || fileStatus(g) === "skip") continue;
-    const o = merged.get(k);
-    if (!o) { merged.set(k, { ...g }); continue; }
-    o.sec = (o.sec || 0) + (g.sec || 0) || null;
-    o.rating = Math.max(o.rating, g.rating);
-    if (g.date && (!o.date || g.date > o.date)) o.date = g.date;
-    if (g.started && (!o.started || g.started < o.started)) o.started = g.started;
-    if (g.status === "completed" || (!o.status && g.status)) { o.status = g.status; o.cat = null; }
-    if (!o.notes && g.notes) o.notes = g.notes;
-    if (!o.memo && g.memo) o.memo = g.memo;
-    if (g.dropNote && g.dropNote !== o.dropNote) o.dropNote = [o.dropNote, g.dropNote].filter(Boolean).join("\n").slice(0, 2000);
-    o.emulated = o.emulated || g.emulated;
-    if (!o.platform && g.platform) o.platform = g.platform;
-  }
-  const unique = [...merged.values()];
+  // Yapıştırılan yazı / dosya bir kez ayıklanır (aktarım sırasında ilerleme çubuğu her güncellendiğinde binlerce oyunu yeniden işlemesin)
+  const { ps, ownPage, bl, all, unique } = useMemo(() => {
+    const ps = src === "ps" ? psParse(text) : null; // PlayStation sayfası: sadece altında PS4 / PS5 etiketi olan satırlar oyundur
+    const ownPage = /Ancalog'a (kopyala|ekle)|PlayStation, Epic, Switch ve diğerleri|Başka yerdeki kütüphaneni/.test(text); // yanlışlıkla Ancalog'un kendi sayfası yapıştırıldı
+    const bl = src === "backloggd" ? blParse(text) : null; // Backloggd yer iminin topladığı liste (durum ve puanlarıyla)
+    const pasted: ListGame[] = ps?.length ? ps : bl?.length ? bl : ownPage ? [] : cleanPaste(text)
+      .map((title) => ({ title, status: null, rating: 0, sec: null, date: null, started: null, platform: "", store: "", notes: "" }));
+    const all = fileMode ? csv || [] : pasted;
+    // Aynı oyunun birden fazla satırı (HLTB'de her yeniden oynayış ayrı satır) tek kayıtta birleşir:
+    // süreler toplanır, en son bitirme tarihi ve en yüksek puan alınır, biri bitmişse oyun bitmiş sayılır
+    const merged = new Map<string, ListGame>();
+    for (const g of all) {
+      const k = looseKey(g.title);
+      if (!k || (g.status || (g.cat ? catMap[g.cat] ?? "owned" : null)) === "skip") continue;
+      const o = merged.get(k);
+      if (!o) { merged.set(k, { ...g }); continue; }
+      o.sec = (o.sec || 0) + (g.sec || 0) || null;
+      o.rating = Math.max(o.rating, g.rating);
+      if (g.date && (!o.date || g.date > o.date)) o.date = g.date;
+      if (g.started && (!o.started || g.started < o.started)) o.started = g.started;
+      if (g.status === "completed" || (!o.status && g.status)) { o.status = g.status; o.cat = null; }
+      if (!o.notes && g.notes) o.notes = g.notes;
+      if (!o.memo && g.memo) o.memo = g.memo;
+      if (g.dropNote && g.dropNote !== o.dropNote) o.dropNote = [o.dropNote, g.dropNote].filter(Boolean).join("\n").slice(0, 2000);
+      o.emulated = o.emulated || g.emulated;
+      if (!o.platform && g.platform) o.platform = g.platform;
+    }
+    const unique = [...merged.values()];
+    return { ps, ownPage, bl, all, unique };
+  }, [src, text, csv, fileMode, catMap]);
   const cats = Object.keys(catMap);
   const catCount = (c: string) => all.filter((g) => !g.status && g.cat === c).length;
   const known = unique.filter((g) => byKey.has(looseKey(g.title))).length; // ada göre kütüphanede olanlar

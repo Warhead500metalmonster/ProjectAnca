@@ -28,7 +28,7 @@ const refLinks = (kind: string, list?: RawgRef[]) => list?.length
 
 export default function GamePage() {
   const { id } = useParams<{ id: string }>();
-  const { me, version, openForm, pickList, scale, isAdmin } = useApp();
+  const { me, version, openForm, pickList, scale, isAdmin, following } = useApp();
   const [more, setMore] = useState(false);
   const [shown, setShown] = useState<number | null>(null); // büyük gösterilen görsel
   const [editing, setEditing] = useState(false);
@@ -61,6 +61,9 @@ export default function GamePage() {
   const images = [...(art ? [art] : []), ...shots.map((s) => resized(s.image, 1280))];
   const rated = logs.filter((l) => l.rating);
   const avg = rated.length ? rated.reduce((s, l) => s + Number(l.rating), 0) / rated.length : 0;
+  // Takip ettiklerinin ortalaması (en az bir kişi puan verdiyse)
+  const fr = rated.filter((l) => following.has(l.user_id));
+  const friendAvg = fr.length ? { avg: fr.reduce((s, l) => s + Number(l.rating), 0) / fr.length, n: fr.length } : null;
   const timed = logs.filter((l) => playSec(l) > 0);
   const avgSec = timed.length ? timed.reduce((s, l) => s + playSec(l), 0) / timed.length : 0;
   const item = { type: "game" as const, title: name, year: edit.year || source.year || null,
@@ -116,6 +119,7 @@ export default function GamePage() {
           <div className="gh-score">
             <div><b>★ {avg ? avgText(avg, scale) : "–"}</b><span>{rated.length} oy · Ancalog</span></div>
             {mine?.rating ? <div><b className="you">★ {scoreText(Number(mine.rating), scale)}</b><span>Senin puanın</span></div> : null}
+            {friendAvg ? <div title="Takip ettiklerinin bu içeriğe verdiği puanların ortalaması"><b className="friends">★ {avgText(friendAvg.avg, scale)}</b><span>{friendAvg.n} takip ettiğin</span></div> : null}
             {g?.metacritic ? <div><b className="mc">{g.metacritic}</b><span>Metacritic</span></div> : null}
           </div>
         </div>

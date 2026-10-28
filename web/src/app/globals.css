@@ -421,7 +421,8 @@ textarea { resize: vertical; }
 .suggest {
   position: absolute; top: 100%; left: 0; right: 0; z-index: 5; margin-top: 4px;
   background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px;
-  overflow: hidden; box-shadow: 0 14px 34px rgba(0, 0, 0, .55);
+  overflow-x: hidden; overflow-y: auto; max-height: min(55vh, 440px); overscroll-behavior: contain; /* çok sonuç varsa kaydırılır */
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .55);
 }
 .suggest button { display: flex; gap: 10px; align-items: center; width: 100%; border: 0; background: none; padding: 6px 10px; cursor: pointer; text-align: left; }
 .suggest button:hover, .suggest button:focus { background: rgb(var(--accent-rgb) / .2); outline: none; }
@@ -645,6 +646,7 @@ label.inline { display: inline-flex; gap: 6px; align-items: center; color: var(-
 /* ---------- İçerik sayfası ---------- */
 .gh-cover.square { aspect-ratio: 1; }
 .gh-score b.you { color: var(--accent-2); }
+.gh-score b.friends { color: #8ab8ff; }
 
 /* ---------- Keşfet ---------- */
 .search-hero h1 { font-size: 40px; margin-bottom: 14px; }
@@ -1302,3 +1304,27 @@ body.fav-dragging, body.fav-dragging * { cursor: grabbing !important; user-selec
   background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .signup-import span { font-size: 13px; color: var(--accent-2); }
 .signup-import small { color: var(--muted); font-size: 12px; }
+.suggest .credit { position: sticky; bottom: 0; background: var(--panel-2); }
+
+/* Uyum: türe göre */
+.match-types { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: -6px 0 22px; }
+.match-types div { display: flex; flex-direction: column; padding: 12px 14px; border-radius: 12px; background: var(--panel); border: 1px solid var(--border); }
+.match-types b { font-family: var(--head); font-size: 26px; color: var(--accent-2); }
+.match-types span { font-weight: 600; }
+.match-types small { color: var(--muted); font-size: 12px; }
+
+/* En uyumlu üyeler ve Ancalog sıralaması */
+.match-list, .rank-list { display: flex; flex-direction: column; gap: 6px; padding: 0; margin: 0; list-style: none; }
+.match-row, .rank-list a { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 12px; background: var(--panel); border: 1px solid var(--border); }
+.match-row:hover, .rank-list a:hover { border-color: var(--accent); }
+.match-row .rank, .rank-list .rank { width: 26px; text-align: center; font-weight: 700; color: var(--muted); flex: none; }
+.match-row .who, .rank-list .who { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.match-row .who small, .rank-list .who small { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-list .who b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.match-row .pct { font-family: var(--head); font-size: 22px; font-weight: 700; color: var(--accent-2); }
+.rank-list .poster { width: 44px; flex: none; border-radius: 6px; }
+.rank-list .score { display: flex; flex-direction: column; align-items: flex-end; flex: none; }
+.rank-list .score b { color: #f5c518; }
+.rank-list .score small { color: var(--muted); font-size: 12px; }
+.rank-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.rank-bar select { margin-left: 6px; }

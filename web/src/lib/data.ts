@@ -257,7 +257,7 @@ export const fetchPageEdit = (key: string) =>
 // Bir türde içerik ara: oyunda RAWG, müzikte iTunes + Deezer, film/dizide TMDB, animede AniList.
 // Oyun dışında kullanıcıların daha önce eklediği içerikler de en üstte çıkar (aynı şey iki kez eklenmesin diye).
 export async function findContent(type: EntryType, text: string): Promise<Found[]> {
-  if (type === "game") return searchGames(text);
+  if (type === "game") return searchGames(text, 20); // öneri kutusu kaydırılır, aranan oyun ilk 6da olmayabilir
   const source = type === "music" ? (isLink(text) ? fromLink(text).then((f) => (f ? [f] : [])) : searchMusic(text))
     : type === "anime" ? searchAnime(text).catch(() => searchLogged(type, text))
     : searchTmdb(type, text).catch(() => searchLogged(type, text));

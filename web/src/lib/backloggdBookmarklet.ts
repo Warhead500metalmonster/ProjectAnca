@@ -1,5 +1,5 @@
 // Backloggd için yer imi düğmesi: kişinin kendi tarayıcısında, Backloggd sayfasındayken çalışır.
-// Played / Playing / Backlog / Wishlist sekmelerinin bütün sayfalarını sırayla okur (oyun adı ve puan),
+// Played / Playing / Backlog / Wishlist sekmelerinin bütün sayfalarını sırayla okur (oyun adı ve puan; Games sayfası Played ile aynı liste),
 // sonucu kopyalanacak bir kutuda gösterir. Hiçbir yere veri göndermez; yazı Ancalog'daki kutuya yapıştırılır.
 export const BL_MARK = "ANCALOG_BACKLOGGD:";
 
@@ -18,8 +18,8 @@ const SCRIPT = `
   note.style.cssText = 'position:fixed;top:12px;right:12px;z-index:2147483647;background:#111;color:#fff;padding:10px 14px;border-radius:10px;font:15px sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.4)';
   document.body.appendChild(note);
   var games = [], seen = {}, failed = 0, counts = {};
-  var tabs = ['played', 'playing', 'backlog', 'wishlist', ''];
-  var names = { played: 'Played', playing: 'Playing', backlog: 'Backlog', wishlist: 'Wishlist', '': 'Diğer' };
+  var tabs = ['played', 'playing', 'backlog', 'wishlist'];
+  var names = { played: 'Played', playing: 'Playing', backlog: 'Backlog', wishlist: 'Wishlist' };
   var get = async function (url) {
     for (var tryNo = 0; tryNo < 5; tryNo++) {
       try {
@@ -49,7 +49,7 @@ const SCRIPT = `
         var link = c.querySelector('a.cover-link');
         var slug = (link && link.getAttribute('href')) || name;
         if (!name) return;
-        if (!seen[tab + slug]) { seen[tab + slug] = 1; any++; }
+        if (!seen[tab + '|' + slug]) { seen[tab + '|' + slug] = 1; any++; }
         if (seen[slug]) return;
         seen[slug] = 1;
         counts[tab]++;

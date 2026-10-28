@@ -13,6 +13,7 @@ import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { Cover, Feed, UserRow } from "@/components/ui";
 import { ImportPromo } from "@/components/ImportPromo";
+import { BestMatches } from "@/components/BestMatches";
 
 interface Slim { rawg_id: number | null; title: string; cover: string | null; rating: number }
 
@@ -108,6 +109,11 @@ export default function Community() {
           </div>}
         </section>
       )}
+      <section className="section">
+        <div className="section-head"><h2>Ancalog sıralaması</h2><Link href="/top">En yüksek ve en düşük puanlılar →</Link></div>
+        <p className="muted" style={{ margin: 0 }}>Üyelerin puanlarına göre en sevilen ve en sevilmeyen oyunlar, filmler, diziler, albümler ve animeler.</p>
+      </section>
+      <BestMatches />
       {lists.length > 0 && (
         <section className="section">
           <div className="section-head"><h2>Yeni listeler</h2></div>

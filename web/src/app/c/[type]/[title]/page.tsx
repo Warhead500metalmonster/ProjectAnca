@@ -62,7 +62,7 @@ export default function ContentPage() {
   const search = useSearchParams();
   const type = params.type as EntryType;
   const title = decodeURIComponent(params.title);
-  const { me, version, openForm, pickList, scale, isAdmin } = useApp();
+  const { me, version, openForm, pickList, scale, isAdmin, following } = useApp();
   const [more, setMore] = useState(false);
   const [zoom, setZoom] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -103,6 +103,9 @@ export default function ContentPage() {
   const item: Item = { type, title, year: year || null, creator: creator || null, cover: cover || null, rawg_id: null, ext_id: extId };
   const rated = logs.filter((l) => l.rating);
   const avg = rated.length ? rated.reduce((s, l) => s + Number(l.rating), 0) / rated.length : 0;
+  // Takip ettiklerinin ortalaması (en az bir kişi puan verdiyse)
+  const fr = rated.filter((l) => following.has(l.user_id));
+  const friendAvg = fr.length ? { avg: fr.reduce((s, l) => s + Number(l.rating), 0) / fr.length, n: fr.length } : null;
   const timed = logs.filter((l) => playSec(l) > 0);
   const avgSec = timed.length ? timed.reduce((s, l) => s + playSec(l), 0) / timed.length : 0;
   const mine = me && logs.find((l) => l.user_id === me.id);
@@ -145,6 +148,7 @@ export default function ContentPage() {
           <div className="gh-score">
             <div><b>★ {avg ? avgText(avg, scale) : "–"}</b><span>{rated.length} oy · Ancalog</span></div>
             {mine?.rating ? <div><b className="you">★ {scoreText(Number(mine.rating), scale)}</b><span>Senin puanın</span></div> : null}
+            {friendAvg ? <div title="Takip ettiklerinin bu içeriğe verdiği puanların ortalaması"><b className="friends">★ {avgText(friendAvg.avg, scale)}</b><span>{friendAvg.n} takip ettiğin</span></div> : null}
             {info?.score && <div><b className="mc">{info.score[0]}</b><span>{info.score[1]}</span></div>}
           </div>
         </div>
