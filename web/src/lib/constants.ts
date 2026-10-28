@@ -45,7 +45,8 @@ export const activityVerb = (e: { type: EntryType; status: Status }) => ({
 })[e.status];
 
 export const PROFILE_COLS = "id, username, display_name, avatar_url";
-export const ENTRY_COLS = `*, profiles(${PROFILE_COLS}), likes(count), comments(count)`;
+// Beğeni/yorum tabloları da entries ile profiles arasında bağ kurduğu için hangi bağın kullanılacağını açıkça söylüyoruz
+export const ENTRY_COLS = `*, profiles!entries_user_id_fkey(${PROFILE_COLS}), likes(count), comments(count)`;
 export const LOCAL_KEY = "ancalog.v1"; // hesaplardan önceki, tarayıcıda tutulan kayıtlar
 
 // Rozetler veritabanından verilir (user_badges). active: false olanlar henüz kimseye verilmiyor, ileride açılacak.
