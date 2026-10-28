@@ -523,8 +523,8 @@ function Spotify() {
 // Bu mağazaların herkese açık kütüphane bağlantısı yok; oyun adlarını yapıştırmak ya da CSV seçmek yeterli
 const SOURCES: Record<string, { name: string; platform: string; store: string; help: React.ReactNode }> = {
   ps: { name: "PlayStation", platform: "PlayStation 5", store: "PlayStation Store", help: <>
-    <a className="grad" href="https://library.playstation.com/played" target="_blank" rel="noreferrer">PlayStation oyun kütüphanendeki Oynananlar</a> sayfasını
-    (ya da <a className="grad" href="https://library.playstation.com/recently-purchased" target="_blank" rel="noreferrer">Satın Alınanlar</a>&apos;ı) aç,
+    <a className="grad" href="https://library.playstation.com/recently-purchased" target="_blank" rel="noreferrer">PlayStation oyun kütüphaneni</a> aç
+    (oynadıkların için üstteki <b>Oynananlar</b> sekmesine geç),
     sayfanın tamamını seç (Ctrl+A), kopyala (Ctrl+C) ve aşağıya yapıştır. &quot;İndir&quot;, &quot;PS5&quot; gibi yazılar kendiliğinden ayıklanır.
     Sayfa sayfa gösteriyorsa her sayfayı alt alta yapıştırabilirsin. PS4 oyunlarıysa yukarıdan platformu değiştir.</> },
   epic: { name: "Epic Games", platform: "PC", store: "Epic Games Store", help: <>
