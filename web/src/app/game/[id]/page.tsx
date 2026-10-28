@@ -90,7 +90,7 @@ export default function GamePage() {
             <div className="gh-counts">
               <span>{logs.length} kayıt</span>
               <span>{count("active")} devam</span>
-              <span>{count("completed")} bitirdi</span>
+              <span>{count("completed")} oynadı</span>
               <span>{count("planned")} planlı</span>
             </div>
             {!me ? <Link className="btn primary wide" href="/login">+ Kütüphaneme ekle</Link>

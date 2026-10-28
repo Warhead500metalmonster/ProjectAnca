@@ -8,7 +8,7 @@ export interface TypeInfo {
 }
 
 export const TYPES: Record<EntryType, TypeInfo> = {
-  game: { label: "Oyun", plural: "Oyunlar", creator: "Geliştirici", active: "Oynuyorum", done: "bitirdi", doing: "oynuyor",
+  game: { label: "Oyun", plural: "Oyunlar", creator: "Geliştirici", active: "Oynuyorum", done: "oynadı", doing: "oynuyor",
     where: "Platform", progress: "ör. Ana hikâye %60, Malenia'da takıldım", time: "Oynama süresi",
     places: ["PC", "PlayStation 5", "PlayStation 4", "Xbox Series X|S", "Xbox One", "Nintendo Switch", "Nintendo Switch 2", "Steam Deck", "iOS", "Android"] },
   movie: { label: "Film", plural: "Filmler", creator: "Yönetmen", active: "İzliyorum", done: "izledi", doing: "izliyor",

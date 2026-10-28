@@ -140,7 +140,7 @@ export default function SearchPage() {
                     {a.avg ? <span className="rating">★ {avgText(a.avg, scale).split("/")[0]}</span> : null}
                   </div>
                   <div className="card-title">{a.title}</div>
-                  <div className="card-meta">{a.n} kişi · {a.done} bitirdi{a.active ? ` · ${a.active} devam` : ""}{a.year ? ` · ${a.year}` : ""}</div>
+                  <div className="card-meta">{a.n} kişi · {a.done} {TYPES[a.type as keyof typeof TYPES]?.done || "bitirdi"}{a.active ? ` · ${a.active} devam` : ""}{a.year ? ` · ${a.year}` : ""}</div>
                 </Link>
               ))}
             </div>

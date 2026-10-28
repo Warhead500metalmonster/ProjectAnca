@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { Entry, RawgGame, Status } from "@/lib/types";
 import { norm, smallImage } from "@/lib/format";
@@ -9,6 +9,7 @@ import { STATUSES, STORES, TYPES, statusLabel } from "@/lib/constants";
 import { rawg } from "@/lib/rawg";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
+import { psBookmarklet } from "@/lib/psBookmarklet";
 
 // Başka sitelerden kütüphane aktarma: Steam, PlayStation, Xbox, Epic / Switch / HowLongToBeat listeleri, Letterboxd, Simkl, Spotify ve Last.fm
 export default function ImportPage() {
@@ -525,8 +526,8 @@ const SOURCES: Record<string, { name: string; platform: string; store: string; h
   ps: { name: "PlayStation", platform: "PlayStation 5", store: "PlayStation Store", help: <>
     <a className="grad" href="https://library.playstation.com/recently-purchased" target="_blank" rel="noreferrer">PlayStation oyun kütüphaneni</a> aç
     (oynadıkların için üstteki <b>Oynananlar</b> sekmesine geç),
-    sayfanın tamamını seç (Ctrl+A), kopyala (Ctrl+C) ve aşağıya yapıştır. &quot;İndir&quot;, &quot;PS5&quot; gibi yazılar kendiliğinden ayıklanır.
-    Sayfa sayfa gösteriyorsa her sayfayı alt alta yapıştırabilirsin. PS4 oyunlarıysa yukarıdan platformu değiştir.</> },
+    sayfanın tamamını seç (Ctrl+A), kopyala (Ctrl+C) ve aşağıya yapıştır. Menü, &quot;İndir&quot; gibi yazılar elenir; PS4 / PS5 kendiliğinden anlaşılır.
+    <PsCopyLink /></> },
   epic: { name: "Epic Games", platform: "PC", store: "Epic Games Store", help: <>
     <a className="grad" href="https://www.epicgames.com/account/transactions" target="_blank" rel="noreferrer">Epic satın alma geçmişini</a> ya da
     Epic Launcher&apos;daki <b>Kütüphane</b>&apos;yi aç, sayfanın tamamını seçip (Ctrl+A) kopyala ve yapıştır.</> },
@@ -534,7 +535,9 @@ const SOURCES: Record<string, { name: string; platform: string; store: string; h
     Konsolda ya da Nintendo hesabındaki oyun adlarını kopyalayıp yapıştır.</> },
   hltb: { name: "HowLongToBeat", platform: "", store: "", help: <>
     HowLongToBeat&apos;te <b>profilin → Games → Options (dişli) → Export</b>&apos;a bas, inen <b>.csv</b> dosyasını aşağıdan seç.
-    Bitirdiklerin, oynadıkların, listende olanlar, puanların ve sürelerin gelir.</> },
+    Bitirdiklerin, oynadıkların, listende olanlar, puanların ve sürelerin gelir.
+    HowLongToBeat bir dosyada en fazla 500 oyun veriyor: daha fazlaysa her sekmeyi (Completed, Backlog, Playing…) ayrı ayrı indirip
+    <b>hepsini birlikte seç</b>; aynı oyun bir kez sayılır.</> },
   playnite: { name: "Playnite / diğer", platform: "", store: "", help: <>
     Playnite ya da başka bir uygulamadan dışa aktardığın <b>.csv</b> dosyasını seç. &quot;Name&quot; ya da &quot;Title&quot; sütunu olması yeter;
     durum, puan, süre, platform sütunları varsa onlar da okunur.</> },
@@ -630,6 +633,7 @@ function ListImport() {
   const [text, setText] = useState("");
   const [csv, setCsv] = useState<ListGame[] | null>(null);
   const [catMap, setCatMap] = useState<Record<string, Status | "skip">>({}); // bizde olmayan kategori → durum
+  const [fixRatings, setFixRatings] = useState(false); // eski aktarımda yanlış gelen puanları dosyadakiyle değiştir
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState<{ done: number; total: number } | null>(null);
   const s = SOURCES[src];
@@ -650,13 +654,15 @@ function ListImport() {
     for (const f of [...files]) {
       const rowsOf = parseCsv(await f.text());
       const cats = categoryColumns(rowsOf);
+      const scoreOf = (r: Record<string, string>) => Number(col(r, "review", "userscore", "rating", "score", "puan").replace(",", ".")) || 0;
+      const outOf100 = src === "hltb" || src === "playnite" || rowsOf.some((r) => scoreOf(r) > 10);
       for (const r of rowsOf) {
         const title = col(r, "title", "name", "game", "gamename", "oyun");
         if (!title) continue;
-        const score = Number(col(r, "review", "userscore", "rating", "score", "puan").replace(",", ".")) || 0;
+        const score = scoreOf(r);
         const known = statusFrom(r);
         list.push({
-          title, status: known, cat: known ? null : categoryOf(r, cats), rating: Math.max(0, Math.min(10, Math.round(score > 10 ? score / 10 : score))),
+          title, status: known, cat: known ? null : categoryOf(r, cats), rating: Math.max(0, Math.min(10, Math.round(outOf100 ? score / 10 : score))),
           sec: seconds(col(r, "progress", "playtime", "timeplayed", "sure"), !!col(r, "playtime") && src === "playnite"),
           date: isoDate(col(r, "completiondate", "completed", "lastactivity", "finished", "date")),
           started: isoDate(col(r, "startdate", "started")),
@@ -670,7 +676,8 @@ function ListImport() {
     setCsv(list);
   }
 
-  const pasted: ListGame[] = cleanPaste(text)
+  const ps = src === "ps" ? psParse(text) : null; // PlayStation sayfası: sadece altında PS4 / PS5 etiketi olan satırlar oyundur
+  const pasted: ListGame[] = ps?.length ? ps : cleanPaste(text)
     .map((title) => ({ title, status: null, rating: 0, sec: null, date: null, started: null, platform: "", store: "", notes: "" }));
   const all = fileMode ? csv || [] : pasted;
   const seen = new Set<string>();
@@ -684,7 +691,7 @@ function ListImport() {
     const p: Row = {};
     if (!e.date && g.date) p.date = g.date;
     if (!e.started_on && g.started) p.started_on = g.started;
-    if (!e.rating && g.rating) p.rating = g.rating;
+    if ((!e.rating || fixRatings) && g.rating && g.rating !== e.rating) p.rating = g.rating;
     if (!e.playtime_sec && !e.hours && g.sec) { p.playtime_sec = g.sec; p.hours = Math.round(g.sec / 360) / 10; }
     if (!e.notes?.trim() && g.notes) p.notes = g.notes;
     if (!e.platform && (g.platform || platform)) p.platform = (g.platform || platform).slice(0, 60);
@@ -786,6 +793,10 @@ function ListImport() {
             </label>
           ))}
         </div>
+      )}
+      {fileMode && csv && csv.some((g) => g.rating) && (
+        <label className="check-line"><input type="checkbox" checked={fixRatings} disabled={busy} onChange={(e) => setFixRatings(e.target.checked)} />
+          Kütüphanemde olan oyunların puanlarını da dosyadakiyle düzelt (daha önce yanlış puanla aktardıysan)</label>
       )}
       {fileMode ? (
         !csv && <label className="btn file-btn">CSV dosyasını seç<input type="file" accept=".csv,text/csv" multiple onChange={(e) => read(e.target.files)} /></label>
@@ -1073,6 +1084,46 @@ function AlbumImport({ mode }: { mode: "link" | "lastfm" }) {
 
 // Mağaza sayfasından kopyalanan metindeki fiyat, tarih, düğme yazısı gibi gereksiz satırları ayıkla
 const NOISE = /^(konsola indir|indirme durumunu görüntüle|view download status|download to (your )?console|gta\+|ps plus|playstation plus|oyun kütüphanesi|game library|satın alınanlar|oynananlar|indirilenler|purchased|played|collection|koleksiyon|ps vr2?|satın al(ındı)?|purchased|owned|sahip olunan|yükle(ndi)?|install(ed)?|oyna|play|indir|download|güncelle|update|kütüphane|library|kitaplığım|my games|oyunlarım|sırala|sort|filtre|filter|ara|search|tümü|all|favoriler|favorites|ücretsiz|free|ödendi|paid|iade|refund|detaylar|details|daha fazla|more|games?|oyunlar|apps?|uygulamalar|hepsi|yüklü|hazır|ready|ps5|ps4|pc|xbox( series x\|s| one)?|nintendo switch|dlc|eklenti|add-?on|demo|beta|trial)$/i;
+// Sayfa sayfa kopyalamak yerine: yer imleri çubuğuna sürüklenen düğme, PlayStation'da bütün sayfaları kendisi toplar
+function PsCopyLink() {
+  const { toast } = useApp();
+  const link = useRef<HTMLAnchorElement>(null);
+  // React "javascript:" linklerini engellediği için adres sayfa açıldıktan sonra verilir
+  useEffect(() => { link.current?.setAttribute("href", psBookmarklet()); }, []);
+  return (
+    <span className="ps-helper">
+      <b>Çok sayfa mı var?</b> Şu düğmeyi fareyle tutup tarayıcının yer imleri çubuğuna sürükle (çubuk görünmüyorsa Ctrl+Shift+B):
+      <a ref={link} className="btn bookmarklet" draggable onClick={(e) => { e.preventDefault(); toast("Buna basma; fareyle tutup yer imleri çubuğuna sürükle."); }}>Ancalog&apos;a kopyala</a>
+      Sonra PlayStation kütüphanende bu yer imine bas: bütün sayfaları kendisi toplar, sen çıkan kutudaki <b>Kopyala</b>&apos;ya basıp buraya yapıştırırsın.
+    </span>
+  );
+}
+
+// PlayStation kütüphane sayfasından kopyalanan metin: her oyunun adının hemen altında platform etiketi (PS5, PS4...) olur.
+// Menü ve sayfa altı yazılarının altında böyle bir etiket olmadığı için onlar kendiliğinden elenir.
+const PS_TAG = /^(ps5|ps4|ps3|ps vita|psvita|ps vr2?)(\s|$)/i;
+const PS_MENU = /^(mağaza|store|oyunlar|games|aksesuarlar|accessories|haberler|news|destek|support|arama|search|filtre|filter|tümü|all|ps plus|playstation plus|playstation|sony)$/;
+function psParse(text: string): ListGame[] {
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const out = new Map<string, ListGame>();
+  for (let i = 0; i < lines.length - 1; i++) {
+    const tag = lines[i + 1].match(PS_TAG)?.[1]?.toLowerCase();
+    if (!tag || PS_TAG.test(lines[i])) continue;
+    const title = lines[i].replace(/[™®©]/g, "").replace(/\s+/g, " ").trim();
+    const low = title.toLocaleLowerCase("tr");
+    if (NOISE.test(title) || NOISE.test(low) || PS_MENU.test(low)) continue;
+    if (title.length < 2 || title.length > 150) continue;
+    const platform = tag === "ps5" ? "PlayStation 5" : tag === "ps4" ? "PlayStation 4" : tag === "ps3" ? "PlayStation 3" : tag.includes("vita") ? "PS Vita" : "PlayStation 5";
+    const key = title.toLocaleLowerCase("tr");
+    const old = out.get(key);
+    // Aynı oyunun hem PS4 hem PS5 sürümü varsa PS5'i tut
+    if (!old || (old.platform !== "PlayStation 5" && platform === "PlayStation 5")) {
+      out.set(key, { title, status: null, rating: 0, sec: null, date: null, started: null, platform, store: "PlayStation Store", notes: "" });
+    }
+  }
+  return [...out.values()];
+}
+
 function cleanPaste(text: string) {
   const seen = new Set<string>();
   return text.split(/\r?\n/)

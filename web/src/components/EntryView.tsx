@@ -43,7 +43,7 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
     [t.where, [e.platform, e.emulated ? "Emülatör" : ""].filter(Boolean).join(" · ")],
     ["Mağaza", e.store],
     ["Başladı", e.started_on && fmtDate(e.started_on)],
-    [e.status === "completed" ? "Bitirdi" : "Tarih", e.date && fmtDate(e.date)],
+    [e.status === "completed" ? TYPES[e.type].done.replace(/^./, (c) => c.toLocaleUpperCase("tr")) : "Tarih", e.date && fmtDate(e.date)],
     ["Kaç günde bitti", days && `${days} gün`],
     [t.time, fmtDur(playSec(e))],
     ["Şu anki ilerleme", fmtDur(e.progress_sec)],
