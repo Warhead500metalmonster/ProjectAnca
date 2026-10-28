@@ -75,7 +75,7 @@ export function ListPicker({ item, onClose }: { item: Item; onClose: () => void 
       </div>
       <div className="pick-body">
         <div className="pick-item">
-          <div className={`poster ${TYPES[item.type].square ? "square" : ""}`}><div className="ph">{TYPES[item.type].icon}</div><Cover src={item.cover} /></div>
+          <div className={`poster ${TYPES[item.type].square ? "square" : ""}`}><div className="ph">{TYPES[item.type].label}</div><Cover src={item.cover} /></div>
           <div><b>{item.title}</b><span className="muted">{[TYPES[item.type].label, item.year].filter(Boolean).join(" · ")}</span></div>
         </div>
         {lists === null ? <div className="loading">Yükleniyor…</div> : (
@@ -85,7 +85,7 @@ export function ListPicker({ item, onClose }: { item: Item; onClose: () => void 
               return (
                 <button key={l.id} type="button" className={`pick-row ${on ? "on" : ""}`} disabled={!!busy} onClick={() => addTo(l)}>
                   <span className="tick">{on ? "✓" : "+"}</span>
-                  <span className="grow">{l.title} <small className="muted">{(l.list_items || []).length} içerik{l.is_public ? "" : " · 🔒 gizli"}</small></span>
+                  <span className="grow">{l.title} <small className="muted">{(l.list_items || []).length} içerik{l.is_public ? "" : " · gizli"}</small></span>
                 </button>
               );
             })}

@@ -116,7 +116,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     q<{ user_id: string; badge: string }[]>(client.from("user_badges").select("user_id, badge").order("granted_at"))
       .then((rows) => {
         const m = new Map<string, string[]>();
-        const order = Object.keys(BADGES); // 👑 her zaman önce
+        const order = Object.keys(BADGES); // her zaman önce
         for (const r of rows) m.set(r.user_id, [...(m.get(r.user_id) || []), r.badge].sort((x, y) => order.indexOf(x) - order.indexOf(y)));
         setBadges(m);
       })

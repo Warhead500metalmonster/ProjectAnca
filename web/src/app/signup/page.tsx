@@ -40,7 +40,7 @@ export default function Signup() {
   if (sent) {
     return (
       <div className="auth">
-        <h1>Neredeyse tamam 📬</h1>
+        <h1>Neredeyse tamam </h1>
         <p>E-postana bir onay linki gönderdik. Linke tıkladıktan sonra giriş yapabilirsin.</p>
         <Link className="btn primary" href="/login">Giriş sayfasına git</Link>
       </div>
@@ -48,7 +48,7 @@ export default function Signup() {
   }
   return (
     <form className="auth" onSubmit={submit}>
-      <h1>Ancalog&apos;a katıl ✨</h1>
+      <h1>Ancalog&apos;a katıl </h1>
       <div className="field">
         <label htmlFor="s-user">Kullanıcı adı</label>
         <input id="s-user" name="username" required minLength={3} maxLength={20} pattern="[a-zA-Z0-9_]+" autoFocus autoComplete="username" placeholder="ornek_kullanici" />

@@ -58,7 +58,7 @@ export function ListEditor({ list, onClose, onSaved }: { list: List | null; onCl
           <input id="lf-title" maxLength={100} autoFocus value={title} placeholder="ör. Bitirmem gereken soulslike'lar" onChange={(e) => setTitle(e.target.value)} /></div>
         <div className="field"><label htmlFor="lf-desc">Açıklama</label>
           <textarea id="lf-desc" rows={3} maxLength={1000} value={desc} onChange={(e) => setDesc(e.target.value)} /></div>
-        <label className="check"><input type="checkbox" checked={pub} onChange={(e) => setPub(e.target.checked)} /> 🌍 Herkese açık <span className="muted">(kapalıysa sadece sen görürsün)</span></label>
+        <label className="check"><input type="checkbox" checked={pub} onChange={(e) => setPub(e.target.checked)} /> Herkese açık <span className="muted">(kapalıysa sadece sen görürsün)</span></label>
         {error && <p className="form-error">{error}</p>}
         <div className="actions">
           {list && <button type="button" className="btn danger" onClick={remove}>Listeyi sil</button>}

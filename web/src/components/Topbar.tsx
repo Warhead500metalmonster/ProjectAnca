@@ -34,7 +34,7 @@ export function Topbar() {
 
   return (
     <header className="topbar">
-      <Link href="/" className="brand">📒 <span>Ancalog</span></Link>
+      <Link href="/" className="brand"><span>Ancalog</span></Link>
       <nav className="nav">
         <Link href="/" className={active("home")}>
           <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg><span>Ana Sayfa</span>
@@ -60,7 +60,8 @@ export function Topbar() {
         {me ? (
           <>
             <Link className="icon-link" href="/notifications" title="Bildirimler">
-              🔔{notifAt && notifAt > seen && <span className="dot" />}
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
+              {notifAt && notifAt > seen && <span className="dot" />}
             </Link>
             <button className="btn primary" onClick={() => openForm(null)}>+ Ekle</button>
             <Link href={mine} title="Profilim"><Avatar p={me} /></Link>

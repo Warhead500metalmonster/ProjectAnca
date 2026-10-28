@@ -40,7 +40,7 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
   const liked = !!me && !!likers?.includes(me.id);
   const days = daysTaken(e);
   const details = [
-    [t.where, [e.platform, e.emulated ? "🕹️ Emülatör" : ""].filter(Boolean).join(" · ")],
+    [t.where, [e.platform, e.emulated ? "Emülatör" : ""].filter(Boolean).join(" · ")],
     ["Mağaza", e.store],
     ["Başladı", e.started_on && fmtDate(e.started_on)],
     [e.status === "completed" ? "Bitirdi" : "Tarih", e.date && fmtDate(e.date)],
@@ -66,7 +66,7 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
     try {
       await q(sb().from("entries").update({ favorite: !fav }).eq("id", e.id));
       setFav(!fav);
-      toast(fav ? "Favorilerden çıkarıldı" : "Favorilere eklendi ❤");
+      toast(fav ? "Favorilerden çıkarıldı" : "Favorilere eklendi ♥");
       refresh();
     } catch (err) {
       toast((err as Error).message);
@@ -112,10 +112,10 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
         </div>
         <div className="view-content">
           <div className="chips-row">
-            <span className={`badge ${e.status}`}>{t.icon} {statusLabel(e.status, e.type)}</span>
+            <span className={`badge ${e.status}`}>{statusLabel(e.status, e.type)}</span>
             {isMine
-              ? <button type="button" className={`fav-btn ${fav ? "on" : ""}`} onClick={toggleFav}>{fav ? "❤ Favori" : "♡ Favorilere ekle"}</button>
-              : fav && <span className="badge fav">❤ Favori</span>}
+              ? <button type="button" className={`fav-btn ${fav ? "on" : ""}`} onClick={toggleFav}>{fav ? "♥ Favori" : "♡ Favorilere ekle"}</button>
+              : fav && <span className="badge fav">♥ Favori</span>}
           </div>
           <h2><Link href={contentHref(e)} onClick={close}>{e.title}</Link></h2>
           {(e.creator || e.year) && <div className="muted">{[e.creator, e.year].filter(Boolean).join(" · ")}</div>}
@@ -130,8 +130,8 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
               <div><span>Sen</span>{my.rating ? <Rating r={my.rating} /> : <i className="muted">puan yok</i>}
                 <span className={`pill ${my.status}`}>{statusLabel(my.status, my.type)}</span></div>
               {diff !== null && (
-                <p>{diff === 0 ? "🤝 Aynı puanı vermişsiniz."
-                  : `${diff > 0 ? "📈 Sen" : "📉 Sen"} ${scale === 10 ? num(Math.abs(diff)) : num(Math.abs(diff) / 2, 2)} puan ${diff > 0 ? "daha yüksek" : "daha düşük"} vermişsin (${scoreText(Number(my.rating), scale)}).`}</p>
+                <p>{diff === 0 ? "Aynı puanı vermişsiniz."
+                  : `Sen ${scale === 10 ? num(Math.abs(diff)) : num(Math.abs(diff) / 2, 2)} puan ${diff > 0 ? "daha yüksek" : "daha düşük"} vermişsin (${scoreText(Number(my.rating), scale)}).`}</p>
               )}
             </div>
           )}
@@ -145,14 +145,14 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
           {details.length > 0 && (
             <div className="view-details">{details.map(([k, v]) => <div key={k}><span>{k}</span><b>{v}</b></div>)}</div>
           )}
-          {e.progress && <div className="view-note"><span>📌 Not</span>{e.progress}</div>}
-          {e.notes && <div className="view-notes"><span className="muted">📝 İnceleme</span>{"\n"}{e.notes}</div>}
+          {e.progress && <div className="view-note"><span>Not</span>{e.progress}</div>}
+          {e.notes && <div className="view-notes"><span className="muted">İnceleme</span>{"\n"}{e.notes}</div>}
 
           <div className="social-bar">
             <button type="button" className={`like ${liked ? "on" : ""}`} onClick={toggleLike} disabled={likers === null}>
               {liked ? "♥" : "♡"} {likers?.length ?? "…"} beğeni
             </button>
-            <span className="muted">💬 {comments?.length ?? "…"} yorum</span>
+            <span className="muted">{comments?.length ?? "…"} yorum</span>
           </div>
           <div className="comments">
             {comments?.map((c) => (
@@ -178,7 +178,7 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
 
           <div className="actions">
             <Link className="btn" href={contentHref(e)} onClick={close}>{e.type === "game" ? "Oyun sayfası" : "İçerik sayfası"} →</Link>
-            <button type="button" className="btn" onClick={() => { close(); pickList(itemOf(e)); }}>📚 Listeye ekle</button>
+            <button type="button" className="btn" onClick={() => { close(); pickList(itemOf(e)); }}>Listeye ekle</button>
             <span className="spacer" />
             {isMine && <button type="button" className="btn primary" onClick={() => onEdit(e)}>Düzenle</button>}
           </div>

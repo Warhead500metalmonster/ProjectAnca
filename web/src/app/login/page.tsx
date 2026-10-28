@@ -22,7 +22,7 @@ export default function Login() {
 
   return (
     <form className="auth" onSubmit={submit}>
-      <h1>Tekrar hoş geldin 👋</h1>
+      <h1>Tekrar hoş geldin </h1>
       <div className="field"><label htmlFor="l-email">E-posta</label><input id="l-email" name="email" type="email" required autoFocus autoComplete="email" /></div>
       <div className="field"><label htmlFor="l-pass">Şifre</label><input id="l-pass" name="password" type="password" required autoComplete="current-password" /></div>
       <label className="check"><input type="checkbox" name="remember" defaultChecked /> Beni hatırla <span className="muted">(tarayıcıyı kapatınca çıkış yapma)</span></label>

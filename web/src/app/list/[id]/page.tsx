@@ -15,11 +15,11 @@ import { Avatar, Cover, Name } from "@/components/ui";
 import { ListEditor } from "@/components/ListEditor";
 
 const SEGMENTS: [Status | "none", string, string][] = [
-  ["completed", "🏆 Bitirdi", "#199e70"],
+  ["completed", "Bitirdi", "#199e70"],
   ["active", "▶ Devam ediyor", "#3987e5"],
   ["paused", "⏸ Ara verdi", "#c98500"],
   ["dropped", "✖ Bıraktı", "#d95926"],
-  ["planned", "📋 Planladı", "#d55181"],
+  ["planned", "Planladı", "#d55181"],
   ["none", "○ Hiç başlamadı", "#3a3f4b"],
 ];
 
@@ -78,7 +78,7 @@ function ListView({ list, base }: { list: List; base: Entry[] }) {
     <>
       <section className="list-head">
         <div className="crumbs"><Link href={`/u/${owner.username}/lists`}>@{owner.username} listeleri</Link></div>
-        <h1>{list.title} {!list.is_public && <span className="tag">🔒 Gizli</span>}</h1>
+        <h1>{list.title} {!list.is_public && <span className="tag">Gizli</span>}</h1>
         {list.description && <p className="list-desc">{list.description}</p>}
         <div className="view-user">
           <Avatar p={owner} cls="sm" /> <Link href={`/u/${owner.username}`}><Name p={owner} /></Link>
@@ -92,7 +92,7 @@ function ListView({ list, base }: { list: List; base: Entry[] }) {
           <div className="pc-top">
             <b>%{pct}</b>
             <span>
-              {pct === 100 ? `🏆 ${who === "Sen" ? "Bu listeyi tamamladın!" : `${who} bu listeyi tamamladı!`}`
+              {pct === 100 ? `${who === "Sen" ? "Bu listeyi tamamladın!" : `${who} bu listeyi tamamladı!`}`
                 : `${who} bu listedeki ${items.length} içeriğin ${counts.completed} tanesini ${who === "Sen" ? "bitirdin" : "bitirdi"}.`}
               {counts.dropped > 0 && ` ${counts.dropped} tanesini ${who === "Sen" ? "bıraktın" : "bıraktı"}.`}
               {counts.active > 0 && ` ${counts.active} tanesine devam ${who === "Sen" ? "ediyorsun" : "ediyor"}.`}
@@ -120,7 +120,7 @@ function ListView({ list, base }: { list: List; base: Entry[] }) {
                 <div key={it.id} className="card li">
                   <Link href={contentHref(it)} className="card-link">
                     <div className={`poster ${t.square ? "square" : ""} ${e ? "" : "dim"}`}>
-                      <div className="ph">{t.icon}</div><Cover src={it.cover} />
+                      <div className="ph">{t.label}</div><Cover src={it.cover} />
                       <span className="rank">#{i + 1}</span>
                       <span className={`st badge ${e?.status || ""}`}>{e ? statusLabel(e.status, e.type) : "Loglanmadı"}</span>
                     </div>
@@ -129,7 +129,7 @@ function ListView({ list, base }: { list: List; base: Entry[] }) {
                   </Link>
                   <div className="li-actions">
                     {me && (e && e.user_id === me.id
-                      ? <button className="icon-btn" title="Kaydımı aç" onClick={() => openView({ ...e, profiles: me })}>👁</button>
+                      ? <button className="icon-btn" title="Kaydımı aç" onClick={() => openView({ ...e, profiles: me })}>Aç</button>
                       : !e && <button className="icon-btn" title="Kütüphaneme ekle" onClick={() => openForm(null, { item: itemOf(it) })}>＋</button>)}
                     {isOwner && <>
                       <button className="icon-btn" title="Öne al" onClick={() => move(it, -1)} disabled={i === 0}>←</button>
@@ -186,7 +186,7 @@ function AddToList({ list, count }: { list: List; count: number }) {
   return (
     <section className="list-add">
       <select value={type} onChange={(e) => { setType(e.target.value as EntryType); setFound(null); setText(""); }} aria-label="Tür">
-        {TYPE_KEYS.map((k) => <option key={k} value={k}>{TYPES[k].icon} {TYPES[k].label}</option>)}
+        {TYPE_KEYS.map((k) => <option key={k} value={k}>{TYPES[k].label}</option>)}
       </select>
       <div className="suggest-wrap grow">
         <input className="input" value={text} placeholder={`Listeye eklemek için ${TYPES[type].label.toLocaleLowerCase("tr")} ara…`} onChange={(e) => onText(e.target.value)} />

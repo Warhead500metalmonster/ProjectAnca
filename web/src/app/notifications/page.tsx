@@ -50,7 +50,7 @@ export default function Notifications() {
 
   return (
     <section className="notes">
-      <h1>🔔 Bildirimler</h1>
+      <h1>Bildirimler</h1>
       {data.length ? data.map((n, i) => (
         <div key={i} className="note-row">
           <Link href={`/u/${n.who?.username}`}><Avatar p={n.who} /></Link>
@@ -59,7 +59,7 @@ export default function Notifications() {
             {n.kind === "like" && <>kaydını beğendi: <Link className="grad" href={`/u/${me.username}?entry=${n.entry!.id}`}>{n.entry!.title}</Link> ♥</>}
             {n.kind === "comment" && <>yorum yaptı: <Link className="grad" href={`/u/${me.username}?entry=${n.entry!.id}`}>{n.entry!.title}</Link>
               <p className="note-body">“{n.body}”</p></>}
-            {n.kind === "follow" && <>seni takip etmeye başladı 👋</>}
+            {n.kind === "follow" && <>seni takip etmeye başladı </>}
             <div className="muted small">{timeAgo(n.at)}</div>
           </div>
         </div>

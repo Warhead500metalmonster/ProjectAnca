@@ -40,16 +40,16 @@ function Landing({ version }: { version: number }) {
           </div>
         </div>
         <div className="hero-art">
-          {Object.values(TYPES).map((t, i) => <div className="tile" key={t.label}>{t.icon}<Cover src={data?.find((e, j) => j % 5 === i && e.cover)?.cover} /></div>)}
+          {Object.values(TYPES).map((t, i) => <div className="tile" key={t.label}>{t.label}<Cover src={data?.find((e, j) => j % 5 === i && e.cover)?.cover} /></div>)}
         </div>
       </section>
       <div className="features">
-        <div className="feature"><span className="ico">📒</span><b>Her şeyi logla</b><span>Oyun, film, dizi, müzik ve anime tek kütüphanede. Platform, süre, tarih ve notlarınla.</span></div>
-        <div className="feature"><span className="ico">⭐</span><b>5 ya da 10 üzerinden puanla</b><span>Hangi ölçeği seversen. İncelemelerini arkadaşların beğenip yorumlayabilir.</span></div>
-        <div className="feature"><span className="ico">📚</span><b>Listeler yap</b><span>Herkese açık ya da gizli listeler; hangilerini bitirdiğini yüzdesiyle gör.</span></div>
-        <div className="feature"><span className="ico">📊</span><b>Tüm zamanların istatistikleri</b><span>Yıla, türe ve çıkış tarihine göre süzülebilen ayrıntılı istatistikler.</span></div>
-        <div className="feature"><span className="ico">👥</span><b>Arkadaşlarınla</b><span>Takip et, akışı izle, puanlarınızı karşılaştırın, karşılıklı takipleşince mesajlaşın.</span></div>
-        <div className="feature"><span className="ico">❤️</span><b>Favoriler ve rozetler</b><span>Her kategoriden 10 favorini profilinde sergile, kendi rengini ve kapağını seç.</span></div>
+        <div className="feature"><svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></svg><b>Her şeyi logla</b><span>Oyun, film, dizi, müzik ve anime tek kütüphanede. Platform, süre, tarih ve notlarınla.</span></div>
+        <div className="feature"><svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z" /></svg><b>5 ya da 10 üzerinden puanla</b><span>Hangi ölçeği seversen. İncelemelerini arkadaşların beğenip yorumlayabilir.</span></div>
+        <div className="feature"><svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg><b>Listeler yap</b><span>Herkese açık ya da gizli listeler; hangilerini bitirdiğini yüzdesiyle gör.</span></div>
+        <div className="feature"><svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10M12 20V4M6 20v-6" /></svg><b>Tüm zamanların istatistikleri</b><span>Yıla, türe ve çıkış tarihine göre süzülebilen ayrıntılı istatistikler.</span></div>
+        <div className="feature"><svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg><b>Arkadaşlarınla</b><span>Takip et, akışı izle, puanlarınızı karşılaştırın, karşılıklı takipleşince mesajlaşın.</span></div>
+        <div className="feature"><svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg><b>Favoriler ve rozetler</b><span>Her kategoriden 10 favorini profilinde sergile, kendi rengini ve kapağını seç.</span></div>
       </div>
       <section className="section">
         <div className="section-head"><h2>Toplulukta son hareketler</h2><Link href="/community">Tümü →</Link></div>
@@ -123,7 +123,7 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
     <>
       <section className="welcome">
         <div>
-          <h1>{hello}, <span className="grad">{displayName(user)}</span> 👋</h1>
+          <h1>{hello}, <span className="grad">{displayName(user)}</span> </h1>
           <p>{mine.length ? `Kütüphanende ${mine.length} kayıt var.` : "Kütüphanen boş, ilk kaydını ekleyerek başla."}</p>
         </div>
         <div className="hero-actions">
@@ -133,7 +133,7 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
       </section>
       {localCount > 0 && (
         <div className="banner">
-          <span>📦 Bu tarayıcıda hesap öncesinden kalan <b>{localCount}</b> kayıt var.</span>
+          <span>Bu tarayıcıda hesap öncesinden kalan <b>{localCount}</b> kayıt var.</span>
           <button className="btn primary" disabled={importing} onClick={importLocal}>{importing ? "Aktarılıyor…" : "Hesabıma aktar"}</button>
           <button className="btn ghost" onClick={dismissLocal}>Yoksay</button>
         </div>
@@ -173,7 +173,7 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
 // Planladıklarından rastgele birini seç: "ne oynasam / izlesem?"
 function Roulette({ list }: { list: Entry[] }) {
   const { openView } = useApp();
-  return <button className="btn big" title="Planladıklarından rastgele birini seç" onClick={() => openView(list[Math.floor(Math.random() * list.length)])}>🎲 Ne yapsam?</button>;
+  return <button className="btn big" title="Planladıklarından rastgele birini seç" onClick={() => openView(list[Math.floor(Math.random() * list.length)])}>Ne yapsam?</button>;
 }
 
 function AddButton() {
