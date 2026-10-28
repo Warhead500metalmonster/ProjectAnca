@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Entry, EntryType, Status } from "@/lib/types";
 import { STATUSES, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
 import { daysTaken, fmtDate, fmtDur, num, playSec } from "@/lib/format";
@@ -210,61 +210,112 @@ export function LibraryTab() {
   );
 }
 
-// Favoriler: sahibi "Sırala"ya basınca sürükleyip bırakarak (telefonda oklarla) sırasını değiştirir
+// Favoriler: sahibi kapağı tutup sürükleyerek sıralar, bırakınca sıra kaydedilir.
+// Telefonda parmakla sürükleme şeridin kaymasıyla karışmasın diye "Sırala" düğmesi ve oklar kullanılır.
 function Favorites({ list, isMe }: { list: Entry[]; isMe: boolean }) {
   const { toast, refresh } = useApp();
   const sorted = [...list].sort((a, b) => (a.fav_pos ?? 99) - (b.fav_pos ?? 99) || b.rating - a.rating);
-  const [order, setOrder] = useState<Entry[] | null>(null); // düzenlenirken yerel sıra
-  const [drag, setDrag] = useState<string | null>(null);
-  const items = order || sorted;
+  const [order, setOrder] = useState<Entry[] | null>(null); // sürüklenirken / düzenlenirken yerel sıra
+  const [arrows, setArrows] = useState(false); // telefonda oklarla sıralama
+  const [dragId, setDragId] = useState<string | null>(null);
+  const press = useRef<{ id: string; x: number; y: number; moved: boolean } | null>(null);
+  const justDragged = useRef(false);
+  // Favori eklenip çıkarılınca eski yerel sıra geçersiz olur
+  const items = order && order.length === list.length && order.every((o) => list.some((l) => l.id === o.id)) ? order : sorted;
 
-  function move(from: number, to: number) {
-    if (to < 0 || to >= items.length || from === to) return;
-    const next = [...items];
+  function move(from: number, to: number, base = items) {
+    if (to < 0 || to >= base.length || from === to || from < 0) return base;
+    const next = [...base];
     const [x] = next.splice(from, 1);
     next.splice(to, 0, x);
     setOrder(next);
+    return next;
   }
 
-  async function save() {
-    if (!order) return;
+  async function save(list2 = order) {
+    if (!list2) return;
+    const changed = list2.map((e, i) => ({ e, i })).filter(({ e, i }) => e.fav_pos !== i);
+    if (!changed.length) { setOrder(null); return; }
     try {
-      await Promise.all(order.map((e, i) => (e.fav_pos === i ? null : q(sb().from("entries").update({ fav_pos: i }).eq("id", e.id)))));
-      toast("Favori sıran kaydedildi ✓");
-      setOrder(null);
+      await Promise.all(changed.map(({ e, i }) => q(sb().from("entries").update({ fav_pos: i }).eq("id", e.id))));
+      toast("Favori sıran kaydedildi");
       refresh();
     } catch (err) {
       toast("Kaydedilemedi: " + (err as Error).message);
+      setOrder(null);
     }
+  }
+
+  // Bilgisayarda: fareyle tut, sürükle, bırak
+  function onPointerDown(ev: React.PointerEvent, id: string) {
+    if (!isMe || arrows || ev.pointerType !== "mouse" || ev.button !== 0) return;
+    press.current = { id, x: ev.clientX, y: ev.clientY, moved: false };
+    let current = items;
+    const onMove = (m: PointerEvent) => {
+      const p = press.current;
+      if (!p) return;
+      if (!p.moved) {
+        if (Math.hypot(m.clientX - p.x, m.clientY - p.y) < 6) return;
+        p.moved = true;
+        setDragId(p.id);
+        document.body.classList.add("fav-dragging");
+      }
+      const over = document.elementsFromPoint(m.clientX, m.clientY).find((el) => (el as HTMLElement).dataset?.favId) as HTMLElement | undefined;
+      const to = over ? current.findIndex((x) => x.id === over.dataset.favId) : -1;
+      const from = current.findIndex((x) => x.id === p.id);
+      if (to >= 0 && to !== from) current = move(from, to, current);
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      document.body.classList.remove("fav-dragging");
+      const p = press.current;
+      press.current = null;
+      setDragId(null);
+      if (p?.moved) {
+        // Bırakınca gelen tıklama kartı açmasın; sonraki normal tıklamalar çalışsın
+        justDragged.current = true;
+        setTimeout(() => { justDragged.current = false; }, 80);
+        save(current);
+      }
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
   }
 
   return (
     <>
       {isMe && list.length > 1 && (
         <div className="fav-tools">
-          {order ? (
+          {arrows ? (
             <>
-              <span className="muted small">Kapakları sürükleyip bırak ya da oklarla taşı.</span>
-              <button className="btn" onClick={() => setOrder(null)}>Vazgeç</button>
-              <button className="btn primary" onClick={save}>Sırayı kaydet</button>
+              <span className="muted small">Oklarla taşı, sonra kaydet.</span>
+              <button className="btn" onClick={() => { setArrows(false); setOrder(null); }}>Vazgeç</button>
+              <button className="btn primary" onClick={() => { setArrows(false); save(); }}>Sırayı kaydet</button>
             </>
-          ) : <button className="link" onClick={() => setOrder(sorted)}>Sırala</button>}
+          ) : (
+            <>
+              <span className="muted small fav-hint">Sıralamak için kapağı tutup sürükle.</span>
+              <button className="link fav-arrows-btn" onClick={() => { setArrows(true); setOrder(sorted); }}>Sırala</button>
+            </>
+          )}
         </div>
       )}
-      <div className={`strip ${order ? "sorting" : ""}`}>
-        {items.map((e, i) => order ? (
-          <div key={e.id} className={`fav-sort ${drag === e.id ? "dragging" : ""}`} draggable
-            onDragStart={(ev) => { setDrag(e.id); ev.dataTransfer.effectAllowed = "move"; }}
-            onDragOver={(ev) => { ev.preventDefault(); if (drag && drag !== e.id) move(items.findIndex((x) => x.id === drag), i); }}
-            onDragEnd={() => setDrag(null)}>
-            <div className="fav-num">{i + 1}</div>
+      <div className={`strip ${isMe && list.length > 1 && !arrows ? "fav-draggable" : ""} ${arrows ? "sorting" : ""}`}>
+        {items.map((e, i) => (
+          <div key={e.id} data-fav-id={e.id} className={`fav-sort ${dragId === e.id ? "dragging" : ""}`} draggable={false}
+            onPointerDown={(ev) => onPointerDown(ev, e.id)} onDragStart={(ev) => ev.preventDefault()}
+            onClickCapture={(ev) => { if (justDragged.current) { ev.preventDefault(); ev.stopPropagation(); justDragged.current = false; } }}>
+            {(arrows || dragId) && <div className="fav-num">{i + 1}</div>}
             <EntryCard e={e} />
-            <div className="fav-arrows">
-              <button className="icon-btn" aria-label="Sola taşı" disabled={i === 0} onClick={() => move(i, i - 1)}>‹</button>
-              <button className="icon-btn" aria-label="Sağa taşı" disabled={i === items.length - 1} onClick={() => move(i, i + 1)}>›</button>
-            </div>
+            {arrows && (
+              <div className="fav-arrows">
+                <button className="icon-btn" aria-label="Sola taşı" disabled={i === 0} onClick={() => move(i, i - 1)}>‹</button>
+                <button className="icon-btn" aria-label="Sağa taşı" disabled={i === items.length - 1} onClick={() => move(i, i + 1)}>›</button>
+              </div>
+            )}
           </div>
-        ) : <EntryCard key={e.id} e={e} />)}
+        ))}
       </div>
     </>
   );
