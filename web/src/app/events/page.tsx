@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { eventState, fetchEvents, memberCounts } from "@/lib/events";
+import { eventState, fetchEvents, memberStats } from "@/lib/events";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { EventCard } from "@/components/EventBanner";
@@ -10,13 +10,13 @@ import { EventForm } from "@/components/EventForm";
 
 // Bütün etkinlikler: sürenler, yaklaşanlar, bitenler. Yönetim buradan yeni etkinlik açar.
 export default function EventsPage() {
-  const { isAdmin, version } = useApp();
+  const { me, isAdmin, version } = useApp();
   const router = useRouter();
   const [creating, setCreating] = useState(false);
   const { data } = useLoad(async () => {
     const events = await fetchEvents();
-    return { events, counts: await memberCounts(events.map((e) => e.id)) };
-  }, [version]);
+    return { events, counts: await memberStats(events.map((e) => e.id), me?.id) };
+  }, [version, me?.id]);
 
   const events = data?.events || [];
   const groups = [
@@ -41,7 +41,7 @@ export default function EventsPage() {
           return list.length ? (
             <section key={state} className="section">
               <div className="section-head"><h2>{name}</h2></div>
-              <div className="ev-cards">{list.map((e) => <EventCard key={e.id} ev={e} count={data.counts[e.id] || 0} />)}</div>
+              <div className="ev-cards">{list.map((e) => <EventCard key={e.id} ev={e} stats={data.counts[e.id]} />)}</div>
             </section>
           ) : null;
         })}

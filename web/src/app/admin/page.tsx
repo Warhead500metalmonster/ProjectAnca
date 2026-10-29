@@ -13,7 +13,7 @@ import { Avatar, Name, UserRow } from "@/components/ui";
 import { NOTICE_TONES, type Notice, fetchNotice } from "@/components/Announcement";
 import { EventForm } from "@/components/EventForm";
 import { EventCard } from "@/components/EventBanner";
-import { eventState, fetchEvents, memberCounts } from "@/lib/events";
+import { eventState, fetchEvents, memberStats } from "@/lib/events";
 
 const TABS = [["home", "Genel"], ["reports", "Raporlar"], ["members", "Üyeler"], ["content", "İçerikler"], ["comments", "Moderasyon"], ["events", "Etkinlikler"]] as const;
 type Tab = (typeof TABS)[number][0];
@@ -802,7 +802,7 @@ function EventsAdmin() {
   const [creating, setCreating] = useState(false);
   const { data } = useLoad(async () => {
     const events = await fetchEvents();
-    return { events, counts: await memberCounts(events.map((e) => e.id)) };
+    return { events, counts: await memberStats(events.map((e) => e.id)) };
   }, [version]);
   const events = data?.events || [];
   return (
@@ -821,7 +821,7 @@ function EventsAdmin() {
         return list.length ? (
           <section key={st} className="section">
             <div className="section-head"><h2>{st === "live" ? "Sürenler" : st === "upcoming" ? "Yaklaşanlar" : "Geçmiş etkinlikler"}</h2></div>
-            <div className="ev-cards">{list.map((e) => <EventCard key={e.id} ev={e} count={data?.counts[e.id] || 0} />)}</div>
+            <div className="ev-cards">{list.map((e) => <EventCard key={e.id} ev={e} stats={data?.counts[e.id]} />)}</div>
           </section>
         ) : null;
       })}

@@ -5,12 +5,14 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Avatar } from "./ui";
 import { useApp } from "./AppProvider";
-import { sb } from "@/lib/supabase";
+import { q, sb } from "@/lib/supabase";
+import { eventState, fetchEvents } from "@/lib/events";
+import { useLoad } from "@/lib/useLoad";
 
 export const NOTIF_SEEN = "ancalog.notifSeen";
 
 export function Topbar() {
-  const { me: user, openForm, unread, notifAt, isAdmin } = useApp();
+  const { me: user, openForm, unread, notifAt, isAdmin, version } = useApp();
   // Sunucu girişi bilmez; ilk çizim sunucuyla aynı olsun (yoksa sayfa baştan çizilir), giriş bir an sonra görünür
   const [ready, setReady] = useState(false);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- yalnızca ilk çizimden sonra bir kez
@@ -23,11 +25,19 @@ export function Topbar() {
   // eslint-disable-next-line react-hooks/set-state-in-effect -- tarayıcı deposundan / ağdan gelen veri
   useEffect(() => { try { setSeen(localStorage.getItem(NOTIF_SEEN) || ""); } catch { /* yok say */ } }, [path, notifAt]);
 
+  // Süren ya da yaklaşan, henüz katılmadığın etkinlik varsa menüde parlayan işaret
+  const { data: freshEvents } = useLoad(async () => {
+    const open = (await fetchEvents()).filter((e) => eventState(e) !== "ended");
+    if (!open.length || !me) return open.length;
+    const joined = await q<{ event_id: string }[]>(sb().from("event_members").select("event_id").eq("user_id", me.id)).catch(() => []);
+    return open.filter((e) => !joined.some((j) => j.event_id === e.id)).length;
+  }, [me?.id, version, path.startsWith("/events")], ready);
   const mine = me ? `/u/${me.username}` : "/login";
   const active = (key: string) => ({
     home: path === "/",
     search: path.startsWith("/search"),
     community: path.startsWith("/community"),
+    events: path.startsWith("/events"),
     chat: path.startsWith("/chat") || path.startsWith("/forum"),
     me: path === mine || path.startsWith(mine + "/") || path === "/settings",
   })[key] ? "active" : "";
@@ -48,6 +58,9 @@ export function Topbar() {
         <Link href="/community" className={active("community")}>
           <svg viewBox="0 0 24 24"><path d="M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4zm8 0c-.3 0-.7 0-1.1.1 1.3.9 2.1 2.2 2.1 3.9v2h7v-2c0-2.7-5.3-4-8-4z" /></svg><span>Topluluk</span>
         </Link>
+        <Link href="/events" className={`nav-events ${active("events")}`}>
+          <svg viewBox="0 0 24 24"><path d="M12 2.5l2.6 6.1 6.6.6-5 4.4 1.5 6.5L12 16.7l-5.7 3.4 1.5-6.5-5-4.4 6.6-.6z" /></svg><span>Etkinlikler</span>{freshEvents ? <i className="nav-spark" title="Katılabileceğin etkinlik var" /> : null}
+        </Link>
         {/* Telefonda alt menünün ortasında büyük ekle düğmesi (bilgisayarda gizli, orada üstte "+ Ekle" var) */}
         {me && (
           <button className="nav-add" aria-label="Yeni kayıt ekle" onClick={() => openForm(null)}>
@@ -66,6 +79,11 @@ export function Topbar() {
         <input type="search" value={text} placeholder="Oyun, film, kişi ara…" aria-label="Ara" onChange={(e) => setText(e.target.value)} />
       </form>
       <div className="top-actions">
+        {/* Telefonda alt menü dolu: Etkinlikler üstte, yıldız simgesiyle */}
+        <Link className={`icon-link mobile-events ${active("events")}`} href="/events" aria-label="Etkinlikler" title="Etkinlikler">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2.5l2.6 6.1 6.6.6-5 4.4 1.5 6.5L12 16.7l-5.7 3.4 1.5-6.5-5-4.4 6.6-.6z" /></svg>
+          {freshEvents ? <span className="dot spark" /> : null}
+        </Link>
         <Link className="icon-link mobile-search" href="/search" aria-label="Ara" title="Ara">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
         </Link>

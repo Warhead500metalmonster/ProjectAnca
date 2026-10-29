@@ -11,6 +11,7 @@ import { q, sb } from "@/lib/supabase";
 import { useApp } from "./AppProvider";
 
 const newId = () => Math.random().toString(36).slice(2, 8);
+const BADGE_ICONS = ["✦", "⚔", "♫", "★", "♛", "☄", "◈", "✿", "⚑", "☾"];
 // Hazır süreler: başlangıçtan itibaren (0 = süresiz)
 const DURATIONS: [number, string][] = [[7, "1 hafta"], [14, "2 hafta"], [30, "1 ay"], [60, "2 ay"], [0, "Süresiz"]];
 function addDays(date: string, days: number) {
@@ -29,6 +30,8 @@ export function EventForm({ ev, onDone }: { ev?: AncEvent; onDone: (id?: string)
   const [starts, setStarts] = useState(ev?.starts_on || today());
   const [ends, setEnds] = useState(ev?.ends_on || "");
   const [options, setOptions] = useState<EventOption[]>(ev?.options || []);
+  const [badgeName, setBadgeName] = useState(ev?.badge_name || "");
+  const [badgeIcon, setBadgeIcon] = useState(ev?.badge_icon || "✦");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -42,7 +45,10 @@ export function EventForm({ ev, onDone }: { ev?: AncEvent; onDone: (id?: string)
     if (options.some((o) => !o.label.trim())) return setError("Her sürüme bir ad ver (ör. Orijinal, 3DS remake).");
     const row = {
       title: title.trim().slice(0, 120), description: description.trim() || null, cover: cover.trim() || null, kind,
-      starts_on: starts, ends_on: ends || null, options: options.map((o) => ({ ...o, label: o.label.trim().slice(0, 40), sub: o.sub?.trim() || undefined })),
+      starts_on: starts, ends_on: ends || null,
+      // Rozet alanları sadece doluysa gönderilir (veritabanı güncellenmeden de etkinlik açılabilsin)
+      ...((badgeName.trim() || ev?.badge_name) && { badge_name: badgeName.trim().slice(0, 40) || null, badge_icon: badgeIcon }),
+      options: options.map((o) => ({ ...o, label: o.label.trim().slice(0, 40), sub: o.sub?.trim() || undefined })),
     };
     setBusy(true);
     try {
@@ -76,7 +82,7 @@ export function EventForm({ ev, onDone }: { ev?: AncEvent; onDone: (id?: string)
       </div>
       <div className="row">
         <div className="field grow">
-          <label>Tür</label>
+          <label>Etkinliğin türü <span className="muted">· sürümlere ayrı ayrı da seçebilirsin</span></label>
           <div className="type-picker">
             {TYPE_KEYS.map((k) => <button type="button" key={k} className={kind === k ? "active" : ""} onClick={() => setKind(k)}>{TYPES[k].label}</button>)}
           </div>
@@ -104,10 +110,25 @@ export function EventForm({ ev, onDone }: { ev?: AncEvent; onDone: (id?: string)
         <input id="ev-cover" className="input" type="url" placeholder="https://…" value={cover} onChange={(e) => setCover(e.target.value)} />
       </div>
 
+      <h3 className="set-h">Etkinliğe özel rozet <span className="muted small">· isteğe bağlı: bitiren herkes kazanır, profilinde görünür</span></h3>
+      <div className="row ev-badge-row">
+        <input className="input" maxLength={40} placeholder="Rozet adı (ör. Hyrule Kahramanı)" value={badgeName} onChange={(e) => setBadgeName(e.target.value)} />
+        <div className="chips">
+          {BADGE_ICONS.map((i) => <button type="button" key={i} className={`chip ${badgeIcon === i ? "active" : ""}`} onClick={() => setBadgeIcon(i)}>{i}</button>)}
+        </div>
+      </div>
+      {badgeName.trim() && <p className="muted small">Önizleme: <span className="bdg event">{badgeIcon} {badgeName.trim()}</span></p>}
+
       <h3 className="set-h">Sürümler <span className="muted small">· isteğe bağlı: katılan hangisini oynayacağını seçer</span></h3>
       {options.map((o) => (
         <div key={o.id} className="ev-form-opt">
-          <OptionSearch kind={kind} option={o} onPick={(p) => patch(o.id, p)} />
+          <div className="type-picker small">
+            {TYPE_KEYS.map((k) => (
+              <button type="button" key={k} className={(o.kind || kind) === k ? "active" : ""}
+                onClick={() => patch(o.id, { kind: k === kind ? undefined : k, ...((o.kind || kind) !== k && { title: undefined, rawg_id: null, ext_id: null, cover: null, year: null }) })}>{TYPES[k].label}</button>
+            ))}
+          </div>
+          <OptionSearch kind={o.kind || kind} option={o} onPick={(p) => patch(o.id, p)} />
           <div className="row">
             <input className="input" maxLength={40} placeholder="Görünen ad (ör. 3DS remake)" value={o.label} onChange={(e) => patch(o.id, { label: e.target.value })} />
             <input className="input" maxLength={60} placeholder="Alt yazı (ör. Nintendo 3DS · 2011)" value={o.sub || ""} onChange={(e) => patch(o.id, { sub: e.target.value })} />

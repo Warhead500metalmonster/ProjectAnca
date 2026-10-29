@@ -8,6 +8,7 @@ import { contentKey, today } from "@/lib/format";
 import { fetchEntries, fixForeignTitles, friendsOnMyPlans } from "@/lib/data";
 import { applyTheme } from "@/lib/theme";
 import { steamAutoSync } from "@/lib/steamSync";
+import { eventBadgeKey } from "@/lib/events";
 import { dueToday, upcoming } from "@/lib/upcoming";
 import { notify, notifyOn, setupApp } from "@/lib/notify";
 import { countOf, q, sb, supabaseConfigured } from "@/lib/supabase";
@@ -85,7 +86,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const myBadgesRef = useRef<string[] | null>(null); // yeni kazanılan rozeti haber vermek için
   const loadBadges = useCallback(() => {
-    q<{ user_id: string; badge: string }[]>(sb().from("user_badges").select("user_id, badge").order("granted_at"))
+    // Etkinliğe özel rozetler veritabanında tanımlı: rozet listesine bir kez eklenir (yoksa sessizce geçilir)
+    q<{ id: string; title: string; badge_name: string | null; badge_icon: string | null }[]>(sb().from("events").select("id, title, badge_name, badge_icon").not("badge_name", "is", null))
+      .then((list) => { for (const e of list) BADGES[eventBadgeKey(e.id)] ??= { icon: e.badge_icon || "✦", name: e.badge_name!, desc: `“${e.title}” etkinliğini bitirene özel`, tone: "event" }; })
+      .catch(() => {})
+      .then(() => q<{ user_id: string; badge: string }[]>(sb().from("user_badges").select("user_id, badge").order("granted_at")))
       .then((rows) => {
         const m = new Map<string, string[]>();
         const order = Object.keys(BADGES); // her zaman önce

@@ -5,6 +5,14 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-10-30T00:55:00+04:00",
+    title: "Etkinlik rozetleri, fotoğraflar ve arşiv",
+    body: "Etkinlikler artık üst menüde, Topluluk'un yanında. Katılabileceğin bir etkinlik varsa yanında küçük bir ışık yanar.\n"
+      + "Etkinliklere katılana yeni rozetler: Etkinlikçi (katılınca), Etkinlik ruhu (bitirince), İlk bitiren (herkesten önce bitirene), Müdavim (3 etkinliğe katılınca). Her etkinliğin bitirenlere kendi özel rozeti de olabilir; Ocarina of Time'ı bitirene Hyrule Kahramanı!\n"
+      + "Etkinlik sohbetinde link ile fotoğraf paylaşabilirsin.\n"
+      + "Biten etkinlikler arşivlenir: sonuçlar, ilk bitiren, kimin hangi sürümü oynadığı, notlar ve sohbet saklanır; yazmaya kapanır ama istediğin zaman dönüp bakabilirsin.",
+  },
+  {
     date: "2026-10-30T00:30:00+04:00",
     title: "Etkinlikler geldi: ilki Ocarina of Time!",
     body: "Artık hep birlikte oynuyoruz. İlk etkinliğimiz 5 Kasım'da başlıyor: Hep birlikte Ocarina of Time. İsteyen 1998'in orijinalini, isteyen 3DS'i, isteyen yeni Switch 2 remake'ini oynasın.\n"

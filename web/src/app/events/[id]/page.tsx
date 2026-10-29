@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { type AncEvent, type EventMember, type EventOption, type MemberStatus, addToLibrary, dateLine, eventState, fetchEvent, libraryEntry } from "@/lib/events";
-import { PROFILE_COLS, TYPES } from "@/lib/constants";
+import { BADGES, PROFILE_COLS, TYPES } from "@/lib/constants";
 import { cssUrl, safeUrl, timeAgo, today } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
 import type { ProfileLite } from "@/lib/types";
@@ -32,6 +32,7 @@ export default function EventPage() {
 
   const reload = () => { setBump((n) => n + 1); refresh(); };
   const my = me ? members.find((m) => m.user_id === me.id) : undefined;
+  const ended = eventState(ev) === "ended";
 
   async function remove() {
     if (!confirm(`“${ev!.title}” etkinliği silinsin mi? Katılımcıların kayıtları kütüphanelerinde kalır.`)) return;
@@ -53,8 +54,21 @@ export default function EventPage() {
       )}
       {editing && <EventForm ev={ev} onDone={() => { setEditing(false); reload(); }} />}
 
-      <Versions ev={ev} members={members} my={my} onChange={reload} />
-      {my && <MyPanel ev={ev} my={my} members={members} onChange={reload} />}
+      {ended ? (
+        <>
+          <div className="ev-archive-note">
+            <b>Bu etkinlik bitti ve arşivlendi.</b> Sonuçlar, katılanlar, notlar ve sohbet burada saklanıyor; artık yazılamaz ama istediğin zaman dönüp bakabilirsin.
+          </div>
+          <Results ev={ev} members={members} my={my} />
+        </>
+      ) : (
+        <>
+          <Rewards ev={ev} />
+          {!my && <HowTo />}
+          <Versions ev={ev} members={members} my={my} onChange={reload} />
+          {my && <MyPanel ev={ev} my={my} members={members} onChange={reload} />}
+        </>
+      )}
 
       {ev.description?.trim() && (
         <section className="section ev-about">
@@ -64,7 +78,7 @@ export default function EventPage() {
       )}
 
       <People ev={ev} members={members} />
-      <EventChat ev={ev} joined={!!my} />
+      <EventChat ev={ev} joined={!!my} closed={ended} />
       {!me && <p className="muted ev-guest"><Link href="/signup">Ücretsiz katıl</Link> ya da <Link href="/login">giriş yap</Link>, sen de etkinliğe dahil ol.</p>}
     </div>
   );
@@ -75,12 +89,18 @@ function Hero({ ev, members, my }: { ev: AncEvent; members: EventMember[]; my?: 
   const state = eventState(ev);
   const done = members.filter((m) => m.status === "done").length;
   const art = safeUrl(ev.cover) || safeUrl(ev.options[0]?.cover);
+  const covers = ev.options.map((o) => safeUrl(o.cover)).filter(Boolean).slice(0, 3);
   return (
-    <section className="ev-hero" style={art ? { backgroundImage: cssUrl(art) } : undefined}>
+    <section className={`ev-hero ${state}`} style={art ? { backgroundImage: cssUrl(art) } : undefined}>
+      {covers.length > 1 && (
+        <div className={`ev-fan hero n${covers.length}`} aria-hidden="true">
+          {covers.map((c, i) => <img key={i} src={c} alt="" style={{ "--i": i - (covers.length - 1) / 2 } as React.CSSProperties} />)}
+        </div>
+      )}
       <div className="ev-hero-in">
         <div className="ev-kicker">
-          <span>Etkinlik · {TYPES[ev.kind]?.label || "Oyun"}</span>
-          <span className={`ev-state ${state}`}>{state === "upcoming" ? "Yakında" : state === "live" ? "Şu an sürüyor" : "Bitti"}</span>
+          <span>Etkinlik · {new Set(ev.options.map((o) => o.kind || ev.kind)).size > 1 ? "Karışık" : TYPES[ev.options[0]?.kind || ev.kind]?.label || "Oyun"}</span>
+          <span className={`ev-state ${state}`}>{state === "upcoming" ? "Yakında" : state === "live" ? "Şu an sürüyor" : "Bitti · Arşivde"}</span>
         </div>
         <h1>{ev.title}</h1>
         <p className="ev-date">{dateLine(ev)}</p>
@@ -148,7 +168,7 @@ function Versions({ ev, members, my, onChange }: { ev: AncEvent; members: EventM
     }
   }
 
-  if (state === "ended" && !my) return null;
+  if (state === "ended") return null;
   return (
     <section className="section" id="ev-versions">
       <div className="section-head"><h2>{ev.options.length > 1 ? "Sürümünü seç" : "Katıl"}</h2>
@@ -158,7 +178,7 @@ function Versions({ ev, members, my, onChange }: { ev: AncEvent; members: EventM
           const who = members.filter((m) => (m.choice || "") === o.id);
           const mineHere = my && (my.choice || "") === o.id;
           return (
-            <button key={o.id || "one"} className={`ev-opt ${mineHere ? "on" : ""}`} disabled={busy || state === "ended"} onClick={() => pick(o)}>
+            <button key={o.id || "one"} className={`ev-opt ${mineHere ? "on" : ""}`} disabled={busy} onClick={() => pick(o)}>
               <div className="ev-opt-art">{safeUrl(o.cover) ? <img src={o.cover!} alt="" /> : <span className="ev-opt-ph">{o.label}</span>}</div>
               <div className="ev-opt-body">
                 <b>{o.label}</b>
@@ -277,12 +297,14 @@ function People({ ev, members }: { ev: AncEvent; members: EventMember[] }) {
 }
 
 // Etkinlik sohbeti: herkes okur, giriş yapan yazar. Spoiler işaretli mesajlar dokununca açılır.
-interface EventPost { id: string; event_id: string; user_id: string; body: string; spoiler: boolean; created_at: string; profiles?: ProfileLite | null }
+interface EventPost { id: string; event_id: string; user_id: string; body: string; spoiler: boolean; image?: string | null; created_at: string; profiles?: ProfileLite | null }
 
-function EventChat({ ev, joined }: { ev: AncEvent; joined: boolean }) {
+function EventChat({ ev, joined, closed }: { ev: AncEvent; joined: boolean; closed: boolean }) {
   const { me, isAdmin, blocked, toast, report } = useApp();
   const [text, setText] = useState("");
   const [spoiler, setSpoiler] = useState(false);
+  const [image, setImage] = useState(""); // fotoğraf linki (isteğe bağlı)
+  const [photo, setPhoto] = useState(false); // fotoğraf kutusu açık mı
   const [busy, setBusy] = useState(false);
   const [shown, setShown] = useState<Set<string>>(new Set()); // açılan spoilerlar
   const [v, setV] = useState(0);
@@ -292,12 +314,16 @@ function EventChat({ ev, joined }: { ev: AncEvent; joined: boolean }) {
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
-    if (!me || !text.trim()) return;
+    if (!me || (!text.trim() && !image.trim())) return;
+    const img = image.trim();
+    if (img && !/^https:\/\/\S+$/i.test(img)) return toast("Fotoğraf linki https:// ile başlamalı.");
     setBusy(true);
     try {
-      await q(sb().from("event_posts").insert({ event_id: ev.id, user_id: me.id, body: text.trim().slice(0, 1000), spoiler }));
+      await q(sb().from("event_posts").insert({ event_id: ev.id, user_id: me.id, body: text.trim().slice(0, 1000) || "📷", spoiler, ...(img && { image: img }) }));
       setText("");
       setSpoiler(false);
+      setImage("");
+      setPhoto(false);
       setV((n) => n + 1);
     } catch (err) {
       toast("Gönderilemedi: " + (err as Error).message);
@@ -315,13 +341,21 @@ function EventChat({ ev, joined }: { ev: AncEvent; joined: boolean }) {
   return (
     <section className="section ev-chat">
       <div className="section-head"><h2>Etkinlik sohbeti</h2>{posts.length > 0 && <span className="muted small">{posts.length} mesaj</span>}</div>
-      {me ? (
+      {closed ? <p className="ev-closed">Etkinlik bittiği için sohbet kapandı. Yazılanlar arşivde duruyor.</p> : me ? (
         <form className="ev-chat-form" onSubmit={send}>
           <textarea className="input" rows={2} maxLength={1000} value={text} onChange={(e) => setText(e.target.value)}
             placeholder={joined ? "Nasıl gidiyor? Takıldığın yer, sevdiğin an, ipucu isteği…" : "Etkinlik hakkında bir şey yaz…"} />
+          {photo && (
+            <div className="ev-photo-in">
+              <input className="input" type="url" placeholder="Fotoğraf linki (https://… .jpg, .png, .gif, Imgur, Discord…)" value={image} onChange={(e) => setImage(e.target.value)} />
+              {/^https:\/\/\S+$/i.test(image.trim()) && <img src={image.trim()} alt="Önizleme" onError={(e) => (e.currentTarget.style.display = "none")} onLoad={(e) => (e.currentTarget.style.display = "")} />}
+            </div>
+          )}
           <div className="ev-chat-tools">
+            <button type="button" className={`btn ${photo ? "on" : ""}`} onClick={() => { setPhoto(!photo); if (photo) setImage(""); }}>📷 Fotoğraf</button>
             <label className="check"><input type="checkbox" checked={spoiler} onChange={(e) => setSpoiler(e.target.checked)} /> Spoiler içeriyor (gizli gösterilsin)</label>
-            <button className="btn primary" disabled={busy || !text.trim()}>Gönder</button>
+            <span className="spacer" />
+            <button className="btn primary" disabled={busy || (!text.trim() && !image.trim())}>Gönder</button>
           </div>
         </form>
       ) : <p className="muted small">Yazmak için <Link href="/login">giriş yap</Link>.</p>}
@@ -345,11 +379,86 @@ function EventChat({ ev, joined }: { ev: AncEvent; joined: boolean }) {
                   </div>
                   {hidden
                     ? <button className="ev-spoiler" onClick={() => setShown((s) => new Set(s).add(x.id))}>Spoiler içeriyor. Görmek için dokun.</button>
-                    : <div className="ev-post-body"><RichText text={x.body} /></div>}
+                    : <>
+                      {x.body !== "📷" && <div className="ev-post-body"><RichText text={x.body} /></div>}
+                      {x.image && safeUrl(x.image) && <a href={x.image} target="_blank" rel="noopener noreferrer nofollow" className="ev-post-img"><img src={x.image} alt="" loading="lazy" /></a>}
+                    </>}
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// Kazanılacak rozetler: katılana, bitirene, ilk bitirene, etkinliğe özel
+function Rewards({ ev }: { ev: AncEvent }) {
+  const special = ev.badge_name ? { icon: ev.badge_icon || "✦", name: ev.badge_name } : null;
+  const items: [string, string, string][] = [
+    [BADGES.event_join.icon, BADGES.event_join.name, "Katılınca"],
+    [BADGES.event.icon, BADGES.event.name, "Bitirince"],
+    ...(special ? [[special.icon, special.name, "Bitirince, bu etkinliğe özel"] as [string, string, string]] : []),
+    [BADGES.event_first.icon, BADGES.event_first.name, "Herkesten önce bitirene"],
+    [BADGES.event_regular.icon, BADGES.event_regular.name, "3 etkinliğe katılınca"],
+  ];
+  return (
+    <section className="section ev-rewards">
+      <div className="section-head"><h2>Kazanacağın rozetler</h2><span className="muted small">Profilinde herkes görür</span></div>
+      <div className="ev-reward-list">
+        {items.map(([icon, name, when]) => (
+          <div key={name} className="ev-reward"><span className="ev-reward-icon">{icon}</span><b>{name}</b><small>{when}</small></div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// Henüz katılmayanlara üç adımda nasıl işlediği
+function HowTo() {
+  return (
+    <section className="section ev-howto">
+      <div><span>1</span><b>Sürümünü seç</b><small>Aşağıdan hangisini oynayacağını seç, katıl.</small></div>
+      <div><span>2</span><b>Oyna, yaz</b><small>Nerede olduğunu yaz, sohbette gaz ver; spoiler gizli kalır.</small></div>
+      <div><span>3</span><b>Bitir, rozeti kap</b><small>Bitirdim&apos;e bas; bitirenler listesine adın yazılsın.</small></div>
+    </section>
+  );
+}
+
+// Arşiv: biten etkinliğin sonuçları
+function Results({ ev, members, my }: { ev: AncEvent; members: EventMember[]; my?: EventMember }) {
+  const done = members.filter((m) => m.status === "done").sort((a, b) => (a.finished_at || "").localeCompare(b.finished_at || ""));
+  const first = done[0];
+  const byVersion = ev.options.map((o) => ({ o, n: members.filter((m) => m.choice === o.id).length, d: members.filter((m) => m.choice === o.id && m.status === "done").length }));
+  const top = [...byVersion].sort((a, b) => b.n - a.n)[0];
+  const rate = members.length ? Math.round((done.length / members.length) * 100) : 0;
+  const myRank = my ? done.findIndex((m) => m.user_id === my.user_id) + 1 : 0;
+  return (
+    <section className="section ev-results">
+      <div className="section-head"><h2>Sonuçlar</h2></div>
+      <div className="ev-res-tiles">
+        <div><b>{members.length}</b><span>katılan</span></div>
+        <div><b>{done.length}</b><span>bitiren</span></div>
+        <div><b>%{rate}</b><span>bitirme oranı</span></div>
+        {top && top.n > 0 && <div><b className="small">{top.o.label}</b><span>en çok seçilen</span></div>}
+      </div>
+      {first && (
+        <div className="ev-first">
+          <span className="ev-reward-icon">{BADGES.event_first.icon}</span>
+          <span>İlk bitiren: <Link href={`/u/${first.profiles?.username}`}><b><Name p={first.profiles} /></b></Link></span>
+        </div>
+      )}
+      {my && <p className="muted">Sen: {my.status === "done" ? `bitirdin, ${myRank}. sıradasın. Helal olsun!` : "bu etkinliği yarıda bıraktın; bir dahakine!"}</p>}
+      {byVersion.length > 1 && (
+        <div className="ev-res-versions">
+          {byVersion.map(({ o, n, d }) => (
+            <div key={o.id} className="ev-res-row">
+              <span>{o.label}</span>
+              <div className="ev-res-bar"><i style={{ width: `${members.length ? (n / members.length) * 100 : 0}%` }} /></div>
+              <span className="muted small">{n} kişi · {d} bitirdi</span>
+            </div>
+          ))}
         </div>
       )}
     </section>
