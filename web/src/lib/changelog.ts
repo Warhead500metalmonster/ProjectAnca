@@ -5,6 +5,11 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-10-29T19:30:00+04:00",
+    title: "Temalı profiller de yeni tasarımda",
+    body: "Profil teması seçmiş olanların profili eski kutulu düzende kalıyordu; artık herkes yeni tasarımda. Temanın rengi ve arka plan resmin aynen duruyor, renk artık bütün sayfayı boyuyor.",
+  },
+  {
     date: "2026-10-29T19:20:00+04:00",
     title: "Serializd'den içe aktarma, kaynağa göre silme",
     body: "Serializd'deki dizilerin de artık gelir: İçe aktar → Serializd'deki düğmeyi yer imlerine sürükle, Serializd profilinde bas, yapıştır. Diziler TMDB numarasıyla birebir eşleşir; izleme listen Planlandı, izlemeye devam ettiklerin İzliyorum olarak gelir.\n"

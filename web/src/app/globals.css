@@ -938,7 +938,6 @@ p.count-note { margin: -4px 0 12px; }
 .feed-col { max-width: 860px; margin-inline: auto; }
 
 /* ---------- Steam'deki gibi profil teması ve arka plan ---------- */
-.profile.themed { background: var(--ptint); border: 1px solid rgba(255, 255, 255, .06); border-radius: 22px; padding: 14px 14px 24px; box-shadow: 0 20px 60px rgba(0, 0, 0, .35); }
 .profile-bg { position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; object-fit: cover; background: center top / cover no-repeat; pointer-events: none; }
 .profile-bg-shade { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(to bottom, rgba(8, 12, 13, .15), rgba(8, 12, 13, .55) 60%, rgba(8, 12, 13, .85)); }
 .theme-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; }
@@ -1058,7 +1057,6 @@ p.count-note { margin: -4px 0 12px; }
 .legal-summary ul { margin: 8px 0 0; }
 
 /* Temalı (kutulu) profilde banner tam genişliğe taşmaz, kutunun içinde kalır */
-.profile.themed .profile-banner { margin: 0; height: 220px; border-radius: 18px; }
 
 /* ---------- Kütüphane: sayfa sayfa yükleme, favori sıralama ---------- */
 .load-more { display: flex; justify-content: center; margin-top: 20px; }
@@ -1145,7 +1143,6 @@ body.fav-dragging, body.fav-dragging * { cursor: grabbing !important; user-selec
 
 /* ---------- Şeffaf profil (Steam gibi): resim her yerde görünür, kutular yarı saydam ---------- */
 .profile-bg-shade.light { background: linear-gradient(to bottom, rgba(8, 12, 13, .05), rgba(8, 12, 13, .3)); }
-.profile.glass { padding-top: 24px; }
 .profile.glass .profile-head { margin-top: 0; padding: 18px 22px; align-items: center; }
 .profile.glass .profile-head, .profile.glass .profile > .section, .profile.glass > .section, .profile.glass .badges-page,
 .profile.glass .subnav, .profile.glass .song-box {
@@ -1799,3 +1796,8 @@ body {
   .home-add { flex-wrap: wrap; }
   .home-add .chip { flex: none; }
 }
+
+/* Şeffaf tema: kapak alanı boş (arka plan resmi görünsün), başlık ve bölümler yarı saydam kutularda kalır */
+.profile-banner.clear { background: none; height: 170px; }
+.profile-banner.clear::after { display: none; }
+@media (max-width: 640px) { .profile-banner.clear { height: 110px; } }
