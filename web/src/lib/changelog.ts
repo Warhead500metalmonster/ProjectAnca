@@ -5,7 +5,7 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
-    date: "2026-10-30T12:00:00+04:00",
+    date: "2026-10-29T18:50:00+04:00",
     title: "Profil ana sayfan artık tamamen senin",
     body: "Ana sayfayı düzenle'de her bölüme ayrı ayrı tür seçebilirsin: Şu an devam ettikleri'nde animeler görünmesin, Özet sadece oyunları saysın gibi.\n"
       + "Aynı bölümü istediğin kadar ekleyebilirsin: bir Favoriler sadece oyunlar, bir başkası sadece animeler; ya da oyun ve anime bir arada. Sınır yok.\n"
