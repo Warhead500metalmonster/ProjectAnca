@@ -47,10 +47,34 @@ export default function AboutPage() {
 
       <h2>Sözüm</h2>
       <ul>
-        <li>Kayıtların senindir. İstediğin an <Link className="grad" href="/settings">Ayarlar</Link>&apos;dan Excel, JSON ya da Letterboxd biçiminde indirebilir, hesabını tamamen silebilirsin.</li>
-        <li>Reklam yok, veri satışı yok, takip çerezi yok. Ayrıntılar <Link className="grad" href="/privacy">Gizlilik ve KVKK</Link> sayfasında.</li>
-        <li>Önerilerini okurum. Sitedeki pek çok özellik kullanıcıların isteğiyle eklendi.</li>
+        <li><b>Seni burada tutmaya çalışmam.</b> Kayıtların senindir: puanların, sürelerin, incelemelerin, listelerin. İstediğin gün{" "}
+          <Link className="grad" href="/settings">Ayarlar</Link>&apos;dan hepsini tek tıkla Excel, JSON ya da Letterboxd biçiminde indirip başka yere taşıyabilirsin. Soru sorulmaz, gönül koyulmaz.</li>
+        <li><b>Gidersen iz kalmaz.</b> Hesabını sildiğinde kayıtların, yorumların ve mesajların da silinir.</li>
+        <li><b>Gelmek de gitmek kadar kolay.</b> Başka sitelerdeki geçmişini <Link className="grad" href="/import">İçe aktar</Link>&apos;dan birkaç dakikada getirirsin; sıfırdan başlamazsın.</li>
+        <li><b>Ücretsiz.</b> Reklam yok, veri satışı yok, takip çerezi yok, &quot;premium&quot; yok. Ayrıntılar <Link className="grad" href="/privacy">Gizlilik ve KVKK</Link> sayfasında.</li>
+        <li><b>Önerilerini okurum.</b> Sitedeki pek çok özellik kullanıcıların isteğiyle eklendi.</li>
       </ul>
+
+      <h2>Nasıl kullanılır? (kısaca)</h2>
+      <ul>
+        <li><b>Ekle:</b> sağ üstteki <b>+ Ekle</b> ile oyun, film, dizi, albüm ya da anime ara; durumunu, puanını ve süresini seç, kaydet. Hepsi bu.</li>
+        <li><b>Getir:</b> Steam, PlayStation, Backloggd, Letterboxd, MyAnimeList ve daha fazlasındaki geçmişini <Link className="grad" href="/import">İçe aktar</Link>&apos;dan topluca getir.</li>
+        <li><b>Takip et:</b> arkadaşlarını <Link className="grad" href="/community">Topluluk</Link>&apos;tan bul; ne oynadıkları ana sayfana düşer, zevkinizin ne kadar uyuştuğunu görürsün.</li>
+        <li><b>Süsle:</b> profil fotoğrafı, kapak, tema rengi, arka plan ve profil şarkısı <Link className="grad" href="/settings">Ayarlar</Link>&apos;da.</li>
+        <li>Takıldığın yer olursa <Link className="grad" href="/help">kullanım rehberine</Link> bak ya da bana yaz.</li>
+      </ul>
+
+      <h2>Yasaklar (kısaca)</h2>
+      <p className="muted">Burası arkadaş ortamı. Çoğu şey serbest; şunlar değil:</p>
+      <ul>
+        <li><b>Hakaret, taciz, nefret söylemi.</b> Bir oyunu yerden yere vurabilirsin, insanları değil.</li>
+        <li><b>Habersiz spoiler.</b> Sürpriz bozan bir şey yazacaksan spoiler işaretini kullan.</li>
+        <li><b>Spam ve reklam.</b> Aynı şeyi tekrar tekrar yazmak, link yağdırmak, sahte hesap açmak yok.</li>
+        <li><b>Başkası gibi davranmak.</b> Başka birinin adını ya da fotoğrafını kullanarak hesap açma.</li>
+        <li><b>Yasa dışı ve +18 içerik.</b> Korsan link, kişisel bilgi paylaşma (adres, telefon), müstehcen görsel yok.</li>
+      </ul>
+      <p className="muted">Kurala uymayan içerik kaldırılır; tekrarlanırsa önce susturma, sonra hesap kapatma gelir. Rahatsız olduğun bir şey görürsen{" "}
+        <Link className="grad" href="/chat/arno4436">bana yaz</Link>. Hukuki ayrıntılar <Link className="grad" href="/terms">Kullanım Koşulları</Link>&apos;nda.</p>
 
       <h2>Bana ulaş</h2>
       <ul>

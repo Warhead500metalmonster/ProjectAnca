@@ -1614,3 +1614,69 @@ html, body { overflow-x: clip; }
 .ip-steps b { font-size: 15px; }
 .ip-steps small { color: var(--muted); font-size: 12.5px; }
 @media (max-width: 640px) { .ip-steps { grid-template-columns: 1fr; gap: 6px; margin-bottom: 18px; } .ip-steps li { padding: 9px 12px; } }
+
+/* =========================================================
+   KAPAK ODAKLI SADE GÖRÜNÜM: düz yüzeyler, ince çizgili küçük başlıklar, keskin kapaklar,
+   profilde büyük sayaçlar ve büyük favoriler
+   ========================================================= */
+body {
+  background:
+    radial-gradient(900px 520px at 12% -8%, rgb(var(--accent-rgb) / .14), transparent 60%),
+    radial-gradient(700px 480px at 95% 0%, rgba(63, 167, 201, .08), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+}
+.btn.primary { box-shadow: none; }
+
+/* Bölüm başlıkları: küçük, büyük harf, altında ince çizgi */
+.section-head { align-items: center; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.section-head h2 { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #c6cbd8; }
+.section-head a, .section-head .link { font-size: 13px; }
+
+/* Kapaklar: keskin köşe, üzerine gelince sadece çerçeve */
+.poster { border-radius: 6px; border-color: rgba(255, 255, 255, .06); }
+.card:hover .poster { transform: none; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.poster::after { background: linear-gradient(to top, rgba(0, 0, 0, .6), transparent 35%); }
+.card-meta { margin-top: -5px; }
+
+/* Profil: adın yanında büyük sayaçlar */
+.profile-counts { display: flex; align-self: center; padding-bottom: 4px; }
+.profile-counts > * { display: flex; flex-direction: column; align-items: center; min-width: 78px; padding: 4px 12px; background: none; border: 0;
+  border-left: 1px solid var(--border); color: var(--muted); font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+.profile-counts > :first-child { border-left: 0; }
+.profile-counts b { font-family: var(--head); font-size: 28px; line-height: 1.15; color: var(--text); letter-spacing: -.02em; text-transform: none; }
+.profile-counts button { cursor: pointer; }
+.profile-counts button:hover b { color: var(--accent-2); }
+
+/* Favoriler: büyük kapaklar, bilgisayarda yan yana beş tane */
+@media (min-width: 641px) {
+  .favs .strip { grid-auto-columns: calc((100% - 4 * 16px) / 5); }
+  .favs .card-title { font-size: 15px; }
+}
+@media (max-width: 640px) {
+  .profile-counts { width: 100%; justify-content: center; padding: 4px 0 0; }
+  .profile-counts > * { min-width: 0; flex: 1; padding: 2px 4px; font-size: 10px; letter-spacing: .02em; }
+  .profile-counts b { font-size: 21px; }
+  .favs .strip { grid-auto-columns: calc((100% - 24px - 20px) / 3); }
+  .section-head h2 { font-size: 13px; }
+}
+
+/* Oyun / içerik sayfası: sayaçlar büyük sayı + küçük etiket */
+.gh-counts { justify-content: space-between; gap: 4px; }
+.gh-counts span { display: flex; flex-direction: column; align-items: center; flex: 1; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+.gh-counts b { font-family: var(--head); font-size: 20px; color: var(--text); letter-spacing: 0; text-transform: none; }
+.gh-cover { border-radius: 8px; }
+
+/* Bilgisayarda oyun sayfasının üstü: kenardan kenara geniş görsel, kapak onun üstüne biner */
+@media (min-width: 861px) {
+  .gh { margin: -24px calc(50% - 50vw) 0; padding: 230px max(28px, calc(50vw - var(--wide, 1200px) / 2 + 28px)) 28px; }
+  .gh-bg { bottom: auto; height: 460px; -webkit-mask-image: linear-gradient(#000 55%, transparent); mask-image: linear-gradient(#000 55%, transparent); }
+  .gh-bg::after { background: linear-gradient(to bottom, rgba(8, 12, 13, .1), rgba(8, 12, 13, .55) 55%, rgba(8, 12, 13, .85)); }
+  .gh-left { margin-top: -110px; }
+}
+/* Telefonda "Son bitirdikleri": tarih tek satır, yıldızlar altına */
+@media (max-width: 640px) {
+  .card.dated .dated-meta { flex-direction: column; align-items: flex-start; gap: 0; font-size: 11px; }
+  .card.dated .dated-meta span:first-child { white-space: nowrap; }
+  .card.dated .dated-meta .stars { font-size: 10px; }
+}

@@ -126,10 +126,10 @@ export default function ContentPage() {
           <div className="gh-left">
             <div className={`gh-cover ${t.square ? "square" : ""}`}>{cover ? <button className="zoom" onClick={() => setZoom(true)} aria-label="Büyüt"><img src={cover} alt="" /></button> : <div className="ph">{t.label}</div>}</div>
             <div className="gh-counts">
-              <span>{logs.length} kayıt</span>
-              <span>{count("active")} devam</span>
-              <span>{count("completed")} bitirdi</span>
-              <span>{count("planned")} planlı</span>
+              <span><b>{logs.length}</b>kayıt</span>
+              <span><b>{count("active")}</b>devam</span>
+              <span><b>{count("completed")}</b>bitirdi</span>
+              <span><b>{count("planned")}</b>planlı</span>
             </div>
             {!me ? <Link className="btn primary wide" href="/login">+ Kütüphaneme ekle</Link>
               : mine ? <button className="btn primary wide" onClick={() => openForm(mine)}>{statusLabel(mine.status, type)} · Düzenle</button>

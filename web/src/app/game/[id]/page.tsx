@@ -92,10 +92,10 @@ export default function GamePage() {
           <div className="gh-left">
             <div className="gh-cover">{art ? <button className="zoom" onClick={() => setShown(0)} aria-label="Büyüt"><img src={art} alt="" /></button> : <div className="ph">Oyun</div>}</div>
             <div className="gh-counts">
-              <span>{logs.length} kayıt</span>
-              <span>{count("active")} devam</span>
-              <span>{count("completed")} oynadı</span>
-              <span>{count("planned")} planlı</span>
+              <span><b>{logs.length}</b>kayıt</span>
+              <span><b>{count("active")}</b>devam</span>
+              <span><b>{count("completed")}</b>oynadı</span>
+              <span><b>{count("planned")}</b>planlı</span>
             </div>
             {!me ? <Link className="btn primary wide" href="/login">+ Kütüphaneme ekle</Link>
               : mine ? <button className="btn primary wide" onClick={() => openForm(mine)}>{statusLabel(mine.status, "game")} · Düzenle</button>

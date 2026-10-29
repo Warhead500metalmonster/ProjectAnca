@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import type { Entry, Profile } from "@/lib/types";
-import { fmtDate, cssUrl, safeUrl } from "@/lib/format";
+import { fmtDate, cssUrl, num, safeUrl } from "@/lib/format";
 import { fetchEntries } from "@/lib/data";
 import { PROFILE_THEMES, TYPES } from "@/lib/constants";
 import { compat } from "@/lib/compat";
@@ -84,6 +84,7 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
   const tab = path.split("/")[3] || "home"; // /u/ali/library → library
   const song = profile.song_url || null; // profilde arkada çalan şarkı
   const match = me && !isMe ? compat(mine, entries).score : null;
+  const year = String(new Date().getFullYear());
 
   return (
     <ProfileCtx.Provider value={{ ...data, isMe }}>
@@ -103,6 +104,14 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
             <h1><Name p={profile} /></h1>
             <div className="handle">@{profile.username}{profile.pronouns ? ` · ${profile.pronouns}` : ""}</div>
           </div>
+          {/* Büyük sayaçlar: kaç şey loglamış, bu yıl kaç tane bitirmiş, sırada ne kadar var, takipçi */}
+          <div className="profile-counts">
+            <span><b>{num(entries.filter((e) => e.status !== "planned").length)}</b>Kayıt</span>
+            <span><b>{num(entries.filter((e) => e.status === "completed" && (e.date || "").startsWith(year)).length)}</b>Bu yıl bitti</span>
+            <span><b>{num(entries.filter((e) => e.status === "planned").length)}</b>Planlanan</span>
+            <button onClick={() => openUserList("followers")}><b>{num(followers)}</b>Takipçi</button>
+            <button onClick={() => openUserList("following")}><b>{num(following)}</b>Takip</button>
+          </div>
           <div className="profile-actions">
             {isMe
               ? <><Link className="btn" href="/settings">Profili düzenle</Link><button className="btn primary" onClick={() => openForm(null)}>+ Ekle</button></>
@@ -121,9 +130,6 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
           </p>
         )}
         <div className="profile-meta">
-          <span><b>{entries.filter((e) => e.status !== "planned").length}</b> kayıt</span>
-          <button onClick={() => openUserList("followers")}><b>{followers}</b> takipçi</button>
-          <button onClick={() => openUserList("following")}><b>{following}</b> takip</button>
           {profile.location && <span>{profile.location}</span>}
           <span>{fmtDate(profile.created_at.slice(0, 10))} tarihinde katıldı</span>
         </div>
