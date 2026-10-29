@@ -17,7 +17,8 @@ export default function Privacy() {
           <li>Reklam yok, veri satışı yok, takip çerezi yok.</li>
           <li>Şifreni kimse göremez, biz de dahil: şifrelenmiş (hash&apos;lenmiş) olarak saklanır.</li>
           <li>E-posta adresin hiçbir yerde görünmez.</li>
-          <li>Herkese açık olan: profilin, kayıtların, puanların, incelemelerin, yorumların ve açık listelerin. Gizli listelerin ve mesajların yalnızca senin (ve mesajlaştığın kişinin).</li>
+          <li>Kimin ne göreceğini sen seçersin: profilin herkese açık, sadece arkadaşlara açık ya da gizli olabilir. Gizli listelerin, engel listen ve mesajların yalnızca senin (ve mesajlaştığın kişinin).</li>
+          <li>Raporların sadece yönetime gider; raporladığın kişi kimin raporladığını öğrenmez.</li>
           <li>Hesabını istediğin an <b>Ayarlar → Hesabımı sil</b> ile kalıcı olarak silebilir, silmeden önce <b>Verilerimi indir</b> ile bir kopyasını alabilirsin.</li>
           <li>Başka sitelerden aktarırken hiçbir sitenin şifresi istenmez. PlayStation ve Backloggd düğmeleri ile dosyalar senin tarayıcında çalışır; sunucuya sadece sonuçtaki oyun / film listesi kaydedilir.</li>
           <li>Yetkili makamlar kanuna uygun olarak isterse, mesajlar dahil kayıtlar onlarla paylaşılır. Herkes kendi yazdığından sorumludur.</li>
@@ -33,7 +34,11 @@ export default function Privacy() {
         <li><b>Hesap bilgileri:</b> e-posta adresin, şifren (şifrelenmiş olarak), kullanıcı adın ve görünen adın.</li>
         <li><b>Profil bilgileri (hepsi isteğe bağlı):</b> hakkında yazısı, konum, zamirler, sosyal medya bağlantıları, profil fotoğrafı / kapak / arka plan linkleri, profil şarkısı, tema ve renk seçimlerin, yıllık hedeflerin.</li>
         <li><b>Kullanım içeriğin:</b> kayıtların, puanların, sürelerin, tarihlerin, notların, incelemelerin, listelerin, favorilerin, beğenilerin, yorumların, takiplerin ve rozetlerin.</li>
-        <li><b>Mesajların:</b> karşılıklı takipleştiğin kişilerle yazışmaların.</li>
+        <li><b>Mesajların ve forum yazıların:</b> karşılıklı takipleştiğin kişilerle ve kurucuyla yazışmaların, forumda açtığın konular ve yazdığın cevaplar.</li>
+        <li><b>Gizlilik ve güvenlik tercihlerin:</b> profil gizlilik seçimin (herkese açık / sadece arkadaşlar / gizli), profilde gizlediğin türler ve engellediğin kişilerin listesi.</li>
+        <li><b>Raporlar:</b> bir şeyi raporladığında; raporlayan olarak hesabın, raporlanan içeriğin türü ve kimliği, sahibinin hesabı, seçtiğin sebep, isteğe bağlı notun ve
+          raporlanan yazının o anki hali (yazı sonradan silinse de yönetim inceleyebilsin diye). Bir mesajlaşmayı raporlarsan karşı tarafın son birkaç mesajı rapora eklenir.</li>
+        <li><b>Yönetim kayıtları:</b> sana gönderilen uyarılar ve okuyup okumadığın, susturma süresi, yönetimin verdiği rozetler.</li>
         <li><b>İçe aktarma:</b> yalnızca senin başlattığın aktarımda ve yalnızca kütüphanene eklenecek bilgiler (içerik adı, durum, puan, süre, tarih, not, platform) alınır.
           <ul>
             <li>Steam: herkese açık oyun listen, oynama sürelerin, son oynama tarihin ve istersen başarım oranların (Steam Web API).</li>
@@ -49,23 +54,31 @@ export default function Privacy() {
       <h2>2. Neden işliyoruz? (Amaç ve hukuki sebep)</h2>
       <ul>
         <li>Hesabını açmak, giriş yapmanı sağlamak ve siteyi sunmak: sözleşmenin kurulması ve ifası (KVKK m.5/2-c).</li>
-        <li>Siteyi güvende tutmak, kötüye kullanımı, spam&apos;i ve kurallara aykırı içeriği önlemek: meşru menfaat (KVKK m.5/2-f). Bu amaçla kurallar nedeniyle kapatılan hesapların e-posta adresi, tekrar kayıt olunmasını engellemek için saklanabilir.</li>
+        <li>Siteyi güvende tutmak, kötüye kullanımı, spam&apos;i ve kurallara aykırı içeriği önlemek; raporları incelemek, uyarı ve yaptırım uygulamak, engellemeleri uygulamak: meşru menfaat (KVKK m.5/2-f).
+          Bu amaçla kurallar nedeniyle kapatılan hesapların e-posta adresi, tekrar kayıt olunmasını engellemek için saklanabilir.</li>
+        <li>Hak ihlali bildirimlerini incelemek ve 5651 sayılı Kanun kapsamındaki yer sağlayıcı yükümlülüklerini yerine getirmek: hukuki yükümlülük (KVKK m.5/2-ç).</li>
         <li>Kanuni yükümlülükleri yerine getirmek, yetkili makamların hukuka uygun taleplerine yanıt vermek: kanunlarda açıkça öngörülme ve hukuki yükümlülük (KVKK m.5/2-a, ç).</li>
       </ul>
       <p>Verilerin reklam, profilleme ya da pazarlama için kullanılmaz, satılmaz, kiralanmaz. Uyum yüzdeleri ve sıralamalar yalnızca herkese açık kayıtlardan,
-        sitenin kendi içinde hesaplanır; kimseyle paylaşılmaz.</p>
+        sitenin kendi içinde hesaplanır; kimseyle paylaşılmaz. Gizli ya da sadece arkadaşlara açık profillerin kayıtları, onları göremeyen kişiler için bu hesaplara girmez.</p>
+      <p><b>Otomatik karar yok:</b> hakkında otomatik bir sistemle aleyhine sonuç doğuran bir karar verilmez. Uyarı, içerik silme, susturma ve hesap kapatma kararlarını her zaman bir insan, raporu okuyarak verir.</p>
       <p>Ancalog kâr amacı gütmeyen, tek kişinin yürüttüğü bir hobi projesidir. Kişisel verilerini korumak için makul teknik ve idari önlemler alınır;
         ancak profesyonel bir kurumun sunabileceği güvenlik ve süreklilik garanti edilemez. Hassas bilgilerini (kimlik, adres, telefon, sağlık bilgisi gibi)
         siteye yazmamanı öneririz; yazdığın her şeyden sen sorumlusun.</p>
 
       <h2>3. Kimler görebilir?</h2>
       <ul>
-        <li><b>Herkes:</b> profilin, kayıtların, puanların, incelemelerin, yorumların, rozetlerin ve açık listelerin. Bunlar giriş yapmamış ziyaretçilere de görünür.</li>
-        <li><b>Sadece sen:</b> e-posta adresin, gizli listelerin, sadece senin gördüğün site rengi.</li>
+        <li><b>Herkes:</b> profilin herkese açıksa kayıtların, puanların, incelemelerin, rozetlerin ve açık listelerin; ayrıca forumda ve başkalarının kayıtlarına yazdığın yorumlar.
+          Bunlar giriş yapmamış ziyaretçilere de görünür.</li>
+        <li><b>Profilin gizliyse ya da sadece arkadaşlara açıksa:</b> diğerleri yalnızca adını, kullanıcı adını, fotoğrafını, kapağını, arka planını, rozetlerini, kaçıncı üye olduğunu ve profil şarkını görür.
+          Kayıtların, listelerin ve istatistiklerin onlara gösterilmez; bu kural veritabanı düzeyinde uygulanır.</li>
+        <li><b>Sadece sen:</b> e-posta adresin, gizli listelerin, engellediğin kişilerin listesi, sana gelen uyarılar, sadece senin gördüğün site rengi. Engellediğin kişiye bildirim gitmez.</li>
+        <li><b>Sen ve yönetim:</b> gönderdiğin raporlar ve sana gelen uyarılar. Raporlanan kişiye kimin raporladığı söylenmez.</li>
         <li><b>Sen ve mesajlaştığın kişi:</b> mesajların. Mesajlar uçtan uca şifreli değildir; teknik olarak veritabanında saklanır. Site yöneticileri mesajları okumaz; yalnızca bir şikâyeti incelemek ya da kanuni bir zorunluluk gibi istisnai durumlarda bakılabilir.</li>
         <li><b>Yetkili makamlar:</b> mahkemeler, savcılıklar, kolluk ve diğer yetkili kamu kurum ve kuruluşları kanuna uygun olarak talep ederse; hesap bilgilerin, paylaştığın içerikler,
           mesaj kayıtların ve altyapı sağlayıcılarının tuttuğu teknik kayıtlar (giriş zamanları, IP adresleri gibi) bu makamlarla paylaşılır (KVKK m.8/2 ve m.28).</li>
-        <li><b>Yöneticiler:</b> herkese açık içerikleri düzenleyebilir ya da kaldırabilir; e-posta adresini ve şifreni göremez.</li>
+        <li><b>Yöneticiler:</b> kurucu ve atadığı yöneticiler. Raporları ve raporlara eklenen yazıları görür, herkese açık içerikleri düzenleyebilir ya da kaldırabilir, uyarı gönderebilir;
+          e-posta adresini ve şifreni göremez, raporlanmamış mesajlarını okumaz.</li>
       </ul>
 
       <h2>4. Güvenlik</h2>
@@ -103,6 +116,8 @@ export default function Privacy() {
         <li><b>Hesabını sildiğinde</b> profilin, kayıtların, listelerin, yorumların, beğenilerin, mesajların, takiplerin ve rozetlerin hemen ve kalıcı olarak silinir. Altyapı sağlayıcısının teknik yedeklerinden de en geç birkaç hafta içinde kendiliğinden çıkar.</li>
         <li>Ortak katalogdaki içerikler (aramada olmadığı için elle eklediğin şarkılar gibi) başkaları da kullandığı için kalır; ekleyen bilgisi silinir.</li>
         <li>Kurallar nedeniyle kapatılan hesapların e-posta adresi, tekrar kayıt olmayı engellemek için saklanabilir. Susturma kararları süresi bitene kadar profilde tutulur.</li>
+        <li>Raporlar incelenip kapandıktan sonra da, aynı kişi hakkındaki yeni raporları değerlendirebilmek için saklanabilir. Raporlayan hesabını silerse gönderdiği raporlar da silinir;
+          raporlanan kişi hesabını silerse rapordaki hesap bağlantısı kalkar. Uyarılar ve engel listen hesabınla birlikte silinir.</li>
       </ul>
 
       <h2>8. Hakların (KVKK m.11)</h2>

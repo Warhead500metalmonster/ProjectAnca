@@ -54,6 +54,7 @@ export default function Terms() {
         <li>Telif hakkıyla korunan içeriğin izinsiz paylaşımı ya da korsan içeriğe bağlantı</li>
         <li>Spam, reklam, sahte hesap, oy / beğeni şişirme</li>
         <li>Sitenin işleyişini bozmaya, güvenliğini aşmaya ya da başkalarının hesabına erişmeye yönelik girişimler</li>
+        <li>Raporlamayı ya da engellemeyi kötüye kullanmak (bilerek asılsız rapor göndermek, birini taciz etmek için yeni hesaplar açmak gibi)</li>
         <li>Türkiye Cumhuriyeti kanunlarına aykırı her türlü içerik</li>
       </ul>
       <p>Spoiler içeren incelemelerde spoiler kısmını gizlemen (<b>Spoiler gizle</b> düğmesi) rica olunur.</p>
@@ -151,7 +152,60 @@ export default function Terms() {
       <p>Bu koşulların herhangi bir maddesi geçersiz sayılırsa diğer maddeler geçerliliğini korur. Site sahibinin bir hakkını kullanmaması, o haktan vazgeçtiği anlamına gelmez.</p>
 
       <h2>10. İletişim</h2>
-      <p>Şikâyet, itiraz, telif bildirimi ve sorular için site yöneticisine Ancalog üzerinden ulaşabilirsin: <Link href="/u/arno4436">@arno4436</Link>.</p>
+      <p>Şikâyet, itiraz, telif bildirimi ve sorular için kurucuya Ancalog üzerinden ulaşabilirsin: <Link href="/chat/arno4436">@arno4436</Link> (takipleşmeniz gerekmez,
+        susturulmuş olsan da yazabilirsin). Site dışından: Discord <b>arno4436</b>. İçeriklerle ilgili bildirimler için içeriğin yanındaki <b>Raporla</b> düğmesi en hızlı yoldur.</p>
+
+      <h2>11. Sık sorulan sorular</h2>
+      <p className="muted">Hukuk dilini bir kenara bırakalım; en çok merak edilenler, düz Türkçeyle:</p>
+      <details className="help-q"><summary>Ancalog bir şirket mi, para kazanıyor mu?</summary>
+        <p>Hayır. Tek bir kişinin hobi olarak, kâr amacı gütmeden yaptığı ücretsiz bir site. Reklam yok, ücretli üyelik yok, &quot;premium&quot; yok, veri satışı yok.</p></details>
+      <details className="help-q"><summary>Verilerim satılıyor ya da reklam için kullanılıyor mu?</summary>
+        <p>Hayır. Verilerin sadece sitenin çalışması için kullanılır; satılmaz, kiralanmaz, reklam ya da profilleme için kullanılmaz. Ayrıntılar <Link href="/privacy">Gizlilik</Link> sayfasında.</p></details>
+      <details className="help-q"><summary>Verilerimi alıp gidebilir miyim? Hesabımı silersem ne olur?</summary>
+        <p>Evet, istediğin an. <b>Ayarlar → Verilerimi indir</b> ile her şeyini Excel / CSV, JSON ya da Letterboxd biçiminde indirirsin. <b>Hesabımı sil</b> dediğinde profilin,
+          kayıtların, listelerin, yorumların, mesajların ve takiplerin hemen ve kalıcı olarak silinir; geri getirilemez. Soru sorulmaz, gönül koyulmaz.</p></details>
+      <details className="help-q"><summary>Profilimi gizlersem başkaları ne görür?</summary>
+        <p>Adını, fotoğrafını, kapağını, arka planını, rozetlerini, kaçıncı üye olduğunu ve profil şarkını görürler. Kütüphanen, listelerin, istatistiklerin ve hareketlerin görünmez;
+          sıralamalara ve uyum hesaplarına da girmez. &quot;Sadece arkadaşlar&quot; seçersen karşılıklı takipleştiğin kişiler her şeyi görür.</p></details>
+      <details className="help-q"><summary>Biri beni engellerse ya da ben birini engellersem karşı taraf anlar mı?</summary>
+        <p>Kimseye bildirim gitmez. Ama engellenen kişi seni takip etmeye, sana yazmaya ya da kayıtlarına yorum yapmaya çalışırsa bunun mümkün olmadığını görür.
+          Engeli istediğin zaman kaldırabilirsin; aranızdaki eski takipler kendiliğinden geri gelmez.</p></details>
+      <details className="help-q"><summary>Birini raporlarsam benim raporladığımı öğrenir mi?</summary>
+        <p>Hayır. Raporu sadece yönetim görür; raporlanan kişiye kimin raporladığı söylenmez. Lütfen sadece gerçekten kurala aykırı şeyleri raporla; asılsız raporları tekrar tekrar göndermek de kural ihlalidir.</p></details>
+      <details className="help-q"><summary>Ben raporlanırsam ne olur? Otomatik ceza var mı?</summary>
+        <p>Otomatik ceza yok; her raporu bir insan okur. Çoğu rapor &quot;bir şey yapma&quot; ile kapanır. Kural ihlali varsa duruma göre önce uyarı gelir (siteye girince üstte görürsün),
+          gerekirse içerik silinir, tekrarlanırsa susturma, çok ağır durumlarda hesap kapatma olur. Haksızlık olduğunu düşünürsen itiraz edebilirsin.</p></details>
+      <details className="help-q"><summary>Susturuldum ya da hesabım kapatıldı, ne yapabilirim?</summary>
+        <p>Susturulduğunda yorum, forum yazısı ve mesaj yazamazsın ama kütüphanen yerinde durur, loglamaya devam edebilirsin. Susturulmuş olsan da kurucuya (<Link href="/u/arno4436">@arno4436</Link>) yazabilir,
+          itiraz edebilirsin. Hesabın kapatıldıysa Discord&apos;dan (<b>arno4436</b>) ulaşabilirsin.</p></details>
+      <details className="help-q"><summary>Mesajlarımı yöneticiler okuyor mu?</summary>
+        <p>Hayır, mesajlar sadece sen ve karşındaki kişi içindir. İki istisna var: bir mesajlaşma raporlanırsa, raporlanan kişinin son birkaç mesajı rapora eklenir ve yönetim onu görür;
+          ya da mahkeme, savcılık gibi yetkili bir makam kanuna uygun olarak isterse. Mesajlar uçtan uca şifreli değildir; çok özel şeyleri buraya yazma.</p></details>
+      <details className="help-q"><summary>Steam, PlayStation, Backloggd gibi yerlerden içe aktarmak yasal mı? Hesabım banlanır mı?</summary>
+        <p>İçe aktarma tamamen senin isteğinle, senin kendi verin için yapılır ve hiçbir sitenin şifresi istenmez. Steam&apos;in resmi API&apos;si kullanılır; PlayStation ve Backloggd düğmeleri
+          senin tarayıcında, zaten ekranda gördüğün listeyi toplar. Yine de o sitelerin kendi kurallarına uymak senin sorumluluğunda; içine sinmezse o yöntemi kullanma, oyunları elle de ekleyebilirsin.</p></details>
+      <details className="help-q"><summary>Kapaklar, oyun görselleri ve açıklamalar telif ihlali değil mi?</summary>
+        <p>Bunlar hak sahiplerine aittir; Ancalog bunları RAWG, TMDB, AniList, Apple ve Deezer gibi servislerin izin verdiği şekilde, kaynağını belirterek, sadece tanıtım ve kişisel arşiv amacıyla gösterir
+          ve üzerlerinde hak iddia etmez. Hakkını ihlal eden bir şey görürsen 7. maddedeki yolla bildir, kaldırırız.</p></details>
+      <details className="help-q"><summary>İncelememde spoiler, küfür ya da sert eleştiri olabilir mi?</summary>
+        <p>Sert eleştiri serbest: bir oyunu, filmi, albümü istediğin kadar beğenmeyebilirsin. Spoiler yazacaksan <b>Spoiler gizle</b> ile gizle. Küfür kişilere yönelikse, hakaret ya da nefret söylemi içeriyorsa yasak.</p></details>
+      <details className="help-q"><summary>Profil fotoğrafı, arka plan ya da şarkı olarak her şeyi koyabilir miyim?</summary>
+        <p>Kullanma hakkın olan, müstehcen ya da şiddet içermeyen, başkasını taklit etmeyen her şeyi. Profil şarkıları YouTube&apos;un kendi oynatıcısıyla çalar, sitede barındırılmaz;
+          YouTube&apos;dan kaldırılan bir şarkı burada da çalmaz.</p></details>
+      <details className="help-q"><summary>Kaç yaşında olmam gerekiyor?</summary>
+        <p>En az 13. 18 yaşından küçüksen velinin bilgisi ve onayıyla kullanmalısın.</p></details>
+      <details className="help-q"><summary>Polis ya da mahkeme bilgilerimi isterse ne olur?</summary>
+        <p>Yetkili bir makam kanuna uygun olarak isterse hesap bilgilerin, paylaştıkların, mesajların ve altyapı sağlayıcılarının tuttuğu teknik kayıtlar (giriş zamanı, IP adresi gibi) onlarla paylaşılır.
+          Bu, her sitenin uymak zorunda olduğu bir kural. Ancalog kendi isteğiyle kimseye veri vermez.</p></details>
+      <details className="help-q"><summary>Site kapanırsa ya da bir şey bozulursa verilerim ne olur?</summary>
+        <p>Site kapanacaksa verilerini indirebilmen için mümkün olduğunca önceden duyurulur. Hobi projesi olduğu için hiçbir şey garanti edilemez; önemli kayıtlarını ara ara <b>Verilerimi indir</b> ile yedeklemeni öneririz.</p></details>
+      <details className="help-q"><summary>Yöneticiler kim, neyi yapabilir?</summary>
+        <p>Kurucu ve onun atadığı yöneticiler. Hepsi aynı yetkiye sahiptir: raporları inceler, uyarı gönderir, içerik siler, susturur, gerekirse hesap kapatır, duyuru yazar.
+          E-posta adresini ve şifreni kimse göremez. Yöneticiler kurucuya işlem yapamaz.</p></details>
+      <details className="help-q"><summary>Kurallar değişirse nereden öğrenirim?</summary>
+        <p>Önemli değişiklikler <Link href="/community">Topluluk → Duyurular</Link>&apos;da ve sitenin üstündeki duyuru alanında yazılır. Bu sayfanın en üstünde son güncelleme tarihi var.</p></details>
+      <details className="help-q"><summary>Sorumun cevabı burada yok.</summary>
+        <p><Link href="/chat/arno4436">Kurucuya yaz</Link>; takipleşmenize gerek yok. Cevabı sık sorulan bir şeyse buraya da eklenir.</p></details>
 
       <p className="muted"><Link href="/privacy">Gizlilik ve KVKK Aydınlatma Metni →</Link></p>
     </article>

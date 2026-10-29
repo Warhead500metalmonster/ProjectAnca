@@ -5,6 +5,13 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-10-29T16:05:00+04:00",
+    title: "Yasal metinler: sık sorulan sorular ve fikri mülkiyet",
+    body: "Kullanım Koşulları'nın sonuna düz Türkçeyle 20 soruluk bir bölüm eklendi: verilerin satılıyor mu, raporlanırsan ne olur, mesajlarını kim görür, içe aktarmak yasal mı gibi.\n"
+      + "Fikri mülkiyet bölümü genişledi: kapaklar ve markalar kime ait, ne alıntılayabilirsin, hakkın ihlal edilirse nasıl bildirirsin.\n"
+      + "Gizlilik metni profil gizliliği, engelleme, raporlar ve uyarılarla güncellendi; hiçbir yaptırım otomatik verilmez, her raporu bir insan okur.",
+  },
+  {
     date: "2026-10-29T15:40:00+04:00",
     title: "Telefonda profil şarkıları çalıyor, kurallar yenilendi",
     body: "Telefonlar sayfadaki videoyu kendiliğinden sesli çaldırmıyor; artık köşedeki şarkının kapağına dokununca çalıyor.\n"
