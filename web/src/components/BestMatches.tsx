@@ -40,22 +40,32 @@ export function BestMatches() {
   );
 }
 
+// İlk 6 satır görünür, düğmeyle 6'şar 6'şar açılır
+const STEP = 6;
+function More({ total, shown, setShown }: { total: number; shown: number; setShown: (f: (n: number) => number) => void }) {
+  if (total <= STEP) return null;
+  return shown < total
+    ? <button className="feed-more" onClick={() => setShown((n) => n + STEP)}>Daha fazla göster ({total - shown})</button>
+    : <button className="feed-more" onClick={() => setShown(() => STEP)}>Daha az göster</button>;
+}
+
 function SiteList({ kind }: { kind: EntryType | "all" }) {
   const { version } = useApp();
   const { data, error } = useLoad(async () => {
-    const pairs = await q<Pair[]>(sb().rpc("compat_leaderboard", { p_type: kind === "all" ? null : kind, p_limit: 15 }));
+    const pairs = await q<Pair[]>(sb().rpc("compat_leaderboard", { p_type: kind === "all" ? null : kind, p_limit: 30 }));
     const ids = [...new Set(pairs.flatMap((p) => [p.a, p.b]))];
     const people = ids.length ? await q<Profile[]>(sb().from("profiles").select("*").in("id", ids)) : [];
     const by = new Map(people.map((p) => [p.id, p]));
     return pairs.filter((p) => by.has(p.a) && by.has(p.b)).map((p) => ({ ...p, pa: by.get(p.a)!, pb: by.get(p.b)! }));
   }, [kind, version], supabaseConfigured());
 
+  const [shown, setShown] = useState(STEP);
   if (error) return <div className="muted">Uyum sıralaması şu an yüklenemedi.</div>;
   if (!data) return <div className="loading">Yükleniyor…</div>;
   if (!data.length) return <div className="muted">Bu türde henüz en az 3 ortak içeriği olan iki üye yok.</div>;
   return (
     <div className="match-list">
-      {data.map((p, i) => (
+      {data.slice(0, shown).map((p, i) => (
         <div key={p.a + p.b} className="match-row pair">
           <span className="rank">{i + 1}</span>
           <span className="duo"><Avatar p={p.pa} /><Avatar p={p.pb} /></span>
@@ -66,6 +76,7 @@ function SiteList({ kind }: { kind: EntryType | "all" }) {
           <span className="pct">%{p.score}</span>
         </div>
       ))}
+      <More total={data.length} shown={shown} setShown={setShown} />
     </div>
   );
 }
@@ -79,6 +90,7 @@ function MineList({ kind }: { kind: EntryType | "all" }) {
     return { rows, people: new Map(people.map((p) => [p.id, p])) };
   }, [me?.id, version], !!me);
 
+  const [shown, setShown] = useState(STEP);
   if (error) return <div className="muted">Uyum şu an hesaplanamadı.</div>;
   if (!data) return <div className="loading">Yükleniyor…</div>;
   const myN = kind === "all" ? mine.length : mine.filter((e) => e.type === kind).length;
@@ -89,12 +101,12 @@ function MineList({ kind }: { kind: EntryType | "all" }) {
     const sum = (f: (r: Row) => number) => pick.reduce((s, r) => s + f(r), 0);
     // genelde karşı tarafın bütün kayıtları, türde o türünkiler
     return { p: data.people.get(id), common: sum((r) => r.common), score: scoreOf(sum((r) => r.common), sum((r) => r.rated), sum((r) => Number(r.diff_sum)), myN, sum((r) => r.total)) };
-  }).filter((x) => x.p && x.score !== null && x.common >= (kind === "all" ? 2 : 1)).sort((a, b) => b.score! - a.score! || b.common - a.common).slice(0, 10);
+  }).filter((x) => x.p && x.score !== null && x.common >= (kind === "all" ? 2 : 1)).sort((a, b) => b.score! - a.score! || b.common - a.common).slice(0, 30);
 
   if (!ranked.length) return <div className="muted">Bu türde henüz seninle yeterince ortak içeriği olan kimse yok.</div>;
   return (
     <div className="match-list">
-      {ranked.map(({ p, score, common }, i) => (
+      {ranked.slice(0, shown).map(({ p, score, common }, i) => (
         <Link key={p!.id} className="match-row" href={`/u/${p!.username}/compare`}>
           <span className="rank">{i + 1}</span>
           <Avatar p={p!} />
@@ -102,6 +114,7 @@ function MineList({ kind }: { kind: EntryType | "all" }) {
           <span className="pct">%{score}</span>
         </Link>
       ))}
+      <More total={ranked.length} shown={shown} setShown={setShown} />
     </div>
   );
 }

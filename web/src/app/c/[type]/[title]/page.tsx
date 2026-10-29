@@ -115,7 +115,7 @@ export default function ContentPage() {
   const facts: [string, string][] = [
     ...(info?.facts || (creator ? [[t.creator, creator]] as [string, string][] : [])),
     ...(year ? [["Yıl", String(year)]] as [string, string][] : []),
-    ...(avgSec ? [[`Ortalama ${t.time.toLocaleLowerCase("tr")} (Ancalog)`, fmtDur(Math.round(avgSec))]] as [string, string][] : []),
+    ...(avgSec ? [[`Ortalama ${t.time.toLocaleLowerCase("tr")} (Ancalog)`, fmtDur(avgSec >= 3600 ? Math.round(avgSec / 60) * 60 : Math.round(avgSec))]] as [string, string][] : []),
   ];
 
   return (

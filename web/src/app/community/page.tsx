@@ -20,6 +20,12 @@ interface Slim { rawg_id: number | null; title: string; cover: string | null; ra
 // En çok loglanan oyunlar: her oyunu kaç farklı kişinin loglandığına göre sırala (users verilirse sadece onların kayıtları)
 async function popularGames(users?: string[]): Promise<(Slim & { n: number })[]> {
   if (users && !users.length) return [];
+  // Önce sunucuda say (017); veritabanı henüz güncellenmediyse eski yola düş
+  try {
+    const top = await q<{ rawg_id: number; n: number; title: string; cover: string | null }[]>(
+      sb().rpc("popular_games", { p_users: users ?? null, p_limit: 12 }));
+    return top.map((g) => ({ ...g, n: Number(g.n), rating: 0 }));
+  } catch { /* eski yol */ }
   const rows = await fetchAll<{ rawg_id: number; user_id: string }>((from, to) => {
     const req = sb().from("entries").select("rawg_id, user_id").eq("type", "game").not("rawg_id", "is", null);
     return (users ? req.in("user_id", users) : req).order("id").range(from, to);

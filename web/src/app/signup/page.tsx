@@ -42,7 +42,7 @@ export default function Signup() {
       <div className="auth">
         <h1>Neredeyse tamam </h1>
         <p>E-postana bir onay linki gönderdik. Linke tıkladıktan sonra giriş yapabilirsin.</p>
-        <p className="signup-import"><b>Giriş yapınca ilk iş:</b> Steam, PlayStation, Backloggd, Letterboxd... bütün kütüphaneni <b>İçe aktar</b>&apos;dan birkaç dakikada getir.</p>
+        <p className="signup-import"><b>Giriş yapınca ilk iş:</b> Steam, PlayStation, Backloggd, Letterboxd, MyAnimeList... bütün kütüphaneni <b>İçe aktar</b>&apos;dan birkaç dakikada getir.</p>
         <Link className="btn primary" href="/login">Giriş sayfasına git</Link>
       </div>
     );
@@ -52,7 +52,7 @@ export default function Signup() {
       <h1>Ancalog&apos;a katıl </h1>
       <div className="signup-import">
         <b>Katılınca bütün kütüphaneni getir</b>
-        <span>Steam, PlayStation, Xbox, Epic, Switch, HowLongToBeat, Backloggd, Playnite, Letterboxd, Spotify, Last.fm</span>
+        <span>Steam, PlayStation, Xbox, Epic, Switch, HowLongToBeat, Backloggd, Playnite, Letterboxd, MyAnimeList, AniList, Spotify, Last.fm</span>
         <small>Durumlar, puanlar, süreler, tarihler, notlar: hepsi gelir. Sıfırdan başlamak yok.</small>
       </div>
       <div className="field">

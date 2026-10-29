@@ -79,7 +79,7 @@ export default function GamePage() {
     ["Yayıncı", refLinks("publishers", g?.publishers)],
     ["Çıkış tarihi", g?.released ? fmtDate(g.released) : edit.year ? String(edit.year) : ""],
     ["Ortalama süre (RAWG)", g?.playtime ? `${num(g.playtime)} sa` : ""],
-    ["Ortalama süre (Ancalog)", avgSec ? fmtDur(Math.round(avgSec)) : ""],
+    ["Ortalama süre (Ancalog)", avgSec ? fmtDur(Math.round(avgSec / 60) * 60 || Math.round(avgSec)) : ""],
     ["Mağazalar", refLinks("stores", g?.stores?.map((s) => s.store))],
     ["Yaş sınırı", g?.esrb_rating?.name || ""],
   ] as [string, React.ReactNode][]).filter(([, v]) => v);

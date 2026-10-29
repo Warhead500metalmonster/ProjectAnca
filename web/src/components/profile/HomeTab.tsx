@@ -43,7 +43,7 @@ export function HomeTab() {
       {editing && <HomeEditor layout={layout} sections={sections} onClose={() => setEditing(false)} />}
       {layout?.text?.trim() && <section className="section home-text"><RichText text={layout.text} /></section>}
       {!entries.length && !layout?.text?.trim() && (
-        <div className="empty">{isMe ? <>Henüz kaydın yok. Steam, PlayStation, Backloggd, Letterboxd... başka yerdeki kütüphaneni birkaç dakikada getir.<br />
+        <div className="empty">{isMe ? <>Henüz kaydın yok. Steam, PlayStation, Backloggd, Letterboxd, MyAnimeList... başka yerdeki kütüphaneni birkaç dakikada getir.<br />
           <Link className="btn primary" href="/import">Kütüphanemi getir</Link></> : "Henüz kayıt yok."}</div>
       )}
       {sections.map((k) => <HomeSection key={k} k={k} />)}

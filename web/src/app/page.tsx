@@ -49,7 +49,7 @@ function Landing({ version }: { version: number }) {
         <div className="hero2-text">
           <h1>Oynadığın, izlediğin, dinlediğin <span className="grad">her şey</span> tek yerde.</h1>
           <p>Oyunlarını, filmlerini, dizilerini, müziklerini ve animelerini logla. Puanla, not al, arkadaşlarının neyle uğraştığını gör.</p>
-          <p className="hero-import"><b>Steam, PlayStation, Xbox, HowLongToBeat, Backloggd, Letterboxd, Spotify</b> ve daha fazlasından bütün geçmişini tek seferde getir.</p>
+          <p className="hero-import"><b>Steam, PlayStation, Xbox, HowLongToBeat, Backloggd, Letterboxd, MyAnimeList, Spotify</b> ve daha fazlasından bütün geçmişini tek seferde getir.</p>
           <div className="hero-actions">
             <Link className="btn primary big" href="/signup">Ücretsiz katıl, kütüphaneni getir</Link>
             <Link className="btn big ghost" href="/login">Giriş yap</Link>

@@ -15,7 +15,7 @@ export function GettingStarted({ user, mine }: { user: Profile; mine: Entry[] })
   useEffect(() => { try { setHidden(localStorage.getItem(HIDE) === "1"); } catch { setHidden(false); } }, []);
 
   const steps = [
-    { done: mine.length >= 20, title: "Kütüphaneni getir", text: "Steam, PlayStation, Xbox, Backloggd, HowLongToBeat, Letterboxd, Spotify... Yıllardır biriktirdiğin her şey birkaç dakikada gelir.",
+    { done: mine.length >= 20, title: "Kütüphaneni getir", text: "Steam, PlayStation, Xbox, Backloggd, HowLongToBeat, Letterboxd, MyAnimeList, Spotify... Yıllardır biriktirdiğin her şey birkaç dakikada gelir.",
       action: <Link className="btn primary" href="/import">Kütüphanemi getir</Link> },
     { done: mine.length > 0, title: "İlk kaydını ekle", text: "Oynadığın, izlediğin ya da dinlediğin bir şeyi ara, durumunu ve puanını seç.",
       action: <button className="btn" onClick={() => openForm(null)}>+ Ekle</button> },

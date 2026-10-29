@@ -12,12 +12,19 @@ import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { psBookmarklet } from "@/lib/psBookmarklet";
 import { BL_MARK, backloggdBookmarklet } from "@/lib/backloggdBookmarklet";
+import { ImportPromo } from "@/components/ImportPromo";
 
-// Başka sitelerden kütüphane aktarma: Steam, PlayStation, Xbox, Epic / Switch / HowLongToBeat listeleri, Letterboxd, Simkl, Spotify ve Last.fm
+// Başka sitelerden kütüphane aktarma: Steam, PlayStation, Xbox, Epic / Switch / HowLongToBeat listeleri, Backloggd, Letterboxd, MyAnimeList, AniList, Simkl, Spotify ve Last.fm
 export default function ImportPage() {
   const { me, ready } = useApp();
   if (!ready) return <div className="loading">Yükleniyor…</div>;
-  if (!me) return <div className="empty">Bu sayfa için giriş yapmalısın. <br /><Link className="btn" href="/login">Giriş yap</Link></div>;
+  // Giriş yapmamışa boş uyarı yerine neler getirebileceğini göster (sitenin en büyük özelliği)
+  if (!me) return (
+    <>
+      <ImportPromo signedIn={false} />
+      <p className="muted" style={{ textAlign: "center" }}>Zaten üye misin? <Link className="link" href="/login">Giriş yap</Link>, kaldığın yerden devam et.</p>
+    </>
+  );
   return <Importer />;
 }
 

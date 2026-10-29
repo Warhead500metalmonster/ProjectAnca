@@ -228,7 +228,7 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
         </div>
         {!entry && !item && !game && (
           <Link className="form-import" href="/import" onClick={() => ref.current?.close()}>
-            <b>Tek tek uğraşma.</b> Steam, PlayStation, Backloggd, Letterboxd... bütün kütüphaneni tek seferde getir →
+            <b>Tek tek uğraşma.</b> Steam, PlayStation, Backloggd, Letterboxd, MyAnimeList... bütün kütüphaneni tek seferde getir →
           </Link>
         )}
         <div className="field">
