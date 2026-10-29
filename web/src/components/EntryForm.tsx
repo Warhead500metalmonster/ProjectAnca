@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { Entry, EntryType, FormGame, Item, RawgGame } from "@/lib/types";
 import { STATUSES, STORES, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
-import { safeUrl, scoreText, today } from "@/lib/format";
+import { fmtDate, safeUrl, scoreText, today } from "@/lib/format";
 import { gameFromRawg, rawg } from "@/lib/rawg";
 import { type Found, addCatalog, findContent, isLink, searchCredit, tmdbCreator, tmdbDetail } from "@/lib/data";
 import { q, sb } from "@/lib/supabase";
@@ -47,6 +47,11 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
   const [review, setReview] = useState(entry?.notes || "");
   const [rating, setRating] = useState(Number(entry?.rating) || 0); // 0-10
   const [favorite, setFavorite] = useState(!!entry?.favorite);
+  const [season, setSeason] = useState(entry?.season?.toString() || "");
+  const [episode, setEpisode] = useState(entry?.episode?.toString() || "");
+  const [epTotal, setEpTotal] = useState(entry?.episodes_total?.toString() || "");
+  const [tags, setTags] = useState<string[]>(entry?.tags || []);
+  const [tagText, setTagText] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [suggestions, setSuggestions] = useState<Found[] | null>(null);
@@ -54,6 +59,17 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
 
   const t = TYPES[type];
   const isGame = type === "game";
+  const episodic = type === "show" || type === "anime";
+  const verb = isGame ? "oynamaya" : type === "music" ? "dinlemeye" : "izlemeye";
+  const myTags = [...new Set(mine.flatMap((e) => e.tags || []))].filter((x) => !tags.includes(x)).sort((a, b) => a.localeCompare(b, "tr"));
+
+  // Etiket: yazıp Enter'a ya da virgüle bas; küçük harfe çevrilir, aynısı iki kez eklenmez
+  const cleanTag = (raw: string) => raw.replace(/[#,]/g, " ").replace(/\s+/g, " ").trim().toLocaleLowerCase("tr").slice(0, 30);
+  function addTag(raw: string) {
+    const v = cleanTag(raw);
+    if (v && !tags.includes(v) && tags.length < 20) setTags([...tags, v]);
+    setTagText("");
+  }
 
   useEffect(() => {
     ref.current?.showModal();
@@ -158,6 +174,11 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
       ...((dropNote.trim() || entry?.drop_note) && { drop_note: status === "dropped" ? dropNote.trim() || null : entry?.drop_note ?? null }),
       playtime_sec: playtime,
       progress_sec: progressSec,
+      // Bölüm ve etiketler: sadece kullanılınca gönderilir (veritabanı güncellenmeden de kayıt çalışsın)
+      ...((season || entry?.season != null) && { season: type === "show" ? parseInt(season) || null : null }),
+      ...((episode || entry?.episode != null) && { episode: episodic ? parseInt(episode) || null : null }),
+      ...((epTotal || entry?.episodes_total != null) && { episodes_total: episodic ? parseInt(epTotal) || null : null }),
+      ...((tags.length || entry?.tags?.length || cleanTag(tagText)) && { tags: [...new Set([...tags, cleanTag(tagText)].filter(Boolean))].slice(0, 20) }),
       hours: playtime ? Math.round(playtime / 360) / 10 : null, // eski alanla uyumlu kalsın
       progress: note.trim() || null,
       rating,
@@ -186,7 +207,9 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
       refresh();
     } catch (err) {
       const msg = (err as Error).message;
-      setError(msg.includes("favori") ? msg : "Kaydedilemedi: " + msg);
+      setError(msg.includes("favori") ? msg
+        : /season|episode|tags/.test(msg) ? "Bölüm ve etiket alanları birkaç dakika içinde açılacak; şimdilik onları boş bırakıp kaydedebilirsin."
+        : "Kaydedilemedi: " + msg);
     } finally {
       setSaving(false);
     }
@@ -198,6 +221,25 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
     const from = box?.selectionStart ?? review.length, to = box?.selectionEnd ?? review.length;
     const picked = review.slice(from, to) || "spoiler buraya";
     setReview(review.slice(0, from) + "||" + picked + "||" + review.slice(to));
+  }
+
+  // Tekrar oynama / izleme: bu seferin bilgileri geçmişe taşınır, kayıt baştan "devam ediyor" olur
+  async function again() {
+    if (!entry) return;
+    const play = { started_on: entry.started_on, date: entry.date, rating: Number(entry.rating) || 0, playtime_sec: entry.playtime_sec ?? null };
+    try {
+      await q(sb().from("entries").update({
+        plays: [...(entry.plays || []), play], status: "active", started_on: today(), date: null, progress_sec: null,
+        ...(entry.episode != null && { episode: null, season: entry.season != null ? 1 : null }),
+        updated_at: new Date().toISOString(),
+      }).eq("id", entry.id));
+      ref.current?.close();
+      toast(`${(entry.plays?.length || 0) + 2}. kez başladın, keyfini çıkar!`);
+      refresh();
+    } catch (err) {
+      const msg = (err as Error).message;
+      setError(/plays/.test(msg) ? "Bu özellik birkaç dakika içinde açılacak." : "Kaydedilemedi: " + msg);
+    }
   }
 
   async function remove() {
@@ -325,6 +367,27 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
             <HmsInput value={progressSec} onChange={setProgressSec} label="Şu anki ilerleme" />
           </div>
         </div>
+        {episodic && (
+          <div className="row">
+            {type === "show" && (
+              <div className="field small">
+                <label htmlFor="f-season">Sezon</label>
+                <input id="f-season" type="number" min={0} max={1000} inputMode="numeric" value={season} onChange={(e) => setSeason(e.target.value)} />
+              </div>
+            )}
+            <div className="field">
+              <label htmlFor="f-ep">Bölüm</label>
+              <div className="ep-input">
+                <input id="f-ep" type="number" min={0} max={100000} inputMode="numeric" value={episode} onChange={(e) => setEpisode(e.target.value)} />
+                <button type="button" className="btn" title="Bir sonraki bölüm" onClick={() => setEpisode(String((parseInt(episode) || 0) + 1))}>+1</button>
+              </div>
+            </div>
+            <div className="field small">
+              <label htmlFor="f-eptotal">Toplam</label>
+              <input id="f-eptotal" type="number" min={0} max={100000} inputMode="numeric" placeholder="?" value={epTotal} onChange={(e) => setEpTotal(e.target.value)} />
+            </div>
+          </div>
+        )}
         <div className="row">
           <div className="field grow">
             <label htmlFor="f-start">Başlama tarihi</label>
@@ -358,6 +421,19 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
             <button type="button" className="link clear" onClick={() => setRating(0)}>temizle</button>
           </div>
         </div>
+        <div className="field">
+          <label htmlFor="f-tags">Etiketler <span className="muted">· kendi düzenin: co-op, çocukluğum, yağmurlu gün…</span></label>
+          <div className="tag-input">
+            {tags.map((x) => <button type="button" key={x} className="tag" title="Kaldır" onClick={() => setTags(tags.filter((y) => y !== x))}>#{x} ✕</button>)}
+            <input id="f-tags" list="tagList" maxLength={31} autoComplete="off" value={tagText} placeholder={tags.length ? "" : "yaz ve Enter'a bas"}
+              onChange={(e) => (e.target.value.endsWith(",") ? addTag(e.target.value) : setTagText(e.target.value))}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && tagText.trim()) { e.preventDefault(); addTag(tagText); }
+                if (e.key === "Backspace" && !tagText && tags.length) setTags(tags.slice(0, -1));
+              }} />
+            <datalist id="tagList">{myTags.map((x) => <option key={x} value={x} />)}</datalist>
+          </div>
+        </div>
         <label className="check"><input type="checkbox" checked={favorite} onChange={(e) => setFavorite(e.target.checked)} /> ♥ Favorilerime ekle <span className="muted">(her kategoride en fazla 10)</span></label>
         {(!isGame || picked) && (
           <div className="field">
@@ -376,6 +452,17 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
           </label>
           <textarea id="f-review" rows={3} maxLength={5000} value={review} onChange={(e) => setReview(e.target.value)} />
         </div>
+        {entry && (entry.plays?.length || entry.status === "completed") ? (
+          <div className="replays">
+            {entry.plays?.length ? (
+              <div className="muted small">
+                <b>Önceki seferlerin:</b>{" "}
+                {entry.plays.map((p, i) => <span key={i}>{i ? " · " : ""}{i + 1}. kez{p.date ? ` (${fmtDate(p.date)})` : ""}{p.rating ? ` ★ ${scoreText(p.rating, scale)}` : ""}</span>)}
+              </div>
+            ) : null}
+            {entry.status === "completed" && <button type="button" className="btn" onClick={again}>↻ Yeniden {verb} başla</button>}
+          </div>
+        ) : null}
         {error && <p className="form-error">{error}</p>}
         <div className="actions">
           {entry && <button type="button" className="btn danger" onClick={remove}>Sil</button>}

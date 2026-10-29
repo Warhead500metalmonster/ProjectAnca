@@ -13,6 +13,7 @@ import { useApp } from "@/components/AppProvider";
 import { psBookmarklet } from "@/lib/psBookmarklet";
 import { BL_MARK, backloggdBookmarklet } from "@/lib/backloggdBookmarklet";
 import { SZ_MARK, serializdBookmarklet } from "@/lib/serializdBookmarklet";
+import { type SteamGame, setSteamLink, steamLink, steamRow } from "@/lib/steamSync";
 import { ImportPromo } from "@/components/ImportPromo";
 
 // Başka sitelerden kütüphane aktarma: Steam, PlayStation, Xbox, Epic / Switch / HowLongToBeat listeleri, Backloggd, Letterboxd, Serializd, MyAnimeList, AniList, Simkl, Spotify ve Last.fm
@@ -168,7 +169,6 @@ function Progress({ done, total, label }: { done: number; total: number; label: 
 
 // ---------- Steam ----------
 
-interface SteamGame { appid: number; name: string; minutes: number; last: number }
 
 type Ach = Record<string, [number, number]>;
 
@@ -199,6 +199,19 @@ function Steam() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState<{ done: number; total: number } | null>(null);
+  const [linked, setLinked] = useState<string | null | undefined>(undefined); // otomatik senkron için bağlı Steam kimliği (undefined: bilinmiyor)
+  useEffect(() => { if (me) steamLink().then(setLinked).catch(() => setLinked(undefined)); }, [me]);
+
+  async function autoSync(on: boolean) {
+    if (!me) return;
+    try {
+      await setSteamLink(me.id, on ? steamid : null);
+      setLinked(on ? steamid : null);
+      toast(on ? "Tamam! Her gün siteye girdiğinde Steam oyunların kendiliğinden güncellenecek." : "Otomatik güncelleme kapatıldı.");
+    } catch (err) {
+      toast(/steam_links/.test((err as Error).message) ? "Bu özellik birkaç dakika içinde açılacak." : "Olmadı: " + (err as Error).message);
+    }
+  }
 
   const haveSteam = new Set(mine.map((e) => e.ext_id).filter((x) => x?.startsWith("steam:")));
   const haveTitle = new Set(mine.filter((e) => e.type === "game").map((e) => norm(e.title)));
@@ -247,13 +260,7 @@ function Steam() {
         const hit = found.find((x) => norm(x.name) === norm(g.name)) || found[0];
         if (hit && myRawg.has(hit.id)) return null;
         if (hit) myRawg.add(hit.id);
-        return {
-          type: "game", title: (hit?.name || g.name).slice(0, 200), rawg_id: hit?.id ?? null, ext_id: `steam:${g.appid}`,
-          year: parseInt(hit?.released || "") || null,
-          cover: hit?.background_image ? smallImage(hit.background_image) : `https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/header.jpg`,
-          status: steamStatus(g, ach), playtime_sec: g.minutes * 60 || null, hours: g.minutes ? Math.round(g.minutes / 6) / 10 : null,
-          platform: "PC", store: "Steam", rating: 0, updated_at: new Date((g.last || Date.now() / 1000) * 1000).toISOString(),
-        };
+        return steamRow(g, hit, steamStatus(g, ach));
       }, (done) => setStep({ done, total: chosen.length }))).filter(Boolean) as Row[];
       await insertAll(rows, me.id);
       const done = rows.filter((r) => r.status === "completed").length;
@@ -309,6 +316,12 @@ function Steam() {
   return (
     <section className="section import-card">
       <div className="section-head"><h2>Steam</h2></div>
+      {linked && (
+        <div className="import-bar">
+          <span><b>Otomatik güncelleme açık.</b> Her gün siteye girdiğinde oynama sürelerin tazelenir, yeni oynadığın oyunlar kendiliğinden eklenir.</span>
+          <button className="link" onClick={() => autoSync(false)}>Kapat</button>
+        </div>
+      )}
       <p className="muted small" style={{ marginTop: 0 }}>Oyunların ve oynama sürelerin gelir. Oyunlar hiçbir kategoriye konmadan (<b>Kategorisiz</b>) eklenir; Bitti, Oynuyorum ya da Backlog&apos;a istediğini sonra sen taşırsın.
         Daha önce aktardıysan aynı linkle tekrar getirip <b>Kütüphanemdekileri güncelle</b>&apos;ye bas: oynama süreleri tazelenir.</p>
       {!games ? (
@@ -326,6 +339,9 @@ function Steam() {
             {games.length > fresh.length && <button className="btn" disabled={busy} onClick={resync}>Kütüphanemdekileri güncelle</button>}
           </div>
           <label className="check-line"><input type="checkbox" checked={useAch} disabled={busy} onChange={(e) => setUseAch(e.target.checked)} /> Bütün başarımlarını açtığım oyunları <b>Oynandı</b> yap (isteğe bağlı)</label>
+          {linked !== steamid && (
+            <label className="check-line"><input type="checkbox" checked={false} disabled={busy} onChange={() => autoSync(true)} /> <b>Her gün otomatik güncel tut</b>: siteye girdiğinde oynama süreleri tazelensin, yeni oynadığım oyunlar kendiliğinden eklensin (istediğin an kapatabilirsin)</label>
+          )}
           <div className="import-list">
             {games.map((g) => (
               <label key={g.appid} className={already(g) ? "off" : ""}>

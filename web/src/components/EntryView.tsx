@@ -6,7 +6,7 @@ import type { Comment, Entry } from "@/lib/types";
 import { PROFILE_COLS, TYPES, statusLabel } from "@/lib/constants";
 import { contentHref, cssUrl, daysTaken, fmtDate, fmtDur, itemOf, num, playSec, safeUrl, scoreText, timeAgo } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
-import { Avatar, Name, Rating, RichText } from "./ui";
+import { Avatar, Name, Rating, RichText, epText } from "./ui";
 import { useApp } from "./AppProvider";
 
 // Bir kaydın ayrıntılarını, beğeni ve yorumlarını gösteren pencere
@@ -47,6 +47,8 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
     ["Kaç günde bitti", days && `${days} gün`],
     [t.time, fmtDur(playSec(e))],
     ["Şu anki ilerleme", fmtDur(e.progress_sec)],
+    ["Bölüm", epText(e)],
+    ["Kaçıncı kez", e.plays?.length ? `${e.plays.length + 1}. kez` : ""],
   ].filter(([, v]) => v) as [string, string][];
 
   async function toggleLike() {
@@ -155,6 +157,7 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
           {details.length > 0 && (
             <div className="view-details">{details.map(([k, v]) => <div key={k}><span>{k}</span><b>{v}</b></div>)}</div>
           )}
+          {e.tags?.length ? <div className="lib-tags">{e.tags.map((x) => <span key={x} className="tag">#{x}</span>)}</div> : null}
           {e.progress && <div className="view-note"><span>Not</span>{e.progress}</div>}
           {e.status === "dropped" && e.drop_note && <div className="view-note"><span>Neden bıraktı</span>{e.drop_note}</div>}
           {e.notes && <div className="view-notes"><span className="muted">İnceleme</span>{"\n"}<RichText text={e.notes} /></div>}

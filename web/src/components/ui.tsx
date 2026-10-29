@@ -5,7 +5,8 @@ import { useState } from "react";
 import Link from "next/link";
 import type { AvatarCrop, Entry, Profile } from "@/lib/types";
 import { BADGES, SOCIALS, TYPES, activityVerb, statusLabel } from "@/lib/constants";
-import { daysTaken, fmtDur, fmtHoursShort, num, playSec, safeUrl, scoreShort, scoreText, timeAgo, avgText } from "@/lib/format";
+import { daysTaken, fmtDur, fmtHoursShort, num, playSec, safeUrl, scoreShort, scoreText, timeAgo, avgText, today } from "@/lib/format";
+import { q, sb } from "@/lib/supabase";
 import { useApp } from "./AppProvider";
 
 type Who = Partial<Pick<Profile, "id" | "username" | "display_name" | "avatar_url">> | null | undefined;
@@ -165,11 +166,41 @@ export function Stats({ list }: { list: Entry[] }) {
   return <>{items.map(([b, s]) => <div className="stat" key={s}><b>{b}</b><span>{s}</span></div>)}</>;
 }
 
+// Dizi/animede bir bölüm daha izleyince tek dokunuş: sayaç artar, son bölümse bitirmek isteyip istemediği sorulur
+function EpBump({ e }: { e: Entry }) {
+  const { toast, refresh } = useApp();
+  const [busy, setBusy] = useState(false);
+  const total = e.episodes_total || 0;
+  async function bump() {
+    const next = (e.episode || 0) + 1;
+    const patch: Partial<Entry> = { episode: next, updated_at: new Date().toISOString() };
+    const last = total > 0 && next >= total;
+    if (last && confirm(`Son bölüm! “${e.title}” bitti olarak işaretlensin mi?`)) Object.assign(patch, { status: "completed", date: today() });
+    setBusy(true);
+    try {
+      await q(sb().from("entries").update(patch).eq("id", e.id));
+      toast(patch.status === "completed" ? "Bitirdin, tebrikler!" : `${next}. bölüm ✓`);
+      refresh();
+    } catch (err) {
+      const msg = (err as Error).message;
+      toast(/episode/.test(msg) ? "Bölüm takibi birkaç dakika içinde açılacak." : "Kaydedilemedi: " + msg);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <button type="button" className="ep-bump" disabled={busy} onClick={bump} title="Bir bölüm daha izledim">
+      {e.episode ? <span>{e.episode}{total ? `/${total}` : ""}</span> : null}+1
+    </button>
+  );
+}
+
 export function EntryCard({ e, kind = false, edit = false, wall = false }: { e: Entry; kind?: boolean; edit?: boolean; wall?: boolean }) {
   const { openForm, openView, scale } = useApp();
   const t = TYPES[e.type];
   const meta = [e.creator, e.year].filter(Boolean).join(" · ");
-  return (
+  const episodic = (e.type === "show" || e.type === "anime") && e.status === "active";
+  const card = (
     <button className="card" onClick={() => (edit ? openForm(e) : openView(e))}>
       <div className={`poster ${t.square ? "square" : ""}`}>
         <div className="ph">{t.label}</div>
@@ -178,18 +209,26 @@ export function EntryCard({ e, kind = false, edit = false, wall = false }: { e: 
         {e.favorite && <span className="fav" title="Favori">♥</span>}
         {e.status !== "owned" && <span className={`st badge ${e.status}`}>{statusLabel(e.status, e.type)}</span>}
         {e.rating ? <span className="rating">★ {scoreShort(e.rating, scale)}</span> : null}
+        {episodic && !edit && e.episode ? <span className="ep-pill">{e.episode}{e.episodes_total ? `/${e.episodes_total}` : ""}. bölüm</span> : null}
         {wall && <div className="hover"><b>{e.title}</b>{meta && <span>{meta}</span>}</div>}
       </div>
       {!wall && <div className="card-title">{e.title}</div>}
       {!wall && meta && <div className="card-meta">{meta}</div>}
     </button>
   );
+  // Kendi devam eden dizinde kapağın köşesinde "+1 bölüm" (düğme içinde düğme olmasın diye yanına konur)
+  return edit && episodic ? <div className="card-bump">{card}<EpBump e={e} /></div> : card;
 }
 
 export const likeCount = (e: Entry) => e.likes?.[0]?.count || 0;
 export const commentCount = (e: Entry) => e.comments?.[0]?.count || 0;
 
 // Kayıtla ilgili kısa etiketler: platform, emülatör, mağaza, ilerleme, süre, kaç günde bitti
+// Dizi/animede kaçıncı bölümde: "S2 · 5/12. bölüm"
+export const epText = (e: Entry) => e.episode
+  ? `${e.season ? `S${e.season} · ` : ""}${e.episode}${e.episodes_total ? `/${e.episodes_total}` : ""}. bölüm`
+  : "";
+
 export function entryTags(e: Entry, { store = false, time = true } = {}) {
   const days = daysTaken(e);
   return [
@@ -198,6 +237,8 @@ export function entryTags(e: Entry, { store = false, time = true } = {}) {
     e.dlc ? "DLC dahil" : "",
     store ? e.store : "",
     e.status === "active" && e.progress_sec ? `▶ ${fmtDur(e.progress_sec)}` : "",
+    epText(e),
+    e.plays?.length ? `${e.plays.length + 1}. kez` : "",
     time && playSec(e) ? fmtDur(playSec(e)) : "",
     days ? `${days} günde` : "",
   ].filter(Boolean) as string[];

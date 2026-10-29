@@ -5,6 +5,14 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-10-29T20:00:00+04:00",
+    title: "Bölüm takibi, tekrar oynama, etiketler ve Steam otomatik güncelleme",
+    body: "Dizi ve animelerde kaçıncı sezon ve bölümde olduğunu yazabilirsin; ana sayfadaki kapağın köşesindeki +1 ile bir bölüm daha izlediğini tek dokunuşla işlersin, son bölümde bitirmek isteyip istemediğin sorulur.\n"
+      + "Bitirdiğin bir şeye geri mi döndün? Kaydında \"Yeniden başla\"ya bas: önceki seferin tarihi ve puanıyla saklanır, kaçıncı kez olduğu görünür.\n"
+      + "Kayıtlarına kendi etiketlerini ekle: co-op, çocukluğum, yağmurlu gün… Kütüphanende etikete dokununca sadece onlar listelenir.\n"
+      + "Steam'i bir kez bağla, unut: İçe aktar → Steam'de \"Her gün otomatik güncel tut\"u işaretlersen siteye girdiğinde oynama sürelerin tazelenir, yeni oynadığın oyunlar kendiliğinden eklenir. Silmiş olduğun oyunlar geri gelmez, istediğin an kapatırsın.",
+  },
+  {
     date: "2026-10-29T19:50:00+04:00",
     title: "Arkadaşların öneriyor",
     body: "Ana sayfanda yeni bir bölüm: takip ettiklerinin 9 ve üstü puan verdiği, senin kütüphanende henüz olmayan şeyler. Kaç arkadaşın sevmişse o kadar öne çıkar; kapağın köşesindeki + ile tek dokunuşta ekleyebilirsin.",

@@ -1813,3 +1813,27 @@ body {
 .pick-faces { display: flex; flex-shrink: 0; }
 .pick-faces .avatar { width: 18px; height: 18px; font-size: 9px; border: 1.5px solid var(--bg, #080c0d); }
 .pick-faces .avatar + .avatar { margin-left: -6px; }
+
+/* Kayıt formu: bölüm sayacı, etiketler, tekrar oynama */
+.ep-input { display: flex; gap: 6px; }
+.ep-input input { width: 90px; }
+.ep-input .btn { padding: 0 12px; }
+.tag-input { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel-2, rgba(255, 255, 255, .03)); }
+.tag-input input { flex: 1; min-width: 140px; border: 0 !important; background: none !important; padding: 4px 6px !important; outline: none; box-shadow: none !important; }
+.tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: 13px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--text); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); cursor: pointer; }
+a.tag, span.tag { cursor: pointer; text-decoration: none; }
+.tag.active { background: var(--accent); color: #fff; }
+.replays { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; padding: 10px 0 2px; border-top: 1px solid var(--border); }
+.lib-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 2px; }
+.lib-tags .tag .muted { font-size: 11px; }
+.lib-tags .tag.active .muted { color: inherit; opacity: .8; }
+
+/* Devam eden dizide kapağın köşesinde +1 bölüm */
+.card-bump { position: relative; min-width: 0; }
+.card-bump > .card { width: 100%; }
+.ep-bump { position: absolute; right: 8px; top: 8px; z-index: 2; display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 999px; border: 0;
+  background: rgba(8, 12, 13, .85); color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; box-shadow: 0 2px 8px rgba(0, 0, 0, .4); }
+.ep-bump span { font-weight: 500; opacity: .85; }
+.ep-bump:hover { background: var(--accent); }
+.ep-bump:disabled { opacity: .6; }
+.poster .ep-pill { position: absolute; right: 8px; top: 8px; z-index: 1; font-size: 12px; background: rgba(0, 0, 0, .6); border-radius: 8px; padding: 2px 7px; }

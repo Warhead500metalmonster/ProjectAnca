@@ -7,6 +7,7 @@ import { BADGES } from "@/lib/constants";
 import { contentKey } from "@/lib/format";
 import { fetchEntries, fixForeignTitles, friendsOnMyPlans } from "@/lib/data";
 import { applyTheme } from "@/lib/theme";
+import { steamAutoSync } from "@/lib/steamSync";
 import { countOf, q, sb, supabaseConfigured } from "@/lib/supabase";
 import { EntryForm } from "./EntryForm";
 import { EntryView } from "./EntryView";
@@ -205,6 +206,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (n) refresh();
     }).catch(() => { titlesFixed.current = false; });
   }, [me, mine, refresh]);
+
+  // Steam otomatik senkron: açtıysa günde bir, arka planda (bağlı değilse hiçbir şey yapmaz)
+  const steamChecked = useRef(false);
+  useEffect(() => {
+    if (!me || !mine.length || steamChecked.current) return;
+    steamChecked.current = true;
+    steamAutoSync(me.id, mine).then((r) => {
+      if (!r) return;
+      const parts = [r.timed ? `${r.timed} oyunun süresi güncellendi` : "", r.added.length ? `${r.added.length} yeni oyun eklendi (${r.added.slice(0, 2).join(", ")}${r.added.length > 2 ? "…" : ""})` : ""];
+      toast("Steam: " + parts.filter(Boolean).join(", "));
+      refresh();
+    }).catch(() => {});
+  }, [me, mine, refresh, toast]);
 
   // Kişisel site rengi (çıkış yapınca varsayılana döner)
   useEffect(() => { if (ready) applyTheme(me?.site_color); }, [ready, me?.site_color]);

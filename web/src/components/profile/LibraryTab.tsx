@@ -48,6 +48,7 @@ export function LibraryTab() {
   const [finishYear, setFinishYear] = useState("");
   const [platform, setPlatform] = useState("");
   const [minRating, setMinRating] = useState("");
+  const [tag, setTag] = useState(""); // kendi etiketlerinden biri
   const [flags, setFlags] = useState<Set<"fav" | "review" | "emu" | "dlc">>(new Set());
   // Oyunlar oynama süresine göre, diğer türler son güncellenene göre sıralı açılır; kişi değiştirirse onun seçimi geçerli
   const [sortPick, setSort] = useState<Sort | null>(null);
@@ -70,6 +71,11 @@ export function LibraryTab() {
   const years = useMemo(() => uniqSorted(scoped.map((e) => e.year)), [scoped]);
   const finishYears = useMemo(() => uniqSorted(scoped.filter((e) => e.status === "completed").map((e) => e.date?.slice(0, 4))), [scoped]);
   const platforms = useMemo(() => uniqSorted(scoped.map((e) => e.platform), false), [scoped]);
+  const tagList = useMemo(() => {
+    const n = new Map<string, number>();
+    for (const e of scoped) for (const x of e.tags || []) n.set(x, (n.get(x) || 0) + 1);
+    return [...n].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "tr"));
+  }, [scoped]);
   const ratingSteps = scale === 10 ? [9, 8, 7, 6, 5] : [9, 8, 6, 4];
 
   const needle = text.trim().toLocaleLowerCase("tr");
@@ -79,24 +85,25 @@ export function LibraryTab() {
     (!year || String(e.year) === year) &&
     (!finishYear || (e.status === "completed" && e.date?.startsWith(finishYear))) &&
     (!platform || e.platform === platform) &&
+    (!tag || (e.tags || []).includes(tag)) &&
     (!minRating || (minRating === "none" ? !e.rating : e.rating >= Number(minRating))) &&
     (!flags.has("fav") || e.favorite) &&
     (!flags.has("review") || e.notes) &&
     (!flags.has("emu") || e.emulated) &&
     (!flags.has("dlc") || e.dlc) &&
-    (!needle || `${e.title} ${e.creator || ""} ${e.notes || ""} ${e.progress || ""}`.toLocaleLowerCase("tr").includes(needle)),
+    (!needle || `${e.title} ${e.creator || ""} ${e.notes || ""} ${e.progress || ""} ${(e.tags || []).join(" ")}`.toLocaleLowerCase("tr").includes(needle)),
   ).sort(sorter);
-  const filterCount = statuses.size + [year, finishYear, platform, minRating].filter(Boolean).length + flags.size;
+  const filterCount = statuses.size + [year, finishYear, platform, minRating, tag].filter(Boolean).length + flags.size;
   const statusType = type === "all" ? null : type;
   // Sayfa sayfa göster; filtre ya da sıralama değişince baştan başla
-  const pageKey = [type, showPlanned, [...statuses].join(), year, finishYear, platform, minRating, [...flags].join(), sort, needle, view].join("|");
+  const pageKey = [type, showPlanned, [...statuses].join(), year, finishYear, platform, minRating, tag, [...flags].join(), sort, needle, view].join("|");
   const [paging, setPaging] = useState({ key: pageKey, n: PAGE });
   const shown = paging.key === pageKey ? paging.n : PAGE;
   const more = () => setPaging({ key: pageKey, n: shown + PAGE });
 
 
   function clear() {
-    setStatuses(new Set()); setYear(""); setFinishYear(""); setPlatform(""); setMinRating(""); setFlags(new Set());
+    setStatuses(new Set()); setYear(""); setFinishYear(""); setPlatform(""); setMinRating(""); setFlags(new Set()); setTag("");
   }
 
   return (
@@ -129,6 +136,13 @@ export function LibraryTab() {
             <button type="button" className={view === "list" ? "active" : ""} title="Liste" onClick={() => pickView("list")}>☰</button>
           </div>
         </div>
+        {tagList.length > 0 && (
+          <div className="lib-tags">
+            {tagList.slice(0, 30).map(([x, n]) => (
+              <button key={x} className={`tag ${tag === x ? "active" : ""}`} onClick={() => setTag(tag === x ? "" : x)}>#{x} <span className="muted">{n}</span></button>
+            ))}
+          </div>
+        )}
         {showFilters && (
           <div className="filter-panel">
             <div className="fp-row">

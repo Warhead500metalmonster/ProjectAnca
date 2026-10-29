@@ -65,12 +65,20 @@ export interface Entry {
   drop_note?: string | null; // bıraktıysa neden bıraktı
   favorite?: boolean;
   fav_pos?: number | null;  // favoriler şeridindeki sıra (sahibi sürükleyerek ayarlar)
+  season?: number | null;   // dizi/animede kaçıncı sezon
+  episode?: number | null;  // kaçıncı bölümde
+  episodes_total?: number | null;
+  plays?: Play[] | null;    // tekrar oynama/izleme: önceki seferler
+  tags?: string[] | null;   // kendi etiketleri
   created_at: string;
   updated_at: string;
   profiles?: Partial<Profile> | null;
   likes?: { count: number }[];
   comments?: { count: number }[];
 }
+
+// Bir kaydın önceki seferi (tekrar oynayınca/izleyince eskisi buraya taşınır)
+export interface Play { started_on: string | null; date: string | null; rating: number; playtime_sec?: number | null }
 
 // Bir içeriği (oyun, film...) kayıttan bağımsız tarif eder: listelerde ve "ekle" kısayollarında kullanılır
 export interface Item {
