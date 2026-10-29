@@ -40,7 +40,7 @@ export function Announcements({ onHome = false }: { onHome?: boolean }) {
     const it = items[0];
     if (!it) return null;
     return (
-      <Link className={`ann-home ann ${it.kind} ${it.pinned ? "pinned" : ""}`} href="/community" title="Bütün duyurular">
+      <Link className={`ann-home ann k-${it.kind} ${it.pinned ? "pinned" : ""}`} href="/community" title="Bütün duyurular">
         <span className="ann-tag">{it.pinned ? "Sabit" : it.kind === "post" ? "Duyuru" : "Yenilik"}</span>
         <b className="ann-title">{it.title}</b>
         <span className="ann-date">{it.kind === "post" ? timeAgo(it.at) : fmtDate(it.at)}</span>
@@ -60,7 +60,7 @@ export function Announcements({ onHome = false }: { onHome?: boolean }) {
         {items.slice(0, shown).map((it) => {
           const isOpen = open === it.key;
           return (
-            <article key={it.key} className={`ann ${it.kind} ${it.pinned ? "pinned" : ""} ${isOpen ? "open" : ""}`}>
+            <article key={it.key} className={`ann k-${it.kind} ${it.pinned ? "pinned" : ""} ${isOpen ? "open" : ""}`}>
               <button className="ann-row" onClick={() => setOpen(isOpen ? null : it.key)} aria-expanded={isOpen}>
                 <span className="ann-tag">{it.pinned ? "Sabit" : it.kind === "post" ? "Duyuru" : "Yenilik"}</span>
                 <b className="ann-title">{it.title}</b>
