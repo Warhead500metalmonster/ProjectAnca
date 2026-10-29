@@ -23,7 +23,8 @@ export interface Profile {
   home_layout?: HomeLayout | null; // profil ana sayfasının düzeni
   muted_until?: string | null;
   avatar_crop?: AvatarCrop | null; // profil fotoğrafının görünen kısmı
-  hidden_types?: EntryType[] | null; // başkalarına profilde gösterilmeyen türler     // yönetici susturduysa bu zamana kadar yazı yazamaz
+  hidden_types?: EntryType[] | null; // başkalarına profilde gösterilmeyen türler
+  privacy?: "public" | "friends" | "private" | null; // profil gizliliği (Steam gibi)
   created_at: string;
 }
 

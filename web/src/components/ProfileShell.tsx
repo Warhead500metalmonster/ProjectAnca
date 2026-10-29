@@ -87,6 +87,9 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
   const song = profile.song_url || null; // profilde arkada çalan şarkı
   const match = me && !isMe ? compat(mine, entries).score : null;
   const year = String(new Date().getFullYear());
+  // Steam gibi gizli profil: fotoğraf, ad, kapak ve arka plan görünür; kütüphane ve sayılar görünmez (veritabanı da vermez)
+  const privacy = profile.privacy || "public";
+  const locked = !isMe && (privacy === "private" || (privacy === "friends" && !isFriend(profile.id)));
 
   return (
     <ProfileCtx.Provider value={{ ...data, isMe }}>
@@ -107,46 +110,63 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
             <div className="handle">@{profile.username}{profile.pronouns ? ` · ${profile.pronouns}` : ""}</div>
           </div>
           {/* Büyük sayaçlar: kaç şey loglamış, bu yıl kaç tane bitirmiş, sırada ne kadar var, takipçi */}
-          <div className="profile-counts">
+          {!locked && <div className="profile-counts">
             <span><b>{num(entries.filter((e) => e.status !== "planned").length)}</b>Kayıt</span>
             <span><b>{num(entries.filter((e) => e.status === "completed" && (e.date || "").startsWith(year)).length)}</b>Bu yıl bitti</span>
             <span><b>{num(entries.filter((e) => e.status === "planned").length)}</b>Planlanan</span>
             <button onClick={() => openUserList("followers")}><b>{num(followers)}</b>Takipçi</button>
             <button onClick={() => openUserList("following")}><b>{num(following)}</b>Takip</button>
-          </div>
+          </div>}
           <div className="profile-actions">
             {isMe
               ? <><Link className="btn" href="/settings">Profili düzenle</Link><button className="btn primary" onClick={() => openForm(null)}>+ Ekle</button></>
               : <>
-                {match !== null && <Link className="match-pill" href={`/u/${profile.username}/compare`} title="Zevkleriniz ne kadar uyuşuyor">Uyum %{match}</Link>}
+                {match !== null && !locked && <Link className="match-pill" href={`/u/${profile.username}/compare`} title="Zevkleriniz ne kadar uyuşuyor">Uyum %{match}</Link>}
                 {/* Arkadaşlar birbirine; site sahibi herkese, herkes de site sahibine yazabilir */}
                 {(isFriend(profile.id) || isOwner || badges.get(profile.id)?.includes("owner")) && <Link className="btn" href={`/chat/${profile.username}`}>Mesaj</Link>}<FollowButton id={profile.id} />
               </>}
           </div>
         </div>
         <BadgeChips id={profile.id} max={3} more={`/u/${profile.username}/badges`} />
-        {profile.bio && <p className="profile-bio">{profile.bio}</p>}
+        {profile.bio && !locked && <p className="profile-bio">{profile.bio}</p>}
+        {isMe && privacy !== "public" && (
+          <p className="muted small profile-note" style={{ margin: "6px 0 0" }}>
+            Profilin {privacy === "private" ? "gizli: kütüphaneni sadece sen görüyorsun" : "sadece arkadaşlarına açık"}. <Link href="/settings">Değiştir</Link>
+          </p>
+        )}
         {isMe && hidden.length > 0 && (
           <p className="muted small profile-note" style={{ margin: "6px 0 0" }}>
             Başkaları profilinde {hidden.map((t) => TYPES[t].plural.toLocaleLowerCase("tr")).join(", ")} göremez. <Link href="/settings">Değiştir</Link>
           </p>
         )}
-        <div className="profile-meta">
-          {profile.location && <span>{profile.location}</span>}
-          <span>{fmtDate(profile.created_at.slice(0, 10))} tarihinde katıldı{data.memberNo ? <> · <b className="member-no">Ancalog&apos;un {num(data.memberNo)}. üyesi</b></> : null}</span>
-        </div>
-        <Socials socials={profile.socials} />
-        <nav className="subnav">
-          <Link href={base} className={tab === "home" ? "active" : ""}>Ana sayfa</Link>
-          <Link href={`${base}/library`} className={tab === "library" ? "active" : ""}>Kütüphane</Link>
-          <Link href={`${base}/reviews`} className={tab === "reviews" ? "active" : ""}>İncelemeler</Link>
-          <Link href={`${base}/likes`} className={tab === "likes" ? "active" : ""}>Beğendikleri</Link>
-          <Link href={`${base}/lists`} className={tab === "lists" ? "active" : ""}>Listeler</Link>
-          <Link href={`${base}/stats`} className={tab === "stats" ? "active" : ""}>İstatistikler</Link>
-          <Link href={`${base}/badges`} className={tab === "badges" ? "active" : ""}>Rozetler</Link>
-          {me && !isMe && <Link href={`${base}/compare`} className={tab === "compare" ? "active" : ""}>Uyum</Link>}
-        </nav>
-        {children}
+        {locked ? (
+          <div className="profile-locked">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 1 1 6 0v3z" /></svg>
+            <b>{privacy === "private" ? "Bu profil gizli" : "Bu profili sadece arkadaşları görebilir"}</b>
+            <span className="muted">{privacy === "private"
+              ? <>@{profile.username} kütüphanesini kendine saklamayı seçmiş.</>
+              : <>Karşılıklı takipleşince kütüphanesini, listelerini ve istatistiklerini görebilirsin.</>}</span>
+          </div>
+        ) : (
+          <>
+          <div className="profile-meta">
+            {profile.location && <span>{profile.location}</span>}
+            <span>{fmtDate(profile.created_at.slice(0, 10))} tarihinde katıldı{data.memberNo ? <> · <b className="member-no">Ancalog&apos;un {num(data.memberNo)}. üyesi</b></> : null}</span>
+          </div>
+          <Socials socials={profile.socials} />
+          <nav className="subnav">
+            <Link href={base} className={tab === "home" ? "active" : ""}>Ana sayfa</Link>
+            <Link href={`${base}/library`} className={tab === "library" ? "active" : ""}>Kütüphane</Link>
+            <Link href={`${base}/reviews`} className={tab === "reviews" ? "active" : ""}>İncelemeler</Link>
+            <Link href={`${base}/likes`} className={tab === "likes" ? "active" : ""}>Beğendikleri</Link>
+            <Link href={`${base}/lists`} className={tab === "lists" ? "active" : ""}>Listeler</Link>
+            <Link href={`${base}/stats`} className={tab === "stats" ? "active" : ""}>İstatistikler</Link>
+            <Link href={`${base}/badges`} className={tab === "badges" ? "active" : ""}>Rozetler</Link>
+            {me && !isMe && <Link href={`${base}/compare`} className={tab === "compare" ? "active" : ""}>Uyum</Link>}
+          </nav>
+          {children}
+          </>
+        )}
       </div>
       {song && <ProfileSong url={song} title={profile.song_title} volume={profile.song_volume} />}
       {userList && (

@@ -5,6 +5,14 @@ export interface ChangelogItem { date: string; title: string; body: string }
 export const CHANGELOG: ChangelogItem[] = [
   {
     date: "2026-10-29",
+    title: "Profil gizliliği: herkese açık, sadece arkadaşlar ya da gizli",
+    body: "Ayarlar'dan profilini kimlerin görebileceğini seçebilirsin.\n"
+      + "Gizli profilde adın, fotoğrafın, kapağın ve arka planın görünür; kütüphanen, listelerin ve istatistiklerin sadece sende kalır.\n"
+      + "Sadece arkadaşlar seçeneğinde karşılıklı takipleştiğin kişiler görür.\n"
+      + "Gizli kayıtlar sıralamalara ve uyum hesaplarına da girmez.",
+  },
+  {
+    date: "2026-10-29",
     title: "Duyurular ana sayfada, daha geniş kayıt penceresi",
     body: "En yeni duyuru artık ana sayfanın üstünde ince bir satır olarak görünüyor.\n"
       + "Bilgisayarda yeni kayıt penceresi ve Ayarlar daha geniş, daha az kaydırma.\n"

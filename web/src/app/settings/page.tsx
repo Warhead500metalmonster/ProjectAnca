@@ -53,6 +53,7 @@ function SettingsForm({ me }: { me: Profile }) {
   const [avatar, setAvatar] = useState(me.avatar_url || "");
   const [crop, setCrop] = useState<AvatarCrop>(me.avatar_crop || { x: 50, y: 50, z: 1 });
   const [hiddenTypes, setHiddenTypes] = useState<EntryType[]>(me.hidden_types || []);
+  const [privacy, setPrivacy] = useState(me.privacy || "public");
   // Renk seçilince site hemen o renge döner; kaydetmeden çıkarsa eskisine
   const pickSiteColor = (c: string) => { setSiteColor(c); applyTheme(c); };
   const saved = useRef(me.site_color);
@@ -103,6 +104,7 @@ function SettingsForm({ me }: { me: Profile }) {
         // Yeni alanlar yalnızca kullanıldığında gönderilir (veritabanı güncellenmeden de profil kaydedilebilsin)
         ...((me.avatar_crop || crop.z > 1 || crop.x !== 50 || crop.y !== 50) && { avatar_crop: crop }),
         ...((me.hidden_types?.length || hiddenTypes.length) && { hidden_types: hiddenTypes }),
+        ...(privacy !== (me.privacy || "public") && { privacy }), // yalnızca değişince (veritabanı güncellenmeden de kaydedilebilsin)
       }).eq("id", me.id).select().single());
       setMe(updated);
       saved.current = updated.site_color;
@@ -136,6 +138,18 @@ function SettingsForm({ me }: { me: Profile }) {
         <label htmlFor="p-banner">Kapak görseli (profilin üstündeki geniş resim, https://)</label>
         <input id="p-banner" name="banner" type="url" defaultValue={me.banner_url || ""} placeholder="https://…" />
       </div>
+
+      <h3 className="set-h">Profilimi kimler görebilir?</h3>
+      <div className="vis-pick" style={{ marginBottom: 8 }}>
+        {([["public", "Herkese açık", "Herkes kütüphaneni, listelerini ve istatistiklerini görür"],
+          ["friends", "Sadece arkadaşlar", "Karşılıklı takipleştiğin kişiler görür, diğerleri sadece adını ve fotoğrafını görür"],
+          ["private", "Gizli", "Kütüphanen sadece sana görünür. Adın, fotoğrafın, kapağın ve arka planın yine görünür"]] as const).map(([k, name, hint]) => (
+          <label key={k} className={`vis-opt ${privacy === k ? "on" : ""}`}>
+            <input type="radio" name="privacy" checked={privacy === k} onChange={() => setPrivacy(k)} /> <b>{name}</b><span className="muted small">{hint}</span>
+          </label>
+        ))}
+      </div>
+      <p className="muted small" style={{ margin: "0 0 4px" }}>Profilin gizli olsa da insanlar seni takip edebilir; arkadaşların sana yazmaya devam eder.</p>
 
       <h3 className="set-h">Profilimde gösterilecek türler <span className="muted small">· işaretini kaldırdığın türü başkaları profilinde göremez</span></h3>
       <div className="chips" style={{ marginBottom: 8 }}>

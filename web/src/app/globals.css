@@ -1724,3 +1724,9 @@ body {
 .checks { align-items: flex-start; }
 .row .checks .check { align-self: flex-start; padding-bottom: 0; }
 @media (min-width: 900px) { dialog:has(#form) { width: min(700px, calc(100% - 48px)); } #form { padding: 22px 28px 24px; } }
+
+/* Gizli profil (Steam gibi): kilit kartı */
+.profile-locked { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; margin: 28px 0 8px; padding: 36px 20px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 12px; }
+.profile-locked svg { width: 34px; height: 34px; fill: var(--muted); margin-bottom: 4px; }
+.profile-locked b { font-family: var(--head); font-size: 20px; }
