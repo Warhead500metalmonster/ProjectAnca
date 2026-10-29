@@ -56,6 +56,7 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
   const [saving, setSaving] = useState(false);
   const [suggestions, setSuggestions] = useState<Found[] | null>(null);
   const [suggestNote, setSuggestNote] = useState("");
+  const [more, setMore] = useState(() => !!(entry?.store || entry?.emulated || entry?.dlc || playtime || progressSec || started || note || tags.length));
 
   const t = TYPES[type];
   const isGame = type === "game";
@@ -73,6 +74,7 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
 
   useEffect(() => {
     ref.current?.showModal();
+    document.getElementById("f-title")?.focus();
     // Kayıtlı oyunu düzenlerken platform/mağaza önerileri için RAWG'den detayı çek
     if (src?.type === "game" && src.rawg_id && !game) loadGameOptions(src.rawg_id);
     return () => clearTimeout(searchTimer.current);
@@ -344,6 +346,61 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
             <datalist id="platformList">{places.map((p) => <option key={p} value={p} />)}</datalist>
           </div>
         </div>
+        {episodic && (
+          <div className="row">
+            {type === "show" && (
+              <div className="field small">
+                <label htmlFor="f-season">Sezon</label>
+                <input id="f-season" type="number" min={0} max={1000} inputMode="numeric" value={season} onChange={(e) => setSeason(e.target.value)} />
+              </div>
+            )}
+            <div className="field">
+              <label htmlFor="f-ep">Bölüm</label>
+              <div className="ep-input">
+                <input id="f-ep" type="number" min={0} max={100000} inputMode="numeric" value={episode} onChange={(e) => setEpisode(e.target.value)} />
+                <button type="button" className="btn" title="Bir sonraki bölüm" onClick={() => setEpisode(String((parseInt(episode) || 0) + 1))}>+1</button>
+              </div>
+            </div>
+            <div className="field small">
+              <label htmlFor="f-eptotal">Toplam</label>
+              <input id="f-eptotal" type="number" min={0} max={100000} inputMode="numeric" placeholder="?" value={epTotal} onChange={(e) => setEpTotal(e.target.value)} />
+            </div>
+          </div>
+        )}
+        {status === "dropped" && (
+          <div className="field">
+            <label htmlFor="f-drop">Bırakma notu <span className="muted">· neden bıraktın?</span></label>
+            <textarea id="f-drop" rows={2} maxLength={2000} placeholder="ör. Oynanışı sıkıcı geldi, belki sonra dönerim" value={dropNote} onChange={(e) => setDropNote(e.target.value)} />
+          </div>
+        )}
+        <div className="field">
+          <label>Puan <span className="muted">{rating ? `(${scoreText(rating, scale)})` : ""}</span></label>
+          <div className={`stars input ${n === 10 ? "ten" : ""}`}>
+            {Array.from({ length: n }, (_, j) => j + 1).map((i) => {
+              const v = rating - (i - 1) * step;
+              return (
+                <span key={i} className={`star ${v >= step ? "full" : v >= step / 2 ? "half" : ""}`}
+                  onClick={(e) => setRating((i - (e.nativeEvent.offsetX < e.currentTarget.offsetWidth / 2 ? 0.5 : 0)) * step)}>★</span>
+              );
+            })}
+            <button type="button" className="link clear" onClick={() => setRating(0)}>temizle</button>
+          </div>
+        </div>
+        <label className="check"><input type="checkbox" checked={favorite} onChange={(e) => setFavorite(e.target.checked)} /> ♥ Favorilerime ekle <span className="muted">(her kategoride en fazla 10)</span></label>
+        <div className="field">
+          <label htmlFor="f-review" className="review-label">
+            <span>İnceleme <span className="muted">· profilinde bu kayda tıklayanlar okuyup beğenebilir, yorum yapabilir</span></span>
+            <button type="button" className="link" onClick={spoilerize} title="Seçtiğin yazıyı spoiler olarak gizler">Spoiler gizle</button>
+          </label>
+          <textarea id="f-review" rows={3} maxLength={5000} value={review} onChange={(e) => setReview(e.target.value)} />
+        </div>
+        {/* Ayrıntılar: çoğu kişi sadece durum ve puan girer; gerisi istenirse açılır (doluysa açık gelir) */}
+        <button type="button" className={`more-toggle ${more ? "on" : ""}`} aria-expanded={more} onClick={() => setMore(!more)}>
+          <span>{more ? "▾" : "▸"} Daha fazla ayrıntı</span>
+          <span className="muted small">{[isGame && "mağaza", t.time.toLocaleLowerCase("tr"), "tarihler", "not", "etiketler", "kapak"].filter(Boolean).join(", ")}</span>
+        </button>
+        {more && (
+          <div className="more-box">
         {isGame && (
           <div className="row">
             <div className="field grow">
@@ -367,27 +424,6 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
             <HmsInput value={progressSec} onChange={setProgressSec} label="Şu anki ilerleme" />
           </div>
         </div>
-        {episodic && (
-          <div className="row">
-            {type === "show" && (
-              <div className="field small">
-                <label htmlFor="f-season">Sezon</label>
-                <input id="f-season" type="number" min={0} max={1000} inputMode="numeric" value={season} onChange={(e) => setSeason(e.target.value)} />
-              </div>
-            )}
-            <div className="field">
-              <label htmlFor="f-ep">Bölüm</label>
-              <div className="ep-input">
-                <input id="f-ep" type="number" min={0} max={100000} inputMode="numeric" value={episode} onChange={(e) => setEpisode(e.target.value)} />
-                <button type="button" className="btn" title="Bir sonraki bölüm" onClick={() => setEpisode(String((parseInt(episode) || 0) + 1))}>+1</button>
-              </div>
-            </div>
-            <div className="field small">
-              <label htmlFor="f-eptotal">Toplam</label>
-              <input id="f-eptotal" type="number" min={0} max={100000} inputMode="numeric" placeholder="?" value={epTotal} onChange={(e) => setEpTotal(e.target.value)} />
-            </div>
-          </div>
-        )}
         <div className="row">
           <div className="field grow">
             <label htmlFor="f-start">Başlama tarihi</label>
@@ -402,25 +438,6 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
           <label htmlFor="f-note">Not <span className="muted">· akışta görünmez, kayda tıklayan görür</span></label>
           <input id="f-note" maxLength={1000} placeholder={t.progress} value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
-        {status === "dropped" && (
-          <div className="field">
-            <label htmlFor="f-drop">Bırakma notu <span className="muted">· neden bıraktın?</span></label>
-            <textarea id="f-drop" rows={2} maxLength={2000} placeholder="ör. Oynanışı sıkıcı geldi, belki sonra dönerim" value={dropNote} onChange={(e) => setDropNote(e.target.value)} />
-          </div>
-        )}
-        <div className="field">
-          <label>Puan <span className="muted">{rating ? `(${scoreText(rating, scale)})` : ""}</span></label>
-          <div className={`stars input ${n === 10 ? "ten" : ""}`}>
-            {Array.from({ length: n }, (_, j) => j + 1).map((i) => {
-              const v = rating - (i - 1) * step;
-              return (
-                <span key={i} className={`star ${v >= step ? "full" : v >= step / 2 ? "half" : ""}`}
-                  onClick={(e) => setRating((i - (e.nativeEvent.offsetX < e.currentTarget.offsetWidth / 2 ? 0.5 : 0)) * step)}>★</span>
-              );
-            })}
-            <button type="button" className="link clear" onClick={() => setRating(0)}>temizle</button>
-          </div>
-        </div>
         <div className="field">
           <label htmlFor="f-tags">Etiketler <span className="muted">· kendi düzenin: co-op, çocukluğum, yağmurlu gün…</span></label>
           <div className="tag-input">
@@ -434,7 +451,6 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
             <datalist id="tagList">{myTags.map((x) => <option key={x} value={x} />)}</datalist>
           </div>
         </div>
-        <label className="check"><input type="checkbox" checked={favorite} onChange={(e) => setFavorite(e.target.checked)} /> ♥ Favorilerime ekle <span className="muted">(her kategoride en fazla 10)</span></label>
         {(!isGame || picked) && (
           <div className="field">
             <label htmlFor="f-cover">Kapak görseli <span className="muted">· beğenmediysen başka bir resmin linkini yapıştır</span></label>
@@ -445,13 +461,8 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
             </div>
           </div>
         )}
-        <div className="field">
-          <label htmlFor="f-review" className="review-label">
-            <span>İnceleme <span className="muted">· profilinde bu kayda tıklayanlar okuyup beğenebilir, yorum yapabilir</span></span>
-            <button type="button" className="link" onClick={spoilerize} title="Seçtiğin yazıyı spoiler olarak gizler">Spoiler gizle</button>
-          </label>
-          <textarea id="f-review" rows={3} maxLength={5000} value={review} onChange={(e) => setReview(e.target.value)} />
-        </div>
+          </div>
+        )}
         {entry && (entry.plays?.length || entry.status === "completed") ? (
           <div className="replays">
             {entry.plays?.length ? (

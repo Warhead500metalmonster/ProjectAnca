@@ -2195,3 +2195,16 @@ a.badge-card.link-card:hover { transform: translateY(-2px); }
 .ev-kick { padding: 4px 10px; font-size: 12px; opacity: .55; }
 .ev-person:hover .ev-kick, .ev-kick:focus-visible { opacity: 1; }
 .ev-kick:hover { color: var(--danger, #e5484d); border-color: currentColor; }
+
+/* Kütüphane: menüde (telefonda üstteki büyüteç) */
+.search-sub { margin: -4px 0 4px; max-width: 640px; }
+@media (max-width: 640px) { .nav a.nav-lib { display: none; } }
+
+.top-gap { flex: 1; }
+
+/* Kayıt formu: ayrıntılar açılır kutuda */
+.more-toggle { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; width: 100%; padding: 10px 12px; border: 1px dashed var(--border);
+  border-radius: 10px; background: none; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; text-align: left; }
+.more-toggle:hover, .more-toggle.on { border-style: solid; background: rgba(255, 255, 255, .03); }
+.more-toggle .muted { font-weight: 400; }
+.more-box { display: flex; flex-direction: column; gap: 14px; padding: 4px 0 0; }

@@ -241,7 +241,7 @@ export function entryTags(e: Entry, { store = false, time = true } = {}) {
     e.status === "active" && e.progress_sec ? `▶ ${fmtDur(e.progress_sec)}` : "",
     epText(e),
     e.plays?.length ? `${e.plays.length + 1}. kez` : "",
-    time && playSec(e) ? fmtDur(playSec(e)) : "",
+    time && playSec(e) && !(e.status === "active" && e.progress_sec) ? fmtDur(playSec(e)) : "", // devam edende süre zaten ▶ ile yazıyor
     days ? `${days} günde` : "",
   ].filter(Boolean) as string[];
 }

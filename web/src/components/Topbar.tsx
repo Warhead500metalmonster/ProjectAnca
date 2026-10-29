@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Avatar } from "./ui";
 import { useApp } from "./AppProvider";
 import { q, sb } from "@/lib/supabase";
@@ -19,9 +19,7 @@ export function Topbar() {
   useEffect(() => setReady(true), []);
   const me = ready ? user : null;
   const path = usePathname();
-  const router = useRouter();
   const [seen, setSeen] = useState("");
-  const [text, setText] = useState("");
   // eslint-disable-next-line react-hooks/set-state-in-effect -- tarayıcı deposundan / ağdan gelen veri
   useEffect(() => { try { setSeen(localStorage.getItem(NOTIF_SEEN) || ""); } catch { /* yok say */ } }, [path, notifAt]);
 
@@ -42,12 +40,6 @@ export function Topbar() {
     me: path === mine || path.startsWith(mine + "/") || path === "/settings",
   })[key] ? "active" : "";
 
-  function search(e: React.FormEvent) {
-    e.preventDefault();
-    router.push(`/search?q=${encodeURIComponent(text.trim())}`);
-    setText("");
-  }
-
   return (
     <header className="topbar">
       <Link href="/" className="brand"><span>Ancalog</span></Link>
@@ -60,6 +52,10 @@ export function Topbar() {
         </Link>
         <Link href="/events" className={`nav-events ${active("events")}`}>
           <svg viewBox="0 0 24 24"><path d="M12 2.5l2.6 6.1 6.6.6-5 4.4 1.5 6.5L12 16.7l-5.7 3.4 1.5-6.5-5-4.4 6.6-.6z" /></svg><span>Etkinlikler</span>{freshEvents ? <i className="nav-spark" title="Katılabileceğin etkinlik var" /> : null}
+        </Link>
+        {/* Kütüphane: sitedeki ve dışarıdaki her oyunu, filmi, diziyi, animeyi, albümü tek kutudan ara (telefonda üstteki büyüteç) */}
+        <Link href="/search" className={`nav-lib ${active("search")}`}>
+          <svg viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 5.96 12.05l4.74 4.75-1.4 1.4-4.75-4.74A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z" /></svg><span>Kütüphane</span>
         </Link>
         {/* Telefonda alt menünün ortasında büyük ekle düğmesi (bilgisayarda gizli, orada üstte "+ Ekle" var) */}
         {me && (
@@ -75,16 +71,14 @@ export function Topbar() {
           <svg viewBox="0 0 24 24"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zm0 2c-3 0-9 1.5-9 4.5V21h18v-2.5c0-3-6-4.5-9-4.5z" /></svg><span>Profilim</span>
         </Link>
       </nav>
-      <form className="top-search" onSubmit={search} role="search">
-        <input type="search" value={text} placeholder="Oyun, film, kişi ara…" aria-label="Ara" onChange={(e) => setText(e.target.value)} />
-      </form>
+      <span className="top-gap" />
       <div className="top-actions">
         {/* Telefonda alt menü dolu: Etkinlikler üstte, yıldız simgesiyle */}
         <Link className={`icon-link mobile-events ${active("events")}`} href="/events" aria-label="Etkinlikler" title="Etkinlikler">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2.5l2.6 6.1 6.6.6-5 4.4 1.5 6.5L12 16.7l-5.7 3.4 1.5-6.5-5-4.4 6.6-.6z" /></svg>
           {freshEvents ? <span className="dot spark" /> : null}
         </Link>
-        <Link className="icon-link mobile-search" href="/search" aria-label="Ara" title="Ara">
+        <Link className="icon-link mobile-search" href="/search" aria-label="Kütüphane: ara" title="Kütüphane">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
         </Link>
         {me ? (

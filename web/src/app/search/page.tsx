@@ -99,8 +99,9 @@ export default function SearchPage() {
   return (
     <>
       <section className="search-hero">
-        <h1>Keşfet</h1>
-        <input className="input big" type="search" autoFocus value={text} placeholder="Oyun, film, dizi, albüm, anime ya da kişi ara…" onChange={(e) => setText(e.target.value)} />
+        <h1>Kütüphane</h1>
+        <p className="muted search-sub">Her oyun, film, dizi, anime ve albüm burada. Adını yaz, aynı anda her yerde aransın; bir şeye tıkla, sayfasını gör, kütüphanene ekle.</p>
+        <input className="input big" type="search" autoFocus value={text} placeholder="Ne arıyorsun? Ör. Zelda, Breaking Bad, Frieren…" onChange={(e) => setText(e.target.value)} />
         <div className="tabs">
           {([["all", "", "Tümü"], ...TYPE_KEYS.map((k) => [k, "", TYPES[k].label])] as [EntryType | "all", string, string][]).map(([k, icon, label]) => (
             <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => setType(k)}>{icon} {label}</button>
@@ -127,8 +128,9 @@ export default function SearchPage() {
         </section>
       )}
 
-      <section className="section">
-        <div className="section-head"><h2>Ancalog&apos;da</h2><span className="muted">{local ? `${local.length} içerik` : ""}</span></div>
+      {/* Arama yapılınca sitede kimse loglamadıysa boş kutu göstermeyelim: aşağıda her yerden sonuçlar var */}
+      {!(local?.length === 0 && text.trim() && external?.length) && <section className="section">
+        <div className="section-head"><h2>Ancalog&apos;da loglananlar</h2><span className="muted">{local ? `${local.length} içerik` : ""}</span></div>
         {local === null ? <div className="loading">Aranıyor…</div>
           : local.length ? (
             <div className="grid">
@@ -145,27 +147,34 @@ export default function SearchPage() {
               ))}
             </div>
           ) : <div className="empty">Bu filtrelere uyan loglanmış içerik yok.</div>}
-      </section>
+      </section>}
 
-      {(external === null || external.length > 0) && (
-        <section className="section">
-          <div className="section-head">
-            <h2>{type === "all" ? "Oyunlar (RAWG)" : `${TYPES[type].plural} (${credit[0]})`}</h2>
-            <a href={credit[1]} target="_blank" rel="noopener" className="muted">Veri: {credit[0]}</a>
-          </div>
-          {external === null ? <div className="loading">Aranıyor…</div> : (
-            <div className="grid">
-              {external.map((x, i) => (
-                <Link key={i} className="card" href={contentHref(x)}>
-                  <div className={`poster ${TYPES[x.type].square ? "square" : ""}`}><div className="ph">{TYPES[x.type].label}</div><Cover src={x.cover} /></div>
-                  <div className="card-title">{x.title}</div>
-                  <div className="card-meta">{[x.sub, x.year].filter(Boolean).join(" · ")}</div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
+      {external === null ? <section className="section"><div className="loading">Her yerde aranıyor…</div></section>
+        : (type === "all" ? TYPE_KEYS : [type]).map((k) => {
+          const list = external.filter((x) => x.type === k);
+          if (!list.length) return null;
+          const [src, url] = type === "all" ? SEARCH_CREDITS[k] : credit;
+          return (
+            <section className="section" key={k}>
+              <div className="section-head">
+                <h2>{TYPES[k].plural}</h2>
+                <span className="muted small">
+                  {type === "all" && <button className="link" onClick={() => setType(k)}>Daha fazla {TYPES[k].plural.toLocaleLowerCase("tr")} →</button>}
+                  {" "}<a href={url} target="_blank" rel="noopener" className="muted">Veri: {src}</a>
+                </span>
+              </div>
+              <div className="grid">
+                {list.map((x, i) => (
+                  <Link key={i} className="card" href={contentHref(x)}>
+                    <div className={`poster ${TYPES[x.type].square ? "square" : ""}`}><div className="ph">{TYPES[x.type].label}</div><Cover src={x.cover} /></div>
+                    <div className="card-title">{x.title}</div>
+                    <div className="card-meta">{[x.sub, x.year].filter(Boolean).join(" · ")}</div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          );
+        })}
     </>
   );
 }
@@ -194,8 +203,14 @@ async function findExternal(text: string, type: EntryType | "all", from: string,
   const y1 = /^\d{4}$/.test(from) ? Number(from) : null, y2 = /^\d{4}$/.test(to) ? Number(to) : null;
   const lo = y1 ?? y2, hi = y2 ?? y1;
   const inRange = (y: number | null) => !lo || (y !== null && y >= lo && y <= hi!);
+  // Tümü: oyun, film, dizi, anime ve müzikte aynı anda ara (Google gibi tek kutu); her türden ilk 12
+  if (type === "all") {
+    const kinds: EntryType[] = t ? ["game", "movie", "show", "anime", "music"] : ["game", "movie", "show", "anime"];
+    const all = await Promise.all(kinds.map((k) => findExternal(text, k, from, to, sort).then((r) => r.slice(0, 12))));
+    return all.flat();
+  }
   try {
-    if (type === "all" || type === "game") {
+    if (type === "game") {
       const ordering = { rating: "-rating", newest: "-released", oldest: "released", title: "name" }[sort as string] || "-added";
       const p: Record<string, string | number> = { page_size: 18, ordering };
       if (t) p.search = t;

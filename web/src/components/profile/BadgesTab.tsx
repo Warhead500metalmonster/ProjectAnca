@@ -79,6 +79,7 @@ export function NextBadges({ userId, username, entries }: { userId: string; user
   const next = Object.keys(BADGES)
     .filter((b) => !mine.includes(b) && BADGES[b].progress)
     .map((b) => ({ b, n: Math.min(BADGES[b].earn || 1, BADGES[b].progress!(entries)), earn: BADGES[b].earn || 1 }))
+    .filter((x) => x.n < x.earn) // tamamlananlar zaten birazdan gelir; "0 kaldı" yazmasın
     .sort((x, y) => y.n / y.earn - x.n / x.earn)
     .slice(0, 2);
   if (!next.length) return null;
