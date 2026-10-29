@@ -21,7 +21,8 @@ export default function Terms() {
           <li>Hakaret, taciz, nefret söylemi, müstehcenlik, başkasının kişisel bilgisi ve korsan içerik yasak.</li>
           <li>Hesabını istediğin an kendin silebilirsin.</li>
           <li>Başka sitelerden içe aktarırken verinin sana ait olduğundan ve o sitenin kurallarına uyduğundan sen sorumlusun.</li>
-          <li>Oyun, film ve albüm bilgileri ile kapakları hak sahiplerine ait; biz sadece gösteriyoruz.</li>
+          <li>Oyun, film, dizi, albüm ve anime bilgileri ile kapakları hak sahiplerine ait; biz sadece gösteriyoruz. Hakkını ihlal eden bir içerik görürsen bildir, kaldırırız.</li>
+          <li>Kurala uymayanı raporla, rahatsız edeni engelle; her raporu bir insan okur.</li>
         </ul>
       </div>
 
@@ -83,11 +84,11 @@ export default function Terms() {
 
       <h2>5a. Başka sitelerden içe aktarma</h2>
       <ul>
-        <li>İçe aktarma (Steam, PlayStation, Xbox, Epic, Nintendo, HowLongToBeat, Backloggd, Playnite, Letterboxd, Simkl, Spotify, Last.fm ve benzerleri)
+        <li>İçe aktarma (Steam, PlayStation, Xbox, Epic, Nintendo, HowLongToBeat, Backloggd, Playnite, Letterboxd, MyAnimeList, AniList, Simkl, Spotify, Last.fm ve benzerleri)
           tamamen <b>senin isteğinle ve senin adına</b> yapılır. Bu verilerin sana ait olduğunu ya da onları kullanma hakkın olduğunu kabul edersin.</li>
         <li>PlayStation ve Backloggd düğmeleri (yer imleri) <b>senin tarayıcında, senin açtığın sayfada</b> çalışır; ekranda zaten gördüğün listeyi toplar ve
           senin kopyalayıp yapıştırmanı bekler. Ancalog&apos;un sunucusu bu sitelere bağlanmaz, bu sitelere ait şifre ya da oturum bilgin Ancalog&apos;a gelmez.
-          Dosyalar (HowLongToBeat, Playnite, Letterboxd, Spotify) senin tarayıcında okunur.</li>
+          Dosyalar (HowLongToBeat, Playnite, Letterboxd, MyAnimeList, Spotify) senin tarayıcında okunur.</li>
         <li>Bu sitelerin kendi kullanım koşullarına uymak <b>senin sorumluluğundadır</b>. O sitelerin hesabına uygulayabileceği kısıtlama ya da başka sonuçlardan
           Ancalog ve site sahibi sorumlu tutulamaz. Bir sitenin koşullarının buna izin vermediğini düşünüyorsan o yöntemi kullanma; oyun adlarını elle de ekleyebilirsin.</li>
         <li>İçe aktarılan veriler eksik, yanlış eşleşmiş ya da hatalı olabilir; kontrol etmek ve düzeltmek sana aittir.</li>
@@ -98,17 +99,42 @@ export default function Terms() {
         hesap bilgileri, paylaşılan içerikler, <b>mesaj kayıtları</b> ve altyapı sağlayıcılarımızın tuttuğu teknik kayıtlar (giriş zamanları, IP adresleri gibi)
         bu makamlarla paylaşılır. Siteyi kullanarak bunu kabul etmiş olursun.</p>
 
-      <h2>7. Telif hakları ve markalar</h2>
-      <p>Oyun, film, dizi, albüm ve anime adları, kapak görselleri ve açıklamaları ilgili hak sahiplerine aittir ve yalnızca tanıtım ve bilgi amacıyla gösterilir.
-        Bilgiler <a href="https://rawg.io" target="_blank" rel="noopener">RAWG</a>, <a href="https://www.themoviedb.org" target="_blank" rel="noopener">TMDB</a>,
-        {" "}<a href="https://anilist.co" target="_blank" rel="noopener">AniList</a>, Apple Music (iTunes) ve Deezer&apos;dan alınır. Bu site TMDB API&apos;sini kullanır ancak TMDB tarafından onaylanmış değildir.
-        Steam&apos;den içe aktarma <a href="https://steamcommunity.com/dev/apiterms" target="_blank" rel="noopener">Steam Web API</a> ile yapılır.
-        Profil şarkıları YouTube oynatıcısıyla çalınır; bu kullanımda <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">YouTube Hizmet Şartları</a> geçerlidir.
-        Ancalog; RAWG, TMDB, AniList, Apple, Deezer, YouTube, Google, Steam, Valve, Sony Interactive Entertainment (PlayStation), Microsoft (Xbox), OpenXBL,
-        Epic Games, Nintendo, HowLongToBeat, Backloggd, Playnite, Letterboxd, Simkl, Spotify ya da Last.fm ile bağlantılı değildir ve bu şirketler tarafından onaylanmaz ya da desteklenmez.
-        Adı geçen tüm markalar sahiplerine aittir.</p>
-      <p>Hakkını ihlal eden bir içerik gördüysen aşağıdaki iletişim yolundan; içeriğin bağlantısını ve hak sahibi olduğunu gösteren bilgiyi ileterek bildir.
-        İncelenir ve haklıysan içerik kaldırılır.</p>
+      <h2>7. Fikri mülkiyet</h2>
+      <h3>Üçüncü kişilere ait içerik ve markalar</h3>
+      <p>Oyun, film, dizi, albüm ve anime adları, kapak görselleri, ekran görüntüleri, logolar ve açıklamalar ilgili hak sahiplerine aittir;
+        Ancalog&apos;da yalnızca tanıtım, bilgi ve kişisel arşiv amacıyla, kaynağı belirtilerek gösterilir. Bu içerikler üzerinde Ancalog herhangi bir hak iddia etmez.</p>
+      <p>Bilgiler <a href="https://rawg.io" target="_blank" rel="noopener">RAWG</a>, <a href="https://www.themoviedb.org" target="_blank" rel="noopener">TMDB</a>,
+        {" "}<a href="https://anilist.co" target="_blank" rel="noopener">AniList</a>, Apple Music (iTunes) ve Deezer&apos;dan, bu servislerin kendi kullanım koşullarına uygun olarak alınır.
+        Bu site TMDB API&apos;sini kullanır ancak TMDB tarafından onaylanmış değildir. Steam&apos;den içe aktarma <a href="https://steamcommunity.com/dev/apiterms" target="_blank" rel="noopener">Steam Web API</a> ile yapılır.
+        Profil şarkıları sitede barındırılmaz, YouTube&apos;un kendi oynatıcısıyla çalınır; bu kullanımda <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">YouTube Hizmet Şartları</a> geçerlidir.</p>
+      <p>Ancalog; RAWG, TMDB, AniList, MyAnimeList, Apple, Deezer, YouTube, Google, Steam, Valve, Sony Interactive Entertainment (PlayStation), Microsoft (Xbox), OpenXBL,
+        Epic Games, Nintendo, HowLongToBeat, Backloggd, Playnite, Letterboxd, Simkl, Spotify ya da Last.fm ile bağlantılı değildir ve bu şirketler tarafından onaylanmaz, desteklenmez
+        ya da sponsor edilmez. Adı geçen tüm markalar ve ticari adlar sahiplerine aittir; yalnızca ilgili hizmeti tanımlamak için anılır.</p>
+
+      <h3>Ancalog&apos;a ait olanlar</h3>
+      <p>&quot;Ancalog&quot; adı, logosu, sitenin özgün tasarımı, metinleri ve yazılımı site sahibine aittir. Kişisel ve ticari olmayan kullanım dışında izinsiz kopyalanamaz,
+        çoğaltılamaz ya da başka bir hizmette Ancalog&apos;muş gibi kullanılamaz.</p>
+
+      <h3>Senin paylaştıkların</h3>
+      <ul>
+        <li>Yazdığın incelemelerin, yorumların ve listelerin sahibi sensin (ayrıntılar 5. maddede).</li>
+        <li>Profil fotoğrafı, kapak, arka plan, profil şarkısı ve paylaştığın bağlantılar için <b>kullanma hakkın olduğunu</b> kabul edersin.
+          Başkasına ait fotoğrafı, çizimi ya da içeriği izinsiz kullanmak yasaktır.</li>
+        <li>İncelemelerde eleştiri ve tanıtım amacıyla, kaynağını belirterek kısa alıntı yapabilirsin (5846 sayılı FSEK md. 35); bir eserin tamamını ya da büyük bir kısmını kopyalamak,
+          korsan içeriğe bağlantı vermek yasaktır.</li>
+      </ul>
+
+      <h3>Hak ihlali bildirimi ve içerik kaldırma</h3>
+      <p>Ancalog&apos;da bir içeriğin telif, marka ya da başka bir fikri hakkını ihlal ettiğini düşünüyorsan, 5846 sayılı Kanun ve 5651 sayılı Kanun kapsamında bize bildirebilirsin.
+        Bildirimin şunları içermesi incelemeyi hızlandırır:</p>
+      <ol>
+        <li>Adın ve sana ulaşabileceğimiz bir iletişim yolu,</li>
+        <li>Hakkı ihlal edildiğini düşündüğün eser ya da marka,</li>
+        <li>Ancalog&apos;daki içeriğin bağlantısı (sayfa adresi),</li>
+        <li>Hak sahibi ya da hak sahibi adına yetkili olduğunu gösteren kısa bir açıklama.</li>
+      </ol>
+      <p>Bildirimi içeriğin yanındaki <b>Raporla</b> düğmesiyle (sebep: Diğer) ya da 10. maddedeki iletişim yolundan gönderebilirsin. Haklı bulunan içerik makul sürede kaldırılır
+        ve paylaşan kullanıcıya bildirilir. İçeriği kaldırılan kullanıcı, hakkı olduğunu düşünüyorsa aynı yoldan itiraz edebilir. Hakları tekrar tekrar ihlal eden hesaplar kapatılabilir.</p>
 
       <h2>8. Sorumluluğun sınırı</h2>
       <p>Ancalog, kullanıcıların paylaştığı içeriklerden, kullanıcılar arasındaki yazışmalardan, içe aktarılan verilerden, üçüncü taraf hizmetlerden

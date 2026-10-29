@@ -1779,3 +1779,5 @@ body {
 .song.touch .song-frame iframe { width: 200px; height: 200px; margin: -82px; display: block; }
 .song.touch .song-play { position: relative; z-index: 1; pointer-events: none; background: rgb(var(--accent-rgb) / .55); }
 .song.touch.playing .song-play { background: rgba(0, 0, 0, .35); }
+.legal h3 { font-size: 16px; margin: 18px 0 6px; color: var(--text); }
+.legal ol { padding-left: 22px; display: flex; flex-direction: column; gap: 4px; }
