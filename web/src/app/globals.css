@@ -1771,3 +1771,11 @@ body {
 .report-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
 .btn.danger-btn { color: var(--danger); border-color: rgba(251, 113, 133, .45); }
 .btn.danger-btn:hover { background: rgba(251, 113, 133, .12); }
+.profile-locked-no { order: 9; margin-top: 6px; font-size: 13px; }
+
+/* Telefonda profil şarkısı: şarkının küçük kapağı düğmenin kendisi; dokunulan şey YouTube'un oynatıcısı olduğu için sesli çalar */
+.song.touch .song-frame { left: 8px; top: calc(50% - 18px); width: 36px; height: 36px; border-radius: 50%; opacity: 1; pointer-events: auto; z-index: 0; }
+/* YouTube 200 pikselden küçük oynatıcıyı çalmaz: oynatıcı tam boyda kalır, sadece ortası (oynat düğmesinin olduğu yer) yuvarlak görünür */
+.song.touch .song-frame iframe { width: 200px; height: 200px; margin: -82px; display: block; }
+.song.touch .song-play { position: relative; z-index: 1; pointer-events: none; background: rgb(var(--accent-rgb) / .55); }
+.song.touch.playing .song-play { background: rgba(0, 0, 0, .35); }

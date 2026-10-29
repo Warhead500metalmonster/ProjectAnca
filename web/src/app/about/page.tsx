@@ -65,16 +65,34 @@ export default function AboutPage() {
       </ul>
 
       <h2>Yasaklar (kısaca)</h2>
-      <p className="muted">Burası arkadaş ortamı. Çoğu şey serbest; şunlar değil:</p>
+      <p className="muted">Burası arkadaş ortamı. Tartışmak, eleştirmek, bir oyunu yerden yere vurmak serbest; şunlar değil:</p>
       <ul>
-        <li><b>Hakaret, taciz, nefret söylemi.</b> Bir oyunu yerden yere vurabilirsin, insanları değil.</li>
-        <li><b>Habersiz spoiler.</b> Sürpriz bozan bir şey yazacaksan spoiler işaretini kullan.</li>
+        <li><b>Hakaret, taciz, tehdit, nefret söylemi.</b> Fikre değil kişiye saldırmak yok.</li>
+        <li><b>Habersiz spoiler.</b> Sürpriz bozacaksan yazarken <b>Spoiler gizle</b>&apos;ye bas, ya da ||böyle|| yaz.</li>
         <li><b>Spam ve reklam.</b> Aynı şeyi tekrar tekrar yazmak, link yağdırmak, sahte hesap açmak yok.</li>
-        <li><b>Başkası gibi davranmak.</b> Başka birinin adını ya da fotoğrafını kullanarak hesap açma.</li>
-        <li><b>Yasa dışı ve +18 içerik.</b> Korsan link, kişisel bilgi paylaşma (adres, telefon), müstehcen görsel yok.</li>
+        <li><b>Başkası gibi davranmak.</b> Başkasının adıyla, fotoğrafıyla hesap açmak yok.</li>
+        <li><b>Kişisel bilgi.</b> Kimsenin adresini, telefonunu, özel fotoğrafını paylaşmak yok.</li>
+        <li><b>Yasa dışı ve +18 içerik.</b> Korsan link, müstehcen görsel, yasa dışı her şey yok.</li>
       </ul>
-      <p className="muted">Kurala uymayan içerik kaldırılır; tekrarlanırsa önce susturma, sonra hesap kapatma gelir. Rahatsız olduğun bir şey görürsen{" "}
-        <Link className="grad" href="/chat/arno4436">bana yaz</Link>. Hukuki ayrıntılar <Link className="grad" href="/terms">Kullanım Koşulları</Link>&apos;nda.</p>
+
+      <h2>Rahatsız olursan</h2>
+      <ul>
+        <li><b>Engelle:</b> birinin profilindeki <b>⋯</b> düğmesinden. Seni takip edemez, sana yazamaz, kayıtlarına yorum yapamaz; sen de onu görmezsin. Kimseye haber gitmez.</li>
+        <li><b>Raporla:</b> profillerde ⋯ düğmesinde; kayıtlarda, yorumlarda, listelerde, forum yazılarında ve mesajlarda küçük <b>Raporla</b> yazısı var.
+          Raporun sadece yönetime gider, <b>kimin raporladığını kimse bilmez</b>.</li>
+        <li><b>Gizle:</b> profilini <Link className="grad" href="/settings">Ayarlar</Link>&apos;dan sadece arkadaşlarına ya da sadece kendine açabilirsin.</li>
+      </ul>
+
+      <h2>Kural çiğnenirse ne olur?</h2>
+      <p className="muted">Her raporu bir insan okur, otomatik ceza yoktur. Duruma göre:</p>
+      <ul>
+        <li><b>Uyarı:</b> siteye girince en üstte yönetimden kısa bir not görürsün. Çoğu zaman iş burada biter.</li>
+        <li><b>İçeriğin kaldırılması:</b> kurala uymayan yazı, yorum, liste ya da profil bilgisi silinir.</li>
+        <li><b>Susturma:</b> bir süre (ağır durumlarda süresiz) yorum, forum yazısı ve mesaj yazamazsın. Kütüphanen yerinde durur, loglamaya devam edebilirsin.</li>
+        <li><b>Hesap kapatma:</b> sadece ağır ya da tekrarlanan durumlarda.</li>
+      </ul>
+      <p className="muted">Bir kararın haksız olduğunu düşünüyorsan <Link className="grad" href="/chat/arno4436">bana yaz</Link>, mutlaka bakarım. Susturulmuş olsan da bana yazabilirsin.
+        Hukuki ayrıntılar <Link className="grad" href="/terms">Kullanım Koşulları</Link>&apos;nda.</p>
 
       <h2>Bana ulaş</h2>
       <ul>

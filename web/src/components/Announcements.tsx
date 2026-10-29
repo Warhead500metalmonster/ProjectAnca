@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { Profile } from "@/lib/types";
 import { PROFILE_COLS } from "@/lib/constants";
 import { CHANGELOG } from "@/lib/changelog";
-import { fmtDate, timeAgo } from "@/lib/format";
+import { timeAgo } from "@/lib/format";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "./AppProvider";
@@ -28,7 +28,7 @@ export function Announcements({ onHome = false }: { onHome?: boolean }) {
   const items: Item[] = [
     ...(posts || []).map((p) => ({ key: p.id, kind: "post" as const, title: p.title, body: p.body || "", at: p.created_at, pinned: p.pinned, post: p })),
     ...CHANGELOG.map((c, i) => ({ key: `u${i}`, kind: "update" as const, title: c.title, body: c.body, at: c.date, pinned: false })),
-  ].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.at.localeCompare(a.at));
+  ].sort((a, b) => Number(b.pinned) - Number(a.pinned) || Date.parse(b.at) - Date.parse(a.at)); // en yeni en üstte (saat dahil)
 
   async function remove(id: string) {
     if (!confirm("Bu duyuru silinsin mi?")) return;
@@ -43,7 +43,7 @@ export function Announcements({ onHome = false }: { onHome?: boolean }) {
       <Link className={`ann-home ann k-${it.kind} ${it.pinned ? "pinned" : ""}`} href="/community" title="Bütün duyurular">
         <span className="ann-tag">{it.pinned ? "Sabit" : it.kind === "post" ? "Duyuru" : "Yenilik"}</span>
         <b className="ann-title">{it.title}</b>
-        <span className="ann-date">{it.kind === "post" ? timeAgo(it.at) : fmtDate(it.at)}</span>
+        <span className="ann-date">{timeAgo(it.at)}</span>
         <span className="ann-home-all">Tüm duyurular →</span>
       </Link>
     );
@@ -64,7 +64,7 @@ export function Announcements({ onHome = false }: { onHome?: boolean }) {
               <button className="ann-row" onClick={() => setOpen(isOpen ? null : it.key)} aria-expanded={isOpen}>
                 <span className="ann-tag">{it.pinned ? "Sabit" : it.kind === "post" ? "Duyuru" : "Yenilik"}</span>
                 <b className="ann-title">{it.title}</b>
-                <span className="ann-date">{it.kind === "post" ? timeAgo(it.at) : fmtDate(it.at)}</span>
+                <span className="ann-date">{timeAgo(it.at)}</span>
                 <span className="ann-caret" aria-hidden="true">{isOpen ? "−" : "+"}</span>
               </button>
               {isOpen && (

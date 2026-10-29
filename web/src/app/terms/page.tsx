@@ -59,12 +59,13 @@ export default function Terms() {
 
       <h2>4. Denetim</h2>
       <ul>
-        <li>Yöneticiler, kurallara aykırı içeriği kaldırabilir, profil bilgilerini (görünen ad, yazı, görseller, şarkı) temizleyebilir, kullanıcıyı belli bir süre susturabilir
-          (yorum, forum ve mesaj yazamaz), kullanıcı adı ya da kelime yasaklayabilir ve hesapları kapatabilir.</li>
+        <li>Yöneticiler, kurallara aykırı içerik için kullanıcıya uyarı gönderebilir, içeriği kaldırabilir, profil bilgilerini (görünen ad, yazı, görseller, şarkı) temizleyebilir,
+          kullanıcıyı belli bir süre ya da süresiz susturabilir (yorum, forum ve mesaj yazamaz), kullanıcı adı ya da kelime yasaklayabilir ve hesapları kapatabilir.</li>
         <li>Site sahibi, gerekçe göstermek zorunda olmaksızın bir hesabı askıya alma, kapatma ya da hizmeti tamamen durdurma hakkını saklı tutar.</li>
         <li>Hafif ihlallerde önce içerik kaldırılır; ağır ya da tekrarlanan ihlallerde hesap kapatılabilir ve aynı e-postayla tekrar kayıt engellenebilir.</li>
         <li>Bir kararın yanlış olduğunu düşünüyorsan aşağıdaki iletişim yolundan itiraz edebilirsin; itirazın incelenir.</li>
-        <li>Kurallara aykırı bir içerik görürsen bize bildir; elimizden geldiğince hızlı bakarız.</li>
+        <li>Kurallara aykırı bir içerik görürsen içeriğin yanındaki <b>Raporla</b> ile bildir; raporlar yalnızca yönetime görünür, raporlayanın kimliği raporlanan kişiyle paylaşılmaz.</li>
+        <li>Bir kullanıcıyı engelleyebilirsin: engellenen kişi seni takip edemez, sana mesaj yazamaz ve kayıtlarına yorum yapamaz.</li>
       </ul>
 
       <h2>5. Paylaştığın içerik ve sorumluluk</h2>

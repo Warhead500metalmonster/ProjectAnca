@@ -89,6 +89,8 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
   const year = String(new Date().getFullYear());
   // Steam gibi gizli profil: fotoğraf, ad, kapak ve arka plan görünür; kütüphane ve sayılar görünmez (veritabanı da vermez)
   const privacy = profile.privacy || "public";
+  const founder = (badges.get(raw.profile.id) || []).includes("owner");
+  const memberLine = raw.memberNo ? <b className="member-no">Ancalog&apos;un {num(raw.memberNo)}. üyesi</b> : null; // gizli profilde de görünür
   const iBlocked = blocked.has(raw.profile.id); // engellediğim kişinin profilinde içerik gösterilmez
   const locked = !isMe && (iBlocked || privacy === "private" || (privacy === "friends" && !isFriend(profile.id)));
 
@@ -153,6 +155,7 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
         )}
         {locked ? (
           <div className="profile-locked">
+            {memberLine && <span className="profile-locked-no">{memberLine}</span>}
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 1 1 6 0v3z" /></svg>
             <b>{iBlocked ? "Bu kişiyi engelledin" : privacy === "private" ? "Bu profil gizli" : "Bu profili sadece arkadaşları görebilir"}</b>
             <span className="muted">{iBlocked
@@ -165,7 +168,9 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
           <>
           <div className="profile-meta">
             {profile.location && <span>{profile.location}</span>}
-            <span>{fmtDate(profile.created_at.slice(0, 10))} tarihinde katıldı{data.memberNo ? <> · <b className="member-no">Ancalog&apos;un {num(data.memberNo)}. üyesi</b></> : null}</span>
+            {/* Kurucunun profilinde katılma tarihi yerine sadece kaçıncı üye olduğu yazar */}
+            {founder ? memberLine
+              : <span>{fmtDate(profile.created_at.slice(0, 10))} tarihinde katıldı{memberLine && <> · {memberLine}</>}</span>}
           </div>
           <Socials socials={profile.socials} />
           <nav className="subnav">

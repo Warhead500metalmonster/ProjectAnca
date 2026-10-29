@@ -39,7 +39,10 @@ const savedLevel = () => { try { const v = localStorage.getItem(LEVEL_KEY); retu
 export function ProfileSong({ url, title, volume }: { url: string; title?: string | null; volume?: number | null }) {
   const host = useRef<HTMLDivElement>(null);
   const player = useRef<any>(null);
-  const [state, setState] = useState<"loading" | "playing" | "error">("loading");
+  const [state, setState] = useState<"loading" | "ready" | "playing" | "error">("loading");
+  // Telefon: iPhone ve çoğu telefon görünmeyen videoyu çalmaz, sesi de sayfadaki dokunuşla açtırmaz.
+  // Orada şarkının küçük kapağı düğmenin ta kendisi olur: dokununca YouTube'un kendisi sesli çalar.
+  const [touch] = useState(() => typeof window !== "undefined" && matchMedia("(hover: none)").matches);
   const id = youtubeId(url);
   const vol = Math.min(100, Math.max(1, volume || 15)); // profil sahibinin seçtiği ses
   const [level, setLevel] = useState(() => savedLevel() ?? vol); // ziyaretçinin ayarladığı ses
@@ -59,18 +62,21 @@ export function ProfileSong({ url, title, volume }: { url: string; title?: strin
       loud();
       GESTURES.forEach((g) => document.removeEventListener(g, onGesture, true));
     };
-    GESTURES.forEach((g) => document.addEventListener(g, onGesture, true));
+    if (!touch) GESTURES.forEach((g) => document.addEventListener(g, onGesture, true));
 
     loadYouTube().then((YT) => {
       if (dead) return;
       player.current = new YT.Player(target, {
         videoId: id, width: 200, height: 200, host: "https://www.youtube-nocookie.com",
         // Sessiz otomatik oynatmaya her tarayıcı izin verir
-        playerVars: { autoplay: 1, mute: 1, loop: 1, playlist: id, controls: 0, disablekb: 1, playsinline: 1, rel: 0 },
+        playerVars: touch
+          ? { autoplay: 0, mute: 0, loop: 1, playlist: id, controls: 0, disablekb: 1, playsinline: 1, rel: 0 }
+          : { autoplay: 1, mute: 1, loop: 1, playlist: id, controls: 0, disablekb: 1, playsinline: 1, rel: 0 },
         events: {
           onReady: () => {
             ready = true;
             player.current.setVolume(levelRef.current);
+            if (touch) return setState("ready"); // telefonda ziyaretçinin dokunmasını bekle
             player.current.playVideo();
             if (navigator.userActivation?.hasBeenActive) onGesture(); // siteden tıklayıp geldiyse ses hemen açık
           },
@@ -92,7 +98,7 @@ export function ProfileSong({ url, title, volume }: { url: string; title?: strin
       player.current = null;
       target.remove();
     };
-  }, [id]);
+  }, [id, touch]);
 
   function changeLevel(v: number) {
     setLevel(v);
@@ -108,11 +114,11 @@ export function ProfileSong({ url, title, volume }: { url: string; title?: strin
   if (!id || state === "error") return null;
 
   return (
-    <div className={`song ${state}`}>
+    <div className={`song ${state} ${touch ? "touch" : ""}`}>
       <div className="song-frame" ref={host} aria-hidden="true" />
-      <span className="song-play">{state === "playing" ? <span className="eq"><i /><i /><i /></span> : ""}</span>
+      <span className="song-play">{state === "playing" ? <span className="eq"><i /><i /><i /></span> : touch && state === "ready" ? "▶" : ""}</span>
       <div className="song-text">
-        <small>{state === "playing" ? "Şu an çalıyor" : "Profil şarkısı"}</small>
+        <small>{state === "playing" ? "Şu an çalıyor" : touch && state === "ready" ? "Dinlemek için kapağa dokun" : "Profil şarkısı"}</small>
         <b title={title || ""}>{title || "Profil şarkısı"}</b>
       </div>
       <div className="song-vol">
