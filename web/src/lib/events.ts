@@ -51,14 +51,15 @@ export async function fetchEvent(id: string) {
   return { ev, members };
 }
 // Etkinlik başına kaç kişi katıldı, kaçı bitirdi, kimler (kartlarda yüzler görünsün)
-export interface EventStats { n: number; done: number; faces: ProfileLite[]; mine: boolean }
+export interface EventStats { n: number; done: number; faces: ProfileLite[]; mine: boolean; people: ProfileLite[] }
 export async function memberStats(ids: string[], me?: string | null): Promise<Record<string, EventStats>> {
   if (!ids.length) return {};
   const rows = await q<{ event_id: string; user_id: string; status: MemberStatus; profiles: ProfileLite | null }[]>(sb().from("event_members")
     .select(`event_id, user_id, status, profiles(${PROFILE_COLS})`).in("event_id", ids).order("joined_at", { ascending: false }).limit(2000)).catch(() => []);
   const out: Record<string, EventStats> = {};
   for (const r of rows) {
-    const st = (out[r.event_id] ??= { n: 0, done: 0, faces: [], mine: false });
+    const st = (out[r.event_id] ??= { n: 0, done: 0, faces: [], mine: false, people: [] });
+    if (r.profiles) st.people.push(r.profiles);
     st.n++;
     if (r.status === "done") st.done++;
     if (r.profiles && st.faces.length < 6) st.faces.push(r.profiles);

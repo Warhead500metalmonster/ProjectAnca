@@ -37,6 +37,7 @@ export interface HomeLayout {
   sections?: (string | HomeBlock)[]; text?: string;
   counts?: { show: boolean; items?: string[]; types?: EntryType[] };
   banner?: boolean;
+  events?: boolean; // false: katıldığı etkinlikler profilde görünmez
 }
 
 // x, y: odak noktası (yüzde), z: yakınlaştırma (1 = hiç)

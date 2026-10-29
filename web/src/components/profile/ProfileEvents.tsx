@@ -1,9 +1,8 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import Link from "next/link";
 import { type AncEvent, type EventMember, eventState } from "@/lib/events";
-import { safeUrl } from "@/lib/format";
+import { cssUrl, safeUrl } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
@@ -19,7 +18,7 @@ export function ProfileEvents() {
     .select("*, events(id, title, cover, options, starts_on, ends_on, kind)").eq("user_id", profile.id).order("joined_at", { ascending: false }).limit(30))
     .catch(() => []), [profile.id, version]);
   const list = (data || []).filter((m) => m.events);
-  if (!list.length) return null;
+  if (!list.length || profile.home_layout?.events === false) return null; // sahibi gizlediyse görünmez
   const order = { live: 0, upcoming: 1, ended: 2 };
   list.sort((a, b) => order[eventState(a.events!)] - order[eventState(b.events!)]);
   return (
@@ -32,13 +31,12 @@ export function ProfileEvents() {
           const art = safeUrl(opt?.cover) || safeUrl(ev.cover);
           const state = eventState(ev);
           return (
-            <Link key={ev.id} href={`/events/${ev.id}`} className={`pev ${m.status}`}>
-              {art ? <img src={art} alt="" /> : <span className="noimg" />}
+            <Link key={ev.id} href={`/events/${ev.id}`} className={`pev ${m.status} ${state}`} style={art ? { backgroundImage: cssUrl(art) } : undefined}>
+              <span className={`ev-pill ${m.status}`}>{STATUS[m.status]}</span>
               <span className="pev-main">
                 <b>{ev.title}</b>
-                <span className="muted small">{[opt?.label, state === "ended" ? "Geçmiş etkinlik" : state === "upcoming" ? "Yakında" : null].filter(Boolean).join(" · ")}</span>
+                <span>{[opt?.label, state === "ended" ? "Geçmiş etkinlik" : state === "upcoming" ? "Yakında" : "Sürüyor"].filter(Boolean).join(" · ")}</span>
               </span>
-              <span className={`ev-pill ${m.status}`}>{STATUS[m.status]}</span>
             </Link>
           );
         })}

@@ -13,6 +13,7 @@ import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { Avatar, Name, RichText } from "@/components/ui";
 import { EventForm } from "@/components/EventForm";
+import { friendsLine } from "@/components/EventBanner";
 
 const STATUS: Record<MemberStatus, string> = { joined: "Katıldı", playing: "Oynuyor", done: "Bitirdi" };
 const MY_STATUS: Record<MemberStatus, string> = { joined: "Katıldım", playing: "Oynuyorum", done: "Bitirdim" };
@@ -63,10 +64,21 @@ export default function EventPage() {
         </>
       ) : (
         <>
-          <Rewards ev={ev} />
-          {!my && <HowTo />}
-          <Versions ev={ev} members={members} my={my} onChange={reload} />
-          {my && <MyPanel ev={ev} my={my} members={members} onChange={reload} />}
+          {my ? (
+            <>
+              <MyPanel ev={ev} my={my} members={members} onChange={reload} />
+              <Versions ev={ev} members={members} my={my} onChange={reload} />
+              <Rewards ev={ev} />
+            </>
+          ) : (
+            <>
+              <Rewards ev={ev} />
+              <HowTo />
+              <Versions ev={ev} members={members} my={my} onChange={reload} />
+              {/* Telefonda ekranın altında sabit Katıl düğmesi */}
+              <a className="ev-sticky btn primary" href="#ev-versions">Etkinliğe katıl</a>
+            </>
+          )}
         </>
       )}
 
@@ -86,7 +98,17 @@ export default function EventPage() {
 
 // Büyük kapak: başlık, tarih, geri sayım, katılanlar
 function Hero({ ev, members, my }: { ev: AncEvent; members: EventMember[]; my?: EventMember }) {
+  const { following, toast } = useApp();
+  const friends = friendsLine(members.map((m) => m.profiles).filter(Boolean) as ProfileLite[], following);
   const state = eventState(ev);
+  // Arkadaşını çağır: telefonda paylaşım penceresi, bilgisayarda link kopyalanır
+  async function share() {
+    const url = location.href.split("#")[0];
+    try {
+      if (navigator.share) await navigator.share({ title: ev.title, text: `${ev.title}: Ancalog'da hep birlikte! Sen de katıl.`, url });
+      else { await navigator.clipboard.writeText(url); toast("Etkinlik linki kopyalandı, arkadaşına gönder!"); }
+    } catch { /* paylaşım penceresi kapatıldı */ }
+  }
   const done = members.filter((m) => m.status === "done").length;
   const art = safeUrl(ev.cover) || safeUrl(ev.options[0]?.cover);
   const covers = ev.options.map((o) => safeUrl(o.cover)).filter(Boolean).slice(0, 3);
@@ -109,11 +131,14 @@ function Hero({ ev, members, my }: { ev: AncEvent; members: EventMember[]; my?: 
           {members.length > 0 ? (
             <div className="ev-crowd">
               <span className="ev-faces">{members.slice(-6).map((m) => <Avatar key={m.user_id} p={m.profiles} />)}</span>
-              <span><b>{members.length}</b> kişi katıldı{done ? <> · <b>{done}</b> kişi bitirdi</> : null}</span>
+              <span><b>{members.length}</b> kişi katıldı{done ? <> · <b>{done}</b> kişi bitirdi</> : null}{friends && <><br /><small>{friends}</small></>}</span>
             </div>
           ) : <span className="muted">İlk katılan sen ol!</span>}
-          {my ? <span className="ev-joined">✓ Katıldın · {ev.options.find((o) => o.id === my.choice)?.label || "sürüm seçmedin"}</span>
-            : state !== "ended" && <a className="btn primary" href="#ev-versions">Katıl</a>}
+          <div className="ev-hero-actions">
+            {state !== "ended" && <button className="btn ev-share" onClick={share}>Arkadaşını çağır</button>}
+            {my ? <a className="ev-joined" href="#ev-me">✓ Katıldın · {ev.options.find((o) => o.id === my.choice)?.label || "sürüm seçmedin"} · {STATUS[my.status]}</a>
+              : state !== "ended" && <a className="btn primary ev-cta" href="#ev-versions">Katıl</a>}
+          </div>
         </div>
       </div>
     </section>
@@ -170,8 +195,8 @@ function Versions({ ev, members, my, onChange }: { ev: AncEvent; members: EventM
 
   if (state === "ended") return null;
   return (
-    <section className="section" id="ev-versions">
-      <div className="section-head"><h2>{ev.options.length > 1 ? "Sürümünü seç" : "Katıl"}</h2>
+    <section className={`section ${my ? "ev-versions-small" : ""}`} id="ev-versions">
+      <div className="section-head"><h2>{my ? (ev.options.length > 1 ? "Sürümünü değiştir" : "Etkinlik") : ev.options.length > 1 ? "Sürümünü seç, katıl" : "Katıl"}</h2>
         {ev.options.length > 1 && <span className="muted small">Hangisini istersen; sonra değiştirebilirsin</span>}</div>
       <div className={`ev-options n${Math.min(options.length, 4)}`}>
         {options.map((o) => {
@@ -245,7 +270,7 @@ function MyPanel({ ev, my, members, onChange }: { ev: AncEvent; my: EventMember;
   }
 
   return (
-    <section className="section ev-me">
+    <section className="section ev-me" id="ev-me">
       <div className="section-head"><h2>Senin durumun</h2>{option && <span className="muted small">{option.label}</span>}</div>
       <div className="seg ev-status">
         {(Object.keys(MY_STATUS) as MemberStatus[]).map((s) => (
@@ -297,6 +322,30 @@ function People({ ev, members }: { ev: AncEvent; members: EventMember[] }) {
 }
 
 // Etkinlik sohbeti: herkes okur, giriş yapan yazar. Spoiler işaretli mesajlar dokununca açılır.
+// Yazıdaki resim linklerini ayır: doğrudan resim dosyaları, Imgur ve Discord linkleri
+const IMG_URL = /https:\/\/[^\s<>"]+?(?:\.(?:jpe?g|png|gif|webp|avif)(?:\?[^\s<>"]*)?|(?=\s|$))/gi;
+function imagesIn(body: string): { text: string; images: string[] } {
+  const images: string[] = [];
+  const text = body.replace(IMG_URL, (url) => {
+    let u = url;
+    const imgur = u.match(/^https:\/\/(?:www\.)?imgur\.com\/([A-Za-z0-9]{5,10})$/); // sayfa linki → resmin kendisi
+    if (imgur) u = `https://i.imgur.com/${imgur[1]}.jpeg`;
+    const isImg = /\.(jpe?g|png|gif|webp|avif)(\?|$)/i.test(u) || /^https:\/\/(i\.imgur\.com|media\.discordapp\.net|cdn\.discordapp\.com)\//i.test(u);
+    if (!isImg) return url;
+    images.push(u);
+    return "";
+  }).trim();
+  return { text, images };
+}
+
+// Fotoğraf açılmazsa boş kutu yerine linki göster
+function PostImage({ src }: { src: string }) {
+  const [failed, setFailed] = useState(false);
+  return failed
+    ? <a href={src} target="_blank" rel="noopener noreferrer nofollow" className="ev-img-broken">Fotoğraf açılamadı: {src}</a>
+    : <a href={src} target="_blank" rel="noopener noreferrer nofollow" className="ev-post-img"><img src={src} alt="" loading="lazy" onError={() => setFailed(true)} /></a>;
+}
+
 interface EventPost { id: string; event_id: string; user_id: string; body: string; spoiler: boolean; image?: string | null; created_at: string; profiles?: ProfileLite | null }
 
 function EventChat({ ev, joined, closed }: { ev: AncEvent; joined: boolean; closed: boolean }) {
@@ -379,10 +428,15 @@ function EventChat({ ev, joined, closed }: { ev: AncEvent; joined: boolean; clos
                   </div>
                   {hidden
                     ? <button className="ev-spoiler" onClick={() => setShown((s) => new Set(s).add(x.id))}>Spoiler içeriyor. Görmek için dokun.</button>
-                    : <>
-                      {x.body !== "📷" && <div className="ev-post-body"><RichText text={x.body} /></div>}
-                      {x.image && safeUrl(x.image) && <a href={x.image} target="_blank" rel="noopener noreferrer nofollow" className="ev-post-img"><img src={x.image} alt="" loading="lazy" /></a>}
-                    </>}
+                    : (() => {
+                      // Mesaja yapıştırılan resim linkleri de fotoğraf olarak görünür (düğmeyi kullanmayanlar için)
+                      const { text: rest, images } = imagesIn(x.body);
+                      const all = [...new Set([...(x.image && safeUrl(x.image) ? [x.image] : []), ...images])];
+                      return <>
+                        {rest && rest !== "📷" && <div className="ev-post-body"><RichText text={rest} /></div>}
+                        {all.map((src) => <PostImage key={src} src={src} />)}
+                      </>;
+                    })()}
                 </div>
               </div>
             );

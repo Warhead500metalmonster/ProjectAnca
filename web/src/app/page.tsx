@@ -61,6 +61,7 @@ function Landing({ version }: { version: number }) {
         </div>
       </section>
 
+      <EventBanner />
       <ImportPromo signedIn={false} />
 
       <div className="bento">

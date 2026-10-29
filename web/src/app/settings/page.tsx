@@ -50,6 +50,7 @@ function SettingsForm({ me }: { me: Profile }) {
   const [accent, setAccent] = useState(me.accent || "");
   const [showBanner, setShowBanner] = useState(me.home_layout?.banner !== false); // kapak görseli açık mı
   const [counts, setCounts] = useState(() => countsOf(me)); // profilin üstündeki sayılar
+  const [showEvents, setShowEvents] = useState(me.home_layout?.events !== false); // katıldığı etkinlikler profilde
   // Profildeki ⚙ /settings#sayilar'a getirir: sayfa tarayıcıda çizilince o bölüme kaydır
   useEffect(() => { if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView({ block: "start" }); }, []);
   const countsChanged = JSON.stringify(cleanCounts(counts)) !== JSON.stringify(cleanCounts(countsOf(me)));
@@ -103,8 +104,8 @@ function SettingsForm({ me }: { me: Profile }) {
         accent: !theme && /^#[0-9a-f]{6}$/i.test(accent) ? accent : null,
         profile_theme: theme || null,
         bg_url: bgUrl.trim() || null,
-        ...((showBanner !== (me.home_layout?.banner !== false) || countsChanged) && {
-          home_layout: { ...me.home_layout, banner: showBanner, ...(countsChanged && { counts: cleanCounts(counts) }) },
+        ...((showBanner !== (me.home_layout?.banner !== false) || countsChanged || showEvents !== (me.home_layout?.events !== false)) && {
+          home_layout: { ...me.home_layout, banner: showBanner, events: showEvents, ...(countsChanged && { counts: cleanCounts(counts) }) },
         }),
         rating_scale: scale,
         socials,
@@ -154,6 +155,7 @@ function SettingsForm({ me }: { me: Profile }) {
 
       <h3 className="set-h" id="sayilar">Profilimdeki sayılar <span className="muted small">· adının yanındaki kayıt, takipçi gibi büyük sayılar</span></h3>
       <CountsPicker value={counts} onChange={setCounts} />
+      <label className="check"><input type="checkbox" checked={showEvents} onChange={(e) => setShowEvents(e.target.checked)} /> Katıldığım etkinlikler profilimde görünsün</label>
 
       <h3 className="set-h">Profilimi kimler görebilir?</h3>
       <div className="vis-pick" style={{ marginBottom: 8 }}>

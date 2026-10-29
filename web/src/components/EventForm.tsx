@@ -11,7 +11,7 @@ import { q, sb } from "@/lib/supabase";
 import { useApp } from "./AppProvider";
 
 const newId = () => Math.random().toString(36).slice(2, 8);
-const BADGE_ICONS = ["✦", "⚔", "♫", "★", "♛", "☄", "◈", "✿", "⚑", "☾"];
+const BADGE_ICONS = ["✦", "⚔", "♫", "★", "♛", "☄", "◈", "✿", "⚑", "☾", "🏆", "🎮", "🎬", "🔥", "👑", "🗡️"];
 // Hazır süreler: başlangıçtan itibaren (0 = süresiz)
 const DURATIONS: [number, string][] = [[7, "1 hafta"], [14, "2 hafta"], [30, "1 ay"], [60, "2 ay"], [0, "Süresiz"]];
 function addDays(date: string, days: number) {
@@ -47,7 +47,7 @@ export function EventForm({ ev, onDone }: { ev?: AncEvent; onDone: (id?: string)
       title: title.trim().slice(0, 120), description: description.trim() || null, cover: cover.trim() || null, kind,
       starts_on: starts, ends_on: ends || null,
       // Rozet alanları sadece doluysa gönderilir (veritabanı güncellenmeden de etkinlik açılabilsin)
-      ...((badgeName.trim() || ev?.badge_name) && { badge_name: badgeName.trim().slice(0, 40) || null, badge_icon: badgeIcon }),
+      ...((badgeName.trim() || ev?.badge_name) && { badge_name: badgeName.trim().slice(0, 40) || null, badge_icon: badgeIcon.trim() || "✦" }),
       options: options.map((o) => ({ ...o, label: o.label.trim().slice(0, 40), sub: o.sub?.trim() || undefined })),
     };
     setBusy(true);
@@ -80,6 +80,18 @@ export function EventForm({ ev, onDone }: { ev?: AncEvent; onDone: (id?: string)
         <label htmlFor="ev-desc">Açıklama <span className="muted">· ne yapacağız, nasıl katılınır</span></label>
         <textarea id="ev-desc" rows={4} maxLength={4000} value={description} onChange={(e) => setDescription(e.target.value)} />
       </div>
+      <div className="ev-badge-box">
+        <b>Bu etkinliğin rozeti</b>
+        <span className="muted small">İsteğe bağlı. Etkinliği bitiren herkes kazanır, profilinde görünür. Adını yaz, simgesini seç ya da kendi emojini yaz.</span>
+        <div className="row ev-badge-row">
+          <input className="input" maxLength={40} placeholder="Rozet adı (ör. Hyrule Kahramanı, Vice City Efsanesi)" value={badgeName} onChange={(e) => setBadgeName(e.target.value)} />
+          <input className="input ev-emoji" maxLength={4} aria-label="Kendi emojin" placeholder="😀" value={badgeIcon} onChange={(e) => setBadgeIcon(e.target.value)} />
+        </div>
+        <div className="chips">
+          {BADGE_ICONS.map((i) => <button type="button" key={i} className={`chip ${badgeIcon === i ? "active" : ""}`} onClick={() => setBadgeIcon(i)}>{i}</button>)}
+        </div>
+        {badgeName.trim() && <p className="muted small" style={{ margin: 0 }}>Önizleme: <span className="bdg event">{badgeIcon || "✦"} {badgeName.trim()}</span></p>}
+      </div>
       <div className="row">
         <div className="field grow">
           <label>Etkinliğin türü <span className="muted">· sürümlere ayrı ayrı da seçebilirsin</span></label>
@@ -109,15 +121,6 @@ export function EventForm({ ev, onDone }: { ev?: AncEvent; onDone: (id?: string)
         <label htmlFor="ev-cover">Kapak görseli <span className="muted">· boş kalırsa ilk sürümün kapağı kullanılır</span></label>
         <input id="ev-cover" className="input" type="url" placeholder="https://…" value={cover} onChange={(e) => setCover(e.target.value)} />
       </div>
-
-      <h3 className="set-h">Etkinliğe özel rozet <span className="muted small">· isteğe bağlı: bitiren herkes kazanır, profilinde görünür</span></h3>
-      <div className="row ev-badge-row">
-        <input className="input" maxLength={40} placeholder="Rozet adı (ör. Hyrule Kahramanı)" value={badgeName} onChange={(e) => setBadgeName(e.target.value)} />
-        <div className="chips">
-          {BADGE_ICONS.map((i) => <button type="button" key={i} className={`chip ${badgeIcon === i ? "active" : ""}`} onClick={() => setBadgeIcon(i)}>{i}</button>)}
-        </div>
-      </div>
-      {badgeName.trim() && <p className="muted small">Önizleme: <span className="bdg event">{badgeIcon} {badgeName.trim()}</span></p>}
 
       <h3 className="set-h">Sürümler <span className="muted small">· isteğe bağlı: katılan hangisini oynayacağını seçer</span></h3>
       {options.map((o) => (

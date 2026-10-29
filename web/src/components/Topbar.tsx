@@ -69,7 +69,7 @@ export function Topbar() {
         )}
         <Link href="/chat" className={active("chat")}>
           <svg viewBox="0 0 24 24"><path d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm3 6v2h2V9zm4 0v2h2V9zm4 0v2h2V9z" /></svg>
-          <span>Sosyal</span>{unread > 0 && <b className="nav-badge">{unread > 9 ? "9+" : unread}</b>}
+          <span>Sosyal</span>{ready && unread > 0 && <b className="nav-badge">{unread > 9 ? "9+" : unread}</b>}
         </Link>
         <Link href={mine} className={active("me")}>
           <svg viewBox="0 0 24 24"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zm0 2c-3 0-9 1.5-9 4.5V21h18v-2.5c0-3-6-4.5-9-4.5z" /></svg><span>Profilim</span>

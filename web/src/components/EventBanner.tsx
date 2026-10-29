@@ -66,7 +66,17 @@ export function EventBanner() {
   );
 }
 
-function EventFeature({ ev, stats }: { ev: AncEvent; stats?: EventStats }) {
+// Takip ettiklerinden katılanlar: "Ali, Ayşe ve 2 kişi daha katıldı"
+export function friendsLine(people: { id: string; display_name?: string | null; username: string }[], following: Set<string>) {
+  const f = people.filter((p) => following.has(p.id));
+  if (!f.length) return "";
+  const names = f.slice(0, 2).map((p) => p.display_name || p.username);
+  return `${names.join(", ")}${f.length > 2 ? ` ve ${f.length - 2} arkadaşın daha` : ""} katıldı`;
+}
+
+export function EventFeature({ ev, stats }: { ev: AncEvent; stats?: EventStats }) {
+  const { following } = useApp();
+  const friends = friendsLine(stats?.people || [], following);
   const state = eventState(ev);
   const a = art(ev);
   const covers = ev.options.map((o) => safeUrl(o.cover)).filter(Boolean).slice(0, 3);
@@ -79,6 +89,7 @@ function EventFeature({ ev, stats }: { ev: AncEvent; stats?: EventStats }) {
           <div className="ev-kicker"><span>✦ Ancalog etkinliği</span><span className={`ev-state ${state}`}>{stateName[state]}</span></div>
           <h2>{ev.title}</h2>
           {ev.options.length > 1 && <p className="ev-feature-opts">{ev.options.map((o) => o.label).join(" · ")}: hangisini istersen</p>}
+          {ev.badge_name && <span className="ev-feature-badge">Bitirene özel rozet: <b>{ev.badge_icon || "✦"} {ev.badge_name}</b></span>}
           {state === "upcoming" ? (
             <div className="ev-count small"><div><b>{d}</b><span>gün</span></div><div><b>{h}</b><span>saat</span></div><div><b>{m}</b><span>dakika</span></div></div>
           ) : <p className="ev-date">{dateLine(ev)}</p>}
@@ -86,7 +97,7 @@ function EventFeature({ ev, stats }: { ev: AncEvent; stats?: EventStats }) {
             <span className="btn primary ev-cta">{stats?.mine ? "✓ Katıldın · Etkinliğe git" : "Katıl"}</span>
             <span className="ev-crowd">
               {stats?.faces.length ? <span className="ev-faces">{stats.faces.slice(0, 5).map((p) => <Avatar key={p.id} p={p} />)}</span> : null}
-              <span>{stats?.n ? <><b>{stats.n}</b> kişi katıldı</> : "İlk katılan sen ol!"}</span>
+              <span>{friends || (stats?.n ? <><b>{stats.n}</b> kişi katıldı</> : "İlk katılan sen ol!")}</span>
             </span>
           </div>
         </div>

@@ -5,6 +5,14 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-10-30T01:05:00+04:00",
+    title: "Etkinlikler daha kolay, daha görünür",
+    body: "Etkinlikler sayfasında süren ve yaklaşan etkinlikler büyük vitrinlerle en üstte. Takip ettiklerinden kimin katıldığını görürsün, \"Arkadaşını çağır\" ile linki tek dokunuşta paylaşırsın.\n"
+      + "Katıldıysan etkinlik sayfasında önce kendi durumun çıkar; telefonda katılmadıysan ekranın altında Katıl düğmesi hep elinin altında.\n"
+      + "Sohbete yapıştırdığın resim linkleri (Imgur, Discord, .jpg, .png…) kendiliğinden fotoğraf olarak görünür.\n"
+      + "Profilindeki etkinlikler artık kapaklı kartlar; istersen Ayarlar'dan gizleyebilirsin.",
+  },
+  {
     date: "2026-10-30T00:55:00+04:00",
     title: "Etkinlik rozetleri, fotoğraflar ve arşiv",
     body: "Etkinlikler artık üst menüde, Topluluk'un yanında. Katılabileceğin bir etkinlik varsa yanında küçük bir ışık yanar.\n"
