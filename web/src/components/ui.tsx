@@ -51,7 +51,9 @@ export function BadgeChips({ id, showLocked = false, entries, max, more }: { id:
   return (
     <div className="badge-row">
       {mine.map((b) => (
-        <span key={b} className={`bdg ${BADGES[b].tone}`} title={BADGES[b].desc}>{BADGES[b].icon} {BADGES[b].name}</span>
+        BADGES[b].href
+          ? <Link key={b} href={`${BADGES[b].href}?u=${id}`} className={`bdg ${BADGES[b].tone} link-bdg`} title={`${BADGES[b].desc} · tıkla, etkinliğe git`}>{BADGES[b].icon} {BADGES[b].name}</Link>
+          : <span key={b} className={`bdg ${BADGES[b].tone}`} title={BADGES[b].desc}>{BADGES[b].icon} {BADGES[b].name}</span>
       ))}
       {more && <Link className="bdg more" href={more}>{all.length > mine.length ? `+${all.length - mine.length} rozet` : "Rozetler"} →</Link>}
       {showLocked && locked.length > 0 && (

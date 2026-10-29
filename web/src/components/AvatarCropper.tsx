@@ -6,7 +6,8 @@ import type { AvatarCrop } from "@/lib/types";
 
 // Profil fotoğrafının hangi kısmının görüneceğini seçmek: resmi tutup kaydır, kaydırıcıyla yakınlaştır.
 // Resmin kendisi değişmez; seçilen odak ve yakınlık profilde saklanır, her yerde aynı kırpılmış görünür.
-export function AvatarCropper({ url, crop, onChange }: { url: string; crop: AvatarCrop; onChange: (c: AvatarCrop) => void }) {
+// shape: circle = profil fotoğrafı, wide = kapak görseli, screen = arka plan resmi
+export function AvatarCropper({ url, crop, onChange, shape = "circle" }: { url: string; crop: AvatarCrop; onChange: (c: AvatarCrop) => void; shape?: "circle" | "wide" | "screen" }) {
   const drag = useRef<{ x: number; y: number; cx: number; cy: number } | null>(null);
   const clamp = (v: number) => Math.max(0, Math.min(100, Math.round(v)));
 
@@ -23,8 +24,8 @@ export function AvatarCropper({ url, crop, onChange }: { url: string; crop: Avat
   }
 
   return (
-    <div className="cropper">
-      <div className="cropper-box" onPointerDown={down} onPointerMove={move} onPointerUp={() => (drag.current = null)} onPointerCancel={() => (drag.current = null)}
+    <div className={`cropper ${shape}`}>
+      <div className={`cropper-box ${shape}`} onPointerDown={down} onPointerMove={move} onPointerUp={() => (drag.current = null)} onPointerCancel={() => (drag.current = null)}
         title="Görünmesini istediğin yere sürükle">
         <img src={url} alt="" draggable={false}
           style={{ objectPosition: `${crop.x}% ${crop.y}%`, transform: `scale(${crop.z})`, transformOrigin: `${crop.x}% ${crop.y}%` }} />

@@ -38,6 +38,8 @@ export interface HomeLayout {
   counts?: { show: boolean; items?: string[]; types?: EntryType[] };
   banner?: boolean;
   events?: boolean; // false: katıldığı etkinlikler profilde görünmez
+  bannerCrop?: AvatarCrop; // kapak görselinin kadrajı
+  bgCrop?: AvatarCrop;     // arka plan resminin kadrajı
 }
 
 // x, y: odak noktası (yüzde), z: yakınlaştırma (1 = hiç)

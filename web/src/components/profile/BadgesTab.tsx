@@ -33,13 +33,13 @@ export function BadgesTab() {
         <>
           <h3 className="set-h">Kazanılanlar</h3>
           <div className="badge-grid">
-            {mine.map((b) => (
-              <div key={b} className={`badge-card got ${BADGES[b].tone}`}>
-                <span className="b-icon">{BADGES[b].icon}</span>
-                <b>{BADGES[b].name}</b>
-                <small>{BADGES[b].desc}</small>
-              </div>
-            ))}
+            {mine.map((b) => {
+              const inner = <><span className="b-icon">{BADGES[b].icon}</span><b>{BADGES[b].name}</b><small>{BADGES[b].desc}</small></>;
+              // Etkinlik rozetleri etkinliğin sayfasına (biten etkinlikte arşive) götürür, rozetin sahibi orada öne çıkar
+              return BADGES[b].href
+                ? <Link key={b} href={`${BADGES[b].href}?u=${profile.id}`} className={`badge-card got ${BADGES[b].tone} link-card`}>{inner}<small className="b-go">Etkinliğe git →</small></Link>
+                : <div key={b} className={`badge-card got ${BADGES[b].tone}`}>{inner}</div>;
+            })}
           </div>
         </>
       )}

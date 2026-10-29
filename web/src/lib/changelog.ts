@@ -5,6 +5,13 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-10-30T01:20:00+04:00",
+    title: "Kapak kadrajı, rozetten etkinliğe",
+    body: "Ayarlar'da kapak görselinin ve arka plan resminin kadrajını seçebilirsin: resmi tutup sürükle, yakınlaştır; hangi kısmı görünsün sen karar ver.\n"
+      + "Profildeki etkinlik rozetine tıklayınca o etkinliğin sayfası açılır, en üstte o kişinin sonucu görünür: kaçıncı bitirdi, hangi sürümle, ne zaman, notu ve kazandığı rozetler.\n"
+      + "Etkinliklerde film, dizi ve animede artık \"Bunu izleyeceğim\", müzikte \"Bunu dinleyeceğim\" yazıyor.",
+  },
+  {
     date: "2026-10-30T01:05:00+04:00",
     title: "Etkinlikler daha kolay, daha görünür",
     body: "Etkinlikler sayfasında süren ve yaklaşan etkinlikler büyük vitrinlerle en üstte. Takip ettiklerinden kimin katıldığını görürsün, \"Arkadaşını çağır\" ile linki tek dokunuşta paylaşırsın.\n"

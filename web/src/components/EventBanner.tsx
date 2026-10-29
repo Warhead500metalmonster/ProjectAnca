@@ -25,12 +25,12 @@ function LeftText({ date }: { date: string }) {
 }
 
 // Etkinlik kartı (liste ve arşiv): kapak, durum, tarih, katılanların yüzleri; geçmişte sonuç özeti
-export function EventCard({ ev, stats }: { ev: AncEvent; stats?: EventStats }) {
+export function EventCard({ ev, stats, focus }: { ev: AncEvent; stats?: EventStats; focus?: string | null }) {
   const state = eventState(ev);
   const a = art(ev);
   const n = stats?.n || 0, done = stats?.done || 0;
   return (
-    <Link href={`/events/${ev.id}`} className={`ev-card ${state}`} style={a ? { backgroundImage: cssUrl(a) } : undefined}>
+    <Link href={`/events/${ev.id}${focus ? `?u=${focus}` : ""}`} className={`ev-card ${state}`} style={a ? { backgroundImage: cssUrl(a) } : undefined}>
       <div className="ev-card-in">
         <span className={`ev-state ${state}`}>{stateName[state]}</span>
         <b>{ev.title}</b>

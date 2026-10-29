@@ -67,15 +67,16 @@ const thisYear = () => String(new Date().getFullYear());
 const secOf = (x: Entry) => x.playtime_sec ?? (x.hours ? Number(x.hours) * 3600 : 0);
 const count = (f: (x: Entry) => unknown): Prog => (e) => e.filter(f).length;
 const hoursOf: Prog = (e) => Math.floor(e.reduce((s, x) => s + (x.playtime_sec ?? (x.hours ? Number(x.hours) * 3600 : 0)), 0) / 3600);
-export const BADGES: Record<string, { icon: string; name: string; desc: string; tone: string; earn?: number; progress?: Prog }> = {
+// href: rozete tıklayınca gidilen yer (etkinlik rozetleri etkinliğe götürür; ?u= rozetin sahibini vurgular)
+export const BADGES: Record<string, { icon: string; name: string; desc: string; tone: string; earn?: number; progress?: Prog; href?: string }> = {
   owner: { icon: "♛", name: "Kurucu", desc: "Ancalog'u kuran kişi", tone: "gold" },
   dev: { icon: "⚒", name: "Geliştirici", desc: "Ancalog'u yapan ve geliştiren ekipten", tone: "dev" },
   admin: { icon: "◆", name: "Yönetici", desc: "Ancalog'u yöneten ekipten", tone: "blue" },
   founder: { icon: "★", name: "Öncü", desc: "Ancalog'a ilk katılanlardan biri", tone: "violet" },
-  event_join: { icon: "✧", name: "Etkinlikçi", desc: "Bir Ancalog etkinliğine katıl", tone: "event", earn: 1 },
-  event: { icon: "✦", name: "Etkinlik ruhu", desc: "Bir Ancalog etkinliğini sonuna kadar götür", tone: "event", earn: 1 },
-  event_first: { icon: "⚑", name: "İlk bitiren", desc: "Bir etkinliği herkesten önce bitir", tone: "gold" },
-  event_regular: { icon: "❖", name: "Müdavim", desc: "3 etkinliğe katıl", tone: "event", earn: 3 },
+  event_join: { icon: "✧", name: "Etkinlikçi", desc: "Bir Ancalog etkinliğine katıl", tone: "event", earn: 1, href: "/events" },
+  event: { icon: "✦", name: "Etkinlik ruhu", desc: "Bir Ancalog etkinliğini sonuna kadar götür", tone: "event", earn: 1, href: "/events" },
+  event_first: { icon: "⚑", name: "İlk bitiren", desc: "Bir etkinliği herkesten önce bitir", tone: "gold", href: "/events" },
+  event_regular: { icon: "❖", name: "Müdavim", desc: "3 etkinliğe katıl", tone: "event", earn: 3, href: "/events" },
   critic: { icon: "◆", name: "Eleştirmen", desc: "10 inceleme yaz", tone: "", earn: 10, progress: (e) => e.filter((x) => x.notes?.trim()).length },
   completionist: { icon: "◆", name: "Tamamlayıcı", desc: "50 oyun bitir", tone: "", earn: 50, progress: doneOf("game") },
   marathon: { icon: "◆", name: "Maratoncu", desc: "Toplam 1000 saat logla", tone: "", earn: 1000, progress: hoursOf },

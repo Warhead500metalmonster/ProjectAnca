@@ -21,6 +21,10 @@ const ProfileCtx = createContext<(ProfileData & { isMe: boolean }) | null>(null)
 export const useProfile = () => useContext(ProfileCtx)!;
 
 // Profilin üst kısmı (kapak, isim, rozetler, bağlantılar, sekmeler) bütün profil sekmelerinde ortak
+// Kapak / arka plan kadrajı: odak noktası ve yakınlık (sahibi Ayarlar'da seçer)
+const cropStyle = (c?: { x: number; y: number; z: number } | null): React.CSSProperties =>
+  c ? { backgroundPosition: `${c.x}% ${c.y}%`, ...(c.z > 1 && { transform: `scale(${c.z})`, transformOrigin: `${c.x}% ${c.y}%` }) } : {};
+
 export function ProfileShell({ children }: { children: React.ReactNode }) {
   const { username } = useParams<{ username: string }>();
   const { version } = useApp();
@@ -102,14 +106,15 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
     <ProfileCtx.Provider value={{ ...data, isMe }}>
       {bg && (/\.(mp4|webm)(\?|$)/i.test(bg)
         ? <video className="profile-bg" src={bg} autoPlay muted loop playsInline aria-hidden="true" />
-        : <div className="profile-bg" style={{ backgroundImage: cssUrl(bg) }} aria-hidden="true" />)}
+        : <div className="profile-bg" style={{ backgroundImage: cssUrl(bg), ...cropStyle(profile.home_layout?.bgCrop) }} aria-hidden="true" />)}
       {/* Tema rengi eskiden profili bir kutuya alıyordu; artık sayfanın arka planını boyar, düzen herkeste aynı (yeni tasarım) */}
       {(bg || tint) && <div className={`profile-bg-shade ${glass ? "light" : ""}`} aria-hidden="true"
         style={tint ? { background: `linear-gradient(to bottom, rgba(8, 12, 13, ${bg ? ".2" : "0"}), ${tint} ${bg ? "45%" : "35%"})` } : undefined} />}
       <div className={`profile ${accent ? "has-pa" : ""} ${tint ? "themed" : ""} ${glass ? "glass" : ""}`} style={vars}>
         {/* Kapak görseli kapalıysa (ya da şeffaf temada kapak yoksa) kapak alanı boş kalır, arkadaki resim görünür;
             arkada resim yoksa boş alan daralır, ad ve fotoğraf yukarı çıkar */}
-        <div className={`profile-banner ${banner ? "img" : ""} ${!banner && (glass || !showBanner) ? `clear ${bg ? "" : "short"}` : ""}`} style={banner ? { backgroundImage: cssUrl(banner) } : undefined}>
+        <div className={`profile-banner ${banner ? "img" : ""} ${!banner && (glass || !showBanner) ? `clear ${bg ? "" : "short"}` : ""}`} >
+          {banner && <div className="pb-img" style={{ backgroundImage: cssUrl(banner), ...cropStyle(profile.home_layout?.bannerCrop) }} aria-hidden="true" />}
           {!banner && !glass && showBanner && <CoverMarquee covers={[...new Set(entries.map((e) => safeUrl(e.cover)).filter(Boolean))].slice(0, 24)} />}
         </div>
         <div className="profile-head">

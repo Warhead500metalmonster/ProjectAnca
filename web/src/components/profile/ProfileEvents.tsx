@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { type AncEvent, type EventMember, eventState } from "@/lib/events";
+import { type AncEvent, type EventMember, eventState, kindOf, statusText } from "@/lib/events";
 import { cssUrl, safeUrl } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { useProfile } from "@/components/ProfileShell";
 
-const STATUS = { joined: "Katıldı", playing: "Oynuyor", done: "Bitirdi ✓" } as const;
 
 // Profilde: katıldığı etkinlikler (sürenler önce, geçmişler arkada). Herkes görür.
 export function ProfileEvents() {
@@ -32,7 +31,7 @@ export function ProfileEvents() {
           const state = eventState(ev);
           return (
             <Link key={ev.id} href={`/events/${ev.id}`} className={`pev ${m.status} ${state}`} style={art ? { backgroundImage: cssUrl(art) } : undefined}>
-              <span className={`ev-pill ${m.status}`}>{STATUS[m.status]}</span>
+              <span className={`ev-pill ${m.status}`}>{statusText(m.status, kindOf(ev, m.choice))}{m.status === "done" ? " ✓" : ""}</span>
               <span className="pev-main">
                 <b>{ev.title}</b>
                 <span>{[opt?.label, state === "ended" ? "Geçmiş etkinlik" : state === "upcoming" ? "Yakında" : "Sürüyor"].filter(Boolean).join(" · ")}</span>

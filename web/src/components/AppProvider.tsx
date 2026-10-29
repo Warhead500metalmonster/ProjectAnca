@@ -88,7 +88,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const loadBadges = useCallback(() => {
     // Etkinliğe özel rozetler veritabanında tanımlı: rozet listesine bir kez eklenir (yoksa sessizce geçilir)
     q<{ id: string; title: string; badge_name: string | null; badge_icon: string | null }[]>(sb().from("events").select("id, title, badge_name, badge_icon").not("badge_name", "is", null))
-      .then((list) => { for (const e of list) BADGES[eventBadgeKey(e.id)] ??= { icon: e.badge_icon || "✦", name: e.badge_name!, desc: `“${e.title}” etkinliğini bitirene özel`, tone: "event" }; })
+      .then((list) => { for (const e of list) BADGES[eventBadgeKey(e.id)] ??= { icon: e.badge_icon || "✦", name: e.badge_name!, desc: `“${e.title}” etkinliğini bitirene özel`, tone: "event", href: `/events/${e.id}` }; })
       .catch(() => {})
       .then(() => q<{ user_id: string; badge: string }[]>(sb().from("user_badges").select("user_id, badge").order("granted_at")))
       .then((rows) => {

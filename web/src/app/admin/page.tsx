@@ -17,8 +17,9 @@ import { eventState, fetchEvents, memberStats } from "@/lib/events";
 
 const TABS = [["home", "Genel"], ["reports", "Raporlar"], ["members", "Üyeler"], ["content", "İçerikler"], ["comments", "Moderasyon"], ["events", "Etkinlikler"]] as const;
 type Tab = (typeof TABS)[number][0];
-// Yöneticinin elle verebileceği rozetler (site sahibi / yönetici rozeti hariç)
-const GRANTABLE = Object.keys(BADGES).filter((b) => b !== "owner" && b !== "admin" && b !== "dev");
+// Yöneticinin elle verebileceği rozetler (site sahibi / yönetici / geliştirici hariç).
+// Her çizimde yeniden bakılır: etkinliğe özel rozetler (ev_...) site açıldıktan sonra listeye eklenir.
+const grantable = () => Object.keys(BADGES).filter((b) => b !== "owner" && b !== "admin" && b !== "dev");
 
 // Yönetim paneli: sadece site sahibi ve yöneticiler girer (veritabanı da başkasına izin vermez)
 export default function AdminPage() {
@@ -423,9 +424,14 @@ Tamam = engelle, İptal = sadece sil`);
                   {mutedNow(p) && <b className="muted-tag"> · {new Date(p.muted_until!).getFullYear() > new Date().getFullYear() + 5 ? "süresiz susturuldu" : `${new Date(p.muted_until!).toLocaleString("tr", { dateStyle: "short", timeStyle: "short" })} tarihine kadar susturuldu`}</b>}</small>
               </div>
               <div className="badge-toggles">
-                {GRANTABLE.map((b) => (
+                {grantable().filter((b) => !b.startsWith("ev_")).map((b) => (
                   <button key={b} className={`bdg-t ${has.includes(b) ? "on" : ""}`} title={`${BADGES[b].name}: ${BADGES[b].desc}`}
                     onClick={() => toggle(p, b, !has.includes(b))}>{BADGES[b].name}</button>
+                ))}
+                {grantable().some((b) => b.startsWith("ev_")) && <span className="bdg-t-sep">Etkinlik rozetleri:</span>}
+                {grantable().filter((b) => b.startsWith("ev_")).map((b) => (
+                  <button key={b} className={`bdg-t ev ${has.includes(b) ? "on" : ""}`} title={`${BADGES[b].name}: ${BADGES[b].desc}`}
+                    onClick={() => toggle(p, b, !has.includes(b))}>{BADGES[b].icon} {BADGES[b].name}</button>
                 ))}
               </div>
               {canModerate(p) && (

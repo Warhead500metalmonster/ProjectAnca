@@ -23,6 +23,17 @@ export interface EventMember {
   joined_at: string; updated_at: string; finished_at: string | null; profiles?: ProfileLite | null;
 }
 
+// Türe göre fiiller: oyunda "oynuyorum", film/dizi/animede "izliyorum", müzikte "dinliyorum"
+export function verbs(kind?: EntryType | null) {
+  if (kind === "music") return { will: "Bunu dinleyeceğim", me: "Dinliyorum", they: "Dinliyor", cheer: "Keyifli dinlemeler!", pick: "hangisini dinleyeceğini", step: "Dinle, yaz" };
+  if (kind && kind !== "game") return { will: "Bunu izleyeceğim", me: "İzliyorum", they: "İzliyor", cheer: "Keyifli seyirler!", pick: "hangisini izleyeceğini", step: "İzle, yaz" };
+  return { will: "Bunu oynayacağım", me: "Oynuyorum", they: "Oynuyor", cheer: "İyi oyunlar!", pick: "hangisini oynayacağını", step: "Oyna, yaz" };
+}
+// Bir katılımcının (ya da sürümün) türü: seçtiği sürümün türü, yoksa etkinliğin
+export const kindOf = (ev: Pick<AncEvent, "kind" | "options">, choice?: string | null) => ev.options.find((o) => o.id === choice)?.kind || ev.kind;
+export const statusText = (s: MemberStatus, kind?: EntryType | null, mine = false) =>
+  s === "playing" ? (mine ? verbs(kind).me : verbs(kind).they) : s === "done" ? (mine ? "Bitirdim" : "Bitirdi") : mine ? "Katıldım" : "Katıldı";
+
 // Henüz başlamadı / sürüyor / bitti
 export function eventState(ev: Pick<AncEvent, "starts_on" | "ends_on">): "upcoming" | "live" | "ended" {
   const t = today();

@@ -56,6 +56,13 @@ function SettingsForm({ me }: { me: Profile }) {
   const countsChanged = JSON.stringify(cleanCounts(counts)) !== JSON.stringify(cleanCounts(countsOf(me)));
   const [theme, setTheme] = useState(me.profile_theme && (PROFILE_THEMES[me.profile_theme] || me.profile_theme === "glass") ? me.profile_theme : "");
   const [bgUrl, setBgUrl] = useState(me.bg_url || "");
+  const [bannerUrl, setBannerUrl] = useState(me.banner_url || "");
+  // Kapak ve arka plan kadrajı: hangi kısmın görüneceği ve yakınlık
+  const NO_CROP = { x: 50, y: 50, z: 1 };
+  const [bannerCrop, setBannerCrop] = useState<AvatarCrop>(me.home_layout?.bannerCrop || NO_CROP);
+  const [bgCrop, setBgCrop] = useState<AvatarCrop>(me.home_layout?.bgCrop || NO_CROP);
+  const cropChanged = JSON.stringify(bannerCrop) !== JSON.stringify(me.home_layout?.bannerCrop || NO_CROP)
+    || JSON.stringify(bgCrop) !== JSON.stringify(me.home_layout?.bgCrop || NO_CROP);
   const [scale, setScale] = useState<5 | 10>(me.rating_scale === 10 ? 10 : 5);
   const [siteColor, setSiteColor] = useState(me.site_color || "");
   const [song, setSong] = useState({ url: me.song_url || "", title: me.song_title || "", volume: me.song_volume || 15 });
@@ -104,8 +111,8 @@ function SettingsForm({ me }: { me: Profile }) {
         accent: !theme && /^#[0-9a-f]{6}$/i.test(accent) ? accent : null,
         profile_theme: theme || null,
         bg_url: bgUrl.trim() || null,
-        ...((showBanner !== (me.home_layout?.banner !== false) || countsChanged || showEvents !== (me.home_layout?.events !== false)) && {
-          home_layout: { ...me.home_layout, banner: showBanner, events: showEvents, ...(countsChanged && { counts: cleanCounts(counts) }) },
+        ...((showBanner !== (me.home_layout?.banner !== false) || countsChanged || cropChanged || showEvents !== (me.home_layout?.events !== false)) && {
+          home_layout: { ...me.home_layout, banner: showBanner, events: showEvents, bannerCrop, bgCrop, ...(countsChanged && { counts: cleanCounts(counts) }) },
         }),
         rating_scale: scale,
         socials,
@@ -148,8 +155,14 @@ function SettingsForm({ me }: { me: Profile }) {
       {safeUrl(avatar) && <AvatarCropper url={avatar} crop={crop} onChange={setCrop} />}
       <div className="field">
         <label htmlFor="p-banner">Kapak görseli (profilin üstündeki geniş resim, https://)</label>
-        <input id="p-banner" name="banner" type="url" defaultValue={me.banner_url || ""} placeholder="https://…" />
+        <input id="p-banner" name="banner" type="url" value={bannerUrl} onChange={(e) => setBannerUrl(e.target.value)} placeholder="https://…" />
       </div>
+      {safeUrl(bannerUrl.trim()) && (
+        <div className="field">
+          <label>Kapağın kadrajı <span className="muted">· resmi tutup sürükle, hangi kısmı görünsün seç</span></label>
+          <AvatarCropper shape="wide" url={bannerUrl.trim()} crop={bannerCrop} onChange={setBannerCrop} />
+        </div>
+      )}
       <label className="check"><input type="checkbox" checked={showBanner} onChange={(e) => setShowBanner(e.target.checked)} /> Kapak görseli görünsün
         <span className="muted small">· kapatırsan üst kısım boş kalır, arka plan resmin ya da temanın rengi oradan görünür</span></label>
 
@@ -213,7 +226,12 @@ function SettingsForm({ me }: { me: Profile }) {
         <label htmlFor="p-bg">Arka plan resmi <span className="muted">· Steam&apos;deki gibi profilinin arkasını kaplar (resim, GIF ya da .mp4 / .webm linki)</span></label>
         <input id="p-bg" type="url" placeholder="https://…" value={bgUrl} onChange={(e) => setBgUrl(e.target.value)} />
       </div>
-      {bgUrl.trim().startsWith("https://") && !/\.(mp4|webm)(\?|$)/i.test(bgUrl) && <div className="bg-preview" style={{ backgroundImage: cssUrl(bgUrl.trim()) }} />}
+      {bgUrl.trim().startsWith("https://") && !/\.(mp4|webm)(\?|$)/i.test(bgUrl) && (
+        <div className="field">
+          <label>Arka planın kadrajı <span className="muted">· resmi tutup sürükle, aşağıdan yakınlaştır</span></label>
+          <AvatarCropper shape="screen" url={bgUrl.trim()} crop={bgCrop} onChange={setBgCrop} />
+        </div>
+      )}
 
       <h3 className="set-h">Site rengi <span className="muted small">· sadece sen görürsün</span></h3>
       <div className="swatches">

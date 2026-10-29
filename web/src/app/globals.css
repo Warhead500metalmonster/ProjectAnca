@@ -2129,3 +2129,30 @@ dialog.fav-picker:not([open]) { display: none; }
 .ev-badge-box { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; margin: 6px 0 12px; border-radius: 14px;
   background: linear-gradient(135deg, rgba(245, 160, 66, .12), rgba(224, 69, 123, .06)); border: 1px solid rgba(245, 160, 66, .35); }
 .ev-emoji { width: 70px !important; flex: none !important; text-align: center; font-size: 18px; }
+
+/* Etkinlikte bir kişinin sonucu (rozetinden gelince ya da arşivde kendi sonucun) */
+.ev-spot { position: relative; overflow: hidden; margin-top: 16px; border-radius: 20px; border: 1px solid rgba(245, 197, 66, .45);
+  background: linear-gradient(135deg, rgba(245, 197, 66, .14), rgba(224, 69, 123, .08) 60%, transparent); box-shadow: 0 14px 40px rgba(0, 0, 0, .35); }
+.ev-spot.done { border-color: rgba(47, 180, 106, .6); background: linear-gradient(135deg, rgba(47, 180, 106, .18), rgba(245, 197, 66, .08) 60%, transparent); }
+.ev-spot-art { position: absolute; inset: 0 0 0 auto; width: 45%; background: center / cover no-repeat; opacity: .35;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 60%); mask-image: linear-gradient(to right, transparent, #000 60%); }
+.ev-spot-in { position: relative; display: flex; flex-direction: column; gap: 12px; padding: 22px 24px; }
+.ev-spot-who { display: flex; align-items: center; gap: 18px; }
+.ev-spot-who h2 { margin: 4px 0 2px; font-family: var(--font-outfit), sans-serif; font-size: clamp(24px, 3.4vw, 34px); text-transform: none; letter-spacing: 0; border: 0; padding: 0; }
+.ev-spot-who p { margin: 0; }
+.ev-spot-note { margin: 0; padding: 10px 14px; border-left: 3px solid var(--accent); background: rgba(255, 255, 255, .04); border-radius: 0 10px 10px 0; font-style: italic; }
+.ev-spot-badges { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+a.link-bdg { text-decoration: none; cursor: pointer; }
+a.link-bdg:hover { filter: brightness(1.2); }
+a.badge-card.link-card { text-decoration: none; color: inherit; cursor: pointer; transition: transform .15s; }
+a.badge-card.link-card:hover { transform: translateY(-2px); }
+.badge-card .b-go { color: var(--accent); font-weight: 600; }
+@media (max-width: 640px) { .ev-spot-who { flex-direction: column; text-align: center; } .ev-spot-art { width: 100%; opacity: .15; } }
+.bdg-t-sep { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; align-self: center; margin-left: 4px; }
+.bdg-t.ev.on { border-color: rgba(245, 160, 66, .7); background: rgba(245, 160, 66, .2); }
+
+/* Kapak ve arka plan kadrajı */
+.profile-banner .pb-img { position: absolute; inset: 0; background: center / cover no-repeat; }
+.cropper.wide, .cropper.screen { flex-direction: column; align-items: stretch; }
+.cropper-box.wide { width: 100%; height: auto; aspect-ratio: 4.6 / 1; border-radius: 12px; }
+.cropper-box.screen { width: 100%; max-width: 420px; height: auto; aspect-ratio: 16 / 9; border-radius: 12px; }

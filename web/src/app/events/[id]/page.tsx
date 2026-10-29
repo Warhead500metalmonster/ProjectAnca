@@ -3,8 +3,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { type AncEvent, type EventMember, type EventOption, type MemberStatus, addToLibrary, dateLine, eventState, fetchEvent, libraryEntry } from "@/lib/events";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { type AncEvent, type EventMember, type EventOption, type MemberStatus, addToLibrary, dateLine, eventBadgeKey, eventState, fetchEvent, kindOf, libraryEntry, statusText, verbs } from "@/lib/events";
 import { BADGES, PROFILE_COLS, TYPES } from "@/lib/constants";
 import { cssUrl, safeUrl, timeAgo, today } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
@@ -15,11 +15,11 @@ import { Avatar, Name, RichText } from "@/components/ui";
 import { EventForm } from "@/components/EventForm";
 import { friendsLine } from "@/components/EventBanner";
 
-const STATUS: Record<MemberStatus, string> = { joined: "Katıldı", playing: "Oynuyor", done: "Bitirdi" };
-const MY_STATUS: Record<MemberStatus, string> = { joined: "Katıldım", playing: "Oynuyorum", done: "Bitirdim" };
+const STATUSES: MemberStatus[] = ["joined", "playing", "done"];
 
 export default function EventPage() {
   const { id } = useParams<{ id: string }>();
+  const focus = useSearchParams().get("u"); // rozetten gelindiyse rozetin sahibi
   const { me, isAdmin, toast, refresh, version } = useApp();
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -34,6 +34,8 @@ export default function EventPage() {
   const reload = () => { setBump((n) => n + 1); refresh(); };
   const my = me ? members.find((m) => m.user_id === me.id) : undefined;
   const ended = eventState(ev) === "ended";
+  // Öne çıkan kişi: rozetten gelinen kişi; yoksa biten etkinlikte kendin
+  const spot = members.find((m) => m.user_id === focus) || (ended ? my : undefined);
 
   async function remove() {
     if (!confirm(`“${ev!.title}” etkinliği silinsin mi? Katılımcıların kayıtları kütüphanelerinde kalır.`)) return;
@@ -47,6 +49,7 @@ export default function EventPage() {
   return (
     <div className="ev-page">
       <Hero ev={ev} members={members} my={my} />
+      {spot && <Spotlight ev={ev} m={spot} members={members} self={spot.user_id === me?.id} />}
       {isAdmin && !editing && (
         <div className="ev-admin">
           <button className="btn" onClick={() => setEditing(true)}>Etkinliği düzenle</button>
@@ -73,7 +76,7 @@ export default function EventPage() {
           ) : (
             <>
               <Rewards ev={ev} />
-              <HowTo />
+              <HowTo kind={new Set(ev.options.map((o) => o.kind || ev.kind)).size > 1 ? null : ev.options[0]?.kind || ev.kind} />
               <Versions ev={ev} members={members} my={my} onChange={reload} />
               {/* Telefonda ekranın altında sabit Katıl düğmesi */}
               <a className="ev-sticky btn primary" href="#ev-versions">Etkinliğe katıl</a>
@@ -136,7 +139,7 @@ function Hero({ ev, members, my }: { ev: AncEvent; members: EventMember[]; my?: 
           ) : <span className="muted">İlk katılan sen ol!</span>}
           <div className="ev-hero-actions">
             {state !== "ended" && <button className="btn ev-share" onClick={share}>Arkadaşını çağır</button>}
-            {my ? <a className="ev-joined" href="#ev-me">✓ Katıldın · {ev.options.find((o) => o.id === my.choice)?.label || "sürüm seçmedin"} · {STATUS[my.status]}</a>
+            {my ? <a className="ev-joined" href="#ev-me">✓ Katıldın · {ev.options.find((o) => o.id === my.choice)?.label || "sürüm seçmedin"} · {statusText(my.status, kindOf(ev, my.choice))}</a>
               : state !== "ended" && <a className="btn primary ev-cta" href="#ev-versions">Katıl</a>}
           </div>
         </div>
@@ -181,7 +184,7 @@ function Versions({ ev, members, my, onChange }: { ev: AncEvent; members: EventM
         await q(sb().from("event_members").insert({ event_id: ev.id, user_id: me.id, choice: o.id || null, status: state === "live" ? "playing" : "joined" }));
         let lib = "";
         if (toLib && (o.rawg_id || o.ext_id || o.title) && !libraryEntry(mine, o)) {
-          await addToLibrary(me.id, ev, o).then(() => { lib = state === "live" ? " Kütüphanene Oynuyorum olarak eklendi." : " Kütüphanene Planlandı olarak eklendi."; }).catch(() => {});
+          await addToLibrary(me.id, ev, o).then(() => { lib = state === "live" ? ` Kütüphanene ${verbs(o.kind || ev.kind).me} olarak eklendi.` : " Kütüphanene Planlandı olarak eklendi."; }).catch(() => {});
         }
         toast(`Katıldın, hoş geldin!${lib}`);
       }
@@ -213,7 +216,7 @@ function Versions({ ev, members, my, onChange }: { ev: AncEvent; members: EventM
                     <span>{who.length} kişi{who.some((m) => m.status === "done") ? ` · ${who.filter((m) => m.status === "done").length} bitirdi` : ""}</span></>
                     : <span className="muted small">Henüz kimse yok</span>}
                 </div>
-                <span className={`ev-opt-cta ${mineHere ? "on" : ""}`}>{mineHere ? "✓ Senin sürümün" : my ? "Buna geç" : "Bunu oynayacağım"}</span>
+                <span className={`ev-opt-cta ${mineHere ? "on" : ""}`}>{mineHere ? "✓ Senin sürümün" : my ? "Buna geç" : verbs(o.kind || ev.kind).will}</span>
               </div>
             </button>
           );
@@ -242,7 +245,7 @@ function MyPanel({ ev, my, members, onChange }: { ev: AncEvent; my: EventMember;
       if (entry && s === "done" && entry.status !== "completed") await sb().from("entries").update({ status: "completed", date: today(), updated_at: now }).eq("id", entry.id);
       if (entry && s === "playing" && entry.status === "planned") await sb().from("entries").update({ status: "active", started_on: entry.started_on || today(), updated_at: now }).eq("id", entry.id);
       const rank = members.filter((m) => m.status === "done").length + 1;
-      toast(s === "done" ? `Tebrikler! Bitiren ${rank}. kişisin.${entry && entry.status !== "completed" ? " Kütüphanende de Bitti yapıldı." : ""}` : s === "playing" ? "İyi oyunlar!" : "Tamam");
+      toast(s === "done" ? `Tebrikler! Bitiren ${rank}. kişisin.${entry && entry.status !== "completed" ? " Kütüphanende de Bitti yapıldı." : ""}` : s === "playing" ? verbs(kindOf(ev, my.choice)).cheer : "Tamam");
       onChange();
     } catch (err) {
       toast("Olmadı: " + (err as Error).message);
@@ -273,8 +276,8 @@ function MyPanel({ ev, my, members, onChange }: { ev: AncEvent; my: EventMember;
     <section className="section ev-me" id="ev-me">
       <div className="section-head"><h2>Senin durumun</h2>{option && <span className="muted small">{option.label}</span>}</div>
       <div className="seg ev-status">
-        {(Object.keys(MY_STATUS) as MemberStatus[]).map((s) => (
-          <button key={s} type="button" disabled={busy} className={my.status === s ? "active" : ""} onClick={() => setStatus(s)}>{MY_STATUS[s]}</button>
+        {STATUSES.map((s) => (
+          <button key={s} type="button" disabled={busy} className={my.status === s ? "active" : ""} onClick={() => setStatus(s)}>{statusText(s, kindOf(ev, my.choice), true)}</button>
         ))}
       </div>
       <div className="ev-note">
@@ -303,7 +306,7 @@ function People({ ev, members }: { ev: AncEvent; members: EventMember[] }) {
       <Link href={`/u/${m.profiles?.username}`} className="ev-person-who"><Avatar p={m.profiles} /><Name p={m.profiles} /></Link>
       <div className="ev-person-mid">
         <div className="ev-person-tags">
-          <span className={`ev-pill ${m.status}`}>{STATUS[m.status]}</span>
+          <span className={`ev-pill ${m.status}`}>{statusText(m.status, kindOf(ev, m.choice))}</span>
           {label(m) && <span className="ev-pill ver">{label(m)}</span>}
         </div>
         {m.note && <p className="ev-person-note">“{m.note}”</p>}
@@ -470,11 +473,12 @@ function Rewards({ ev }: { ev: AncEvent }) {
 }
 
 // Henüz katılmayanlara üç adımda nasıl işlediği
-function HowTo() {
+function HowTo({ kind }: { kind: AncEvent["kind"] | null }) {
+  const v = kind ? verbs(kind) : { pick: "hangisini seçeceğini", step: "Başla, yaz" };
   return (
     <section className="section ev-howto">
-      <div><span>1</span><b>Sürümünü seç</b><small>Aşağıdan hangisini oynayacağını seç, katıl.</small></div>
-      <div><span>2</span><b>Oyna, yaz</b><small>Nerede olduğunu yaz, sohbette gaz ver; spoiler gizli kalır.</small></div>
+      <div><span>1</span><b>Sürümünü seç</b><small>Aşağıdan {v.pick} seç, katıl.</small></div>
+      <div><span>2</span><b>{v.step}</b><small>Nerede olduğunu yaz, sohbette gaz ver; spoiler gizli kalır.</small></div>
       <div><span>3</span><b>Bitir, rozeti kap</b><small>Bitirdim&apos;e bas; bitirenler listesine adın yazılsın.</small></div>
     </section>
   );
@@ -515,6 +519,45 @@ function Results({ ev, members, my }: { ev: AncEvent; members: EventMember[]; my
           ))}
         </div>
       )}
+    </section>
+  );
+}
+
+// Bir katılımcının bu etkinlikteki sonucu: rozetinden gelindiğinde ya da arşivde kendi sonucun
+function Spotlight({ ev, m, members, self }: { ev: AncEvent; m: EventMember; members: EventMember[]; self: boolean }) {
+  const { badges } = useApp();
+  const opt = ev.options.find((o) => o.id === m.choice);
+  const done = members.filter((x) => x.status === "done").sort((a, b) => (a.finished_at || "").localeCompare(b.finished_at || ""));
+  const rank = done.findIndex((x) => x.user_id === m.user_id) + 1;
+  const has = badges.get(m.user_id) || [];
+  const earned = ["event_join", "event", ...(ev.badge_name ? [eventBadgeKey(ev.id)] : []), ...(rank === 1 ? ["event_first"] : [])]
+    .filter((b) => has.includes(b) && BADGES[b] && (b !== "event" || m.status === "done"));
+  const fmt = (d: string) => new Date(d).toLocaleDateString("tr", { day: "numeric", month: "long", year: "numeric" });
+  const name = m.profiles?.display_name || m.profiles?.username || "";
+  const kind = kindOf(ev, m.choice);
+  return (
+    <section className={`ev-spot ${m.status}`}>
+      {safeUrl(opt?.cover) && <div className="ev-spot-art" style={{ backgroundImage: cssUrl(opt!.cover!) }} aria-hidden="true" />}
+      <div className="ev-spot-in">
+        <div className="ev-spot-who">
+          <Link href={`/u/${m.profiles?.username}`}><Avatar p={m.profiles} cls="lg" /></Link>
+          <div>
+            <span className="ev-kicker"><span>{self ? "Senin sonucun" : `${name} bu etkinlikte`}</span></span>
+            <h2>{m.status === "done" ? (rank === 1 ? "İlk bitiren oldu!" : `${rank}. bitiren`) : statusText(m.status, kind)}</h2>
+            <p className="muted">
+              {opt ? <>{opt.label}{opt.sub ? ` · ${opt.sub}` : ""}</> : "Sürüm seçmedi"}
+              {m.status === "done" && m.finished_at ? ` · ${fmt(m.finished_at)} tarihinde bitirdi` : ` · ${fmt(m.joined_at)} tarihinde katıldı`}
+            </p>
+          </div>
+        </div>
+        {m.note && <blockquote className="ev-spot-note">“{m.note}”</blockquote>}
+        {earned.length > 0 && (
+          <div className="ev-spot-badges">
+            <span className="muted small">Bu etkinlikte kazandığı rozetler:</span>
+            {earned.map((b) => <span key={b} className={`bdg ${BADGES[b].tone}`} title={BADGES[b].desc}>{BADGES[b].icon} {BADGES[b].name}</span>)}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

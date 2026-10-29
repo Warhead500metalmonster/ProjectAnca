@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { PROFILE_COLS } from "@/lib/constants";
+import { q, sb } from "@/lib/supabase";
+import type { ProfileLite } from "@/lib/types";
+import { Name } from "@/components/ui";
 import { eventState, fetchEvents, memberStats } from "@/lib/events";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
@@ -14,6 +18,14 @@ export default function EventsPage() {
   const { me, isAdmin, version } = useApp();
   const router = useRouter();
   const [creating, setCreating] = useState(false);
+  const focus = useSearchParams().get("u"); // bir rozetten gelindiyse rozetin sahibi
+  const { data: who } = useLoad(async () => {
+    const [p, rows] = await Promise.all([
+      q<ProfileLite | null>(sb().from("profiles").select(PROFILE_COLS).eq("id", focus!).maybeSingle()).catch(() => null),
+      q<{ event_id: string }[]>(sb().from("event_members").select("event_id").eq("user_id", focus!)).catch(() => []),
+    ]);
+    return { p, ids: rows.map((r) => r.event_id) };
+  }, [focus, version], !!focus);
   const { data } = useLoad(async () => {
     const events = await fetchEvents();
     return { events, counts: await memberStats(events.map((e) => e.id), me?.id) };
@@ -40,6 +52,12 @@ export default function EventsPage() {
         {isAdmin && !creating && <button className="btn primary" onClick={() => setCreating(true)}>+ Yeni etkinlik</button>}
       </section>
       {creating && <EventForm onDone={(id) => { setCreating(false); if (id) router.push(`/events/${id}`); }} />}
+      {who?.p && data && who.ids.length > 0 && (
+        <section className="section">
+          <div className="section-head"><h2><Name p={who.p} /> şu etkinliklere katıldı</h2><span className="muted small">Birine tıkla, sonucunu gör</span></div>
+          <div className="ev-cards">{events.filter((e) => who.ids.includes(e.id)).map((e) => <EventCard key={e.id} ev={e} stats={data.counts[e.id]} focus={focus} />)}</div>
+        </section>
+      )}
       {!data ? <div className="loading">Yükleniyor…</div>
         : !events.length ? <div className="empty">Şu an etkinlik yok. Yakında burada olacak!</div>
         : (
