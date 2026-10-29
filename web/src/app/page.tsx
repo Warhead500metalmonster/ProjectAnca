@@ -18,6 +18,7 @@ import { GettingStarted } from "@/components/GettingStarted";
 import { ImportPromo } from "@/components/ImportPromo";
 import { Announcements } from "@/components/Announcements";
 import { FriendPicks } from "@/components/FriendPicks";
+import { UpcomingStrip } from "@/components/UpcomingStrip";
 import { Avatar, EntryCard, Feed, Stars, Stats, displayName } from "@/components/ui";
 
 interface LocalEntry { title?: string; type?: string; year?: string; creator?: string; status?: string; date?: string; rating?: string; cover?: string; notes?: string; updated?: number }
@@ -208,6 +209,7 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
           <div className="strip">{backlog.map((e) => <EntryCard key={e.id} e={e} kind edit />)}</div>
         </section>
       )}
+      <UpcomingStrip userId={user.id} mine={mine} />
       <FriendPicks following={followingIds} mine={mine} />
       {mine.length > 0 && (
         <section className="section">

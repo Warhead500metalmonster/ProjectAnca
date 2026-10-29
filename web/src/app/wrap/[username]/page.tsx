@@ -55,6 +55,29 @@ export default function WrapPage() {
     } catch { /* paylaşım penceresi kapatıldı */ }
   }
 
+  // Özet kartını resim olarak: telefonda paylaşım penceresi (Instagram, WhatsApp...), bilgisayarda indirme
+  async function shareImage() {
+    toast("Görsel hazırlanıyor…");
+    try {
+      const token = (await sb().auth.getSession()).data.session?.access_token;
+      const r = await fetch(`/wrap/${profile.username}/image?y=${year}`, { headers: token ? { authorization: `Bearer ${token}` } : {} });
+      if (!r.ok) throw new Error(String(r.status));
+      const file = new File([await r.blob()], `ancalog-${profile.username}-${year}.png`, { type: "image/png" });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: `Ancalog ${year} özeti` }).catch(() => {});
+        return;
+      }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(file);
+      a.download = file.name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      toast("Görsel indirildi ✓");
+    } catch {
+      toast("Görsel hazırlanamadı, biraz sonra tekrar dene.");
+    }
+  }
+
   return (
     <div className="wrap-page">
       <section className="wrap-hero">
@@ -65,7 +88,10 @@ export default function WrapPage() {
             {years.map((y) => <button key={y} className={`chip ${y === year ? "active" : ""}`} onClick={() => router.replace(`?y=${y}`, { scroll: false })}>{y}</button>)}
           </div>
         )}
-        <button className="btn primary" onClick={share}>Paylaş</button>
+        <div className="actions">
+          <button className="btn primary" onClick={share}>Paylaş</button>
+          {done.length > 0 && <button className="btn" onClick={shareImage}>Görsel olarak paylaş</button>}
+        </div>
       </section>
 
       {!done.length ? <div className="empty">{year} yılında bitirilen bir şey yok.</div> : (

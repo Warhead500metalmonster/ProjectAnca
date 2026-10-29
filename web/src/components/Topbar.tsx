@@ -123,6 +123,7 @@ function UserMenu({ mine, isAdmin }: { mine: string; isAdmin: boolean }) {
           <Link role="menuitem" href="/settings">Ayarlar</Link>
           <Link role="menuitem" href={`${mine}/badges`}>Rozetlerim</Link>
           <Link role="menuitem" href="/import">İçe aktar</Link>
+          <Link role="menuitem" href="/calendar">Çıkış takvimi</Link>
           {isAdmin && <Link role="menuitem" href="/admin">Yönetim paneli</Link>}
           <Link role="menuitem" href="/help">Nasıl kullanılır?</Link>
           <hr />

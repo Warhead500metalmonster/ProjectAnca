@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { AvatarCrop, EntryType, Profile } from "@/lib/types";
@@ -13,6 +13,7 @@ import { Avatar } from "@/components/ui";
 import { AvatarCropper } from "@/components/AvatarCropper";
 import { youtubeId } from "@/components/ProfileSong";
 import { DEFAULT_COLOR, applyTheme } from "@/lib/theme";
+import { canInstall, disableNotify, enableNotify, install, isIos, isStandalone, notify, notifyOn, notifySupported, onInstallChange } from "@/lib/notify";
 
 // Bağlantı: kullanıcı adı ya da o sitenin https:// linki. undefined = geçersiz
 function cleanSocial(key: string, raw: string): string | null | undefined {
@@ -254,6 +255,7 @@ function SettingsForm({ me }: { me: Profile }) {
         <span className="spacer" />
         <button type="button" className="btn danger" onClick={() => sb().auth.signOut()}>Çıkış yap</button>
       </div>
+      <AppAndNotify />
       <ExportData me={me} />
       <DeleteAllLogs me={me} />
       <DeleteAccount me={me} />
@@ -436,6 +438,51 @@ function DeleteAccount({ me }: { me: Profile }) {
 
 // Sadece kurucu: profil fotoğrafının çevresindeki çerçevenin rengi; seçince hemen kaydolur, herkes aynı rengi görür
 const FRAMES = ["#f5c542", "#e5e7eb", "#58a98a", "#3fa7c9", "#8b5cf6", "#ec4899", "#ef4444", "#f97316"];
+// Ana ekrana ekleme ve cihaz bildirimleri (mesaj, beğeni, çıkış günü)
+function AppAndNotify() {
+  const { toast } = useApp();
+  const [on, setOn] = useState(notifyOn);
+  // Kurulum isteği sonradan gelebilir; sunucuda ve ilk çizimde boş kalır (tarayıcıya özel bilgiler)
+  const installable = useSyncExternalStore(onInstallChange, () => (canInstall() ? "yes" : "no"), () => "ssr");
+  if (installable === "ssr") return null;
+  const standalone = isStandalone();
+  const blocked = notifySupported() && Notification.permission === "denied";
+
+  async function toggleNotify() {
+    if (on) { disableNotify(); setOn(false); return toast("Bildirimler kapatıldı."); }
+    const ok = await enableNotify();
+    setOn(ok);
+    if (ok) notify("Bildirimler açık", "Yeni mesaj, beğeni ve çıkış günlerinde sana haber vereceğiz.", "/calendar");
+    else toast("Tarayıcı izin vermedi. Adres çubuğundaki kilit simgesinden bildirim iznini açabilirsin.");
+  }
+
+  return (
+    <>
+      <h3 className="set-h">Uygulama ve bildirimler</h3>
+      <div className="app-notify">
+        <div>
+          <b>Ana ekrana ekle</b>
+          <span className="muted small">{standalone ? "Ancalog'u zaten uygulama olarak kullanıyorsun."
+            : installable === "yes" ? "Telefonunda ya da bilgisayarında kendi simgesiyle, tam ekran uygulama gibi açılır."
+            : isIos() ? "Safari'de alttaki Paylaş düğmesine bas, sonra \"Ana Ekrana Ekle\"yi seç."
+            : "Tarayıcının menüsünden \"Uygulamayı yükle\" ya da \"Ana ekrana ekle\"yi seç."}</span>
+        </div>
+        {!standalone && installable === "yes" && <button type="button" className="btn primary" onClick={() => install().then((ok) => ok && toast("Ancalog ana ekranında!"))}>Ekle</button>}
+      </div>
+      <div className="app-notify">
+        <div>
+          <b>Bildirimler</b>
+          <span className="muted small">{!notifySupported() ? (isIos() ? "iPhone'da bildirimler için önce Ancalog'u ana ekrana ekle, oradan aç." : "Bu tarayıcı bildirim desteklemiyor.")
+            : blocked ? "Bildirimleri tarayıcıda engellemişsin; adres çubuğundaki kilit simgesinden açabilirsin."
+            : "Yeni mesaj, beğeni, yorum ve takipçi geldiğinde; planladığın bir şey çıktığında cihazına bildirim gelir. Hiçbir yere kaydedilmez, sadece bu cihazda."}</span>
+        </div>
+        {notifySupported() && !blocked && <button type="button" className={`btn ${on ? "" : "primary"}`} onClick={toggleNotify}>{on ? "Kapat" : "Aç"}</button>}
+      </div>
+      <p className="muted small"><Link href="/calendar">Çıkış takvimine</Link> bak: planladıklarının çıkış günü ve izlediklerinin yeni bölümleri.</p>
+    </>
+  );
+}
+
 function FrameColor() {
   const { toast } = useApp();
   const [color, setColor] = useState(() => (typeof document !== "undefined" && getComputedStyle(document.documentElement).getPropertyValue("--frame").trim()) || "#f5c542");

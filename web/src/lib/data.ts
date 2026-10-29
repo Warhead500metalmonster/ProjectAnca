@@ -158,6 +158,7 @@ export interface TmdbDetail {
   id: number; title?: string; name?: string; overview?: string; tagline?: string; runtime?: number; episode_run_time?: number[];
   release_date?: string; first_air_date?: string; poster_path?: string | null; backdrop_path?: string | null; original_title?: string; original_name?: string;
   vote_average?: number; number_of_seasons?: number; number_of_episodes?: number;
+  next_episode_to_air?: { air_date?: string; season_number: number; episode_number: number } | null; // dizinin bir sonraki bölümü
   genres?: { name: string }[]; created_by?: { name: string }[]; networks?: { name: string }[];
   credits?: { crew?: { job: string; name: string }[]; cast?: { name: string; character?: string }[] };
 }

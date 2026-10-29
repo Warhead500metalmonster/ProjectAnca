@@ -8,6 +8,8 @@ import { contentKey } from "@/lib/format";
 import { fetchEntries, fixForeignTitles, friendsOnMyPlans } from "@/lib/data";
 import { applyTheme } from "@/lib/theme";
 import { steamAutoSync } from "@/lib/steamSync";
+import { dueToday, upcoming } from "@/lib/upcoming";
+import { notify, notifyOn, setupApp } from "@/lib/notify";
 import { countOf, q, sb, supabaseConfigured } from "@/lib/supabase";
 import { EntryForm } from "./EntryForm";
 import { EntryView } from "./EntryView";
@@ -114,6 +116,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(t);
   }, [unread]);
 
+  const inboxSeen = useRef<{ unread: number; latest: string } | null>(null);
   const checkInbox = useCallback(async () => {
     const id = userId.current;
     if (!id) return;
@@ -127,6 +130,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         friendsOnMyPlans(plansRef.current.following, plansRef.current.mine).catch(() => [] as Entry[]),
       ]);
       if (userId.current !== id) return;
+      // Sekme arkadayken yeni mesaj ya da bildirim gelirse (izin verdiyse) cihaz bildirimi
+      const latest = [like[0]?.created_at, comment[0]?.created_at, follow[0]?.created_at].map((x) => x || "").sort().pop() || "";
+      const seen = inboxSeen.current;
+      if (seen && document.visibilityState === "hidden") {
+        if (count > seen.unread) notify("Yeni mesajın var", "Ancalog'da sana yazan biri var.", "/chat");
+        else if (latest > seen.latest) notify("Yeni bildirimin var", "Kayıtlarına beğeni, yorum ya da yeni bir takipçi geldi.", "/notifications");
+      }
+      inboxSeen.current = { unread: count, latest: latest > (seen?.latest || "") ? latest : seen?.latest || "" };
       setUnread(count);
       setNotifAt([like[0]?.created_at, comment[0]?.created_at, follow[0]?.created_at, plans[0]?.updated_at].map((x) => x || "").sort().pop() || "");
     } catch { /* bir sonraki denemede */ }
@@ -186,7 +197,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
     });
     // Yeni mesaj sayısı çabuk görünsün: sık yokla, sekmeye geri dönünce hemen bak
-    const timer = setInterval(() => { if (document.visibilityState === "visible") checkInbox(); }, 10000);
+    // Bildirimleri açtıysa sekme arkadayken de dakikada bir bakılır
+    let tick = 0;
+    const timer = setInterval(() => { tick++; if (document.visibilityState === "visible" || (notifyOn() && tick % 6 === 0)) checkInbox(); }, 10000);
     const onShow = () => { if (document.visibilityState === "visible") checkInbox(); };
     document.addEventListener("visibilitychange", onShow);
     return () => { sub.subscription.unsubscribe(); clearInterval(timer); document.removeEventListener("visibilitychange", onShow); };
@@ -219,6 +232,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       refresh();
     }).catch(() => {});
   }, [me, mine, refresh, toast]);
+
+  // Uygulama gibi kurulabilsin, bildirimlere tıklayınca doğru sayfa açılsın
+  useEffect(() => { setupApp(); }, []);
+
+  // Çıkış takvimi hatırlatıcısı: bugün çıkan ya da yeni bölümü gelen şey varsa günde bir kez söyle
+  const remindChecked = useRef(false);
+  useEffect(() => {
+    if (!me || !mine.length || remindChecked.current) return;
+    remindChecked.current = true;
+    upcoming(me.id, mine).then((items) => {
+      const due = dueToday(me.id, items);
+      const byId = new Map(mine.map((e) => [e.id, e]));
+      const lines = due.flatMap((u) => { const e = byId.get(u.id); return e ? [`${e.title} (${u.what.toLocaleLowerCase("tr")})`] : []; });
+      if (!lines.length) return;
+      const text = lines.slice(0, 3).join(", ") + (lines.length > 3 ? ` ve ${lines.length - 3} tane daha` : "");
+      toast(`Bugün çıkıyor: ${text}`);
+      notify("Bugün çıkıyor", text, "/calendar");
+    }).catch(() => {});
+  }, [me, mine, toast]);
 
   // Kişisel site rengi (çıkış yapınca varsayılana döner)
   useEffect(() => { if (ready) applyTheme(me?.site_color); }, [ready, me?.site_color]);

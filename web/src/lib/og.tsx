@@ -10,9 +10,12 @@ const DB = SUPABASE_URL, KEY = SUPABASE_KEY;
 export const OG_SIZE = { width: 1200, height: 630 };
 
 // Supabase REST: hata olursa boş döner, kart yine de çizilir
-export async function rest<T>(path: string): Promise<T | null> {
+// token: kişinin kendi oturumu (kendi gizli kayıtlarını görebilsin diye); yoksa herkese açık anahtar
+export async function rest<T>(path: string, token?: string): Promise<T | null> {
   try {
-    const r = await fetch(`${DB}/rest/v1/${path}`, { headers: { apikey: KEY, authorization: `Bearer ${KEY}` }, next: { revalidate: 600 } });
+    const r = await fetch(`${DB}/rest/v1/${path}`, token
+      ? { headers: { apikey: KEY, authorization: `Bearer ${token}` }, cache: "no-store" }
+      : { headers: { apikey: KEY, authorization: `Bearer ${KEY}` }, next: { revalidate: 600 } });
     return r.ok ? ((await r.json()) as T) : null;
   } catch { return null; }
 }
@@ -99,7 +102,7 @@ export async function ogImage(d: OgData) {
             <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
               {avatar ? <img src={avatar} alt="" width={128} height={128} style={{ width: 128, height: 128, borderRadius: 64, objectFit: "cover", border: `4px solid ${accent}` }} />
                 : d.avatar !== undefined && <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 128, height: 128, borderRadius: 64, background: accent, color: "#080c0d", fontFamily: "Outfit", fontWeight: 700, fontSize: 64 }}>{[...title][0]?.toLocaleUpperCase("tr")}</div>}
-              <div style={{ display: "flex", flexDirection: "column" }}>
+              <div style={{ display: "flex", flexDirection: "column", maxWidth: shown.length ? (avatar || d.avatar !== undefined ? 400 : 540) : 940 }}>
                 <div style={{ fontFamily: "Outfit", fontWeight: 700, fontSize: title.length > (shown.length ? 18 : 28) ? 52 : 72, lineHeight: 1.05 }}>{title}</div>
                 {d.sub && <div style={{ fontSize: 30, color: "#a8b5b1", marginTop: 12 }}>{clip(d.sub, 60)}</div>}
               </div>
@@ -215,18 +218,18 @@ export async function listCard(id: string): Promise<Card | null> {
   };
 }
 
-export async function wrapCard(username: string, year = String(new Date().getFullYear())): Promise<Card | null> {
+export async function wrapCard(username: string, year = String(new Date().getFullYear()), token?: string): Promise<Card | null> {
   const p = await profileOf(username);
   if (!p) return null;
   const name = p.display_name || p.username;
   const hide = (p.hidden_types || []).filter((t) => t in LABEL);
   const done = await rest<{ type: string; cover: string | null; rating: number | null }[]>(
-    `entries?user_id=eq.${p.id}&status=eq.completed&date=gte.${year}-01-01&date=lt.${Number(year) + 1}-01-01&select=type,cover,rating&order=rating.desc.nullslast&limit=1000`);
+    `entries?user_id=eq.${p.id}&status=eq.completed&date=gte.${year}-01-01&date=lt.${Number(year) + 1}-01-01&select=type,cover,rating&order=rating.desc.nullslast&limit=1000`, token);
   const list = (done || []).filter((e) => !hide.includes(e.type));
   const by = Object.keys(LABEL).map((t) => [t, list.filter((e) => e.type === t).length] as const).filter(([, c]) => c);
   const line = list.length ? by.map(([t, c]) => `${c} ${LABEL[t][0].toLocaleLowerCase("tr")}`).join(" · ") : "Yılın özeti";
   return {
-    kicker: `${year} özeti`, title: name, sub: list.length ? `${year} yılında ${list.length} şey bitirdi` : `@${p.username}`, line,
+    kicker: `${year} özeti`, title: name, sub: `@${p.username}`, line: list.length ? `${list.length} şey bitirdi · ${line}` : line,
     avatar: p.avatar_url, accent: p.accent, covers: list.filter((e) => e.cover).map((e) => big(e.cover)),
     description: `${name} ${year} yılında ${list.length} şey bitirdi: ${line}. Ancalog yıl özeti.`,
   };

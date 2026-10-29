@@ -5,6 +5,13 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-10-29T20:10:00+04:00",
+    title: "Çıkış takvimi, bildirimler ve paylaşılabilir yıl özeti",
+    body: "Yeni Çıkış takvimi: planladığın oyunların ve filmlerin çıkış günü, izlediğin dizilerin ve animelerin yeni bölümleri tek sayfada. Ana sayfanda da Yaklaşanlar olarak görünür; o gün geldiğinde siteye girince sana haber veririz.\n"
+      + "Ancalog'u telefonuna ya da bilgisayarına uygulama gibi kurabilirsin: Ayarlar → Uygulama ve bildirimler. Orada bildirimleri de açarsan yeni mesaj, beğeni, yorum ve çıkış günlerinde cihazına bildirim gelir; istediğin an kapatırsın.\n"
+      + "Yıl özetini artık resim olarak paylaşabilirsin: özet sayfasında \"Görsel olarak paylaş\"a bas, Instagram'a, WhatsApp'a ne istersen at.",
+  },
+  {
     date: "2026-10-29T20:00:00+04:00",
     title: "Bölüm takibi, tekrar oynama, etiketler ve Steam otomatik güncelleme",
     body: "Dizi ve animelerde kaçıncı sezon ve bölümde olduğunu yazabilirsin; ana sayfadaki kapağın köşesindeki +1 ile bir bölüm daha izlediğini tek dokunuşla işlersin, son bölümde bitirmek isteyip istemediğin sorulur.\n"

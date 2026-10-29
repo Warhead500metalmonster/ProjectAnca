@@ -1837,3 +1837,23 @@ a.tag, span.tag { cursor: pointer; text-decoration: none; }
 .ep-bump:hover { background: var(--accent); }
 .ep-bump:disabled { opacity: .6; }
 .poster .ep-pill { position: absolute; right: 8px; top: 8px; z-index: 1; font-size: 12px; background: rgba(0, 0, 0, .6); border-radius: 8px; padding: 2px 7px; }
+
+/* Çıkış takvimi */
+.calendar-page { max-width: 760px; margin: 0 auto; width: 100%; }
+.calendar-page h1 { margin: 0; }
+.cal-day { margin-top: 22px; }
+.cal-day h2 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); padding-bottom: 6px; margin: 0 0 8px; }
+.cal-day.today h2 { color: var(--accent); }
+.cal-row { display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 10px; color: inherit; text-decoration: none; }
+.cal-row:hover { background: rgba(255, 255, 255, .04); }
+.cal-row img, .cal-row .noimg { width: 44px; height: 62px; border-radius: 6px; object-fit: cover; flex-shrink: 0; background: var(--panel-2, #1a1f22); }
+.cal-name { display: flex; flex-direction: column; min-width: 0; }
+.cal-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cal-name small { color: var(--muted); }
+.home-upcoming { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.home-upcoming .cal-row { flex: 0 0 auto; max-width: 280px; background: rgba(255, 255, 255, .03); border: 1px solid var(--border); }
+/* Ayarlar: uygulama ve bildirimler */
+.app-notify { display: flex; align-items: center; gap: 14px; justify-content: space-between; padding: 10px 0; }
+.app-notify > div { display: flex; flex-direction: column; gap: 2px; }
+.app-notify .btn { flex-shrink: 0; }
+.wrap-hero .actions { justify-content: center; flex-wrap: wrap; margin: 0; }
