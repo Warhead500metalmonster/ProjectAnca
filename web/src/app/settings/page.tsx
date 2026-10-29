@@ -13,6 +13,8 @@ import { Avatar } from "@/components/ui";
 import { AvatarCropper } from "@/components/AvatarCropper";
 import { youtubeId } from "@/components/ProfileSong";
 import { DEFAULT_COLOR, applyTheme } from "@/lib/theme";
+import { countsOf } from "@/lib/profileLayout";
+import { CountsPicker, cleanCounts } from "@/components/profile/CountsPicker";
 import { canInstall, disableNotify, enableNotify, install, isIos, isStandalone, notify, notifyOn, notifySupported, onInstallChange } from "@/lib/notify";
 
 // Bağlantı: kullanıcı adı ya da o sitenin https:// linki. undefined = geçersiz
@@ -47,6 +49,10 @@ function SettingsForm({ me }: { me: Profile }) {
   const [busy, setBusy] = useState(false);
   const [accent, setAccent] = useState(me.accent || "");
   const [showBanner, setShowBanner] = useState(me.home_layout?.banner !== false); // kapak görseli açık mı
+  const [counts, setCounts] = useState(() => countsOf(me)); // profilin üstündeki sayılar
+  // Profildeki ⚙ /settings#sayilar'a getirir: sayfa tarayıcıda çizilince o bölüme kaydır
+  useEffect(() => { if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView({ block: "start" }); }, []);
+  const countsChanged = JSON.stringify(cleanCounts(counts)) !== JSON.stringify(cleanCounts(countsOf(me)));
   const [theme, setTheme] = useState(me.profile_theme && (PROFILE_THEMES[me.profile_theme] || me.profile_theme === "glass") ? me.profile_theme : "");
   const [bgUrl, setBgUrl] = useState(me.bg_url || "");
   const [scale, setScale] = useState<5 | 10>(me.rating_scale === 10 ? 10 : 5);
@@ -97,7 +103,9 @@ function SettingsForm({ me }: { me: Profile }) {
         accent: !theme && /^#[0-9a-f]{6}$/i.test(accent) ? accent : null,
         profile_theme: theme || null,
         bg_url: bgUrl.trim() || null,
-        ...(showBanner !== (me.home_layout?.banner !== false) && { home_layout: { ...me.home_layout, banner: showBanner } }),
+        ...((showBanner !== (me.home_layout?.banner !== false) || countsChanged) && {
+          home_layout: { ...me.home_layout, banner: showBanner, ...(countsChanged && { counts: cleanCounts(counts) }) },
+        }),
         rating_scale: scale,
         socials,
         site_color: /^#[0-9a-f]{6}$/i.test(siteColor) && siteColor.toLowerCase() !== DEFAULT_COLOR ? siteColor : null,
@@ -143,6 +151,9 @@ function SettingsForm({ me }: { me: Profile }) {
       </div>
       <label className="check"><input type="checkbox" checked={showBanner} onChange={(e) => setShowBanner(e.target.checked)} /> Kapak görseli görünsün
         <span className="muted small">· kapatırsan üst kısım boş kalır, arka plan resmin ya da temanın rengi oradan görünür</span></label>
+
+      <h3 className="set-h" id="sayilar">Profilimdeki sayılar <span className="muted small">· adının yanındaki kayıt, takipçi gibi büyük sayılar</span></h3>
+      <CountsPicker value={counts} onChange={setCounts} />
 
       <h3 className="set-h">Profilimi kimler görebilir?</h3>
       <div className="vis-pick" style={{ marginBottom: 8 }}>

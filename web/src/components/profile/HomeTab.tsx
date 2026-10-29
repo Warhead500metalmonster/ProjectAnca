@@ -5,7 +5,8 @@ import Link from "next/link";
 import type { Entry, EntryType, HomeBlock, HomeLayout, List, Profile } from "@/lib/types";
 import { PROFILE_COLS, TYPES, TYPE_KEYS } from "@/lib/constants";
 import { fmtDate, playSec } from "@/lib/format";
-import { COUNT_ITEMS, countsOf, defaultSections, isNewProfile } from "@/lib/profileLayout";
+import { countsOf, defaultSections, isNewProfile } from "@/lib/profileLayout";
+import { CountsPicker, cleanCounts } from "./CountsPicker";
 import { q, sb } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
@@ -142,7 +143,6 @@ function HomeEditor({ layout, blocks, onClose }: { layout?: HomeLayout | null; b
   const [list, setList] = useState<HomeBlock[]>(blocks);
   const [text, setText] = useState(layout?.text || "");
   const [counts, setCounts] = useState(() => countsOf(profile)); // profilin üstündeki sayılar
-  const toggleIn = <T,>(arr: T[], x: T) => (arr.includes(x) ? arr.filter((y) => y !== x) : [...arr, x]);
   const [busy, setBusy] = useState(false);
 
   const patch = (id: string, p: Partial<HomeBlock>) => setList((l) => l.map((b) => (b.id === id ? { ...b, ...p } : b)));
@@ -165,9 +165,7 @@ function HomeEditor({ layout, blocks, onClose }: { layout?: HomeLayout | null; b
     setBusy(true);
     try {
       const sections = list.map((b) => ({ id: b.id, k: b.k, ...(typesOf(b) && { types: typesOf(b)! }), ...(b.title?.trim() && { title: b.title.trim().slice(0, 60) }) }));
-      const types = counts.types.length < TYPE_KEYS.length ? counts.types : [];
-      const items = counts.items.length ? counts.items : COUNT_ITEMS.map(([k]) => k);
-      await q(sb().from("profiles").update({ home_layout: { ...layout, sections, text: text.trim(), counts: { show: counts.show, items, types } } }).eq("id", me.id));
+      await q(sb().from("profiles").update({ home_layout: { ...layout, sections, text: text.trim(), counts: cleanCounts(counts) } }).eq("id", me.id));
       toast("Ana sayfan kaydedildi");
       onClose();
       refresh();
@@ -183,28 +181,7 @@ function HomeEditor({ layout, blocks, onClose }: { layout?: HomeLayout | null; b
       <h2>Ana sayfanı düzenle</h2>
       <p className="muted small">Profiline girenler önce bu sayfayı görür. İstediğin bölümü istediğin kadar ekle; her birinde hangi türlerin görüneceğini ve başlığını ayrı seç.
         Örneğin bir Favoriler sadece oyunlar, bir başkası animeler olabilir.</p>
-      <div className="home-counts">
-        <label className="check"><input type="checkbox" checked={counts.show} onChange={(e) => setCounts({ ...counts, show: e.target.checked })} /> Adımın yanında büyük sayılar görünsün</label>
-        {counts.show && (
-          <>
-            <div className="chips">
-              <span className="muted small">Hangileri:</span>
-              {COUNT_ITEMS.map(([k, name]) => (
-                <button type="button" key={k} className={`chip ${counts.items.includes(k) ? "active" : ""}`}
-                  onClick={() => setCounts({ ...counts, items: toggleIn(counts.items, k) })}>{name}</button>
-              ))}
-            </div>
-            <div className="chips">
-              <span className="muted small">Neler sayılsın:</span>
-              <button type="button" className={`chip ${!counts.types.length ? "active" : ""}`} onClick={() => setCounts({ ...counts, types: [] })}>Hepsi</button>
-              {TYPE_KEYS.map((k) => (
-                <button type="button" key={k} className={`chip ${!counts.types.length || counts.types.includes(k) ? "active" : ""}`}
-                  onClick={() => setCounts({ ...counts, types: toggleIn(counts.types.length ? counts.types : TYPE_KEYS, k) })}>{TYPES[k].plural}</button>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+      <CountsPicker value={counts} onChange={setCounts} />
       <div className="field">
         <label htmlFor="home-text">Üstte duracak yazı <span className="muted">· isteğe bağlı</span></label>
         <textarea id="home-text" rows={3} maxLength={2000} placeholder="ör. Soulslike ve eski JRPG'ler oynarım. En sevdiğim seri Persona." value={text} onChange={(e) => setText(e.target.value)} />

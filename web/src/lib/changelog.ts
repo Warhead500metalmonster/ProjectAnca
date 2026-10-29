@@ -5,6 +5,12 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-10-29T23:55:00+04:00",
+    title: "Profil sayıları artık Profili düzenle'de",
+    body: "Adının yanındaki büyük sayıları Profili düzenle → Profilimdeki sayılar'dan gizleyebilir, hangilerinin görüneceğini ve neyin sayılacağını seçebilirsin. Sadece animeleri ya da sadece film ve dizileri saymak için o türe basman yeter. Profilindeki sayıların yanındaki ⚙ seni doğrudan oraya götürür.\n"
+      + "Renkli temalarda kapak görselini kapatınca üstte kalan renkli şerit kalktı; ad ve fotoğrafın yukarı çıkıyor.",
+  },
+  {
     date: "2026-10-29T22:50:00+04:00",
     title: "Profil sayıların, favori ekleme ve şeffaf tema",
     body: "Adının yanındaki büyük sayıları artık sen seçiyorsun: Ana sayfayı düzenle'den gösterip gizleyebilir, hangilerinin görüneceğini ve hangi türlerin sayılacağını (ör. animeler sayılmasın) seçebilirsin.\n"

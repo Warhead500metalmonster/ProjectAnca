@@ -491,7 +491,7 @@ details.locked summary { cursor: pointer; color: var(--muted); font-size: 13px; 
 
 /* ---------- Profil kişiselleştirme ---------- */
 .profile.has-pa { --accent: var(--pa); --accent-2: color-mix(in srgb, var(--pa) 65%, white); }
-.profile.has-pa .profile-banner:not(.img) { background: linear-gradient(120deg, color-mix(in srgb, var(--pa) 35%, #000), var(--pa) 50%, color-mix(in srgb, var(--pa) 60%, #3fa7c9)); }
+.profile.has-pa .profile-banner:not(.img):not(.clear) { background: linear-gradient(120deg, color-mix(in srgb, var(--pa) 35%, #000), var(--pa) 50%, color-mix(in srgb, var(--pa) 60%, #3fa7c9)); }
 .profile-banner.img { background-size: cover; background-position: center; }
 .profile.has-pa .btn.primary { background: var(--pa); box-shadow: 0 6px 20px color-mix(in srgb, var(--pa) 40%, transparent); }
 .socials { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 24px 0; }
@@ -685,7 +685,7 @@ label.inline { display: inline-flex; gap: 6px; align-items: center; color: var(-
 .note-body { margin: 6px 0 0; color: #c9cddb; font-style: italic; }
 
 /* ---------- Ayarlar ---------- */
-.set-h { font-size: 17px; margin-top: 10px; padding-top: 14px; border-top: 1px solid var(--border); }
+.set-h { font-size: 17px; margin-top: 10px; padding-top: 14px; border-top: 1px solid var(--border); scroll-margin-top: 80px; }
 .swatches { display: flex; gap: 8px; flex-wrap: wrap; }
 .swatch { width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; display: grid; place-items: center; position: relative; }
 .swatch.on { border-color: #fff; box-shadow: 0 0 0 2px var(--bg) inset; }
@@ -1792,9 +1792,10 @@ body {
 }
 
 /* Şeffaf tema: kapak alanı boş (arka plan resmi görünsün), başlık ve bölümler yarı saydam kutularda kalır */
-.profile-banner.clear { background: none; height: 170px; }
+.profile .profile-banner.clear { background: none; height: 170px; -webkit-mask-image: none; mask-image: none; }
 .profile-banner.clear::after { display: none; }
-@media (max-width: 640px) { .profile-banner.clear { height: 110px; } }
+.profile .profile-banner.clear.short { height: 84px; }
+@media (max-width: 640px) { .profile .profile-banner.clear { height: 110px; } .profile .profile-banner.clear.short { height: 64px; } }
 
 /* Arkadaş önerileri: kapağın köşesinde hızlı ekleme, altında öneren arkadaşlar */
 .card.pick { cursor: default; }
@@ -1861,3 +1862,5 @@ dialog.fav-picker:not([open]) { display: none; }
 .fav-results .year { margin-left: auto; color: var(--muted); font-size: 12px; white-space: nowrap; }
 .home-counts { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; }
 .home-counts .chips { align-items: center; }
+.profile-counts .counts-edit { align-self: flex-start; color: var(--muted); font-size: 15px; padding: 2px 4px; text-decoration: none; opacity: .7; }
+.profile-counts .counts-edit:hover { color: var(--text); opacity: 1; }

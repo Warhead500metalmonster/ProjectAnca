@@ -107,8 +107,9 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
       {(bg || tint) && <div className={`profile-bg-shade ${glass ? "light" : ""}`} aria-hidden="true"
         style={tint ? { background: `linear-gradient(to bottom, rgba(8, 12, 13, ${bg ? ".2" : "0"}), ${tint} ${bg ? "45%" : "35%"})` } : undefined} />}
       <div className={`profile ${accent ? "has-pa" : ""} ${tint ? "themed" : ""} ${glass ? "glass" : ""}`} style={vars}>
-        {/* Kapak görseli kapalıysa (ya da şeffaf temada kapak yoksa) kapak alanı boş kalır, arkadaki resim görünür; düzen yine aynı */}
-        <div className={`profile-banner ${banner ? "img" : ""} ${!banner && (glass || !showBanner) ? "clear" : ""}`} style={banner ? { backgroundImage: cssUrl(banner) } : undefined}>
+        {/* Kapak görseli kapalıysa (ya da şeffaf temada kapak yoksa) kapak alanı boş kalır, arkadaki resim görünür;
+            arkada resim yoksa boş alan daralır, ad ve fotoğraf yukarı çıkar */}
+        <div className={`profile-banner ${banner ? "img" : ""} ${!banner && (glass || !showBanner) ? `clear ${bg ? "" : "short"}` : ""}`} style={banner ? { backgroundImage: cssUrl(banner) } : undefined}>
           {!banner && !glass && showBanner && <CoverMarquee covers={[...new Set(entries.map((e) => safeUrl(e.cover)).filter(Boolean))].slice(0, 24)} />}
         </div>
         <div className="profile-head">
@@ -125,6 +126,7 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
             {cnt.items.includes("planned") && <span><b>{num(counted.filter((e) => e.status === "planned").length)}</b>Planlanan</span>}
             {cnt.items.includes("followers") && <button onClick={() => openUserList("followers")}><b>{num(followers)}</b>Takipçi</button>}
             {cnt.items.includes("following") && <button onClick={() => openUserList("following")}><b>{num(following)}</b>Takip</button>}
+            {isMe && <Link className="counts-edit" href="/settings#sayilar" title="Hangi sayıların görüneceğini ve neyin sayılacağını seç" aria-label="Sayıları düzenle">⚙</Link>}
           </div>}
           <div className="profile-actions">
             {isMe
