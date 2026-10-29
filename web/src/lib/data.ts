@@ -285,6 +285,27 @@ export async function friendsOnMyPlans(following: string[], mine: Entry[]): Prom
   return rows.filter((e) => planned.has(contentKey(e)));
 }
 
+// Arkadaş önerileri: takip ettiklerinin 9 ve üstü puan verdiği, senin kütüphanende olmayan şeyler.
+// Aynı şeyi kaç kişi sevmişse o kadar öne çıkar.
+export interface FriendPick { e: Entry; by: Entry[] }
+export async function friendPicks(following: string[], mine: Entry[]): Promise<FriendPick[]> {
+  if (!following.length) return [];
+  const have = new Set(mine.map(contentKey));
+  const haveExt = new Set(mine.map((e) => e.ext_id).filter(Boolean));
+  const rows = await q<Entry[]>(sb().from("entries").select(ENTRY_COLS).in("user_id", following).gte("rating", 9)
+    .order("updated_at", { ascending: false }).limit(300));
+  const groups = new Map<string, FriendPick>();
+  for (const e of rows) {
+    const k = contentKey(e);
+    if (have.has(k) || (e.ext_id && haveExt.has(e.ext_id))) continue;
+    const g = groups.get(k);
+    if (!g) groups.set(k, { e, by: [e] });
+    else if (!g.by.some((x) => x.user_id === e.user_id)) { g.by.push(e); if (!g.e.cover && e.cover) g.e = e; }
+  }
+  return [...groups.values()].sort((a, b) => b.by.length - a.by.length
+    || Math.max(...b.by.map((x) => x.rating || 0)) - Math.max(...a.by.map((x) => x.rating || 0))).slice(0, 18);
+}
+
 // İçe aktarmada albüm / şarkı kapağı bul: önce Deezer, olmazsa Apple Music
 export async function musicMeta(kind: "album" | "track", artist: string, title: string): Promise<{ cover: string | null; year: number | null }> {
   const text = `${artist} ${title}`.slice(0, 200);

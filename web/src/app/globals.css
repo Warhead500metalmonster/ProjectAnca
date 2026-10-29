@@ -1801,3 +1801,15 @@ body {
 .profile-banner.clear { background: none; height: 170px; }
 .profile-banner.clear::after { display: none; }
 @media (max-width: 640px) { .profile-banner.clear { height: 110px; } }
+
+/* Arkadaş önerileri: kapağın köşesinde hızlı ekleme, altında öneren arkadaşlar */
+.card.pick { cursor: default; }
+.pick-link { position: absolute; inset: 0; display: block; }
+.card.pick .card-title { color: inherit; }
+.pick-add { position: absolute; right: 6px; bottom: 6px; z-index: 2; width: 32px; height: 32px; border-radius: 50%; border: 0; background: rgba(8, 12, 13, .82); color: #fff; font-size: 18px; line-height: 1; cursor: pointer; opacity: .9; }
+.pick-add:hover { background: var(--accent, #58a98a); opacity: 1; }
+.pick-by { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; margin-top: -4px; min-width: 0; }
+.pick-by > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pick-faces { display: flex; flex-shrink: 0; }
+.pick-faces .avatar { width: 18px; height: 18px; font-size: 9px; border: 1.5px solid var(--bg, #080c0d); }
+.pick-faces .avatar + .avatar { margin-left: -6px; }
