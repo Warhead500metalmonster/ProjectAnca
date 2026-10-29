@@ -1142,19 +1142,13 @@ body.fav-dragging, body.fav-dragging * { cursor: grabbing !important; user-selec
 }
 
 /* ---------- Şeffaf profil (Steam gibi): resim her yerde görünür, kutular yarı saydam ---------- */
-.profile-bg-shade.light { background: linear-gradient(to bottom, rgba(8, 12, 13, .05) 120px, rgba(8, 12, 13, .5) 360px, rgba(8, 12, 13, .4)); }
-/* Şeffaf tema: üst kısım normal tasarımda, yazılar gölgeyle okunur; bölümler yarı saydam kartlarda */
-.profile.glass .profile-head, .profile.glass .profile-head .handle, .profile.glass .profile-counts { text-shadow: 0 1px 4px rgba(0, 0, 0, .9); }
-.profile.glass .profile > .section, .profile.glass > .section, .profile.glass .badges-page,
-.profile.glass .subnav, .profile.glass .song-box {
-  background: rgba(10, 8, 8, .62); border: 1px solid rgba(255, 255, 255, .07); border-radius: 14px;
-}
-.profile.glass > .section { padding: 16px 18px; margin-top: 16px; }
-.profile.glass .profile-bio, .profile.glass .profile-meta, .profile.glass .socials, .profile.glass .profile-note { text-shadow: 0 1px 4px rgba(0, 0, 0, .95); }
-.profile.glass .subnav { margin-top: 16px; padding: 0 8px; border-bottom-color: transparent; }
+.profile-bg-shade.light { background: linear-gradient(to bottom, rgba(8, 12, 13, .1) 120px, rgba(8, 12, 13, .62) 380px, rgba(8, 12, 13, .58)); }
+/* Şeffaf tema: düzen diğer temalarla birebir aynı (kutu yok); arka plan resmi renkle örtülmez, yazılar gölgeyle okunur */
+.profile.glass .profile-head, .profile.glass .profile-head .handle, .profile.glass .profile-counts,
+.profile.glass .section-head, .profile.glass .card-title, .profile.glass .card-meta, .profile.glass .subnav,
+.profile.glass .profile-bio, .profile.glass .profile-meta, .profile.glass .socials, .profile.glass .profile-note { text-shadow: 0 1px 4px rgba(0, 0, 0, .9); }
 .profile.glass .profile-meta, .profile.glass .profile-meta button, .profile.glass .handle { color: #e3e6ea; }
 .theme-card.glass-card { background: center / cover no-repeat, repeating-conic-gradient(#2a2f36 0 25%, #1c2026 0 50%) 0 0 / 14px 14px; }
-@media (max-width: 640px) { .profile.glass > .section { padding: 12px; } }
 .import-steps { margin: 0 0 12px; padding-left: 20px; display: grid; gap: 4px; }
 .import-opts { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; }
 .import-opts label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
@@ -1235,7 +1229,7 @@ body.fav-dragging, body.fav-dragging * { cursor: grabbing !important; user-selec
 .li-note-edit .btn { padding: 4px 10px; font-size: 13px; }
 
 /* Profil ana sayfası */
-.home-edit-bar { display: flex; justify-content: flex-end; margin: 16px 0 -8px; }
+.home-edit-bar { display: flex; justify-content: flex-end; align-items: center; gap: 10px; flex-wrap: wrap; margin: 16px 0 -8px; text-align: right; }
 .home-text { white-space: pre-wrap; line-height: 1.6; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
 .home-editor { background: var(--panel); border: 1px solid var(--accent); border-radius: var(--radius); padding: 16px 18px; }
 .home-editor h2 { margin: 0 0 4px; }
@@ -1857,3 +1851,13 @@ a.tag, span.tag { cursor: pointer; text-decoration: none; }
 .app-notify > div { display: flex; flex-direction: column; gap: 2px; }
 .app-notify .btn { flex-shrink: 0; }
 .wrap-hero .actions { justify-content: center; flex-wrap: wrap; margin: 0; }
+
+/* Favori ekle penceresi */
+dialog.fav-picker { width: min(560px, calc(100vw - 24px)); padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+dialog.fav-picker:not([open]) { display: none; }
+.fav-results { position: static; max-height: 50vh; overflow-y: auto; box-shadow: none; }
+.fav-results .note { padding: 8px 10px 4px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.fav-results .name small { display: block; color: var(--muted); font-size: 12px; }
+.fav-results .year { margin-left: auto; color: var(--muted); font-size: 12px; white-space: nowrap; }
+.home-counts { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; }
+.home-counts .chips { align-items: center; }

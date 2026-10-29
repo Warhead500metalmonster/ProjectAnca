@@ -46,6 +46,7 @@ function SettingsForm({ me }: { me: Profile }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [accent, setAccent] = useState(me.accent || "");
+  const [showBanner, setShowBanner] = useState(me.home_layout?.banner !== false); // kapak görseli açık mı
   const [theme, setTheme] = useState(me.profile_theme && (PROFILE_THEMES[me.profile_theme] || me.profile_theme === "glass") ? me.profile_theme : "");
   const [bgUrl, setBgUrl] = useState(me.bg_url || "");
   const [scale, setScale] = useState<5 | 10>(me.rating_scale === 10 ? 10 : 5);
@@ -96,6 +97,7 @@ function SettingsForm({ me }: { me: Profile }) {
         accent: !theme && /^#[0-9a-f]{6}$/i.test(accent) ? accent : null,
         profile_theme: theme || null,
         bg_url: bgUrl.trim() || null,
+        ...(showBanner !== (me.home_layout?.banner !== false) && { home_layout: { ...me.home_layout, banner: showBanner } }),
         rating_scale: scale,
         socials,
         site_color: /^#[0-9a-f]{6}$/i.test(siteColor) && siteColor.toLowerCase() !== DEFAULT_COLOR ? siteColor : null,
@@ -139,6 +141,8 @@ function SettingsForm({ me }: { me: Profile }) {
         <label htmlFor="p-banner">Kapak görseli (profilin üstündeki geniş resim, https://)</label>
         <input id="p-banner" name="banner" type="url" defaultValue={me.banner_url || ""} placeholder="https://…" />
       </div>
+      <label className="check"><input type="checkbox" checked={showBanner} onChange={(e) => setShowBanner(e.target.checked)} /> Kapak görseli görünsün
+        <span className="muted small">· kapatırsan üst kısım boş kalır, arka plan resmin ya da temanın rengi oradan görünür</span></label>
 
       <h3 className="set-h">Profilimi kimler görebilir?</h3>
       <div className="vis-pick" style={{ marginBottom: 8 }}>
@@ -189,7 +193,7 @@ function SettingsForm({ me }: { me: Profile }) {
       </div>
 
       {theme === "glass" && (
-        <p className="muted small">Şeffaf profilde arka plan resmin Steam&apos;deki gibi bütün profilde görünür, kutular yarı saydam olur.
+        <p className="muted small">Şeffaf profilde arka plan resmin Steam&apos;deki gibi bütün profilde, renkle örtülmeden görünür; düzen diğer temalarla aynıdır.
           {!bgUrl.trim().startsWith("https://") && <b> Bunun için aşağıya bir arka plan resmi linki koy.</b>} Renk için &quot;Özel renk&quot;i de seçebilirsin.</p>
       )}
       <div className="field">

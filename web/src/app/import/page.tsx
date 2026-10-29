@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { Entry, RawgGame, Status } from "@/lib/types";
 import { norm, smallImage } from "@/lib/format";
 import { anilist, musicMeta, tmdb, tmdbCreator, tmdbDetail, tmdbImage } from "@/lib/data";
@@ -50,16 +51,14 @@ const IMPORT_PICKS: { key: string; name: string; how: string; gets: string }[] =
 const SIMKL_PICK = { key: "simkl", name: "Simkl", how: "Koduyla bağlan", gets: "Dizilerin, filmlerin, animelerin" };
 
 function Importer() {
-  // /import?from=backloggd gibi bağlantılar doğrudan o kaynağı açar
-  const [pick, setPick] = useState<string | null>(() => {
-    const k = new URLSearchParams(location.search).get("from");
-    return k === "simkl" || IMPORT_PICKS.some((p) => p.key === k) ? k : null;
-  });
+  // Seçilen kaynak adreste durur (/import?from=backloggd): menüden İçe aktar'a basınca adres /import olur, sayfa hep baştan açılır
+  const router = useRouter();
+  const from = useSearchParams().get("from");
+  const pick = from === "simkl" || IMPORT_PICKS.some((p) => p.key === from) ? from : null;
   const { data: simklOn } = useLoad(() => fetch("/api/simkl").then((x) => x.json()).then((j) => j.error !== "no-key").catch(() => false), []);
   const picks = simklOn ? [...IMPORT_PICKS, SIMKL_PICK] : IMPORT_PICKS;
   function choose(k: string | null) {
-    setPick(k);
-    history.replaceState(null, "", k ? `/import?from=${k}` : "/import");
+    router.replace(k ? `/import?from=${k}` : "/import", { scroll: false });
     window.scrollTo({ top: 0 });
   }
   const chosen = [...IMPORT_PICKS, SIMKL_PICK].find((p) => p.key === pick);

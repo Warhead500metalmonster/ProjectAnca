@@ -8,6 +8,7 @@ import { fmtDate, cssUrl, num, safeUrl } from "@/lib/format";
 import { fetchEntries } from "@/lib/data";
 import { PROFILE_THEMES, TYPES } from "@/lib/constants";
 import { compat } from "@/lib/compat";
+import { bannerOn, countedEntries, countsOf } from "@/lib/profileLayout";
 import { countOf, q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
@@ -78,11 +79,14 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
   const theme = PROFILE_THEMES[profile.profile_theme || ""];
   const accent = theme?.accent || (/^#[0-9a-f]{6}$/i.test(profile.accent || "") ? profile.accent! : null);
   const bg = profile.bg_url?.startsWith("https://") ? profile.bg_url : null;
-  // Şeffaf profil: arka plan resmi her yerde görünür, kutular yarı saydam durur (Steam profili gibi)
+  // Şeffaf profil: düzen diğer temalarla aynı, sadece arka plan resmi renkle örtülmez, daha açık görünür
   const glass = profile.profile_theme === "glass" && !!bg;
   const tint = glass ? null : theme?.tint || (accent ? `color-mix(in srgb, ${accent} 14%, rgba(10, 12, 14, .86))` : bg ? "rgba(10, 12, 14, .84)" : null);
   const vars = { ...(accent && { "--pa": accent }), ...(tint && { "--ptint": tint }) } as React.CSSProperties;
-  const banner = profile.banner_url && safeUrl(profile.banner_url);
+  const showBanner = bannerOn(profile); // sahibi kapak görselini kapatabilir
+  const banner = showBanner && profile.banner_url ? safeUrl(profile.banner_url) : "";
+  const cnt = countsOf(profile);
+  const counted = countedEntries(entries, cnt.types);
   const tab = path.split("/")[3] || "home"; // /u/ali/library → library
   const song = profile.song_url || null; // profilde arkada çalan şarkı
   const match = me && !isMe ? compat(mine, entries).score : null;
@@ -103,9 +107,9 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
       {(bg || tint) && <div className={`profile-bg-shade ${glass ? "light" : ""}`} aria-hidden="true"
         style={tint ? { background: `linear-gradient(to bottom, rgba(8, 12, 13, ${bg ? ".2" : "0"}), ${tint} ${bg ? "45%" : "35%"})` } : undefined} />}
       <div className={`profile ${accent ? "has-pa" : ""} ${tint ? "themed" : ""} ${glass ? "glass" : ""}`} style={vars}>
-        {/* Şeffaf temada kapak yerine arka plan resmi görünür: kapak alanı boş kalır, düzen yine aynı */}
-        <div className={`profile-banner ${banner && !glass ? "img" : ""} ${glass ? "clear" : ""}`} style={banner && !glass ? { backgroundImage: cssUrl(banner) } : undefined}>
-          {!banner && !glass && <CoverMarquee covers={[...new Set(entries.map((e) => safeUrl(e.cover)).filter(Boolean))].slice(0, 24)} />}
+        {/* Kapak görseli kapalıysa (ya da şeffaf temada kapak yoksa) kapak alanı boş kalır, arkadaki resim görünür; düzen yine aynı */}
+        <div className={`profile-banner ${banner ? "img" : ""} ${!banner && (glass || !showBanner) ? "clear" : ""}`} style={banner ? { backgroundImage: cssUrl(banner) } : undefined}>
+          {!banner && !glass && showBanner && <CoverMarquee covers={[...new Set(entries.map((e) => safeUrl(e.cover)).filter(Boolean))].slice(0, 24)} />}
         </div>
         <div className="profile-head">
           <Avatar p={profile} cls="lg" />
@@ -114,12 +118,13 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
             <div className="handle">@{profile.username}{profile.pronouns ? ` · ${profile.pronouns}` : ""}</div>
           </div>
           {/* Büyük sayaçlar: kaç şey loglamış, bu yıl kaç tane bitirmiş, sırada ne kadar var, takipçi */}
-          {!locked && <div className="profile-counts">
-            <span><b>{num(entries.filter((e) => e.status !== "planned").length)}</b>Kayıt</span>
-            <span><b>{num(entries.filter((e) => e.status === "completed" && (e.date || "").startsWith(year)).length)}</b>Bu yıl bitti</span>
-            <span><b>{num(entries.filter((e) => e.status === "planned").length)}</b>Planlanan</span>
-            <button onClick={() => openUserList("followers")}><b>{num(followers)}</b>Takipçi</button>
-            <button onClick={() => openUserList("following")}><b>{num(following)}</b>Takip</button>
+          {/* Sahibi Ana sayfayı düzenle'den hangilerinin görüneceğini ve hangi türlerin sayılacağını seçer; yeni profillerde kapalı başlar */}
+          {!locked && cnt.show && <div className="profile-counts">
+            {cnt.items.includes("entries") && <span><b>{num(counted.filter((e) => e.status !== "planned").length)}</b>Kayıt</span>}
+            {cnt.items.includes("year") && <span><b>{num(counted.filter((e) => e.status === "completed" && (e.date || "").startsWith(year)).length)}</b>Bu yıl bitti</span>}
+            {cnt.items.includes("planned") && <span><b>{num(counted.filter((e) => e.status === "planned").length)}</b>Planlanan</span>}
+            {cnt.items.includes("followers") && <button onClick={() => openUserList("followers")}><b>{num(followers)}</b>Takipçi</button>}
+            {cnt.items.includes("following") && <button onClick={() => openUserList("following")}><b>{num(following)}</b>Takip</button>}
           </div>}
           <div className="profile-actions">
             {isMe

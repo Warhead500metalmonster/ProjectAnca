@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { Entry, EntryType, HomeBlock, HomeLayout, List } from "@/lib/types";
+import type { Entry, EntryType, HomeBlock, HomeLayout, List, Profile } from "@/lib/types";
 import { PROFILE_COLS, TYPES, TYPE_KEYS } from "@/lib/constants";
 import { fmtDate, playSec } from "@/lib/format";
+import { COUNT_ITEMS, countsOf, defaultSections, isNewProfile } from "@/lib/profileLayout";
 import { q, sb } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
@@ -27,13 +28,13 @@ const SECTIONS: [string, string][] = [
   ["stats", "Özet"],
 ];
 const NO_TYPES = ["lists"]; // türe göre ayrılamayan bölümler
-const DEFAULT = ["favs", "played", "playing", "recent", "reviews", "stats"];
 const label = (k: string) => SECTIONS.find(([x]) => x === k)?.[1] || k;
 const newId = () => Math.random().toString(36).slice(2, 9);
 
-// Eski düzen sadece bölüm adlarıydı ("favs"); yenisinde her bölüm kendi türleri ve başlığıyla gelir
-function toBlocks(sections?: HomeLayout["sections"] | null): HomeBlock[] {
-  const raw = sections?.length ? sections : DEFAULT;
+// Eski düzen sadece bölüm adlarıydı ("favs"); yenisinde her bölüm kendi türleri ve başlığıyla gelir.
+// Sahibi hiç düzenlemediyse varsayılan: yeni profillerde sadece son eklenenler, eskilerde eski düzen.
+function toBlocks(profile: Pick<Profile, "created_at">, sections?: HomeLayout["sections"] | null): HomeBlock[] {
+  const raw = sections ?? defaultSections(profile);
   return raw.map((x, i) => (typeof x === "string" ? { id: `${x}-${i}`, k: x } : x)).filter((b) => SECTIONS.some(([k]) => k === b.k));
 }
 // Seçili türler: hiçbiri ya da hepsi seçiliyse "hepsi" sayılır
@@ -49,12 +50,15 @@ export function HomeTab() {
   const { profile, entries, isMe } = useProfile();
   const [editing, setEditing] = useState(false);
   const layout = profile.home_layout;
-  const blocks = toBlocks(layout?.sections);
+  const blocks = toBlocks(profile, layout?.sections);
 
   return (
     <>
       {isMe && !editing && (
-        <div className="home-edit-bar"><button className="btn" onClick={() => setEditing(true)}>Ana sayfayı düzenle</button></div>
+        <div className="home-edit-bar">
+          {!layout?.sections && isNewProfile(profile) && <span className="muted small">Profilin sade başladı. İstersen favorilerini, sayılarını, istatistiklerini vitrine koy:</span>}
+          <button className="btn" onClick={() => setEditing(true)}>Ana sayfayı düzenle</button>
+        </div>
       )}
       {editing && <HomeEditor layout={layout} blocks={blocks} onClose={() => setEditing(false)} />}
       {layout?.text?.trim() && <section className="section home-text"><RichText text={layout.text} /></section>}
@@ -134,8 +138,11 @@ function DatedCard({ e }: { e: Entry }) {
 // Sahibinin düzenleme kutusu: istediği bölümü istediği kadar ekler; her bölümde türleri, başlığı ve sırayı seçer
 function HomeEditor({ layout, blocks, onClose }: { layout?: HomeLayout | null; blocks: HomeBlock[]; onClose: () => void }) {
   const { me, toast, refresh } = useApp();
+  const { profile } = useProfile();
   const [list, setList] = useState<HomeBlock[]>(blocks);
   const [text, setText] = useState(layout?.text || "");
+  const [counts, setCounts] = useState(() => countsOf(profile)); // profilin üstündeki sayılar
+  const toggleIn = <T,>(arr: T[], x: T) => (arr.includes(x) ? arr.filter((y) => y !== x) : [...arr, x]);
   const [busy, setBusy] = useState(false);
 
   const patch = (id: string, p: Partial<HomeBlock>) => setList((l) => l.map((b) => (b.id === id ? { ...b, ...p } : b)));
@@ -158,7 +165,9 @@ function HomeEditor({ layout, blocks, onClose }: { layout?: HomeLayout | null; b
     setBusy(true);
     try {
       const sections = list.map((b) => ({ id: b.id, k: b.k, ...(typesOf(b) && { types: typesOf(b)! }), ...(b.title?.trim() && { title: b.title.trim().slice(0, 60) }) }));
-      await q(sb().from("profiles").update({ home_layout: { sections, text: text.trim() } }).eq("id", me.id));
+      const types = counts.types.length < TYPE_KEYS.length ? counts.types : [];
+      const items = counts.items.length ? counts.items : COUNT_ITEMS.map(([k]) => k);
+      await q(sb().from("profiles").update({ home_layout: { ...layout, sections, text: text.trim(), counts: { show: counts.show, items, types } } }).eq("id", me.id));
       toast("Ana sayfan kaydedildi");
       onClose();
       refresh();
@@ -174,6 +183,28 @@ function HomeEditor({ layout, blocks, onClose }: { layout?: HomeLayout | null; b
       <h2>Ana sayfanı düzenle</h2>
       <p className="muted small">Profiline girenler önce bu sayfayı görür. İstediğin bölümü istediğin kadar ekle; her birinde hangi türlerin görüneceğini ve başlığını ayrı seç.
         Örneğin bir Favoriler sadece oyunlar, bir başkası animeler olabilir.</p>
+      <div className="home-counts">
+        <label className="check"><input type="checkbox" checked={counts.show} onChange={(e) => setCounts({ ...counts, show: e.target.checked })} /> Adımın yanında büyük sayılar görünsün</label>
+        {counts.show && (
+          <>
+            <div className="chips">
+              <span className="muted small">Hangileri:</span>
+              {COUNT_ITEMS.map(([k, name]) => (
+                <button type="button" key={k} className={`chip ${counts.items.includes(k) ? "active" : ""}`}
+                  onClick={() => setCounts({ ...counts, items: toggleIn(counts.items, k) })}>{name}</button>
+              ))}
+            </div>
+            <div className="chips">
+              <span className="muted small">Neler sayılsın:</span>
+              <button type="button" className={`chip ${!counts.types.length ? "active" : ""}`} onClick={() => setCounts({ ...counts, types: [] })}>Hepsi</button>
+              {TYPE_KEYS.map((k) => (
+                <button type="button" key={k} className={`chip ${!counts.types.length || counts.types.includes(k) ? "active" : ""}`}
+                  onClick={() => setCounts({ ...counts, types: toggleIn(counts.types.length ? counts.types : TYPE_KEYS, k) })}>{TYPES[k].plural}</button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
       <div className="field">
         <label htmlFor="home-text">Üstte duracak yazı <span className="muted">· isteğe bağlı</span></label>
         <textarea id="home-text" rows={3} maxLength={2000} placeholder="ör. Soulslike ve eski JRPG'ler oynarım. En sevdiğim seri Persona." value={text} onChange={(e) => setText(e.target.value)} />
@@ -212,7 +243,7 @@ function HomeEditor({ layout, blocks, onClose }: { layout?: HomeLayout | null; b
         ))}
       </div>
       <div className="actions">
-        <button className="link" onClick={() => { setList(toBlocks(null)); setText(""); }}>Varsayılana dön</button>
+        <button className="link" onClick={() => { setList(toBlocks(profile, null)); setText(""); setCounts(countsOf({ ...profile, home_layout: null })); }}>Varsayılana dön</button>
         <span className="spacer" />
         <button className="btn" onClick={onClose}>Vazgeç</button>
         <button className="btn primary" disabled={busy} onClick={save}>Kaydet</button>

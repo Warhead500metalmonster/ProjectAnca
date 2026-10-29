@@ -7,6 +7,7 @@ import { STATUSES, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
 import { daysTaken, fmtDate, fmtDur, num, playSec } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
+import { FavPicker } from "@/components/FavPicker";
 import { useProfile } from "@/components/ProfileShell";
 import { Cover, EntryCard, Rating, commentCount, entryTags, likeCount } from "@/components/ui";
 
@@ -219,7 +220,8 @@ export function FavoritesSection({ types = null, title = null }: { types?: Entry
   const favs = entries.filter((e) => e.favorite && (!types || types.includes(e.type)));
   const favTypes = TYPE_KEYS.filter((k) => favs.some((e) => e.type === k));
   const favType = favTypes.includes(favTab as EntryType) ? (favTab as EntryType) : favTypes[0];
-  if (!favs.length) return null;
+  const [picking, setPicking] = useState(false);
+  if (!favs.length && !isMe) return null;
   return (
     <section className="section favs">
       <div className="section-head">
@@ -231,8 +233,11 @@ export function FavoritesSection({ types = null, title = null }: { types?: Entry
             ))}
           </div>
         )}
+        {isMe && <button className="link" onClick={() => setPicking(true)}>+ Favori ekle</button>}
       </div>
-      <Favorites list={favs.filter((e) => e.type === favType)} isMe={isMe} />
+      {favs.length ? <Favorites list={favs.filter((e) => e.type === favType)} isMe={isMe} />
+        : <p className="muted small">Henüz favorin yok. <button className="link" onClick={() => setPicking(true)}>Favori ekle</button>: kütüphanende olmasa da bulup eklersin.</p>}
+      {picking && <FavPicker type={favType || types?.[0] || "game"} onClose={() => setPicking(false)} />}
     </section>
   );
 }

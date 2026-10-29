@@ -32,7 +32,12 @@ export interface Profile {
 // Profil ana sayfasındaki bir bölüm: k = bölüm türü (favs, playing...), types = gösterilecek türler (boşsa hepsi), title = sahibinin verdiği başlık
 export interface HomeBlock { id: string; k: string; types?: EntryType[]; title?: string }
 // sections: eski düzenlerde sadece bölüm adları (string), yenilerde HomeBlock
-export interface HomeLayout { sections: (string | HomeBlock)[]; text?: string }
+// counts: profilin üstündeki sayılar (göster/gizle, hangileri, hangi türler); banner: false ise kapak görseli gizli
+export interface HomeLayout {
+  sections?: (string | HomeBlock)[]; text?: string;
+  counts?: { show: boolean; items?: string[]; types?: EntryType[] };
+  banner?: boolean;
+}
 
 // x, y: odak noktası (yüzde), z: yakınlaştırma (1 = hiç)
 export interface AvatarCrop { x: number; y: number; z: number }

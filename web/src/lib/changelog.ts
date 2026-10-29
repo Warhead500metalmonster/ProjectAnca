@@ -5,6 +5,15 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-10-29T22:50:00+04:00",
+    title: "Profil sayıların, favori ekleme ve şeffaf tema",
+    body: "Adının yanındaki büyük sayıları artık sen seçiyorsun: Ana sayfayı düzenle'den gösterip gizleyebilir, hangilerinin görüneceğini ve hangi türlerin sayılacağını (ör. animeler sayılmasın) seçebilirsin.\n"
+      + "Favoriler bölümündeki \"+ Favori ekle\" ile istediğin oyunu, filmi, animeyi doğrudan favorine koy; kütüphanende olmasa da bulup ekler.\n"
+      + "Yeni açılan profiller sade başlıyor: sayılar kapalı, sadece son eklenenler. Vitrinini istediğin gibi sen kurarsın.\n"
+      + "Ayarlar'dan kapak görselini kapatabilirsin. Şeffaf tema artık diğer temalarla aynı düzende; arka plan resmin üstünde ayrı kutular yok.\n"
+      + "İçe aktar sayfası, başka yere gidip geri dönünce hep baştan açılıyor.",
+  },
+  {
     date: "2026-10-29T20:10:00+04:00",
     title: "Çıkış takvimi, bildirimler ve paylaşılabilir yıl özeti",
     body: "Yeni Çıkış takvimi: planladığın oyunların ve filmlerin çıkış günü, izlediğin dizilerin ve animelerin yeni bölümleri tek sayfada. Ana sayfanda da Yaklaşanlar olarak görünür; o gün geldiğinde siteye girince sana haber veririz.\n"
