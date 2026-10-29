@@ -5,6 +5,12 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-10-29T20:10:00+04:00",
+    title: "Linkler artık güzel görünüyor, şeffaf tema düzeldi",
+    body: "Profilini, bir oyunu, bir listeyi ya da yıl özetini WhatsApp, Discord, X gibi yerlere attığında artık kocaman bir kart çıkıyor: adın, fotoğrafın, kaç kayıt yaptığın ve en sevdiğin kapaklar. Gizli profillerin kütüphanesi kartta da görünmez.\n"
+      + "Şeffaf temalı profillerde üst kısım yeniden düzgün: fotoğraf, ad ve düğmeler yerinde, yazılar açık renkli arka planlarda da okunuyor.",
+  },
+  {
     date: "2026-10-29T19:30:00+04:00",
     title: "Temalı profiller de yeni tasarımda",
     body: "Profil teması seçmiş olanların profili eski kutulu düzende kalıyordu; artık herkes yeni tasarımda. Temanın rengi ve arka plan resmin aynen duruyor, renk artık bütün sayfayı boyuyor.",

@@ -1142,19 +1142,19 @@ body.fav-dragging, body.fav-dragging * { cursor: grabbing !important; user-selec
 }
 
 /* ---------- Şeffaf profil (Steam gibi): resim her yerde görünür, kutular yarı saydam ---------- */
-.profile-bg-shade.light { background: linear-gradient(to bottom, rgba(8, 12, 13, .05), rgba(8, 12, 13, .3)); }
-.profile.glass .profile-head { margin-top: 0; padding: 18px 22px; align-items: center; }
-.profile.glass .profile-head, .profile.glass .profile > .section, .profile.glass > .section, .profile.glass .badges-page,
+.profile-bg-shade.light { background: linear-gradient(to bottom, rgba(8, 12, 13, .05) 120px, rgba(8, 12, 13, .5) 360px, rgba(8, 12, 13, .4)); }
+/* Şeffaf tema: üst kısım normal tasarımda, yazılar gölgeyle okunur; bölümler yarı saydam kartlarda */
+.profile.glass .profile-head, .profile.glass .profile-head .handle, .profile.glass .profile-counts { text-shadow: 0 1px 4px rgba(0, 0, 0, .9); }
+.profile.glass .profile > .section, .profile.glass > .section, .profile.glass .badges-page,
 .profile.glass .subnav, .profile.glass .song-box {
   background: rgba(10, 8, 8, .62); border: 1px solid rgba(255, 255, 255, .07); border-radius: 14px;
 }
 .profile.glass > .section { padding: 16px 18px; margin-top: 16px; }
-.profile.glass .profile-bio, .profile.glass .profile-meta, .profile.glass .socials { margin-left: 0; margin-right: 0; padding: 0 22px; text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
-.profile.glass .badge-row { padding: 0 22px; }
+.profile.glass .profile-bio, .profile.glass .profile-meta, .profile.glass .socials, .profile.glass .profile-note { text-shadow: 0 1px 4px rgba(0, 0, 0, .95); }
 .profile.glass .subnav { margin-top: 16px; padding: 0 8px; border-bottom-color: transparent; }
 .profile.glass .profile-meta, .profile.glass .profile-meta button, .profile.glass .handle { color: #e3e6ea; }
 .theme-card.glass-card { background: center / cover no-repeat, repeating-conic-gradient(#2a2f36 0 25%, #1c2026 0 50%) 0 0 / 14px 14px; }
-@media (max-width: 640px) { .profile.glass > .section { padding: 12px; } .profile.glass .profile-head { padding: 14px; } }
+@media (max-width: 640px) { .profile.glass > .section { padding: 12px; } }
 .import-steps { margin: 0 0 12px; padding-left: 20px; display: grid; gap: 4px; }
 .import-opts { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; }
 .import-opts label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }

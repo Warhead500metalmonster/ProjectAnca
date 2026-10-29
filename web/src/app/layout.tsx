@@ -14,8 +14,11 @@ const inter = Inter({ variable: "--font-inter", subsets: ["latin", "latin-ext"] 
 const outfit = Outfit({ variable: "--font-outfit", subsets: ["latin", "latin-ext"], weight: ["600", "700", "800"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://ancalog.vercel.app"),
   title: "Ancalog",
   description: "Oyun, film, dizi, müzik ve anime günlüğün. Logla, puanla, listeler yap, arkadaşlarını takip et.",
+  openGraph: { siteName: "Ancalog", locale: "tr_TR", type: "website", title: "Ancalog", description: "Oyun, film, dizi, müzik ve anime günlüğün. Logla, puanla, listeler yap, her yerden içe aktar." },
+  twitter: { card: "summary_large_image" },
   appleWebApp: { capable: true, title: "Ancalog", statusBarStyle: "black-translucent" },
   icons: { apple: "/apple-icon.png", icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='black'/><text x='50' y='72' font-size='64' text-anchor='middle' fill='white' font-family='sans-serif'>A</text></svg>" },
 };

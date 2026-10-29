@@ -5,6 +5,9 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://rsdhrnjycttihsduhasl.supabase.co";
 const KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_t6viNIZpme4lDpbaptmPpQ_aDZn31cU";
 
+// Sunucudaki link önizleme kartları da (lib/og.tsx) aynı herkese açık adresi kullanır
+export const SUPABASE_URL = URL, SUPABASE_KEY = KEY;
+
 let client: SupabaseClient | null = null;
 
 export const supabaseConfigured = () => !!URL && !!KEY;
