@@ -35,6 +35,15 @@ function cleanSocial(key: string, raw: string): string | null | undefined {
   return /^[\w.-]{1,50}$/.test(handle) ? handle : undefined;
 }
 
+// Ayarların sekmeleri: [anahtar, ad, kısa açıklama]
+const SET_TABS = [
+  ["profil", "Profil", "Ad, fotoğraf, bağlantılar"],
+  ["gorunum", "Görünüm", "Tema, kapak, arka plan, şarkı"],
+  ["gizlilik", "Gizlilik", "Kimler ne görsün"],
+  ["hesap", "Hesap", "Puan, bildirim, verilerin"],
+] as const;
+type SetTab = (typeof SET_TABS)[number][0];
+
 export default function Settings() {
   const { me, ready } = useApp();
   if (!ready) return <div className="loading">Yükleniyor…</div>;
@@ -51,8 +60,13 @@ function SettingsForm({ me }: { me: Profile }) {
   const [showBanner, setShowBanner] = useState(me.home_layout?.banner !== false); // kapak görseli açık mı
   const [counts, setCounts] = useState(() => countsOf(me)); // profilin üstündeki sayılar
   const [showEvents, setShowEvents] = useState(me.home_layout?.events !== false); // katıldığı etkinlikler profilde
-  // Profildeki ⚙ /settings#sayilar'a getirir: sayfa tarayıcıda çizilince o bölüme kaydır
-  useEffect(() => { if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView({ block: "start" }); }, []);
+  // Hangi sekme açık: /settings#gorunum gibi linkler doğrudan o sekmeyi açar; profildeki ⚙ (#sayilar) Gizlilik'e gelir
+  const [tab, setTab] = useState<SetTab>(() => {
+    const h = location.hash.slice(1);
+    return h === "sayilar" ? "gizlilik" : SET_TABS.some(([k]) => k === h) ? (h as SetTab) : "profil";
+  });
+  const go = (k: SetTab) => { setTab(k); history.replaceState(null, "", `#${k}`); window.scrollTo({ top: 0 }); };
+  useEffect(() => { if (location.hash === "#sayilar") document.getElementById("sayilar")?.scrollIntoView({ block: "start" }); }, []);
   const countsChanged = JSON.stringify(cleanCounts(counts)) !== JSON.stringify(cleanCounts(countsOf(me)));
   const [theme, setTheme] = useState(me.profile_theme && (PROFILE_THEMES[me.profile_theme] || me.profile_theme === "glass") ? me.profile_theme : "");
   const [bgUrl, setBgUrl] = useState(me.bg_url || "");
@@ -88,17 +102,16 @@ function SettingsForm({ me }: { me: Profile }) {
     const f = new FormData(e.currentTarget);
     const str = (k: string) => String(f.get(k) || "").trim();
     setError("");
-    if (bgUrl.trim() && !bgUrl.trim().startsWith("https://")) return setError("Arka plan linki https:// ile başlamalı.");
-    for (const k of ["avatar", "banner"]) {
-      if (str(k) && !str(k).startsWith("https://")) return setError(`${k === "avatar" ? "Fotoğraf" : "Kapak"} linki https:// ile başlamalı.`);
-    }
+    if (bgUrl.trim() && !bgUrl.trim().startsWith("https://")) { setTab("gorunum"); return setError("Arka plan linki https:// ile başlamalı."); }
+    if (avatar.trim() && !avatar.trim().startsWith("https://")) { setTab("profil"); return setError("Fotoğraf linki https:// ile başlamalı."); }
+    if (bannerUrl.trim() && !bannerUrl.trim().startsWith("https://")) { setTab("gorunum"); return setError("Kapak linki https:// ile başlamalı."); }
     const socials: Record<string, string> = {};
     for (const s of SOCIALS) {
       const v = cleanSocial(s.key, str(`s-${s.key}`));
-      if (v === undefined) return setError(`${s.label} bağlantısı geçersiz. Kullanıcı adını ya da https:// ile başlayan linki yaz.`);
+      if (v === undefined) { setTab("profil"); return setError(`${s.label} bağlantısı geçersiz. Kullanıcı adını ya da https:// ile başlayan linki yaz.`); }
       if (v) socials[s.key] = v;
     }
-    if (song.url && !youtubeId(song.url)) return setError("Profil şarkısı için bir YouTube linki yapıştır.");
+    if (song.url && !youtubeId(song.url)) { setTab("gorunum"); return setError("Profil şarkısı için bir YouTube linki yapıştır."); }
     setBusy(true);
     try {
       const updated = await q<Profile>(sb().from("profiles").update({
@@ -138,10 +151,24 @@ function SettingsForm({ me }: { me: Profile }) {
 
   return (
     <form className="auth settings" onSubmit={submit}>
-      <h1>Profili düzenle</h1>
-      <div className="view-user"><Avatar p={me} /> <span>@{me.username}</span></div>
+      <div className="set-top">
+        <Avatar p={me} cls="lg" />
+        <div>
+          <h1>Profili düzenle</h1>
+          <span className="muted">@{me.username}</span>
+        </div>
+      </div>
+      {/* Sekmeler: her şey tek sayfada ama dört başlıkta; Kaydet altta hep görünür */}
+      <nav className="set-tabs" role="tablist">
+        {SET_TABS.map(([k, label, hint]) => (
+          <button type="button" role="tab" key={k} aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => go(k)}>
+            <b>{label}</b><span>{hint}</span>
+          </button>
+        ))}
+      </nav>
 
-      <h3 className="set-h">Profil</h3>
+      <div className="set-pane" hidden={tab !== "profil"}>
+      <h3 className="set-h">Seni tanıtan bilgiler</h3>
       <div className="field"><label htmlFor="p-name">Görünen ad</label><input id="p-name" name="name" maxLength={40} defaultValue={me.display_name || ""} /></div>
       <div className="field"><label htmlFor="p-bio">Hakkımda</label><textarea id="p-bio" name="bio" rows={3} maxLength={300} defaultValue={me.bio || ""} /></div>
       <div className="row">
@@ -153,49 +180,18 @@ function SettingsForm({ me }: { me: Profile }) {
         <input id="p-avatar" name="avatar" type="url" value={avatar} onChange={(e) => { setAvatar(e.target.value); setCrop({ x: 50, y: 50, z: 1 }); }} placeholder="https://…" />
       </div>
       {safeUrl(avatar) && <AvatarCropper url={avatar} crop={crop} onChange={setCrop} />}
-      <div className="field">
-        <label htmlFor="p-banner">Kapak görseli (profilin üstündeki geniş resim, https://)</label>
-        <input id="p-banner" name="banner" type="url" value={bannerUrl} onChange={(e) => setBannerUrl(e.target.value)} placeholder="https://…" />
-      </div>
-      {safeUrl(bannerUrl.trim()) && (
-        <div className="field">
-          <label>Kapağın kadrajı <span className="muted">· resmi tutup sürükle, hangi kısmı görünsün seç</span></label>
-          <AvatarCropper shape="wide" url={bannerUrl.trim()} crop={bannerCrop} onChange={setBannerCrop} />
-        </div>
-      )}
-      <label className="check"><input type="checkbox" checked={showBanner} onChange={(e) => setShowBanner(e.target.checked)} />
-        {safeUrl(bannerUrl.trim()) ? "Kapak görseli görünsün" : "Kapak görseli görünsün (görsel yoksa üstte kapakların döner)"}
-        <span className="muted small">· kapatırsan üst kısım tamamen şeffaf olur, arka plan resmin ya da temanın rengi oradan görünür</span></label>
-
-      <h3 className="set-h" id="sayilar">Profilimdeki sayılar <span className="muted small">· adının yanındaki kayıt, takipçi gibi büyük sayılar</span></h3>
-      <CountsPicker value={counts} onChange={setCounts} />
-      <label className="check"><input type="checkbox" checked={showEvents} onChange={(e) => setShowEvents(e.target.checked)} /> Katıldığım etkinlikler profilimde görünsün</label>
-
-      <h3 className="set-h">Profilimi kimler görebilir?</h3>
-      <div className="vis-pick" style={{ marginBottom: 8 }}>
-        {([["public", "Herkese açık", "Herkes kütüphaneni, listelerini ve istatistiklerini görür"],
-          ["friends", "Sadece arkadaşlar", "Karşılıklı takipleştiğin kişiler görür, diğerleri sadece adını ve fotoğrafını görür"],
-          ["private", "Gizli", "Kütüphanen sadece sana görünür. Adın, fotoğrafın, kapağın ve arka planın yine görünür"]] as const).map(([k, name, hint]) => (
-          <label key={k} className={`vis-opt ${privacy === k ? "on" : ""}`}>
-            <input type="radio" name="privacy" checked={privacy === k} onChange={() => setPrivacy(k)} /> <b>{name}</b><span className="muted small">{hint}</span>
-          </label>
+      <h3 className="set-h">Bağlantılar</h3>
+      <div className="socials-form">
+        {SOCIALS.map((s) => (
+          <div className="field" key={s.key}>
+            <label htmlFor={`s-${s.key}`}>{s.label}</label>
+            <input id={`s-${s.key}`} name={`s-${s.key}`} maxLength={200} placeholder={s.hint} defaultValue={me.socials?.[s.key] || ""} />
+          </div>
         ))}
       </div>
-      <p className="muted small" style={{ margin: "0 0 4px" }}>Profilin gizli olsa da insanlar seni takip edebilir; arkadaşların sana yazmaya devam eder.</p>
-
-      <h3 className="set-h">Profilimde gösterilecek türler <span className="muted small">· işaretini kaldırdığın türü başkaları profilinde göremez</span></h3>
-      <div className="chips" style={{ marginBottom: 8 }}>
-        {TYPE_KEYS.map((t) => {
-          const shown = !hiddenTypes.includes(t);
-          return (
-            <label key={t} className={`chip ${shown ? "active" : ""}`}>
-              <input type="checkbox" hidden checked={shown} onChange={() => setHiddenTypes((h) => (shown ? [...h, t] : h.filter((x) => x !== t)))} />
-              {shown ? "✓ " : ""}{TYPES[t].plural}
-            </label>
-          );
-        })}
       </div>
 
+      <div className="set-pane" hidden={tab !== "gorunum"}>
       <h3 className="set-h">Profil teması <span className="muted small">· profiline girenler görür</span></h3>
       <div className="theme-cards">
         <button type="button" className={`theme-card ${!theme && !accent ? "on" : ""}`} onClick={() => { setTheme(""); setAccent(""); }}
@@ -219,6 +215,21 @@ function SettingsForm({ me }: { me: Profile }) {
         </label>
       </div>
 
+      <h3 className="set-h">Kapak <span className="muted small">· profilinin en üstündeki geniş alan</span></h3>
+      <div className="field">
+        <label htmlFor="p-banner">Kapak görseli (profilin üstündeki geniş resim, https://)</label>
+        <input id="p-banner" name="banner" type="url" value={bannerUrl} onChange={(e) => setBannerUrl(e.target.value)} placeholder="https://…" />
+      </div>
+      {safeUrl(bannerUrl.trim()) && (
+        <div className="field">
+          <label>Kapağın kadrajı <span className="muted">· resmi tutup sürükle, hangi kısmı görünsün seç</span></label>
+          <AvatarCropper shape="wide" url={bannerUrl.trim()} crop={bannerCrop} onChange={setBannerCrop} />
+        </div>
+      )}
+      <label className="check"><input type="checkbox" checked={showBanner} onChange={(e) => setShowBanner(e.target.checked)} />
+        {safeUrl(bannerUrl.trim()) ? "Kapak görseli görünsün" : "Kapak görseli görünsün (görsel yoksa üstte kapakların döner)"}
+        <span className="muted small">· kapatırsan üst kısım tamamen şeffaf olur, arka plan resmin ya da temanın rengi oradan görünür</span></label>
+      <h3 className="set-h">Arka plan</h3>
       {theme === "glass" && (
         <p className="muted small">Şeffaf profilde arka plan resmin Steam&apos;deki gibi bütün profilde, renkle örtülmeden görünür; düzen diğer temalarla aynıdır.
           {!bgUrl.trim().startsWith("https://") && <b> Bunun için aşağıya bir arka plan resmi linki koy.</b>} Renk için &quot;Özel renk&quot;i de seçebilirsin.</p>
@@ -233,21 +244,6 @@ function SettingsForm({ me }: { me: Profile }) {
           <AvatarCropper shape="screen" url={bgUrl.trim()} crop={bgCrop} onChange={setBgCrop} />
         </div>
       )}
-
-      <h3 className="set-h">Site rengi <span className="muted small">· sadece sen görürsün</span></h3>
-      <div className="swatches">
-        <button type="button" className={`swatch ${!siteColor ? "on" : ""}`} style={{ background: DEFAULT_COLOR }} onClick={() => pickSiteColor("")} title="Varsayılan (yeşil)" />
-        {ACCENTS.filter((c) => c !== DEFAULT_COLOR).map((c) => (
-          <button type="button" key={c} className={`swatch ${siteColor === c ? "on" : ""}`} style={{ background: c }} onClick={() => pickSiteColor(c)} aria-label={c} />
-        ))}
-        <label className="swatch custom" title="Kendi rengini seç">
-          <input type="color" value={siteColor || DEFAULT_COLOR} onChange={(e) => pickSiteColor(e.target.value)} />+
-        </label>
-      </div>
-      <p className="muted small">Butonlar, bağlantılar ve arka plandaki ışık bu renge döner. Seçince hemen görürsün; kalıcı olması için aşağıdan kaydet.</p>
-
-      {isOwner && <FrameColor />}
-
       <h3 className="set-h">Profil şarkısı</h3>
       <div className="field">
         <label htmlFor="p-song">YouTube linki</label>
@@ -262,39 +258,73 @@ function SettingsForm({ me }: { me: Profile }) {
         <input id="p-song-vol" type="range" min={1} max={60} value={song.volume} onChange={(e) => setSong((s) => ({ ...s, volume: Number(e.target.value) }))} />
       </div>
       <p className="muted small">Profiline girenler bu şarkıyı arkada kısık sesle duyar, köşede adı yazar. Kaldırmak için linki silip kaydet.</p>
+      <h3 className="set-h">Site rengi <span className="muted small">· sadece sen görürsün</span></h3>
+      <div className="swatches">
+        <button type="button" className={`swatch ${!siteColor ? "on" : ""}`} style={{ background: DEFAULT_COLOR }} onClick={() => pickSiteColor("")} title="Varsayılan (yeşil)" />
+        {ACCENTS.filter((c) => c !== DEFAULT_COLOR).map((c) => (
+          <button type="button" key={c} className={`swatch ${siteColor === c ? "on" : ""}`} style={{ background: c }} onClick={() => pickSiteColor(c)} aria-label={c} />
+        ))}
+        <label className="swatch custom" title="Kendi rengini seç">
+          <input type="color" value={siteColor || DEFAULT_COLOR} onChange={(e) => pickSiteColor(e.target.value)} />+
+        </label>
+      </div>
+      <p className="muted small">Butonlar, bağlantılar ve arka plandaki ışık bu renge döner. Seçince hemen görürsün; kalıcı olması için aşağıdan kaydet.</p>
 
+      {isOwner && <FrameColor />}
+      </div>
+
+      <div className="set-pane" hidden={tab !== "gizlilik"}>
+      <h3 className="set-h">Profilimi kimler görebilir?</h3>
+      <div className="vis-pick" style={{ marginBottom: 8 }}>
+        {([["public", "Herkese açık", "Herkes kütüphaneni, listelerini ve istatistiklerini görür"],
+          ["friends", "Sadece arkadaşlar", "Karşılıklı takipleştiğin kişiler görür, diğerleri sadece adını ve fotoğrafını görür"],
+          ["private", "Gizli", "Kütüphanen sadece sana görünür. Adın, fotoğrafın, kapağın ve arka planın yine görünür"]] as const).map(([k, name, hint]) => (
+          <label key={k} className={`vis-opt ${privacy === k ? "on" : ""}`}>
+            <input type="radio" name="privacy" checked={privacy === k} onChange={() => setPrivacy(k)} /> <b>{name}</b><span className="muted small">{hint}</span>
+          </label>
+        ))}
+      </div>
+      <p className="muted small" style={{ margin: "0 0 4px" }}>Profilin gizli olsa da insanlar seni takip edebilir; arkadaşların sana yazmaya devam eder.</p>
+      <h3 className="set-h">Profilimde gösterilecek türler <span className="muted small">· işaretini kaldırdığın türü başkaları profilinde göremez</span></h3>
+      <div className="chips" style={{ marginBottom: 8 }}>
+        {TYPE_KEYS.map((t) => {
+          const shown = !hiddenTypes.includes(t);
+          return (
+            <label key={t} className={`chip ${shown ? "active" : ""}`}>
+              <input type="checkbox" hidden checked={shown} onChange={() => setHiddenTypes((h) => (shown ? [...h, t] : h.filter((x) => x !== t)))} />
+              {shown ? "✓ " : ""}{TYPES[t].plural}
+            </label>
+          );
+        })}
+      </div>
+      <h3 className="set-h" id="sayilar">Adımın yanındaki sayılar <span className="muted small">· adının yanındaki kayıt, takipçi gibi büyük sayılar</span></h3>
+      <CountsPicker value={counts} onChange={setCounts} />
+      <label className="check"><input type="checkbox" checked={showEvents} onChange={(e) => setShowEvents(e.target.checked)} /> Katıldığım etkinlikler profilimde görünsün</label>
+      </div>
+
+      <div className="set-pane" hidden={tab !== "hesap"}>
       <h3 className="set-h">Puan ölçeği</h3>
       <div className="scale-pick">
         <label className={scale === 5 ? "on" : ""}><input type="radio" name="scale" checked={scale === 5} onChange={() => setScale(5)} /> <b>5 üzerinden</b> <span>★★★½ gibi yarım yıldızlar</span></label>
         <label className={scale === 10 ? "on" : ""}><input type="radio" name="scale" checked={scale === 10} onChange={() => setScale(10)} /> <b>10 üzerinden</b> <span>7,5/10 gibi</span></label>
       </div>
       <p className="muted small">Herkesin puanı senin seçtiğin ölçekte görünür. Ör: biri 10&apos;luk ölçekte 7 verdiyse sen 5&apos;likte 3,5 yıldız görürsün; 5&apos;likte 2,75 verilen bir puanı 10&apos;lukta 5,5 görürsün.</p>
-
-      <h3 className="set-h">Bağlantılar</h3>
-      <div className="socials-form">
-        {SOCIALS.map((s) => (
-          <div className="field" key={s.key}>
-            <label htmlFor={`s-${s.key}`}>{s.label}</label>
-            <input id={`s-${s.key}`} name={`s-${s.key}`} maxLength={200} placeholder={s.hint} defaultValue={me.socials?.[s.key] || ""} />
-          </div>
-        ))}
+        <AppAndNotify />
+        <h3 className="set-h">Başka sitelerden</h3>
+        <p className="muted small" style={{ margin: 0 }}>Letterboxd, Backloggd, Steam, MyAnimeList ve diğerlerinden kütüphaneni getir.</p>
+        <div><Link className="btn" href="/import">Başka siteden içe aktar</Link></div>
+        <ExportData me={me} />
+        <DeleteAllLogs me={me} />
+        <DeleteAccount me={me} />
+        <div className="actions"><span className="spacer" /><button type="button" className="btn danger" onClick={() => sb().auth.signOut()}>Çıkış yap</button></div>
       </div>
 
-      {error && <p className="form-error">{error}</p>}
-      <div className="actions">
-        <button className="btn primary" disabled={busy}>Kaydet</button>
-        <Link className="btn ghost" href={`/u/${me.username}`}>Profilime dön</Link>
-      </div>
-      <hr style={{ border: 0, borderTop: "1px solid var(--border)", width: "100%" }} />
-      <div className="actions">
-        <Link className="btn" href="/import">Başka siteden içe aktar</Link>
+      <div className="set-save">
+        {error ? <p className="form-error">{error}</p> : <span className="muted small">Değişiklikler kaydedince profiline yansır.</span>}
         <span className="spacer" />
-        <button type="button" className="btn danger" onClick={() => sb().auth.signOut()}>Çıkış yap</button>
+        <Link className="btn ghost" href={`/u/${me.username}`}>Vazgeç</Link>
+        <button className="btn primary" disabled={busy}>{busy ? "Kaydediliyor…" : "Kaydet"}</button>
       </div>
-      <AppAndNotify />
-      <ExportData me={me} />
-      <DeleteAllLogs me={me} />
-      <DeleteAccount me={me} />
     </form>
   );
 }

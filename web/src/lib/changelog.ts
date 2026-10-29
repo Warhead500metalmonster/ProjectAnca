@@ -5,6 +5,11 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-10-30T01:40:00+04:00",
+    title: "Profili düzenle artık daha sade",
+    body: "Profili düzenle sayfası dört sekmeye ayrıldı: Profil (ad, fotoğraf, bağlantılar), Görünüm (tema, kapak, arka plan, şarkı), Gizlilik (kimler ne görsün) ve Hesap (puan ölçeği, bildirimler, verilerin). Kaydet düğmesi altta hep elinin altında; hangi sekmede değişiklik yaparsan yap, tek seferde kaydedilir.",
+  },
+  {
     date: "2026-10-30T01:34:00+04:00",
     title: "Üstteki dönen kapakları gizle",
     body: "Profilinin üstünde dönen kapakları istemiyorsan, kendi profilinde şeridin köşesindeki \"Bu şeridi gizle\"ye bas. Üst kısım tamamen şeffaf olur, arka plan resmin oradan görünür. Geri açmak istersen: Ayarlar → Kapak görseli görünsün.",
