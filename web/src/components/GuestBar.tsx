@@ -14,7 +14,8 @@ export function GuestBar() {
   const [closed, setClosed] = useState(true);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- tarayıcı deposundan okunan tercih
   useEffect(() => { try { setClosed(sessionStorage.getItem(KEY) === "1"); } catch { setClosed(false); } }, []);
-  if (!ready || me || closed || /^\/(signup|login)/.test(path)) return null;
+  // Karşılama sayfası ve içe aktar sayfası zaten büyük tanıtımı gösteriyor; iki kez söylemeyelim
+  if (!ready || me || closed || path === "/" || /^\/(signup|login|import)/.test(path)) return null;
 
   function close() {
     try { sessionStorage.setItem(KEY, "1"); } catch { /* yok say */ }

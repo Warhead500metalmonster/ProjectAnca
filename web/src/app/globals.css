@@ -1712,3 +1712,15 @@ body {
 .ann-compose-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 @media (max-width: 640px) { .ann-row { padding: 9px 12px; gap: 8px; } .ann-date { display: none; } }
 .member-no { color: var(--accent-2); font-weight: 600; }
+/* Ana sayfada en yeni duyuru: ince tek satır */
+.ann-home { display: flex; align-items: center; gap: 10px; margin: 0 0 18px; padding: 8px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); color: var(--text); }
+.ann-home:hover { border-color: rgb(var(--accent-rgb) / .5); }
+.ann-home .ann-title { font-size: 14px; }
+.ann-home-all { flex: none; color: var(--accent-2); font-size: 13px; font-weight: 600; }
+@media (max-width: 640px) { .ann-home { margin-bottom: 14px; padding: 8px 12px; } .ann-home-all { display: none; } }
+/* Ayarlar: geniş ekranda dar sütun kalmasın */
+@media (min-width: 900px) { .auth.settings { max-width: 780px; padding: 36px 44px; } }
+/* Kayıt penceresi: işaret kutuları sola hizalı; bilgisayarda biraz daha geniş, daha az kaydırma */
+.checks { align-items: flex-start; }
+.row .checks .check { align-self: flex-start; padding-bottom: 0; }
+@media (min-width: 900px) { dialog:has(#form) { width: min(700px, calc(100% - 48px)); } #form { padding: 22px 28px 24px; } }

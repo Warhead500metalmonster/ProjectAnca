@@ -16,6 +16,7 @@ import { Goals } from "@/components/Goals";
 import { NextBadges } from "@/components/profile/BadgesTab";
 import { GettingStarted } from "@/components/GettingStarted";
 import { ImportPromo } from "@/components/ImportPromo";
+import { Announcements } from "@/components/Announcements";
 import { Avatar, EntryCard, Feed, Stars, Stats, displayName } from "@/components/ui";
 
 interface LocalEntry { title?: string; type?: string; year?: string; creator?: string; status?: string; date?: string; rating?: string; cover?: string; notes?: string; updated?: number }
@@ -186,6 +187,7 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
           <button className="btn ghost" onClick={dismissLocal}>Yoksay</button>
         </div>
       )}
+      <Announcements onHome />
       <GettingStarted user={user} mine={mine} />
       {mine.length < 30 && <ImportPromo signedIn compact={mine.length > 0} />}
       <section className="section"><div className="stats"><Stats list={mine} /></div></section>

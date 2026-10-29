@@ -135,7 +135,7 @@ export function StatsTab() {
           <div className="chart-grid">
             {timeline.length > 0 && <Columns title={finish ? `${finish} yılında aylara göre bitirilenler` : "Yıllara göre bitirilenler"} data={timeline} />}
             {rated.length > 0 && <Columns title={`Puan dağılımı (${scale} üzerinden)`} data={bins} />}
-            {type === "all" && <Bars title="Türler" data={TYPE_KEYS.map((k) => [`$${TYPES[k].label}`, list.filter((e) => e.type === k).length] as [string, number]).filter(([, n]) => n).sort((a, b) => b[1] - a[1])} />}
+            {type === "all" && <Bars title="Türler" data={TYPE_KEYS.map((k) => [TYPES[k].label, list.filter((e) => e.type === k).length] as [string, number]).filter(([, n]) => n).sort((a, b) => b[1] - a[1])} />}
             <Bars title="Platform / nerede" data={countBy(list, (e) => e.platform).slice(0, 8)} />
             {(type === "all" || type === "game") && <Bars title="Mağazalar" data={countBy(list, (e) => e.store).slice(0, 8)} />}
             <Bars title="En çok kimden" data={countBy(list, (e) => e.creator?.split(",")[0].trim()).slice(0, 8)} />

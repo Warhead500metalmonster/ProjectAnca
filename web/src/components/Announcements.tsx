@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { Profile } from "@/lib/types";
 import { PROFILE_COLS } from "@/lib/constants";
 import { CHANGELOG } from "@/lib/changelog";
@@ -14,7 +15,8 @@ interface Post { id: string; title: string; body: string | null; pinned: boolean
 type Item = { key: string; kind: "post" | "update"; title: string; body: string; at: string; pinned: boolean; post?: Post };
 
 // Topluluk → Duyurular: site sahibinin yazdıkları (veritabanında) ve sitenin yenilikleri (kodda, lib/changelog.ts) bir arada.
-export function Announcements() {
+// onHome: ana sayfada en yenisi ince tek satır olarak, tıklayınca Topluluk'taki duyurulara gider
+export function Announcements({ onHome = false }: { onHome?: boolean }) {
   const { isOwner, toast, version } = useApp();
   const [shown, setShown] = useState(3);
   const [open, setOpen] = useState<string | null>(null); // uzun yazının tamamı açık olan
@@ -32,6 +34,19 @@ export function Announcements() {
     if (!confirm("Bu duyuru silinsin mi?")) return;
     try { await q(sb().from("announcements").delete().eq("id", id)); setTick((t) => t + 1); toast("Duyuru silindi"); }
     catch (e) { toast("Silinemedi: " + (e as Error).message); }
+  }
+
+  if (onHome) {
+    const it = items[0];
+    if (!it) return null;
+    return (
+      <Link className={`ann-home ann ${it.kind} ${it.pinned ? "pinned" : ""}`} href="/community" title="Bütün duyurular">
+        <span className="ann-tag">{it.pinned ? "Sabit" : it.kind === "post" ? "Duyuru" : "Yenilik"}</span>
+        <b className="ann-title">{it.title}</b>
+        <span className="ann-date">{it.kind === "post" ? timeAgo(it.at) : fmtDate(it.at)}</span>
+        <span className="ann-home-all">Tüm duyurular →</span>
+      </Link>
+    );
   }
 
   return (
