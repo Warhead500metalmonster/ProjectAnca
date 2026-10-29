@@ -29,7 +29,10 @@ export interface Profile {
 }
 
 // Profil ana sayfası: sahibinin seçtiği bölümler (sırasıyla) ve üstte duran serbest yazı
-export interface HomeLayout { sections: string[]; text?: string }
+// Profil ana sayfasındaki bir bölüm: k = bölüm türü (favs, playing...), types = gösterilecek türler (boşsa hepsi), title = sahibinin verdiği başlık
+export interface HomeBlock { id: string; k: string; types?: EntryType[]; title?: string }
+// sections: eski düzenlerde sadece bölüm adları (string), yenilerde HomeBlock
+export interface HomeLayout { sections: (string | HomeBlock)[]; text?: string }
 
 // x, y: odak noktası (yüzde), z: yakınlaştırma (1 = hiç)
 export interface AvatarCrop { x: number; y: number; z: number }

@@ -198,17 +198,18 @@ export function LibraryTab() {
 }
 
 // Favoriler bölümü (profil ana sayfasında): türler arasında geçiş, sahibi sürükleyerek sıralar
-export function FavoritesSection() {
+// types: bu bölümde gösterilecek türler (boşsa hepsi); title: sahibinin verdiği başlık
+export function FavoritesSection({ types = null, title = null }: { types?: EntryType[] | null; title?: string | null }) {
   const { entries, isMe } = useProfile();
   const [favTab, setFavTab] = useState("");
-  const favs = entries.filter((e) => e.favorite);
+  const favs = entries.filter((e) => e.favorite && (!types || types.includes(e.type)));
   const favTypes = TYPE_KEYS.filter((k) => favs.some((e) => e.type === k));
   const favType = favTypes.includes(favTab as EntryType) ? (favTab as EntryType) : favTypes[0];
   if (!favs.length) return null;
   return (
     <section className="section favs">
       <div className="section-head">
-        <h2>♥ Favoriler</h2>
+        <h2>♥ {title || (types?.length === 1 ? `Favori ${TYPES[types[0]].plural.toLocaleLowerCase("tr")}` : "Favoriler")}</h2>
         {favTypes.length > 1 && (
           <div className="mini-tabs">
             {favTypes.map((k) => (

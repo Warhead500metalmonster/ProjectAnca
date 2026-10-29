@@ -1781,3 +1781,21 @@ body {
 .song.touch.playing .song-play { background: rgba(0, 0, 0, .35); }
 .legal h3 { font-size: 16px; margin: 18px 0 6px; color: var(--text); }
 .legal ol { padding-left: 22px; display: flex; flex-direction: column; gap: 4px; }
+
+/* Profil ana sayfası düzenleyicisi: her bölüm kendi türleri ve başlığıyla */
+.home-row { flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 12px; border: 1px solid var(--border); }
+.home-row-top { display: flex; align-items: center; gap: 6px; }
+.home-kind { flex: none; min-width: 150px; font-weight: 600; font-size: 14px; }
+.home-title { flex: 1; min-width: 0; padding: 6px 10px; font-size: 13.5px; }
+.home-row .icon-btn.danger:hover { color: var(--danger); }
+.home-types { gap: 4px; }
+.home-types .chip { font-size: 12px; padding: 3px 10px; }
+.home-add { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 14px; }
+.home-add .chip { font-size: 12.5px; }
+@media (max-width: 640px) {
+  .home-row-top { flex-wrap: wrap; }
+  .home-kind { min-width: 0; flex: 1 1 100%; }
+  .home-types { flex-wrap: wrap; overflow: visible; }
+  .home-add { flex-wrap: wrap; }
+  .home-add .chip { flex: none; }
+}

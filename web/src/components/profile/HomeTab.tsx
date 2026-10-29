@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { Entry, HomeLayout, List } from "@/lib/types";
-import { PROFILE_COLS, TYPES } from "@/lib/constants";
+import type { Entry, EntryType, HomeBlock, HomeLayout, List } from "@/lib/types";
+import { PROFILE_COLS, TYPES, TYPE_KEYS } from "@/lib/constants";
 import { fmtDate, playSec } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
@@ -13,63 +13,82 @@ import { Cover, EntryCard, FeedItem, Rating, RatingBars, RichText, Stats } from 
 import { ListCard } from "@/components/ListCard";
 import { FavoritesSection } from "./LibraryTab";
 
-// Profil ana sayfasının bölümleri: sahibi hangilerinin hangi sırayla görüneceğini seçer
+// Profil ana sayfasının bölümleri: sahibi istediği bölümü istediği kadar ekler, her birinde türleri ve başlığı ayrı seçer
 const SECTIONS: [string, string][] = [
   ["favs", "Favoriler"],
   ["played", "Son bitirdikleri"],
   ["playing", "Şu an devam ettikleri"],
   ["recent", "Son eklenenler"],
   ["top", "En yüksek puan verdikleri"],
-  ["longest", "En çok oynadığı oyunlar"],
+  ["longest", "En çok vakit geçirdikleri"],
   ["reviews", "Son incelemeler"],
   ["liked", "Son beğendikleri"],
   ["lists", "Listeler"],
   ["stats", "Özet"],
 ];
+const NO_TYPES = ["lists"]; // türe göre ayrılamayan bölümler
 const DEFAULT = ["favs", "played", "playing", "recent", "reviews", "stats"];
 const label = (k: string) => SECTIONS.find(([x]) => x === k)?.[1] || k;
+const newId = () => Math.random().toString(36).slice(2, 9);
+
+// Eski düzen sadece bölüm adlarıydı ("favs"); yenisinde her bölüm kendi türleri ve başlığıyla gelir
+function toBlocks(sections?: HomeLayout["sections"] | null): HomeBlock[] {
+  const raw = sections?.length ? sections : DEFAULT;
+  return raw.map((x, i) => (typeof x === "string" ? { id: `${x}-${i}`, k: x } : x)).filter((b) => SECTIONS.some(([k]) => k === b.k));
+}
+// Seçili türler: hiçbiri ya da hepsi seçiliyse "hepsi" sayılır
+const typesOf = (b: HomeBlock) => (b.types?.length && b.types.length < TYPE_KEYS.length ? b.types : null);
+function titleOf(b: HomeBlock) {
+  if (b.title?.trim()) return b.title.trim();
+  const t = typesOf(b);
+  // Bir iki tür seçildiyse başlığa eklenir (Favoriler · Animeler); birini çıkarmak başlığı uzatmasın
+  return t && t.length <= 2 ? `${label(b.k)} · ${t.map((x) => TYPES[x].plural).join(", ")}` : label(b.k);
+}
 
 export function HomeTab() {
   const { profile, entries, isMe } = useProfile();
   const [editing, setEditing] = useState(false);
   const layout = profile.home_layout;
-  const sections = (layout?.sections?.length ? layout.sections : DEFAULT).filter((k) => SECTIONS.some(([x]) => x === k));
+  const blocks = toBlocks(layout?.sections);
 
   return (
     <>
       {isMe && !editing && (
         <div className="home-edit-bar"><button className="btn" onClick={() => setEditing(true)}>Ana sayfayı düzenle</button></div>
       )}
-      {editing && <HomeEditor layout={layout} sections={sections} onClose={() => setEditing(false)} />}
+      {editing && <HomeEditor layout={layout} blocks={blocks} onClose={() => setEditing(false)} />}
       {layout?.text?.trim() && <section className="section home-text"><RichText text={layout.text} /></section>}
       {!entries.length && !layout?.text?.trim() && (
         <div className="empty">{isMe ? <>Henüz kaydın yok. Steam, PlayStation, Backloggd, Letterboxd, MyAnimeList... başka yerdeki kütüphaneni birkaç dakikada getir.<br />
           <Link className="btn primary" href="/import">Kütüphanemi getir</Link></> : "Henüz kayıt yok."}</div>
       )}
-      {sections.map((k) => <HomeSection key={k} k={k} />)}
+      {blocks.map((b) => <HomeSection key={b.id} b={b} />)}
     </>
   );
 }
 
-function HomeSection({ k }: { k: string }) {
-  const { profile, entries } = useProfile();
+function HomeSection({ b }: { b: HomeBlock }) {
+  const { profile, entries: all } = useProfile();
   const base = `/u/${profile.username}`;
+  const types = typesOf(b);
+  const entries = types ? all.filter((e) => types.includes(e.type)) : all; // bu bölüm için seçilen türler
+  const title = titleOf(b);
   const strip = (list: Entry[], more?: string) => list.length ? (
     <section className="section">
-      <div className="section-head"><h2>{label(k)}</h2>{more && <Link className="link" href={more}>Tümü</Link>}</div>
+      <div className="section-head"><h2>{title}</h2>{more && <Link className="link" href={more}>Tümü</Link>}</div>
       <div className="strip">{list.map((e) => <EntryCard key={e.id} e={e} />)}</div>
     </section>
   ) : null;
   const byUpdated = (a: Entry, b: Entry) => b.updated_at.localeCompare(a.updated_at);
 
-  switch (k) {
-    case "favs": return <FavoritesSection />;
+  switch (b.k) {
+    case "favs": return <FavoritesSection types={types} title={b.title?.trim() || null} />;
     case "played": {
       // Ekleme tarihine göre değil, bitirme tarihine göre (en son bitirilen önce)
       const list = entries.filter((e) => e.status === "completed" && e.date).sort((a, b) => b.date!.localeCompare(a.date!) || byUpdated(a, b)).slice(0, 12);
       return list.length ? (
         <section className="section">
-          <div className="section-head"><h2>{label(k)}</h2><Link className="link" href={`${base}/library`}>Tümü</Link></div>
+          <div className="section-head"><h2>{title}</h2><Link className="link" href={`${base}/library`}>Tümü</Link></div>
           <div className="strip">{list.map((e) => <DatedCard key={e.id} e={e} />)}</div>
         </section>
       ) : null;
@@ -77,21 +96,21 @@ function HomeSection({ k }: { k: string }) {
     case "playing": return strip(entries.filter((e) => e.status === "active").sort(byUpdated).slice(0, 12));
     case "recent": return strip(entries.filter((e) => e.status !== "planned").sort(byUpdated).slice(0, 12), `${base}/library`); // planlananlar kalabalık etmesin
     case "top": return strip(entries.filter((e) => e.rating > 0).sort((a, b) => b.rating - a.rating || byUpdated(a, b)).slice(0, 12));
-    case "longest": return strip(entries.filter((e) => e.type === "game" && playSec(e) > 0).sort((a, b) => playSec(b) - playSec(a)).slice(0, 12));
+    case "longest": return strip(entries.filter((e) => playSec(e) > 0).sort((a, b) => playSec(b) - playSec(a)).slice(0, 12));
     case "reviews": {
       const list = reviewsOf(entries).slice(0, 3);
       return list.length ? (
         <section className="section">
-          <div className="section-head"><h2>{label(k)}</h2><Link className="link" href={`${base}/reviews`}>Tümü</Link></div>
+          <div className="section-head"><h2>{title}</h2><Link className="link" href={`${base}/reviews`}>Tümü</Link></div>
           <div className="feed">{list.map((e) => <FeedItem key={e.id} e={e} />)}</div>
         </section>
       ) : null;
     }
-    case "liked": return <LikedSection limit={3} />;
-    case "lists": return <ListsSection />;
+    case "liked": return <LikedSection limit={3} types={types} title={title} />;
+    case "lists": return <ListsSection title={title} />;
     case "stats": return entries.length ? (
       <section className="section">
-        <div className="section-head"><h2>{label(k)}</h2><Link className="link" href={`${base}/stats`}>Ayrıntılı istatistik</Link></div>
+        <div className="section-head"><h2>{title}</h2><Link className="link" href={`${base}/stats`}>Ayrıntılı istatistik</Link></div>
         <div className="stats"><Stats list={entries} /></div>
         <RatingBars wide ratings={entries.filter((e) => e.rating).map((e) => Number(e.rating))} />
       </section>
@@ -112,27 +131,34 @@ function DatedCard({ e }: { e: Entry }) {
   );
 }
 
-// Sahibinin düzenleme kutusu: bölümleri aç / kapat, sırala, üste bir yazı ekle
-function HomeEditor({ layout, sections, onClose }: { layout?: HomeLayout | null; sections: string[]; onClose: () => void }) {
+// Sahibinin düzenleme kutusu: istediği bölümü istediği kadar ekler; her bölümde türleri, başlığı ve sırayı seçer
+function HomeEditor({ layout, blocks, onClose }: { layout?: HomeLayout | null; blocks: HomeBlock[]; onClose: () => void }) {
   const { me, toast, refresh } = useApp();
-  const [on, setOn] = useState(sections);
+  const [list, setList] = useState<HomeBlock[]>(blocks);
   const [text, setText] = useState(layout?.text || "");
   const [busy, setBusy] = useState(false);
-  const off = SECTIONS.map(([k]) => k).filter((k) => !on.includes(k));
 
+  const patch = (id: string, p: Partial<HomeBlock>) => setList((l) => l.map((b) => (b.id === id ? { ...b, ...p } : b)));
   function move(i: number, d: -1 | 1) {
     const j = i + d;
-    if (j < 0 || j >= on.length) return;
-    const next = [...on];
+    if (j < 0 || j >= list.length) return;
+    const next = [...list];
     [next[i], next[j]] = [next[j], next[i]];
-    setOn(next);
+    setList(next);
+  }
+  // Tür düğmesi: "Hepsi" seçiliyken birine basmak onu çıkarır; son kalanı çıkarmak "Hepsi"ne döner
+  function toggleType(b: HomeBlock, t: EntryType) {
+    const cur = typesOf(b) || TYPE_KEYS;
+    const next = cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t];
+    patch(b.id, { types: next.length && next.length < TYPE_KEYS.length ? next : undefined });
   }
 
   async function save() {
     if (!me) return;
     setBusy(true);
     try {
-      await q(sb().from("profiles").update({ home_layout: { sections: on, text: text.trim() } }).eq("id", me.id));
+      const sections = list.map((b) => ({ id: b.id, k: b.k, ...(typesOf(b) && { types: typesOf(b)! }), ...(b.title?.trim() && { title: b.title.trim().slice(0, 60) }) }));
+      await q(sb().from("profiles").update({ home_layout: { sections, text: text.trim() } }).eq("id", me.id));
       toast("Ana sayfan kaydedildi");
       onClose();
       refresh();
@@ -146,28 +172,47 @@ function HomeEditor({ layout, sections, onClose }: { layout?: HomeLayout | null;
   return (
     <section className="section home-editor">
       <h2>Ana sayfanı düzenle</h2>
-      <p className="muted small">Profiline girenler önce bu sayfayı görür. Görünmesini istediğin bölümleri seç, oklarla sırala.</p>
+      <p className="muted small">Profiline girenler önce bu sayfayı görür. İstediğin bölümü istediğin kadar ekle; her birinde hangi türlerin görüneceğini ve başlığını ayrı seç.
+        Örneğin bir Favoriler sadece oyunlar, bir başkası animeler olabilir.</p>
       <div className="field">
         <label htmlFor="home-text">Üstte duracak yazı <span className="muted">· isteğe bağlı</span></label>
         <textarea id="home-text" rows={3} maxLength={2000} placeholder="ör. Soulslike ve eski JRPG'ler oynarım. En sevdiğim seri Persona." value={text} onChange={(e) => setText(e.target.value)} />
       </div>
       <div className="home-rows">
-        {on.map((k, i) => (
-          <div className="home-row" key={k}>
-            <label className="check"><input type="checkbox" checked onChange={() => setOn(on.filter((x) => x !== k))} /> {label(k)}</label>
-            <span className="spacer" />
-            <button className="icon-btn" aria-label="Yukarı taşı" disabled={i === 0} onClick={() => move(i, -1)}>↑</button>
-            <button className="icon-btn" aria-label="Aşağı taşı" disabled={i === on.length - 1} onClick={() => move(i, 1)}>↓</button>
-          </div>
-        ))}
-        {off.map((k) => (
-          <div className="home-row off" key={k}>
-            <label className="check"><input type="checkbox" checked={false} onChange={() => setOn([...on, k])} /> {label(k)}</label>
-          </div>
+        {list.map((b, i) => {
+          const t = typesOf(b);
+          return (
+            <div className="home-row" key={b.id}>
+              <div className="home-row-top">
+                <span className="home-kind">{label(b.k)}</span>
+                <input className="input home-title" maxLength={60} placeholder={`Başlık (boş kalırsa: ${titleOf({ ...b, title: "" })})`} value={b.title || ""}
+                  onChange={(e) => patch(b.id, { title: e.target.value })} aria-label="Bölüm başlığı" />
+                <button className="icon-btn" aria-label="Yukarı taşı" title="Yukarı" disabled={i === 0} onClick={() => move(i, -1)}>↑</button>
+                <button className="icon-btn" aria-label="Aşağı taşı" title="Aşağı" disabled={i === list.length - 1} onClick={() => move(i, 1)}>↓</button>
+                <button className="icon-btn" aria-label="Kopyasını ekle" title="Kopyasını ekle" onClick={() => setList((l) => [...l.slice(0, i + 1), { ...b, id: newId(), title: "" }, ...l.slice(i + 1)])}>⧉</button>
+                <button className="icon-btn danger" aria-label="Bölümü kaldır" title="Kaldır" onClick={() => setList((l) => l.filter((x) => x.id !== b.id))}>✕</button>
+              </div>
+              {!NO_TYPES.includes(b.k) && (
+                <div className="chips home-types">
+                  <button type="button" className={`chip ${!t ? "active" : ""}`} onClick={() => patch(b.id, { types: undefined })}>Hepsi</button>
+                  {TYPE_KEYS.map((k) => (
+                    <button type="button" key={k} className={`chip ${!t || t.includes(k) ? "active" : ""}`} onClick={() => toggleType(b, k)}>{TYPES[k].plural}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {!list.length && <div className="muted small">Hiç bölüm yok; ana sayfanda sadece üstteki yazı görünür. Aşağıdan bölüm ekle.</div>}
+      </div>
+      <div className="home-add">
+        <span className="muted small">Bölüm ekle:</span>
+        {SECTIONS.map(([k, name]) => (
+          <button type="button" key={k} className="chip" onClick={() => setList((l) => [...l, { id: newId(), k }])}>+ {name}</button>
         ))}
       </div>
       <div className="actions">
-        <button className="link" onClick={() => { setOn(DEFAULT); setText(""); }}>Varsayılana dön</button>
+        <button className="link" onClick={() => { setList(toBlocks(null)); setText(""); }}>Varsayılana dön</button>
         <span className="spacer" />
         <button className="btn" onClick={onClose}>Vazgeç</button>
         <button className="btn primary" disabled={busy} onClick={save}>Kaydet</button>
@@ -208,13 +253,14 @@ function useLiked() {
   }, [profile.id, version]);
 }
 
-function LikedSection({ limit }: { limit: number }) {
+function LikedSection({ limit, types, title }: { limit: number; types: EntryType[] | null; title: string }) {
   const { profile } = useProfile();
-  const { data } = useLiked();
+  const { data: all } = useLiked();
+  const data = types ? all?.filter((e) => types.includes(e.type)) : all;
   if (!data?.length) return null;
   return (
     <section className="section">
-      <div className="section-head"><h2>{label("liked")}</h2><Link className="link" href={`/u/${profile.username}/likes`}>Tümü</Link></div>
+      <div className="section-head"><h2>{title}</h2><Link className="link" href={`/u/${profile.username}/likes`}>Tümü</Link></div>
       <div className="feed">{data.slice(0, limit).map((e) => <FeedItem key={e.id} e={e} />)}</div>
     </section>
   );
@@ -239,7 +285,7 @@ export function LikesTab() {
   );
 }
 
-function ListsSection() {
+function ListsSection({ title }: { title: string }) {
   const { profile } = useProfile();
   const { version } = useApp();
   const { data } = useLoad(() => q<List[]>(sb().from("lists").select("*, list_items(id, type, title, cover, rawg_id, position)")
@@ -247,7 +293,7 @@ function ListsSection() {
   if (!data?.length) return null;
   return (
     <section className="section">
-      <div className="section-head"><h2>{label("lists")}</h2><Link className="link" href={`/u/${profile.username}/lists`}>Tümü</Link></div>
+      <div className="section-head"><h2>{title}</h2><Link className="link" href={`/u/${profile.username}/lists`}>Tümü</Link></div>
       <div className="list-grid">{data.map((l) => <ListCard key={l.id} l={l} />)}</div>
     </section>
   );
