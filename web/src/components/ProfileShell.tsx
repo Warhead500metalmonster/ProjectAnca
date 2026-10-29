@@ -116,7 +116,7 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
         <BadgeChips id={profile.id} max={3} more={`/u/${profile.username}/badges`} />
         {profile.bio && <p className="profile-bio">{profile.bio}</p>}
         {isMe && hidden.length > 0 && (
-          <p className="muted small" style={{ margin: "6px 0 0" }}>
+          <p className="muted small profile-note" style={{ margin: "6px 0 0" }}>
             Başkaları profilinde {hidden.map((t) => TYPES[t].plural.toLocaleLowerCase("tr")).join(", ")} göremez. <Link href="/settings">Değiştir</Link>
           </p>
         )}

@@ -43,6 +43,12 @@ export function Topbar() {
         <Link href="/community" className={active("community")}>
           <svg viewBox="0 0 24 24"><path d="M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4zm8 0c-.3 0-.7 0-1.1.1 1.3.9 2.1 2.2 2.1 3.9v2h7v-2c0-2.7-5.3-4-8-4z" /></svg><span>Topluluk</span>
         </Link>
+        {/* Telefonda alt menünün ortasında büyük ekle düğmesi (bilgisayarda gizli, orada üstte "+ Ekle" var) */}
+        {me && (
+          <button className="nav-add" aria-label="Yeni kayıt ekle" onClick={() => openForm(null)}>
+            <svg viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z" /></svg>
+          </button>
+        )}
         <Link href="/chat" className={active("chat")}>
           <svg viewBox="0 0 24 24"><path d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm3 6v2h2V9zm4 0v2h2V9zm4 0v2h2V9z" /></svg>
           <span>Sosyal</span>{unread > 0 && <b className="nav-badge">{unread > 9 ? "9+" : unread}</b>}
@@ -55,6 +61,9 @@ export function Topbar() {
         <input type="search" value={text} placeholder="Oyun, film, kişi ara…" aria-label="Ara" onChange={(e) => setText(e.target.value)} />
       </form>
       <div className="top-actions">
+        <Link className="icon-link mobile-search" href="/search" aria-label="Ara" title="Ara">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+        </Link>
         {me ? (
           <>
             {isAdmin && <Link className="top-link admin-link" href="/admin" title="Yönetim paneli">Yönetim</Link>}
@@ -63,7 +72,7 @@ export function Topbar() {
               {notifAt && notifAt > seen && <span className="dot" />}
             </Link>
             <Link className="btn import-top" href="/import" title="Steam, PlayStation, Backloggd, Letterboxd... bütün kütüphaneni getir">İçe aktar</Link>
-            <button className="btn primary" onClick={() => openForm(null)}>+ Ekle</button>
+            <button className="btn primary top-add" onClick={() => openForm(null)}>+ Ekle</button>
             <UserMenu mine={mine} isAdmin={isAdmin} />
           </>
         ) : (
