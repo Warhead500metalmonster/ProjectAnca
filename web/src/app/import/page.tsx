@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { Entry, RawgGame, Status } from "@/lib/types";
 import { norm, smallImage } from "@/lib/format";
-import { anilist, musicMeta, tmdb, tmdbImage } from "@/lib/data";
+import { anilist, musicMeta, tmdb, tmdbCreator, tmdbDetail, tmdbImage } from "@/lib/data";
 import { STATUSES, STORES, TYPES, statusLabel } from "@/lib/constants";
 import { rawg } from "@/lib/rawg";
 import { q, sb } from "@/lib/supabase";
@@ -12,9 +12,10 @@ import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { psBookmarklet } from "@/lib/psBookmarklet";
 import { BL_MARK, backloggdBookmarklet } from "@/lib/backloggdBookmarklet";
+import { SZ_MARK, serializdBookmarklet } from "@/lib/serializdBookmarklet";
 import { ImportPromo } from "@/components/ImportPromo";
 
-// Başka sitelerden kütüphane aktarma: Steam, PlayStation, Xbox, Epic / Switch / HowLongToBeat listeleri, Backloggd, Letterboxd, MyAnimeList, AniList, Simkl, Spotify ve Last.fm
+// Başka sitelerden kütüphane aktarma: Steam, PlayStation, Xbox, Epic / Switch / HowLongToBeat listeleri, Backloggd, Letterboxd, Serializd, MyAnimeList, AniList, Simkl, Spotify ve Last.fm
 export default function ImportPage() {
   const { me, ready } = useApp();
   if (!ready) return <div className="loading">Yükleniyor…</div>;
@@ -36,6 +37,7 @@ const IMPORT_PICKS: { key: string; name: string; how: string; gets: string }[] =
   { key: "backloggd", name: "Backloggd", how: "Tarayıcı düğmesiyle", gets: "Durumların ve puanların" },
   { key: "hltb", name: "HowLongToBeat", how: "Dosyanı seç", gets: "Süreler, puanlar, notlar, tarihler" },
   { key: "letterboxd", name: "Letterboxd", how: "Dosyanı seç", gets: "Filmler, puanlar, incelemeler" },
+  { key: "serializd", name: "Serializd", how: "Tarayıcı düğmesiyle", gets: "Dizilerin ve puanların" },
   { key: "mal", name: "MyAnimeList", how: "Dosyanı seç", gets: "Animelerin, puanların, bölümlerin" },
   { key: "anilist", name: "AniList", how: "Kullanıcı adını yaz", gets: "Animelerin, puanların, bölümlerin" },
   { key: "music", name: "Spotify ve Last.fm", how: "Kullanıcı adı ya da dosya", gets: "Albümlerin ve sanatçıların" },
@@ -99,6 +101,7 @@ function Importer() {
             : pick === "letterboxd" ? <Letterboxd />
             : pick === "music" ? <Music />
             : pick === "simkl" ? <Simkl />
+            : pick === "serializd" ? <SerializdImport />
             : pick === "mal" || pick === "anilist" ? <AnimeImport key={pick} kind={pick} />
             : <ListImport key={pick} initial={pick!} />}
         </>
@@ -1604,6 +1607,93 @@ function Simkl() {
         <button className="btn primary" disabled={busy} onClick={start}>{busy ? "Bağlanılıyor…" : "Simkl'a bağlan"}</button>
       )}
       {error && <p className="form-error">{error}</p>}
+    </section>
+  );
+}
+
+// ---------- Serializd: yer imi düğmesinin topladığı liste (TMDB numaralarıyla birebir eşleşir) ----------
+// ANCALOG_SERIALIZD:[["Supernatural", 1622, "completed", 8], ...]   puan 10 üzerinden, 0 = yok
+type SzRow = { title: string; id: number; status: Status; rating: number };
+const SZ_STATUS = new Set(["completed", "active", "planned", "paused", "dropped"]);
+function szParse(text: string): SzRow[] {
+  const i = text.indexOf(SZ_MARK);
+  if (i < 0) return [];
+  try {
+    const rows = JSON.parse(text.slice(i + SZ_MARK.length).trim()) as [string, number, string, number][];
+    return rows.filter((r) => r[0] && r[1] > 0).map(([title, id, st, rating]) => ({
+      title: String(title).slice(0, 200), id: Number(id), status: (SZ_STATUS.has(st) ? st : "completed") as Status,
+      rating: Math.min(10, Math.max(0, Number(rating) || 0)),
+    }));
+  } catch { return []; }
+}
+
+function SerializdImport() {
+  const { me, mine, toast, refresh } = useApp();
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [step, setStep] = useState<{ done: number; total: number } | null>(null);
+  const rows = useMemo(() => szParse(text), [text]);
+  const haveExt = new Set(mine.filter((e) => e.type === "show" && e.ext_id).map((e) => e.ext_id));
+  const haveTitle = new Set(mine.filter((e) => e.type === "show").map((e) => norm(e.title)));
+  const fresh = rows.filter((r) => !haveExt.has(`tmdb:tv:${r.id}`) && !haveTitle.has(norm(r.title)));
+  const count = (st: Status) => fresh.filter((r) => r.status === st).length;
+
+  async function run() {
+    if (!me || !fresh.length) return;
+    setBusy(true);
+    setStep({ done: 0, total: fresh.length });
+    try {
+      // TMDB'den Türkçe ad, kapak, yıl ve yapımcı (bulunamazsa Serializd'deki adla eklenir)
+      const details = await pool(fresh, (r) => tmdbDetail(`tmdb:tv:${r.id}`).catch(() => null), (done) => setStep({ done, total: fresh.length }));
+      const failed = await insertAll(fresh.map((r, i): Row => {
+        const d = details[i];
+        return {
+          type: "show", title: (d?.name || r.title).slice(0, 200), year: parseInt(d?.first_air_date || "") || null,
+          creator: d ? tmdbCreator(d) : null, cover: tmdbImage(d?.poster_path), ext_id: `tmdb:tv:${r.id}`, rawg_id: null,
+          status: r.status, rating: r.rating, date: null, store: "Serializd", updated_at: new Date().toISOString(),
+        };
+      }), me.id);
+      toast(`${fresh.length - failed} dizi kütüphanene eklendi${failed ? `, ${failed} tanesi kaydedilemedi` : ""}`);
+      setText("");
+      refresh();
+    } catch (err) {
+      toast("Aktarılamadı: " + (err as Error).message);
+    } finally {
+      setBusy(false);
+      setStep(null);
+    }
+  }
+
+  return (
+    <section className="section import-card">
+      <div className="section-head"><h2>Serializd</h2></div>
+      <div className="muted small import-help">
+        Serializd&apos;nin dışa aktarma özelliği yok; bu düğme senin yerine dizi listeni okur. Diziler TMDB numarasıyla birebir eşleşir. Dört adım:
+        <ol className="import-steps">
+          <li>Şu düğmeyi fareyle tutup tarayıcının yer imleri çubuğuna sürükle (çubuk görünmüyorsa Ctrl+Shift+B):
+            <BookmarkButton make={serializdBookmarklet} name="Ancalog'a ekle Serializd" /></li>
+          <li><a className="grad" href="https://www.serializd.com/" target="_blank" rel="noreferrer">Serializd</a>&apos;da kendi profilinde izlediğin diziler sayfasını aç ve bu yer imine bas.
+            Sayfayı kendisi sonuna kadar kaydırıp bütün dizileri toplar.</li>
+          <li>İzleme listen ya da şu an izlediklerin gibi başka sayfaların da varsa onları da açıp düğmeye tekrar bas; sonuçlar birikir.
+            İzleme listesindekiler <b>Planlandı</b>, izlemeye devam ettiklerin <b>İzliyorum</b>, gerisi <b>İzlendi</b> olarak gelir.</li>
+          <li>Çıkan kutudaki <b>Kopyala</b>&apos;ya bas, buraya dön ve aşağıya yapıştır (Ctrl+V).</li>
+        </ol>
+      </div>
+      <textarea className="input import-paste" rows={5} placeholder="Serializd'deki düğmenin kopyaladığı yazıyı buraya yapıştır (Ctrl+V)" value={text} onChange={(e) => setText(e.target.value)} />
+      {text.trim() && !rows.length && <p className="muted small">Bu yazıda Serializd listesi bulunamadı. Düğmenin kutusundaki <b>Kopyala</b>&apos;ya basıp tekrar yapıştır.</p>}
+      {rows.length > 0 && (
+        <>
+          <div className="import-bar">
+            <span><b>{rows.length}</b> dizi bulundu{rows.length - fresh.length ? ` · ${rows.length - fresh.length} tanesi zaten kütüphanende` : ""}
+              {" "}· {count("completed")} izlendi, {count("active")} izleniyor, {count("planned")} planlandı{count("dropped") ? `, ${count("dropped")} bırakıldı` : ""}</span>
+          </div>
+          <div className="actions">
+            <button className="btn" disabled={busy} onClick={() => setText("")}>Vazgeç</button>
+            <button className="btn primary" disabled={busy || !fresh.length} onClick={run}>{busy ? "Ekleniyor…" : `${fresh.length} diziyi ekle`}</button>
+          </div>
+        </>
+      )}
+      {step && <Progress done={step.done} total={step.total} label="Diziler TMDB'de eşleştirilip ekleniyor…" />}
     </section>
   );
 }

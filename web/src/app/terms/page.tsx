@@ -85,9 +85,9 @@ export default function Terms() {
 
       <h2>5a. Başka sitelerden içe aktarma</h2>
       <ul>
-        <li>İçe aktarma (Steam, PlayStation, Xbox, Epic, Nintendo, HowLongToBeat, Backloggd, Playnite, Letterboxd, MyAnimeList, AniList, Simkl, Spotify, Last.fm ve benzerleri)
+        <li>İçe aktarma (Steam, PlayStation, Xbox, Epic, Nintendo, HowLongToBeat, Backloggd, Playnite, Letterboxd, Serializd, MyAnimeList, AniList, Simkl, Spotify, Last.fm ve benzerleri)
           tamamen <b>senin isteğinle ve senin adına</b> yapılır. Bu verilerin sana ait olduğunu ya da onları kullanma hakkın olduğunu kabul edersin.</li>
-        <li>PlayStation ve Backloggd düğmeleri (yer imleri) <b>senin tarayıcında, senin açtığın sayfada</b> çalışır; ekranda zaten gördüğün listeyi toplar ve
+        <li>PlayStation, Backloggd ve Serializd düğmeleri (yer imleri) <b>senin tarayıcında, senin açtığın sayfada</b> çalışır; ekranda zaten gördüğün listeyi toplar ve
           senin kopyalayıp yapıştırmanı bekler. Ancalog&apos;un sunucusu bu sitelere bağlanmaz, bu sitelere ait şifre ya da oturum bilgin Ancalog&apos;a gelmez.
           Dosyalar (HowLongToBeat, Playnite, Letterboxd, MyAnimeList, Spotify) senin tarayıcında okunur.</li>
         <li>Bu sitelerin kendi kullanım koşullarına uymak <b>senin sorumluluğundadır</b>. O sitelerin hesabına uygulayabileceği kısıtlama ya da başka sonuçlardan
@@ -109,7 +109,7 @@ export default function Terms() {
         Bu site TMDB API&apos;sini kullanır ancak TMDB tarafından onaylanmış değildir. Steam&apos;den içe aktarma <a href="https://steamcommunity.com/dev/apiterms" target="_blank" rel="noopener">Steam Web API</a> ile yapılır.
         Profil şarkıları sitede barındırılmaz, YouTube&apos;un kendi oynatıcısıyla çalınır; bu kullanımda <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">YouTube Hizmet Şartları</a> geçerlidir.</p>
       <p>Ancalog; RAWG, TMDB, AniList, MyAnimeList, Apple, Deezer, YouTube, Google, Steam, Valve, Sony Interactive Entertainment (PlayStation), Microsoft (Xbox), OpenXBL,
-        Epic Games, Nintendo, HowLongToBeat, Backloggd, Playnite, Letterboxd, Simkl, Spotify ya da Last.fm ile bağlantılı değildir ve bu şirketler tarafından onaylanmaz, desteklenmez
+        Epic Games, Nintendo, HowLongToBeat, Backloggd, Playnite, Letterboxd, Serializd, Simkl, Spotify ya da Last.fm ile bağlantılı değildir ve bu şirketler tarafından onaylanmaz, desteklenmez
         ya da sponsor edilmez. Adı geçen tüm markalar ve ticari adlar sahiplerine aittir; yalnızca ilgili hizmeti tanımlamak için anılır.</p>
 
       <h3>Ancalog&apos;a ait olanlar</h3>

@@ -2,7 +2,7 @@ import Link from "next/link";
 
 // Ana sayfadaki iddialı tanıtım: başka sitelerdeki geçmişini birkaç dakikada buraya taşı
 const SOURCES: [string, string][] = [["Steam", "steam"], ["PlayStation", "ps"], ["Xbox", "xbox"], ["Epic Games", "epic"], ["Nintendo Switch", "switch"],
-  ["HowLongToBeat", "hltb"], ["Backloggd", "backloggd"], ["Playnite", "playnite"], ["Letterboxd", "letterboxd"], ["MyAnimeList", "mal"], ["AniList", "anilist"],
+  ["HowLongToBeat", "hltb"], ["Backloggd", "backloggd"], ["Playnite", "playnite"], ["Letterboxd", "letterboxd"], ["Serializd", "serializd"], ["MyAnimeList", "mal"], ["AniList", "anilist"],
   ["Spotify", "music"], ["Last.fm", "music"]];
 
 // Üç adımda nasıl olduğu: korkutmasın, ne kadar kolay olduğunu göstersin

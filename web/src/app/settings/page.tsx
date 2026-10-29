@@ -332,19 +332,26 @@ function DeleteAllLogs({ me }: { me: Profile }) {
   const { mine, toast, refresh } = useApp();
   const [busy, setBusy] = useState(false);
   const [kind, setKind] = useState<EntryType | "all">("all"); // hepsi ya da sadece bir tür (oyun, film, dizi...)
-  const target = kind === "all" ? mine : mine.filter((e) => e.type === kind);
-  const what = kind === "all" ? "kaydın" : `${TYPES[kind].label.toLocaleLowerCase("tr")} kaydının`;
+  // Nereden geldiği: içe aktarmalar mağazayı yazar (Steam, Xbox Store, PlayStation Store, Serializd...); "" = mağazası yok
+  const [src, setSrc] = useState<string | null>(null);
+  const ofKind = kind === "all" ? mine : mine.filter((e) => e.type === kind);
+  const sources = [...new Set(ofKind.map((e) => e.store || ""))].sort((a, b) => (a ? 0 : 1) - (b ? 0 : 1) || a.localeCompare(b, "tr"));
+  const source = src !== null && sources.includes(src) ? src : null; // tür değişince geçersiz kalan kaynak seçimi düşer
+  const target = source === null ? ofKind : ofKind.filter((e) => (e.store || "") === source);
+  const what = (kind === "all" ? "kaydın" : `${TYPES[kind].label.toLocaleLowerCase("tr")} kaydının`)
+    + (source === null ? "" : source ? ` (${source} kaynaklı)` : " (mağazası olmayan)");
 
   async function wipe() {
     if (!target.length) return toast("Silinecek kaydın yok.");
     if (!confirm(`Kütüphanendeki ${target.length} ${what} tamamı silinecek (puanlar, incelemeler, süreler, favoriler ve bunlara gelen beğeni ve yorumlar dahil). Emin misin?`)) return;
-    if (!confirm(`Gerçekten emin misin? Bu işlem geri alınamaz. ${kind === "all" ? "Hesabın, listelerin ve takiplerin kalır, kayıtların tamamen silinir." : "Diğer türlerdeki kayıtların, hesabın ve listelerin kalır."}`)) return;
+    if (!confirm(`Gerçekten emin misin? Bu işlem geri alınamaz. ${kind === "all" && source === null ? "Hesabın, listelerin ve takiplerin kalır, kayıtların tamamen silinir." : "Diğer kayıtların, hesabın ve listelerin kalır."}`)) return;
     setBusy(true);
     try {
       let req = sb().from("entries").delete().eq("user_id", me.id);
       if (kind !== "all") req = req.eq("type", kind);
+      if (source !== null) req = source ? req.eq("store", source) : req.or("store.is.null,store.eq."); // boş ya da hiç yazılmamış
       await q(req);
-      toast(kind === "all" ? "Bütün kayıtların silindi. Sıfırdan başlayabilirsin." : `${TYPES[kind].plural} kayıtların silindi.`);
+      toast(source !== null ? `${target.length} kayıt silindi.` : kind === "all" ? "Bütün kayıtların silindi. Sıfırdan başlayabilirsin." : `${TYPES[kind].plural} kayıtların silindi.`);
       refresh();
     } catch (err) {
       toast("Silinemedi: " + (err as Error).message);
@@ -355,8 +362,9 @@ function DeleteAllLogs({ me }: { me: Profile }) {
 
   return (
     <details className="danger-zone">
-      <summary>Kayıtlarımı sil (hepsini ya da sadece bir türü)</summary>
-      <p>Hesabın açık kalır. İstersen bütün kayıtlarını, istersen sadece oyun, film, dizi, müzik ya da anime kayıtlarını silebilirsin.
+      <summary>Kayıtlarımı sil (hepsini, bir türü ya da bir yerden gelenleri)</summary>
+      <p>Hesabın açık kalır. İstersen bütün kayıtlarını, istersen sadece bir türü (oyun, film, dizi...) ya da sadece bir yerden gelenleri
+        (ör. Steam&apos;den ya da Xbox&apos;tan içe aktardıkların) silebilirsin; ikisini birlikte de seçebilirsin.
         Önce yukarıdaki <b>Verilerimi indir</b> ile yedek almanı öneririz.</p>
       <div className="chips" style={{ marginBottom: 10 }}>
         <button type="button" className={`chip ${kind === "all" ? "active" : ""}`} onClick={() => setKind("all")}>Hepsi ({mine.length})</button>
@@ -366,8 +374,22 @@ function DeleteAllLogs({ me }: { me: Profile }) {
           </button>
         ))}
       </div>
+      {sources.length > 1 && (
+        <>
+          <p className="muted small" style={{ margin: "0 0 6px" }}>Nereden gelenler? (içe aktarırken kaynak kendiliğinden yazılır; elle mağaza seçtiklerin de buna dahildir)</p>
+          <div className="chips" style={{ marginBottom: 10 }}>
+            <button type="button" className={`chip ${source === null ? "active" : ""}`} onClick={() => setSrc(null)}>Hepsi</button>
+            {sources.map((st) => (
+              <button type="button" key={st || "-"} className={`chip ${source === st ? "active" : ""}`} onClick={() => setSrc(st)}>
+                {st || "Mağazası yok"} ({ofKind.filter((e) => (e.store || "") === st).length})
+              </button>
+            ))}
+          </div>
+        </>
+      )}
       <button type="button" className="btn danger" disabled={busy || !target.length} onClick={wipe}>
-        {busy ? "Siliniyor…" : kind === "all" ? `Bütün kayıtlarımı sil (${target.length})` : `${TYPES[kind].plural} kayıtlarımı sil (${target.length})`}
+        {busy ? "Siliniyor…" : source !== null ? `Seçtiğim ${target.length} kaydı sil`
+          : kind === "all" ? `Bütün kayıtlarımı sil (${target.length})` : `${TYPES[kind].plural} kayıtlarımı sil (${target.length})`}
       </button>
     </details>
   );

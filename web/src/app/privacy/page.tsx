@@ -44,7 +44,7 @@ export default function Privacy() {
             <li>Steam: herkese açık oyun listen, oynama sürelerin, son oynama tarihin ve istersen başarım oranların (Steam Web API).</li>
             <li>Xbox: yazdığın gamertag ile herkese açık oyun listen ve başarımların (OpenXBL aracılığıyla).</li>
             <li>Last.fm, Spotify albüm linki, Simkl: yazdığın kullanıcı adı, link ya da bağlantı kodu ile o hizmetten liste alınır.</li>
-            <li>PlayStation ve Backloggd: düğme senin tarayıcında, senin açtığın sayfada çalışır; topladığı listeyi sen kopyalayıp yapıştırırsın. Ancalog sunucusu bu sitelere bağlanmaz.</li>
+            <li>PlayStation, Backloggd ve Serializd: düğme senin tarayıcında, senin açtığın sayfada çalışır; topladığı listeyi sen kopyalayıp yapıştırırsın. Ancalog sunucusu bu sitelere bağlanmaz.</li>
             <li>HowLongToBeat, Playnite, Letterboxd ve Spotify dosyaları ile yapıştırılan listeler senin tarayıcında okunur, dosyanın kendisi sunucuya yüklenmez.</li>
           </ul>
           Profil linkin, gamertag&apos;in, kullanıcı adların, dosyaların ve yapıştırdığın metin saklanmaz; yalnızca sonuçta kütüphanene eklenen kayıtlar saklanır.</li>
