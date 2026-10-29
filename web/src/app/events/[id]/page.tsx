@@ -295,6 +295,19 @@ function MyPanel({ ev, my, members, onChange }: { ev: AncEvent; my: EventMember;
 
 // Katılımcılar: bitirenler sırasıyla üstte, sonra oynayanlar, sonra katılanlar
 function People({ ev, members }: { ev: AncEvent; members: EventMember[] }) {
+  const { isAdmin, toast, refresh } = useApp();
+  // Yönetici birini etkinlikten çıkarabilir (bitmiş etkinlikte de); kazandığı rozetler yerinde kalır, istenirse Yönetim'den alınır
+  async function remove(m: EventMember) {
+    const who = m.profiles?.display_name || m.profiles?.username || "Bu kişi";
+    if (!confirm(`${who} etkinlikten çıkarılsın mı? Durumu ve notu silinir, sohbetteki mesajları kalır.`)) return;
+    try {
+      const gone = await q<unknown[]>(sb().from("event_members").delete().eq("event_id", ev.id).eq("user_id", m.user_id).select());
+      toast(gone.length ? `${who} etkinlikten çıkarıldı` : "Çıkarılamadı: yetkin yok gibi görünüyor");
+      refresh();
+    } catch (err) {
+      toast("Çıkarılamadı: " + (err as Error).message);
+    }
+  }
   if (!members.length) return null;
   const done = members.filter((m) => m.status === "done").sort((a, b) => (a.finished_at || "").localeCompare(b.finished_at || ""));
   const rest = members.filter((m) => m.status !== "done").sort((a, b) => (a.status === "playing" ? -1 : 0) - (b.status === "playing" ? -1 : 0) || b.updated_at.localeCompare(a.updated_at));
@@ -312,6 +325,7 @@ function People({ ev, members }: { ev: AncEvent; members: EventMember[] }) {
         {m.note && <p className="ev-person-note">“{m.note}”</p>}
       </div>
       <span className="muted small ev-person-time">{timeAgo(m.status === "done" && m.finished_at ? m.finished_at : m.updated_at)}</span>
+      {isAdmin && <button type="button" className="btn small ghost ev-kick" onClick={() => remove(m)} title="Bu kişiyi etkinlikten çıkar">Çıkar</button>}
     </div>
   );
   return (

@@ -2190,3 +2190,8 @@ a.badge-card.link-card:hover { transform: translateY(-2px); }
   .set-save { bottom: calc(70px + env(safe-area-inset-bottom)); }
   .set-save > .muted { display: none; }
 }
+
+/* Yönetici: katılanı etkinlikten çıkar */
+.ev-kick { padding: 4px 10px; font-size: 12px; opacity: .55; }
+.ev-person:hover .ev-kick, .ev-kick:focus-visible { opacity: 1; }
+.ev-kick:hover { color: var(--danger, #e5484d); border-color: currentColor; }
