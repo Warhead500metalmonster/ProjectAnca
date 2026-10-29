@@ -172,7 +172,7 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
         <CoverMarquee covers={heroCovers} />
         <div className="hero2-text">
           <h1>{hello}, <span className="grad">{displayName(user)}</span></h1>
-          <p>{mine.length ? `Kütüphanende ${mine.length} kayıt var.` : "Kütüphanen boş, ilk kaydını ekleyerek başla."}</p>
+          <p>{mine.length ? greetLine(mine) : "Kütüphanen boş. İlk kaydını ekle ya da başka sitedeki geçmişini getir."}</p>
           <div className="hero-actions">
             {mine.some((e) => e.status === "planned") && <Roulette list={mine.filter((e) => e.status === "planned")} />}
             <AddButton />
@@ -241,4 +241,18 @@ function Roulette({ list }: { list: Entry[] }) {
 function AddButton() {
   const { openForm } = useApp();
   return <button className="btn primary big" onClick={() => openForm(null)}>+ Yeni kayıt</button>;
+}
+
+// Karşılamadaki ikinci satır: kişinin kendi kütüphanesinden bir şey söylesin (her gün aynı cümle olmasın)
+function greetLine(mine: Entry[]): string {
+  const year = String(new Date().getFullYear());
+  const doneThisYear = mine.filter((e) => e.status === "completed" && (e.date || "").startsWith(year)).length;
+  const active = mine.filter((e) => e.status === "active");
+  const last = mine.filter((e) => e.status === "completed" && e.date).sort((a, b) => b.date!.localeCompare(a.date!))[0];
+  const lines = [`Kütüphanende ${mine.filter((e) => e.status !== "planned").length.toLocaleString("tr")} kayıt var.`];
+  if (doneThisYear) lines.push(`Bu yıl ${doneThisYear} şey bitirdin. İyi gidiyorsun.`);
+  if (active.length === 1) lines.push(`${active[0].title} seni bekliyor.`);
+  if (active.length > 1) lines.push(`Şu an ${active.length} şeye devam ediyorsun.`);
+  if (last) lines.push(`Son bitirdiğin: ${last.title}.`);
+  return lines[new Date().getDate() % lines.length];
 }

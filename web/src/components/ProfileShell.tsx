@@ -15,7 +15,7 @@ import { Avatar, BadgeChips, FollowButton, Name, Socials, UserRow } from "@/comp
 import { ProfileSong } from "@/components/ProfileSong";
 import { CoverMarquee } from "@/components/CoverMarquee";
 
-interface ProfileData { profile: Profile; entries: Entry[]; followers: number; following: number }
+interface ProfileData { profile: Profile; entries: Entry[]; followers: number; following: number; memberNo?: number }
 const ProfileCtx = createContext<(ProfileData & { isMe: boolean }) | null>(null);
 export const useProfile = () => useContext(ProfileCtx)!;
 
@@ -29,12 +29,14 @@ export function ProfileShell({ children }: { children: React.ReactNode }) {
     const db = sb();
     const profile = await q<Profile | null>(db.from("profiles").select("*").eq("username", name).maybeSingle());
     if (!profile) return null;
-    const [entries, followers, following] = await Promise.all([
+    const [entries, followers, following, memberNo] = await Promise.all([
       fetchEntries(profile.id),
       countOf(db.from("follows").select("*", { count: "exact", head: true }).eq("following_id", profile.id)),
       countOf(db.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", profile.id)),
+      // Kaçıncı üye: kendisinden önce (ve aynı anda) katılanların sayısı
+      countOf(db.from("profiles").select("id", { count: "exact", head: true }).lte("created_at", profile.created_at)).catch(() => 0),
     ]);
-    return { profile, entries: entries.map((e) => ({ ...e, profiles: profile })), followers, following };
+    return { profile, entries: entries.map((e) => ({ ...e, profiles: profile })), followers, following, memberNo };
   }, [name, version], supabaseConfigured());
 
   if (error) return <div className="empty">Bir şeyler ters gitti: {error}</div>;
@@ -131,7 +133,7 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
         )}
         <div className="profile-meta">
           {profile.location && <span>{profile.location}</span>}
-          <span>{fmtDate(profile.created_at.slice(0, 10))} tarihinde katıldı</span>
+          <span>{fmtDate(profile.created_at.slice(0, 10))} tarihinde katıldı{data.memberNo ? <> · <b className="member-no">Ancalog&apos;un {num(data.memberNo)}. üyesi</b></> : null}</span>
         </div>
         <Socials socials={profile.socials} />
         <nav className="subnav">

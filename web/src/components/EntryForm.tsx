@@ -15,7 +15,7 @@ import { HmsInput } from "./ui";
 interface Props { entry: Entry | null; game?: RawgGame | null; type?: EntryType; item?: Item | null; onClose: () => void }
 
 export function EntryForm({ entry, game, type: initialType, item, onClose }: Props) {
-  const { me, toast, refresh, scale } = useApp();
+  const { me, toast, refresh, scale, mine } = useApp();
   const ref = useRef<HTMLDialogElement>(null);
   const searchSeq = useRef(0);       // geç gelen eski cevapları yok saymak için
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -182,7 +182,7 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
       if (entry) await q(db.from("entries").update(data).eq("id", entry.id));
       else await q(db.from("entries").insert({ ...data, user_id: me.id }));
       ref.current?.close();
-      toast(entry ? "Kayıt güncellendi ✓" : "Kütüphanene eklendi ✓");
+      toast(cheer(data.status === "completed" && entry?.status !== "completed", finished, entry ? null : mine.length + 1) || (entry ? "Kayıt güncellendi ✓" : "Kütüphanene eklendi ✓"));
       refresh();
     } catch (err) {
       const msg = (err as Error).message;
@@ -386,4 +386,14 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
       </form>
     </dialog>
   );
+}
+
+// Bir şey bitirince ya da yuvarlak bir sayıya ulaşınca küçük bir kutlama (sıradan "kaydedildi" yerine)
+function cheer(justFinished: boolean, finished: string | null, total: number | null): string | null {
+  if (total && [10, 25, 50, 100, 250, 500, 1000, 2000, 5000].includes(total)) return `${total}. kaydın! Koleksiyon büyüyor, helal olsun.`;
+  if (!justFinished) return null;
+  const year = String(new Date().getFullYear());
+  if (!finished?.startsWith(year)) return "Bitti! Bir tane daha kütüphanede.";
+  const lines = ["Tebrikler, bitirdin!", "Bir tane daha bitti, eline sağlık.", "Bitirdin! Sırada ne var?", "Helal olsun, bir tane daha!"];
+  return lines[Math.floor(Math.random() * lines.length)];
 }

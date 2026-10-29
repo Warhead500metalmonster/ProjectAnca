@@ -1680,3 +1680,35 @@ body {
   .card.dated .dated-meta span:first-child { white-space: nowrap; }
   .card.dated .dated-meta .stars { font-size: 10px; }
 }
+
+/* Puan dağılımı sütunları */
+.rbars { display: flex; align-items: flex-end; gap: 6px; width: 100%; margin-top: 10px; }
+.rbars .rb-end { color: var(--star); font-size: 11px; line-height: 1; padding-bottom: 1px; white-space: nowrap; }
+.rbars .rb-cols { flex: 1; display: flex; align-items: flex-end; gap: 2px; height: 44px; }
+.rbars i { flex: 1; min-width: 3px; border-radius: 2px 2px 0 0; background: color-mix(in srgb, var(--accent) 75%, #fff 0%); transition: background .15s; }
+.rbars i.zero { background: var(--panel-3); }
+.rbars i:hover { background: var(--accent-2); }
+.rbars.wide { max-width: 420px; margin: 16px 0 0; }
+.rbars.wide .rb-cols { height: 70px; gap: 4px; }
+.rbars.wide .rb-end { font-size: 13px; }
+
+/* Topluluk → Duyurular: her biri tek satır, tıklayınca açılır */
+.ann-list { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--panel); }
+.ann + .ann { border-top: 1px solid var(--border); }
+.ann-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 14px; background: none; border: 0; color: var(--text); cursor: pointer; text-align: left; font: inherit; }
+.ann-row:hover { background: rgba(255, 255, 255, .03); }
+.ann-tag { flex: none; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 2px 7px; border-radius: 4px; color: #7cc8e2; background: rgba(63, 167, 201, .14); }
+.ann.post .ann-tag { color: var(--accent-2); background: rgb(var(--accent-rgb) / .16); }
+.ann.pinned .ann-tag { color: var(--star); background: rgba(251, 191, 36, .14); }
+.ann-title { flex: 1; min-width: 0; font-size: 14.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ann-date { flex: none; color: var(--muted); font-size: 12px; }
+.ann-caret { flex: none; width: 14px; text-align: center; color: var(--muted); }
+.ann-body { padding: 0 14px 12px; color: #c9cddb; white-space: pre-line; line-height: 1.6; font-size: 14px; }
+.ann-by { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px; }
+.danger-link { color: var(--danger); margin-left: auto; font-size: 13px; }
+.ann-more { display: block; margin: 8px 0 0 auto; font-size: 13px; }
+.ann-compose { display: flex; flex-direction: column; gap: 8px; padding: 14px; margin-bottom: 10px; background: var(--panel); border: 1px solid var(--accent); border-radius: 10px; }
+.ann-compose textarea { resize: vertical; }
+.ann-compose-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 640px) { .ann-row { padding: 9px 12px; gap: 8px; } .ann-date { display: none; } }
+.member-no { color: var(--accent-2); font-weight: 600; }

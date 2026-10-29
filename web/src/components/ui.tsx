@@ -131,6 +131,22 @@ export function Cover({ src }: { src?: string | null }) {
   return url ? <img src={url} alt="" loading="lazy" decoding="async" onError={(e) => e.currentTarget.remove()} /> : null;
 }
 
+// Puan dağılımı: ince sütunlar, solda yarım yıldız sağda beş yıldız; üzerine gelince kaç kişi olduğu
+export function RatingBars({ ratings, wide = false }: { ratings: number[]; wide?: boolean }) {
+  if (ratings.length < 2) return null;
+  const bins = Array.from({ length: 10 }, (_, i) => ratings.filter((r) => Math.min(10, Math.max(1, Math.round(r))) === i + 1).length);
+  const max = Math.max(...bins);
+  return (
+    <div className={`rbars ${wide ? "wide" : ""}`} role="img" aria-label="Puan dağılımı">
+      <span className="rb-end">½</span>
+      <span className="rb-cols">
+        {bins.map((n, i) => <i key={i} className={n ? "" : "zero"} style={{ height: `${Math.max(6, (n / max) * 100)}%` }} title={`${num((i + 1) / 2)} yıldız: ${n}`} />)}
+      </span>
+      <span className="rb-end">★★★★★</span>
+    </div>
+  );
+}
+
 export function Stats({ list }: { list: Entry[] }) {
   const { scale } = useApp();
   const rated = list.filter((i) => i.rating > 0);

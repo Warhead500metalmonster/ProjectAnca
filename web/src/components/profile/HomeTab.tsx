@@ -9,7 +9,7 @@ import { q, sb } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { useProfile } from "@/components/ProfileShell";
-import { Cover, EntryCard, FeedItem, Rating, RichText, Stats } from "@/components/ui";
+import { Cover, EntryCard, FeedItem, Rating, RatingBars, RichText, Stats } from "@/components/ui";
 import { ListCard } from "@/components/ListCard";
 import { FavoritesSection } from "./LibraryTab";
 
@@ -93,6 +93,7 @@ function HomeSection({ k }: { k: string }) {
       <section className="section">
         <div className="section-head"><h2>{label(k)}</h2><Link className="link" href={`${base}/stats`}>Ayrıntılı istatistik</Link></div>
         <div className="stats"><Stats list={entries} /></div>
+        <RatingBars wide ratings={entries.filter((e) => e.rating).map((e) => Number(e.rating))} />
       </section>
     ) : null;
   }

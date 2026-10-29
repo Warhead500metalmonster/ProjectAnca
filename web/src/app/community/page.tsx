@@ -14,6 +14,7 @@ import { useApp } from "@/components/AppProvider";
 import { Cover, Feed, UserRow } from "@/components/ui";
 import { ImportPromo } from "@/components/ImportPromo";
 import { BestMatches } from "@/components/BestMatches";
+import { Announcements } from "@/components/Announcements";
 
 interface Slim { rawg_id: number | null; title: string; cover: string | null; rating: number }
 
@@ -92,6 +93,7 @@ export default function Community() {
         <div className="mosaic-text"><h1>Topluluk</h1><p>Herkes neyi oynuyor, neyi izliyor? Keşfet, takip et.</p></div>
       </section>
       {!me && <ImportPromo signedIn={false} compact />}
+      <Announcements />
       {games.length > 0 && (
         <section className="section">
           <div className="section-head">

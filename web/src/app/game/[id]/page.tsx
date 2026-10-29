@@ -12,7 +12,7 @@ import { fetchPageEdit } from "@/lib/data";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
-import { Feed } from "@/components/ui";
+import { Feed, RatingBars } from "@/components/ui";
 import { Lightbox } from "@/components/Lightbox";
 import { PageEditor } from "@/components/PageEditor";
 import { ListsWith } from "@/components/ListsWith";
@@ -117,7 +117,7 @@ export default function GamePage() {
               : g?.genres?.length ? <div className="genres">{g.genres.map((x) => <Link key={x.id} href={gamesHref("genres", x)}>{x.name}</Link>)}</div> : null}
           </div>
           <div className="gh-score">
-            <div><b>★ {avg ? avgText(avg, scale) : "–"}</b><span>{rated.length} oy · Ancalog</span></div>
+            <div><b>★ {avg ? avgText(avg, scale) : "–"}</b><span>{rated.length} oy · Ancalog</span><RatingBars ratings={rated.map((l) => Number(l.rating))} /></div>
             {mine?.rating ? <div><b className="you">★ {scoreText(Number(mine.rating), scale)}</b><span>Senin puanın</span></div> : null}
             {friendAvg ? <div title="Takip ettiklerinin bu içeriğe verdiği puanların ortalaması"><b className="friends">★ {avgText(friendAvg.avg, scale)}</b><span>{friendAvg.n} takip ettiğin</span></div> : null}
             {g?.metacritic ? <div><b className="mc">{g.metacritic}</b><span>Metacritic</span></div> : null}
