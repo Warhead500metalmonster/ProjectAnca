@@ -10,6 +10,7 @@ import { applyTheme } from "@/lib/theme";
 import { countOf, q, sb, supabaseConfigured } from "@/lib/supabase";
 import { EntryForm } from "./EntryForm";
 import { EntryView } from "./EntryView";
+import { ReportDialog, type ReportTarget } from "./ReportDialog";
 import { ListPicker } from "./ListPicker";
 
 interface FormOpts { game?: RawgGame | null; type?: Entry["type"]; item?: Item | null }
@@ -38,6 +39,9 @@ interface Ctx {
   openForm: (entry?: Entry | null, opts?: FormOpts) => void;
   openView: (entry: Entry) => void;
   pickList: (item: Item) => void;
+  blocked: Set<string>;     // engellediğim kişiler: hareketleri ve yorumları bana görünmez
+  toggleBlock: (p: { id: string; username: string }) => Promise<void>;
+  report: (t: ReportTarget) => void; // raporlama penceresini açar
 }
 
 const AppCtx = createContext<Ctx | null>(null);
@@ -52,6 +56,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const [me, setMe] = useState<Profile | null>(null);
   const [following, setFollowing] = useState<Set<string>>(new Set());
+  const [blocked, setBlocked] = useState<Set<string>>(new Set());
+  const [reporting, setReporting] = useState<ReportTarget | null>(null);
   const [followers, setFollowers] = useState<Set<string>>(new Set());
   const [mine, setMine] = useState<Entry[]>([]);
   const [badges, setBadges] = useState<Map<string, string[]>>(new Map());
@@ -134,24 +140,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setMe(null);
       setFollowing(new Set());
       setFollowers(new Set());
+      setBlocked(new Set());
       setMine([]);
       setUnread(0);
       if (!id) return;
-      const [profile, f, fr, entries] = await Promise.all([
+      const [profile, f, fr, entries, bl] = await Promise.all([
         q<Profile | null>(client.from("profiles").select("*").eq("id", id).maybeSingle()),
         q<{ following_id: string }[]>(client.from("follows").select("following_id").eq("follower_id", id)),
         q<{ follower_id: string }[]>(client.from("follows").select("follower_id").eq("following_id", id)),
         fetchEntries(id),
+        // veritabanı henüz güncellenmediyse (020) engel listesi boş kalır
+        q<{ blocked_id: string }[]>(client.from("blocks").select("blocked_id").eq("blocker_id", id)).catch(() => []),
       ]);
       if (userId.current !== id) return;
       setMe(profile);
       setFollowing(new Set(f.map((r) => r.following_id)));
       setFollowers(new Set(fr.map((r) => r.follower_id)));
       setMine(entries);
+      setBlocked(new Set(bl.map((r) => r.blocked_id)));
       checkInbox();
     }
 
     loadBadges();
+    // Kurucunun profil fotoğrafı çerçevesinin rengi (kendisi Ayarlar'dan seçer); her yerde aynı renk görünür
+    client.from("site_settings").select("value").eq("key", "owner_frame").maybeSingle().then(({ data }) => {
+      const c = (data?.value as { color?: string } | null)?.color;
+      if (c && /^#[0-9a-f]{6}$/i.test(c)) document.documentElement.style.setProperty("--frame", c);
+    });
     client.auth.getSession()
       .then(({ data }) => loadMe(data.session?.user.id ?? null))
       .catch(console.error)
@@ -218,6 +233,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [me, following, refresh, toast]);
 
+  const toggleBlock = useCallback(async (p: { id: string; username: string }) => {
+    if (!me) return;
+    const on = blocked.has(p.id);
+    if (!on && !confirm(`@${p.username} engellensin mi?
+
+Seni takip edemez, sana yazamaz, kayıtlarına yorum yapamaz. Aranızdaki takipler kalkar, onun hareketlerini ve yorumlarını görmezsin. İstediğin zaman engeli kaldırabilirsin.`)) return;
+    try {
+      if (on) await q(sb().from("blocks").delete().eq("blocker_id", me.id).eq("blocked_id", p.id));
+      else await q(sb().from("blocks").insert({ blocker_id: me.id, blocked_id: p.id }));
+      setBlocked((s) => { const n = new Set(s); if (on) n.delete(p.id); else n.add(p.id); return n; });
+      if (!on) setFollowing((s) => { const n = new Set(s); n.delete(p.id); return n; });
+      toast(on ? `@${p.username} engeli kaldırıldı` : `@${p.username} engellendi`);
+      refresh();
+    } catch (err) {
+      const m = (err as Error).message;
+      toast(m.includes("blocks") ? "Engelleme için veritabanı henüz güncellenmemiş (020)." : "Olmadı: " + m);
+    }
+  }, [me, blocked, refresh, toast]);
+
+  const report = useCallback((t: ReportTarget) => {
+    if (!me) return router.push("/login");
+    setReporting(t);
+  }, [me, router]);
+
   const openForm: Ctx["openForm"] = useCallback((entry = null, opts = {}) => {
     if (!me) return router.push("/login");
     setForm({ entry, opts });
@@ -237,7 +276,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const value: Ctx = {
     me, setMe, following, followers, isFriend: (id) => following.has(id) && followers.has(id),
     mine, myEntry, badges, loadBadges, isOwner: myBadges.includes("owner"), isAdmin: myBadges.some((b) => b === "owner" || b === "admin"), scale: me?.rating_scale === 10 ? 10 : 5, unread, notifAt,
-    ready, version, refresh, checkInbox, toast, toggleFollow, openForm, openView: setViewing, pickList,
+    ready, version, refresh, checkInbox, toast, toggleFollow, openForm, openView: setViewing, pickList, blocked, toggleBlock, report,
   };
 
   return (
@@ -246,6 +285,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       {form && <EntryForm entry={form.entry} {...form.opts} onClose={() => setForm(null)} />}
       {viewing && <EntryView entry={viewing} onClose={() => setViewing(null)} onEdit={(e) => { setViewing(null); openForm(e); }} />}
       {picking && <ListPicker item={picking} onClose={() => setPicking(null)} />}
+      {reporting && <ReportDialog target={reporting} onClose={() => setReporting(null)} />}
       {toastMsg && <div className="toast">{toastMsg}</div>}
     </AppCtx.Provider>
   );

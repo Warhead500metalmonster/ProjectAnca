@@ -42,7 +42,7 @@ export default function ListPage() {
 }
 
 function ListView({ list, base }: { list: List; base: Entry[] }) {
-  const { me, refresh, toast, openView, openForm } = useApp();
+  const { me, refresh, toast, openView, openForm, report } = useApp();
   const router = useRouter();
   const isOwner = me?.id === list.user_id;
   const items = [...(list.list_items || [])].sort((a, b) => a.position - b.position || a.created_at.localeCompare(b.created_at));
@@ -101,6 +101,10 @@ function ListView({ list, base }: { list: List; base: Entry[] }) {
               <button className="btn" onClick={() => navigator.clipboard.writeText(location.href).then(() => toast("Link kopyalandı; kime verirsen o açabilir"), () => toast(location.href))}>Linki kopyala</button>
             )}
           </div>
+        )}
+        {me && !isOwner && (
+          <div style={{ marginTop: 10 }}><button className="report-link" onClick={() => report({ kind: "list", id: list.id, user: list.user_id,
+            excerpt: [list.title, list.description].filter(Boolean).join(" / "), label: `@${owner.username} kullanıcısının "${list.title}" listesi` })}>Listeyi raporla</button></div>
         )}
       </section>
 

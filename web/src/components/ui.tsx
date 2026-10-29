@@ -273,8 +273,10 @@ function FeedGroup({ list }: { list: Entry[] }) {
 }
 
 // Uzun akışlar sayfanın sonuna kadar uzamasın: önce birkaçı, istenirse devamı
-export function Feed({ list, empty, step = 8 }: { list: Entry[]; empty?: React.ReactNode; step?: number }) {
+export function Feed({ list: all, empty, step = 8 }: { list: Entry[]; empty?: React.ReactNode; step?: number }) {
+  const { blocked } = useApp();
   const [shown, setShown] = useState(step);
+  const list = blocked.size ? all.filter((e) => !blocked.has(e.user_id)) : all; // engellediklerinin hareketleri görünmez
   if (!list.length) return <>{empty ?? <div className="empty">Henüz hareket yok.</div>}</>;
   const rows = groupFeed(list);
   return (

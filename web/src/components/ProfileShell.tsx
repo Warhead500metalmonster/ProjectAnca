@@ -46,7 +46,7 @@ export function ProfileShell({ children }: { children: React.ReactNode }) {
 }
 
 function Shell({ data: raw, children }: { data: ProfileData; children: React.ReactNode }) {
-  const { me, openForm, openView, isFriend, mine, isOwner, badges } = useApp();
+  const { me, openForm, openView, isFriend, mine, isOwner, badges, blocked, toggleBlock, report } = useApp();
   const path = usePathname();
   const isMe = me?.id === raw.profile.id;
   // Sahibinin gizlediği türler (ör. oyunlar) başkalarına profilin hiçbir yerinde görünmez; sahibi hepsini görür
@@ -89,7 +89,8 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
   const year = String(new Date().getFullYear());
   // Steam gibi gizli profil: fotoğraf, ad, kapak ve arka plan görünür; kütüphane ve sayılar görünmez (veritabanı da vermez)
   const privacy = profile.privacy || "public";
-  const locked = !isMe && (privacy === "private" || (privacy === "friends" && !isFriend(profile.id)));
+  const iBlocked = blocked.has(raw.profile.id); // engellediğim kişinin profilinde içerik gösterilmez
+  const locked = !isMe && (iBlocked || privacy === "private" || (privacy === "friends" && !isFriend(profile.id)));
 
   return (
     <ProfileCtx.Provider value={{ ...data, isMe }}>
@@ -123,7 +124,18 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
               : <>
                 {match !== null && !locked && <Link className="match-pill" href={`/u/${profile.username}/compare`} title="Zevkleriniz ne kadar uyuşuyor">Uyum %{match}</Link>}
                 {/* Arkadaşlar birbirine; site sahibi herkese, herkes de site sahibine yazabilir */}
-                {(isFriend(profile.id) || isOwner || badges.get(profile.id)?.includes("owner")) && <Link className="btn" href={`/chat/${profile.username}`}>Mesaj</Link>}<FollowButton id={profile.id} />
+                {(isFriend(profile.id) || isOwner || badges.get(profile.id)?.includes("owner")) && <Link className="btn" href={`/chat/${profile.username}`}>Mesaj</Link>}{!iBlocked && <FollowButton id={profile.id} />}
+                {me && (
+                  <details className="more-menu">
+                    <summary className="btn" aria-label="Diğer seçenekler" title="Diğer seçenekler">⋯</summary>
+                    <div className="menu" role="menu">
+                      <button role="menuitem" onClick={(ev) => { ev.currentTarget.closest("details")?.removeAttribute("open");
+                        report({ kind: "profile", id: profile.id, user: profile.id, excerpt: [profile.display_name, profile.bio].filter(Boolean).join(" / ") || null, label: `@${profile.username} profili` }); }}>Raporla</button>
+                      <button role="menuitem" className="danger" onClick={(ev) => { ev.currentTarget.closest("details")?.removeAttribute("open"); toggleBlock(profile); }}>
+                        {iBlocked ? "Engeli kaldır" : "Engelle"}</button>
+                    </div>
+                  </details>
+                )}
               </>}
           </div>
         </div>
@@ -142,8 +154,10 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
         {locked ? (
           <div className="profile-locked">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 1 1 6 0v3z" /></svg>
-            <b>{privacy === "private" ? "Bu profil gizli" : "Bu profili sadece arkadaşları görebilir"}</b>
-            <span className="muted">{privacy === "private"
+            <b>{iBlocked ? "Bu kişiyi engelledin" : privacy === "private" ? "Bu profil gizli" : "Bu profili sadece arkadaşları görebilir"}</b>
+            <span className="muted">{iBlocked
+              ? <>Hareketlerini ve yorumlarını görmüyorsun. <button className="link" onClick={() => toggleBlock(profile)}>Engeli kaldır</button></>
+              : privacy === "private"
               ? <>@{profile.username} kütüphanesini kendine saklamayı seçmiş.</>
               : <>Karşılıklı takipleşince kütüphanesini, listelerini ve istatistiklerini görebilirsin.</>}</span>
           </div>

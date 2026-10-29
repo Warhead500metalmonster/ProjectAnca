@@ -5,6 +5,12 @@ export interface ChangelogItem { date: string; title: string; body: string }
 export const CHANGELOG: ChangelogItem[] = [
   {
     date: "2026-10-29",
+    title: "Engelleme ve raporlama",
+    body: "Birini engelleyebilirsin: seni takip edemez, sana yazamaz, kayıtlarına yorum yapamaz; onun hareketlerini ve yorumlarını da görmezsin. Profilindeki ⋯ düğmesinden.\n"
+      + "Kurallara uymayan profilleri, incelemeleri, yorumları, listeleri, forum yazılarını ve mesajları raporlayabilirsin. Raporun sadece yönetime gider, kimin raporladığı bilinmez.",
+  },
+  {
+    date: "2026-10-29",
     title: "Profil gizliliği: herkese açık, sadece arkadaşlar ya da gizli",
     body: "Ayarlar'dan profilini kimlerin görebileceğini seçebilirsin.\n"
       + "Gizli profilde adın, fotoğrafın, kapağın ve arka planın görünür; kütüphanen, listelerin ve istatistiklerin sadece sende kalır.\n"

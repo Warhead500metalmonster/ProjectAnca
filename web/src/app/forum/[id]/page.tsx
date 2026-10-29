@@ -16,7 +16,7 @@ import { Avatar, Name, RichText } from "@/components/ui";
 export default function ThreadPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { me, isAdmin, toast } = useApp();
+  const { me, isAdmin, toast, blocked, report } = useApp();
   const [tick, setTick] = useState(0);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -92,10 +92,14 @@ export default function ThreadPage() {
             <button className="link danger" onClick={removeThread}>Konuyu sil</button>
           </div>
         )}
+        {me && me.id !== t.user_id && (
+          <div className="post-tools"><button className="report-link" onClick={() => report({ kind: "forum_thread", id: t.id, user: t.user_id,
+            excerpt: `${t.title} / ${t.body}`, label: `@${t.profiles?.username} kullanıcısının "${t.title}" konusu` })}>Raporla</button></div>
+        )}
       </article>
 
       <h3 className="set-h">{posts.length ? `${posts.length} cevap` : "Henüz cevap yok"}</h3>
-      {posts.map((p) => (
+      {posts.filter((p) => !blocked.has(p.user_id)).map((p) => (
         <article key={p.id} className="post">
           <header>
             <Avatar p={p.profiles} />
@@ -106,6 +110,10 @@ export default function ThreadPage() {
             </div>
             {mineOrAdmin(p.user_id) && (
               <button className="link danger small" onClick={() => confirm("Bu cevap silinsin mi?") && run(q(sb().from("forum_posts").delete().eq("id", p.id)), "Cevap silindi")}>Sil</button>
+            )}
+            {me && me.id !== p.user_id && (
+              <button className="report-link" onClick={() => report({ kind: "forum_post", id: p.id, user: p.user_id, excerpt: p.body,
+                label: `@${p.profiles?.username} kullanıcısının "${t.title}" konusundaki cevabı` })}>Raporla</button>
             )}
           </header>
           <p className="post-body"><RichText text={p.body} /></p>

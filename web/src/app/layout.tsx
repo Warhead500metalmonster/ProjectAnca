@@ -6,6 +6,7 @@ import "./globals.css";
 import { AppProvider } from "@/components/AppProvider";
 import { Topbar } from "@/components/Topbar";
 import { Announcement } from "@/components/Announcement";
+import { WarningBanner } from "@/components/WarningBanner";
 import { GuestBar } from "@/components/GuestBar";
 import { themeBootScript } from "@/lib/theme";
 
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AppProvider>
           <Suspense fallback={null}><Topbar /></Suspense>
           <Announcement />
+          <WarningBanner />
           <Suspense fallback={null}><GuestBar /></Suspense>
           <main className="app"><Suspense fallback={<div className="loading">Yükleniyor…</div>}>{children}</Suspense></main>
           <footer className="footer">

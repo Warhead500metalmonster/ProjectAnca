@@ -11,7 +11,7 @@ import { useApp } from "./AppProvider";
 
 // Bir kaydın ayrıntılarını, beğeni ve yorumlarını gösteren pencere
 export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose: () => void; onEdit: (e: Entry) => void }) {
-  const { me, myEntry, scale, openForm, pickList, toast, refresh, isAdmin } = useApp();
+  const { me, myEntry, scale, openForm, pickList, toast, refresh, isAdmin, blocked, report } = useApp();
   const ref = useRef<HTMLDialogElement>(null);
   const [likers, setLikers] = useState<string[] | null>(null);
   const [comments, setComments] = useState<Comment[] | null>(null);
@@ -166,7 +166,7 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
             <span className="muted">{comments?.length ?? "…"} yorum</span>
           </div>
           <div className="comments">
-            {comments?.map((c) => (
+            {comments?.filter((c) => !blocked.has(c.user_id)).map((c) => (
               <div className="comment" key={c.id}>
                 <Link href={`/u/${c.profiles?.username}`} onClick={close}><Avatar p={c.profiles} cls="sm" /></Link>
                 <div>
@@ -174,6 +174,10 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
                     <Link href={`/u/${c.profiles?.username}`} onClick={close}><b><Name p={c.profiles} /></b></Link>
                     <span className="muted">{timeAgo(c.created_at)}</span>
                     {me && (me.id === c.user_id || isMine || isAdmin) && <button type="button" className="link danger" onClick={() => deleteComment(c)}>sil</button>}
+                    {me && me.id !== c.user_id && (
+                      <button type="button" className="report-link" onClick={() => { close(); report({ kind: "comment", id: c.id, user: c.user_id, excerpt: c.body,
+                        label: `@${c.profiles?.username} kullanıcısının "${e.title}" kaydına yorumu` }); }}>Raporla</button>
+                    )}
                   </div>
                   <p><RichText text={c.body} /></p>
                 </div>
@@ -192,6 +196,10 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
             <button type="button" className="btn" onClick={() => { close(); pickList(itemOf(e)); }}>Listeye ekle</button>
             <span className="spacer" />
             {isMine && <button type="button" className="btn primary" onClick={() => onEdit(e)}>Düzenle</button>}
+            {me && !isMine && (
+              <button type="button" className="report-link" onClick={() => { close(); report({ kind: "entry", id: e.id, user: e.user_id,
+                excerpt: [e.notes, e.progress, e.drop_note].filter(Boolean).join(" / ") || null, label: `@${p.username} kullanıcısının "${e.title}" kaydı ve incelemesi` }); }}>Raporla</button>
+            )}
           </div>
           {isAdmin && !isMine && (
             <div className="admin-mod">

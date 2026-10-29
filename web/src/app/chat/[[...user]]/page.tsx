@@ -15,7 +15,7 @@ import { SocialTabs } from "@/components/SocialTabs";
 export default function ChatPage() {
   const params = useParams<{ user?: string[] }>();
   const username = params.user?.[0] ? decodeURIComponent(params.user[0]).toLowerCase() : "";
-  const { me, ready, following, followers, checkInbox, toast, badges, isOwner } = useApp();
+  const { me, ready, following, followers, checkInbox, toast, badges, isOwner, blocked, toggleBlock, report } = useApp();
   const [friends, setFriends] = useState<Profile[] | null>(null);
   const [msgs, setMsgs] = useState<Message[]>([]);
   const [text, setText] = useState("");
@@ -102,7 +102,7 @@ export default function ChatPage() {
             <Link key={f.id} href={`/chat/${f.username}`} className={`chat-friend ${f.username === username ? "active" : ""}`}>
               <Avatar p={f} />
               <div className="grow">
-                <b><Name p={f} />{isSiteOwner(f.id) && <em className="owner-tag">Site sahibi</em>}</b>
+                <b><Name p={f} />{isSiteOwner(f.id) && <em className="owner-tag">Kurucu</em>}</b>
                 <span>{m ? `${m.sender_id === me.id ? "Sen: " : ""}${m.body}` : isSiteOwner(f.id) ? "Soru, sorun ya da şikayetin için yaz" : "Henüz mesaj yok"}</span>
               </div>
               {n > 0 && <span className="unread">{n}</span>}
@@ -120,7 +120,12 @@ export default function ChatPage() {
               <Link href="/chat" className="icon-btn back" aria-label="Geri">←</Link>
               <Avatar p={friend} />
               <Link href={`/u/${friend.username}`}><b><Name p={friend} /></b> <span className="muted">@{friend.username}</span></Link>
-              {isSiteOwner(friend.id) && <em className="owner-tag">Site sahibi</em>}
+              {isSiteOwner(friend.id) && <em className="owner-tag">Kurucu</em>}
+              <span style={{ flex: 1 }} />
+              <button className="report-link" onClick={() => report({ kind: "message", id: friend.id, user: friend.id,
+                excerpt: convo.filter((m) => m.sender_id === friend.id).slice(-5).map((m) => m.body).join(" / ") || null,
+                label: `@${friend.username} ile mesajlaşma (son mesajları rapora eklenir)` })}>Raporla</button>
+              <button className="report-link" onClick={() => toggleBlock(friend)}>{blocked.has(friend.id) ? "Engeli kaldır" : "Engelle"}</button>
             </header>
             <div className="msgs" ref={box}>
               {convo.length ? convo.map((m, i) => {

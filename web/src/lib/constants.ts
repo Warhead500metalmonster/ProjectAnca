@@ -68,8 +68,9 @@ const secOf = (x: Entry) => x.playtime_sec ?? (x.hours ? Number(x.hours) * 3600 
 const count = (f: (x: Entry) => unknown): Prog => (e) => e.filter(f).length;
 const hoursOf: Prog = (e) => Math.floor(e.reduce((s, x) => s + (x.playtime_sec ?? (x.hours ? Number(x.hours) * 3600 : 0)), 0) / 3600);
 export const BADGES: Record<string, { icon: string; name: string; desc: string; tone: string; earn?: number; progress?: Prog }> = {
-  owner: { icon: "♛", name: "Site Sahibi", desc: "Ancalog'un kurucusu ve sahibi", tone: "gold" },
-  admin: { icon: "◆", name: "Yönetici", desc: "Ancalog'un içeriklerini düzenleyen ekipten", tone: "blue" },
+  owner: { icon: "♛", name: "Kurucu", desc: "Ancalog'u kuran kişi", tone: "gold" },
+  dev: { icon: "⚒", name: "Geliştirici", desc: "Ancalog'u yapan ve geliştiren ekipten", tone: "dev" },
+  admin: { icon: "◆", name: "Yönetici", desc: "Ancalog'u yöneten ekipten", tone: "blue" },
   founder: { icon: "★", name: "Öncü", desc: "Ancalog'a ilk katılanlardan biri", tone: "violet" },
   critic: { icon: "◆", name: "Eleştirmen", desc: "10 inceleme yaz", tone: "", earn: 10, progress: (e) => e.filter((x) => x.notes?.trim()).length },
   completionist: { icon: "◆", name: "Tamamlayıcı", desc: "50 oyun bitir", tone: "", earn: 50, progress: doneOf("game") },

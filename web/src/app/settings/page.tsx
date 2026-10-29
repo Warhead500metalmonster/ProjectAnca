@@ -40,7 +40,7 @@ export default function Settings() {
 }
 
 function SettingsForm({ me }: { me: Profile }) {
-  const { setMe, toast } = useApp();
+  const { setMe, toast, isOwner } = useApp();
   const router = useRouter();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -208,6 +208,8 @@ function SettingsForm({ me }: { me: Profile }) {
         </label>
       </div>
       <p className="muted small">Butonlar, bağlantılar ve arka plandaki ışık bu renge döner. Seçince hemen görürsün; kalıcı olması için aşağıdan kaydet.</p>
+
+      {isOwner && <FrameColor />}
 
       <h3 className="set-h">Profil şarkısı</h3>
       <div className="field">
@@ -407,5 +409,30 @@ function DeleteAccount({ me }: { me: Profile }) {
         </>
       )}
     </details>
+  );
+}
+
+// Sadece kurucu: profil fotoğrafının çevresindeki çerçevenin rengi; seçince hemen kaydolur, herkes aynı rengi görür
+const FRAMES = ["#f5c542", "#e5e7eb", "#58a98a", "#3fa7c9", "#8b5cf6", "#ec4899", "#ef4444", "#f97316"];
+function FrameColor() {
+  const { toast } = useApp();
+  const [color, setColor] = useState(() => (typeof document !== "undefined" && getComputedStyle(document.documentElement).getPropertyValue("--frame").trim()) || "#f5c542");
+  async function pick(c: string) {
+    setColor(c);
+    document.documentElement.style.setProperty("--frame", c);
+    const { error } = await sb().from("site_settings").upsert({ key: "owner_frame", value: { color: c }, updated_at: new Date().toISOString() });
+    toast(error ? "Kaydedilemedi: " + error.message : "Çerçeve rengi kaydedildi");
+  }
+  return (
+    <>
+      <h3 className="set-h">Çerçeve rengi <span className="muted small">· profil fotoğrafının çevresindeki kurucu çerçevesi, herkes görür</span></h3>
+      <div className="swatches">
+        {FRAMES.map((c) => <button type="button" key={c} className={`swatch ${color.toLowerCase() === c ? "on" : ""}`} style={{ background: c }} onClick={() => pick(c)} aria-label={c} />)}
+        <label className="swatch custom" title="Kendi rengini seç">
+          <input type="color" value={/^#[0-9a-f]{6}$/i.test(color) ? color : "#f5c542"} title="Seçip pencereyi kapatınca kaydolur"
+            onChange={(e) => { setColor(e.target.value); document.documentElement.style.setProperty("--frame", e.target.value); }} onBlur={(e) => pick(e.target.value)} />+
+        </label>
+      </div>
+    </>
   );
 }

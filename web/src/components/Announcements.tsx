@@ -17,7 +17,7 @@ type Item = { key: string; kind: "post" | "update"; title: string; body: string;
 // Topluluk → Duyurular: site sahibinin yazdıkları (veritabanında) ve sitenin yenilikleri (kodda, lib/changelog.ts) bir arada.
 // onHome: ana sayfada en yenisi ince tek satır olarak, tıklayınca Topluluk'taki duyurulara gider
 export function Announcements({ onHome = false }: { onHome?: boolean }) {
-  const { isOwner, toast, version } = useApp();
+  const { isAdmin: isOwner, toast, version } = useApp(); // site sahibi ve yöneticiler yazar
   const [shown, setShown] = useState(3);
   const [open, setOpen] = useState<string | null>(null); // uzun yazının tamamı açık olan
   const [writing, setWriting] = useState(false);

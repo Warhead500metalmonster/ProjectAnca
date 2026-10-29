@@ -12,10 +12,10 @@ import { useApp } from "@/components/AppProvider";
 import { Avatar, Name, UserRow } from "@/components/ui";
 import { NOTICE_TONES, type Notice, fetchNotice } from "@/components/Announcement";
 
-const TABS = [["home", "Genel"], ["members", "Üyeler"], ["content", "İçerikler"], ["comments", "Moderasyon"]] as const;
+const TABS = [["home", "Genel"], ["reports", "Raporlar"], ["members", "Üyeler"], ["content", "İçerikler"], ["comments", "Moderasyon"]] as const;
 type Tab = (typeof TABS)[number][0];
 // Yöneticinin elle verebileceği rozetler (site sahibi / yönetici rozeti hariç)
-const GRANTABLE = Object.keys(BADGES).filter((b) => b !== "owner" && b !== "admin");
+const GRANTABLE = Object.keys(BADGES).filter((b) => b !== "owner" && b !== "admin" && b !== "dev");
 
 // Yönetim paneli: sadece site sahibi ve yöneticiler girer (veritabanı da başkasına izin vermez)
 export default function AdminPage() {
@@ -37,6 +37,7 @@ export default function AdminPage() {
         </div>
       </section>
       {tab === "home" && <><Overview /><NoticeEditor /></>}
+      {tab === "reports" && <Reports />}
       {tab === "members" && <><Admins /><Members /><BlockedWords /></>}
       {tab === "content" && <><Catalog /><Edits /></>}
       {tab === "comments" && <><Reviews /><Comments /><ForumPosts /><PublicLists /></>}
@@ -45,7 +46,7 @@ export default function AdminPage() {
 }
 
 function Admins() {
-  const { isOwner, toast, loadBadges } = useApp();
+  const { isAdmin, toast, loadBadges } = useApp();
   const [v, setV] = useState(0);
   const [name, setName] = useState("");
   const { data } = useLoad(async () => {
@@ -68,7 +69,7 @@ function Admins() {
   return (
     <section className="section">
       <div className="section-head"><h2>Yöneticiler</h2></div>
-      {isOwner && (
+      {isAdmin && (
         <form className="admin-add" onSubmit={(e) => { e.preventDefault(); if (name.trim()) set(name.trim().replace(/^@/, ""), true); }}>
           <input className="input" placeholder="Kullanıcı adı (ör. bensezar)" value={name} onChange={(e) => setName(e.target.value)} />
           <button className="btn primary" type="submit">Yönetici yap</button>
@@ -78,12 +79,12 @@ function Admins() {
         {data?.map(({ p, owner }) => (
           <div key={p.id} className="admin-row">
             <UserRow p={p} />
-            {owner ? <span className="tag">Site sahibi</span>
-              : isOwner ? <button className="btn danger" onClick={() => set(p.username, false)}>Çıkar</button> : null}
+            {owner ? <span className="tag">Kurucu</span>
+              : isAdmin ? <button className="btn danger" onClick={() => set(p.username, false)}>Çıkar</button> : null}
           </div>
         ))}
       </div>
-      {!isOwner && <p className="muted" style={{ fontSize: 13 }}>Yönetici ekleyip çıkarmayı sadece site sahibi yapabilir.</p>}
+      <p className="muted" style={{ fontSize: 13 }}>Yöneticiler senin yetkilerine sahiptir (sadece site sahibine işlem yapamazlar); yönetici yaptığın kişiye Yönetici rozeti kendiliğinden gelir. Üyeler listesinden de tek tıkla yönetici yapabilirsin.</p>
     </section>
   );
 }
@@ -334,7 +335,7 @@ const PARTS: [string, string, (p: Profile) => unknown][] = [
 const mutedNow = (p: Profile) => !!p.muted_until && p.muted_until > new Date().toISOString();
 
 function Members() {
-  const { badges, loadBadges, toast, isOwner } = useApp();
+  const { badges, loadBadges, toast } = useApp();
   const [cleaning, setCleaning] = useState<{ id: string; parts: Set<string> } | null>(null);
   const [text, setText] = useState("");
   const [v, setV] = useState(0);
@@ -361,8 +362,18 @@ Tamam = engelle, İptal = sadece sil`);
   // Yönetici site sahibine, diğer yöneticilere sadece site sahibi işlem yapabilir (veritabanı da denetler)
   const canModerate = (p: Profile) => {
     const has = badges.get(p.id) || [];
-    return !has.includes("owner") && (isOwner || !has.includes("admin"));
+    return !has.includes("owner");
   };
+
+  // Tek tıkla yönetici yap / çıkar (Yönetici rozeti kendiliğinden gelir, gider)
+  async function setAdmin(p: Profile, on: boolean) {
+    if (!confirm(on ? `@${p.username} yönetici olsun mu? Senin yetkilerine sahip olur (site sahibine işlem yapamaz).` : `@${p.username} artık yönetici olmasın mı?`)) return;
+    const { error } = await sb().rpc("set_admin", { p_username: p.username, p_on: on });
+    if (error) return toast("Olmadı: " + error.message);
+    toast(on ? `@${p.username} artık yönetici` : `@${p.username} yöneticilikten çıkarıldı`);
+    loadBadges();
+    setV((x) => x + 1);
+  }
 
   async function mute(p: Profile, hours: number) {
     if (hours && !confirm(`@${p.username} ${MUTES.find(([h]) => h === hours)?.[1].toLocaleLowerCase("tr")} susturulsun mu? Bu sürede yorum, forum mesajı ve mesaj yazamaz (sana yazabilir).`)) return;
@@ -421,7 +432,8 @@ Tamam = engelle, İptal = sadece sil`);
                     {MUTES.map(([h, label]) => <option key={h} value={h}>{label}</option>)}
                   </select>
                   <button className="btn" onClick={() => setCleaning(cleaning?.id === p.id ? null : { id: p.id, parts: new Set() })}>Profili temizle</button>
-                  {isOwner && <button className="btn danger" onClick={() => removeUser(p)}>Hesabı sil</button>}
+                  <button className="btn" onClick={() => setAdmin(p, !has.includes("admin"))}>{has.includes("admin") ? "Yöneticilikten çıkar" : "Yönetici yap"}</button>
+                  <button className="btn danger" onClick={() => removeUser(p)}>Hesabı sil</button>
                 </div>
               )}
               {cleaning?.id === p.id && (
@@ -654,6 +666,127 @@ function BlockedWords() {
           </div>
         </>
       )}
+    </section>
+  );
+}
+
+// ---------- Raporlar: kullanıcıların raporladıkları; içeriği sil, yazana uyarı gönder, banla ya da bir şey yapmadan kapat ----------
+interface Report {
+  id: string; kind: string; target_id: string; target_user: string | null; reason: string; note: string | null; excerpt: string | null;
+  status: "open" | "resolved" | "dismissed"; created_at: string; reporter: Profile | null; target: Profile | null;
+}
+const KIND_NAMES: Record<string, string> = { profile: "Profil", entry: "Kayıt / inceleme", comment: "Yorum", list: "Liste", forum_thread: "Forum konusu", forum_post: "Forum cevabı", message: "Mesaj" };
+
+function Reports() {
+  const { toast, isAdmin, badges, loadBadges } = useApp();
+  const [v, setV] = useState(0);
+  const [show, setShow] = useState<"open" | "done">("open");
+  const { data, error } = useLoad(() => {
+    const req = sb().from("reports").select(`*, reporter:profiles!reports_reporter_id_fkey(${PROFILE_COLS}), target:profiles!reports_target_user_fkey(${PROFILE_COLS})`);
+    return q<Report[]>((show === "open" ? req.eq("status", "open") : req.neq("status", "open")).order("created_at", { ascending: false }).limit(100));
+  }, [v, show]);
+
+  async function close(r: Report, status: "resolved" | "dismissed", msg: string) {
+    try { await q(sb().from("reports").update({ status }).eq("id", r.id)); toast(msg); setV((x) => x + 1); }
+    catch (err) { toast("Olmadı: " + (err as Error).message); }
+  }
+
+  // Raporlanan şeyin kendisini kaldır (türüne göre)
+  async function removeContent(r: Report) {
+    if (!confirm(`Raporlanan ${KIND_NAMES[r.kind].toLocaleLowerCase("tr")} silinsin mi?`)) return;
+    let error: { message: string } | null = null;
+    if (r.kind === "entry") ({ error } = await sb().rpc("admin_delete_entry", { p_entry: r.target_id }));
+    else if (r.kind === "list") ({ error } = await sb().rpc("admin_delete_list", { p_list: r.target_id }));
+    else if (r.kind === "comment") ({ error } = await sb().from("comments").delete().eq("id", r.target_id));
+    else if (r.kind === "forum_thread") ({ error } = await sb().from("forum_threads").delete().eq("id", r.target_id));
+    else if (r.kind === "forum_post") ({ error } = await sb().from("forum_posts").delete().eq("id", r.target_id));
+    else if (r.kind === "profile" && r.target)
+      ({ error } = await sb().rpc("admin_reset_profile", { p_username: r.target.username, p_parts: ["name", "bio", "avatar", "banner", "bg", "song", "home"] }));
+    if (error) return toast("Olmadı: " + error.message);
+    await close(r, "resolved", r.kind === "profile" ? "Profil temizlendi, rapor kapandı" : "İçerik silindi, rapor kapandı");
+  }
+
+  async function warn(r: Report) {
+    if (!r.target) return;
+    const body = prompt(`@${r.target.username} kişisine gidecek uyarı (siteye girince üstte görür):`,
+      `${KIND_NAMES[r.kind]} için uyarı: "${r.reason}" sebebiyle raporlandı. Lütfen site kurallarına dikkat et.`);
+    if (!body?.trim()) return;
+    try {
+      await q(sb().from("warnings").insert({ user_id: r.target.id, body: body.trim().slice(0, 1000) }));
+      await close(r, "resolved", `@${r.target.username} kişisine uyarı gönderildi`);
+    } catch (err) { toast("Olmadı: " + (err as Error).message); }
+  }
+
+  async function ban(r: Report) {
+    const t = r.target;
+    if (!t || !confirm(`@${t.username} süresiz susturulsun mu? Yorum, forum yazısı ve mesaj yazamaz (yönetime yazabilir). Üyeler sekmesinden istediğin zaman kaldırabilirsin.`)) return;
+    const { error } = await sb().rpc("admin_mute", { p_username: t.username, p_hours: 87600 });
+    if (error) return toast("Olmadı: " + error.message);
+    await close(r, "resolved", `@${t.username} süresiz susturuldu`);
+  }
+
+  async function removeUser(r: Report) {
+    const t = r.target;
+    if (!t || prompt(`@${t.username} hesabı ve bütün kayıtları KALICI olarak silinecek, aynı e-postayla tekrar kayıt olamayacak. Onaylamak için kullanıcı adını yaz:`)?.trim().toLowerCase() !== t.username) return;
+    const { error } = await sb().rpc("admin_delete_user", { p_username: t.username, p_ban: true });
+    if (error) return toast("Olmadı: " + error.message);
+    toast(`@${t.username} silindi ve engellendi`);
+    setV((x) => x + 1);
+    loadBadges();
+  }
+
+  // Site sahibine işlem yapılamaz (veritabanı da denetler)
+  const canAct = (t: Profile | null) => !!t && isAdmin && !(badges.get(t.id) || []).includes("owner");
+  const href = (r: Report) => r.kind === "profile" || r.kind === "message" ? `/u/${r.target?.username}`
+    : r.kind === "entry" ? `/u/${r.target?.username}?entry=${r.target_id}` : r.kind === "list" ? `/list/${r.target_id}`
+    : r.kind === "forum_thread" ? `/forum/${r.target_id}` : null;
+
+  return (
+    <section className="section">
+      <div className="section-head">
+        <h2>Raporlar</h2>
+        <div className="mini-tabs">
+          <button className={show === "open" ? "active" : ""} onClick={() => setShow("open")}>Bekleyenler</button>
+          <button className={show === "done" ? "active" : ""} onClick={() => setShow("done")}>Kapananlar</button>
+        </div>
+      </div>
+      {error ? <div className="muted">{error.includes("reports") ? "Raporlar için veritabanı henüz güncellenmemiş (020)." : error}</div>
+        : !data ? <div className="loading">Yükleniyor…</div>
+        : !data.length ? <div className="empty">{show === "open" ? "Bekleyen rapor yok. Her şey yolunda." : "Henüz kapanan rapor yok."}</div>
+        : (
+          <div className="report-list">
+            {data.map((r) => {
+              const link = href(r);
+              return (
+                <article key={r.id} className={`report-item ${r.status}`}>
+                  <header>
+                    <span className="ann-tag">{KIND_NAMES[r.kind] || r.kind}</span>
+                    <b>{r.reason}</b>
+                    <span className="muted small">{timeAgo(r.created_at)}</span>
+                    {r.status !== "open" && <span className="muted small">· {r.status === "resolved" ? "işlem yapıldı" : "bir şey yapılmadı"}</span>}
+                  </header>
+                  <div className="report-who muted small">
+                    {r.target ? <>Raporlanan: <Link href={`/u/${r.target.username}`}><b><Name p={r.target} /></b></Link> (@{r.target.username})</> : "Raporlanan kişi silinmiş"}
+                    {" · "}Raporlayan: {r.reporter ? <Link href={`/u/${r.reporter.username}`}>@{r.reporter.username}</Link> : "silinmiş hesap"}
+                  </div>
+                  {r.excerpt && <blockquote className="report-excerpt">{r.excerpt}</blockquote>}
+                  {r.note && <p className="report-note"><span className="muted small">Raporlayanın notu:</span> {r.note}</p>}
+                  {r.status === "open" && (
+                    <div className="report-actions">
+                      {link && <Link className="btn" href={link} target="_blank">Gör</Link>}
+                      {r.kind !== "message" && canAct(r.target) && <button className="btn danger-btn" onClick={() => removeContent(r)}>{r.kind === "profile" ? "Profili temizle" : "İçeriği sil"}</button>}
+                      {canAct(r.target) && <button className="btn" onClick={() => warn(r)}>Uyarı gönder</button>}
+                      {canAct(r.target) && <button className="btn danger-btn" onClick={() => ban(r)}>Banla (süresiz sustur)</button>}
+                      {canAct(r.target) && <button className="btn danger-btn" onClick={() => removeUser(r)}>Hesabı sil</button>}
+                      <span style={{ flex: 1 }} />
+                      <button className="btn ghost" onClick={() => close(r, "dismissed", "Rapor kapatıldı, bir şey yapılmadı")}>Bir şey yapma</button>
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        )}
     </section>
   );
 }

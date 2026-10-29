@@ -473,8 +473,9 @@ textarea { resize: vertical; }
 }
 
 /* ---------- Rozetler ---------- */
-.avatar.crown { box-shadow: 0 0 0 2px #f5c542, 0 0 14px rgba(245, 197, 66, .45); }
-.avatar.lg.crown { box-shadow: 0 0 0 3px #f5c542, 0 0 30px rgba(245, 197, 66, .5); }
+/* Kurucunun çerçevesi: rengi Ayarlar'dan seçilir (--frame), seçilmezse altın */
+.avatar.crown { box-shadow: 0 0 0 2px var(--frame, #f5c542), 0 0 14px color-mix(in srgb, var(--frame, #f5c542) 45%, transparent); }
+.avatar.lg.crown { box-shadow: 0 0 0 3px var(--frame, #f5c542), 0 0 30px color-mix(in srgb, var(--frame, #f5c542) 50%, transparent); }
 .bdg-i { margin-left: 4px; font-size: .9em; }
 .badge-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 12px 24px 0; }
 .badge-row .badge-row { margin: 8px 0 0; }
@@ -1730,3 +1731,43 @@ body {
   background: var(--panel); border: 1px solid var(--border); border-radius: 12px; }
 .profile-locked svg { width: 34px; height: 34px; fill: var(--muted); margin-bottom: 4px; }
 .profile-locked b { font-family: var(--head); font-size: 20px; }
+
+/* Raporlama penceresi */
+.report-reasons { display: flex; flex-wrap: wrap; gap: 6px; }
+.report-reasons .chip { cursor: pointer; padding: 6px 12px; font-size: 13.5px; }
+.report-form .actions { justify-content: flex-end; }
+@media (max-width: 640px) { .report-reasons { flex-wrap: wrap; overflow: visible; } }
+/* Küçük "Raporla" bağlantısı */
+.report-link { background: none; border: 0; padding: 0; color: var(--muted); font-size: 12px; cursor: pointer; }
+.report-link:hover { color: var(--danger); text-decoration: underline; }
+/* Profilde "⋯" menüsü: raporla, engelle */
+.more-menu { position: relative; }
+.more-menu > summary { list-style: none; cursor: pointer; padding: 8px 14px; font-weight: 700; letter-spacing: .1em; }
+.more-menu > summary::-webkit-details-marker { display: none; }
+.more-menu .menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; min-width: 170px; padding: 6px; display: flex; flex-direction: column;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 16px 40px rgba(0, 0, 0, .45); }
+.more-menu .menu button { text-align: left; padding: 9px 10px; border-radius: 8px; background: none; border: 0; color: var(--text); font: inherit; cursor: pointer; }
+.more-menu .menu button:hover { background: var(--panel-3); }
+.more-menu .menu .danger { color: var(--danger); }
+@media (max-width: 640px) { .profile-actions .more-menu { flex: none; } .profile-actions .more-menu > summary { max-width: none; } }
+/* Geliştirici rozeti: sadece @arno4436 ve @wulfa; parlayan özel görünüm */
+.bdg.dev { color: #fff; border-color: rgba(255, 255, 255, .35); font-weight: 700;
+  background: linear-gradient(110deg, #ec4899, #8b5cf6 35%, #22d3ee 70%, #ec4899); background-size: 220% 100%;
+  box-shadow: 0 0 14px rgba(139, 92, 246, .45); animation: dev-shine 6s linear infinite; text-shadow: 0 1px 2px rgba(0, 0, 0, .35); }
+@keyframes dev-shine { to { background-position: 220% 0; } }
+@media (prefers-reduced-motion: reduce) { .bdg.dev { animation: none; } }
+.badge-card.dev { border-color: rgba(139, 92, 246, .6); box-shadow: 0 0 18px rgba(139, 92, 246, .25); }
+.badge-card.dev .b-icon { color: #c4b5fd; }
+
+/* Yönetim → Raporlar */
+.report-list { display: flex; flex-direction: column; gap: 10px; }
+.report-item { padding: 12px 14px; background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--danger); border-radius: 10px; }
+.report-item.resolved, .report-item.dismissed { border-left-color: var(--border); opacity: .75; }
+.report-item header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.report-who { margin-top: 4px; }
+.report-who a { color: var(--accent-2); }
+.report-excerpt { margin: 8px 0 0; padding: 8px 12px; border-left: 2px solid var(--muted); background: rgba(0, 0, 0, .2); border-radius: 0 8px 8px 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
+.report-note { margin: 8px 0 0; font-size: 14px; }
+.report-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
+.btn.danger-btn { color: var(--danger); border-color: rgba(251, 113, 133, .45); }
+.btn.danger-btn:hover { background: rgba(251, 113, 133, .12); }
