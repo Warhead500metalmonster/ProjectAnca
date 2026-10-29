@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Entry, Item, Profile, RawgGame } from "@/lib/types";
 import { BADGES } from "@/lib/constants";
 import { contentKey } from "@/lib/format";
-import { fetchEntries, friendsOnMyPlans } from "@/lib/data";
+import { fetchEntries, fixForeignTitles, friendsOnMyPlans } from "@/lib/data";
 import { applyTheme } from "@/lib/theme";
 import { countOf, q, sb, supabaseConfigured } from "@/lib/supabase";
 import { EntryForm } from "./EntryForm";
@@ -177,6 +177,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [router, refresh, checkInbox, loadBadges]);
 
   useEffect(() => { plansRef.current = { following: [...following], mine }; }, [following, mine]);
+
+  // Okunmayan alfabedeki eski film / dizi adları İngilizceye çevrilir (kişi başına bir kez, arka planda)
+  const titlesFixed = useRef(false);
+  useEffect(() => {
+    if (!me || !mine.length || titlesFixed.current) return;
+    const flag = `ancalog.titlesFixed.${me.id}`;
+    try { if (localStorage.getItem(flag)) return; } catch { return; }
+    titlesFixed.current = true;
+    fixForeignTitles(mine).then((n) => {
+      try { localStorage.setItem(flag, "1"); } catch { /* yok say */ }
+      if (n) refresh();
+    }).catch(() => { titlesFixed.current = false; });
+  }, [me, mine, refresh]);
 
   // Kişisel site rengi (çıkış yapınca varsayılana döner)
   useEffect(() => { if (ready) applyTheme(me?.site_color); }, [ready, me?.site_color]);

@@ -1339,3 +1339,25 @@ body.fav-dragging, body.fav-dragging * { cursor: grabbing !important; user-selec
 .match-row.pair .duo { display: flex; flex: none; }
 .match-row.pair .duo .avatar + .avatar { margin-left: -12px; box-shadow: 0 0 0 2px var(--panel); }
 .match-row.pair .who a:hover { color: var(--accent-2); }
+.cover-pick { display: flex; align-items: center; gap: 10px; }
+.cover-pick img, .cover-pick .noimg { width: 40px; height: 54px; border-radius: 6px; object-fit: cover; flex: none; background: var(--panel-3); }
+.cover-pick input { flex: 1; min-width: 0; }
+
+/* Kırpılmış profil fotoğrafı */
+.avatar.cropped { overflow: hidden; display: inline-block; padding: 0; }
+.avatar.cropped img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Son bitirdikleri: kapağın altında tarih ve puan */
+.card.dated .dated-meta { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin-top: -2px; }
+.card.dated .dated-meta .stars { font-size: 12px; }
+/* Liste görünürlüğü */
+.vis-pick { display: flex; flex-direction: column; gap: 6px; }
+.vis-opt { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 4px 8px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; }
+.vis-opt.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.vis-opt .muted { grid-column: 2 / 4; }
+.cropper { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin: -4px 0 12px; }
+.cropper-box { width: 140px; height: 140px; border-radius: 50%; overflow: hidden; cursor: grab; touch-action: none; border: 2px solid var(--accent); flex: none; background: var(--panel-3); }
+.cropper-box:active { cursor: grabbing; }
+.cropper-box img { width: 100%; height: 100%; object-fit: cover; display: block; user-select: none; pointer-events: none; }
+.cropper-tools { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 180px; }
+.cropper-tools label { display: flex; align-items: center; gap: 8px; }
+.cropper-tools input[type=range] { flex: 1; }

@@ -53,6 +53,8 @@ export const scoreShort = (r: number, scale: number) => scale === 10 ? num(r) : 
 
 // ---------- İçerik kimliği: oyunlarda RAWG id, diğerlerinde tür + isim ----------
 
+// Japonca, Korece, Çince, Kiril, Arap, Yunan, Tay alfabesi: Türk okuyucu için okunmaz, İngilizce adı tercih edilir
+export const NON_LATIN = /[Ͱ-ϿЀ-ӿ֐-ۿ฀-๿぀-ヿ㐀-鿿가-힯]/;
 export const norm = (s?: string | null) => String(s || "").trim().toLocaleLowerCase("tr");
 export const contentKey = (x: Pick<Item, "type" | "title" | "rawg_id">) =>
   x.type === "game" && x.rawg_id ? `g:${x.rawg_id}` : `${x.type}:${norm(x.title)}`;

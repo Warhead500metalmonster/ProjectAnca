@@ -6,7 +6,7 @@ import { useParams, usePathname } from "next/navigation";
 import type { Entry, Profile } from "@/lib/types";
 import { fmtDate, cssUrl, safeUrl } from "@/lib/format";
 import { fetchEntries } from "@/lib/data";
-import { PROFILE_THEMES } from "@/lib/constants";
+import { PROFILE_THEMES, TYPES } from "@/lib/constants";
 import { compat } from "@/lib/compat";
 import { countOf, q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
@@ -43,11 +43,14 @@ export function ProfileShell({ children }: { children: React.ReactNode }) {
   return <Shell key={data.profile.id} data={data}>{children}</Shell>;
 }
 
-function Shell({ data, children }: { data: ProfileData; children: React.ReactNode }) {
+function Shell({ data: raw, children }: { data: ProfileData; children: React.ReactNode }) {
   const { me, openForm, openView, isFriend, mine, isOwner, badges } = useApp();
   const path = usePathname();
+  const isMe = me?.id === raw.profile.id;
+  // Sahibinin gizlediği türler (ör. oyunlar) başkalarına profilin hiçbir yerinde görünmez; sahibi hepsini görür
+  const hidden = raw.profile.hidden_types || [];
+  const data = isMe || !hidden.length ? raw : { ...raw, entries: raw.entries.filter((e) => !hidden.includes(e.type)) };
   const { profile, entries, followers, following } = data;
-  const isMe = me?.id === profile.id;
   const base = `/u/${profile.username}`;
   const [userList, setUserList] = useState<{ kind: "followers" | "following"; users: Profile[] | null } | null>(null);
   const listDialog = useRef<HTMLDialogElement>(null);
@@ -112,8 +115,13 @@ function Shell({ data, children }: { data: ProfileData; children: React.ReactNod
         </div>
         <BadgeChips id={profile.id} max={3} more={`/u/${profile.username}/badges`} />
         {profile.bio && <p className="profile-bio">{profile.bio}</p>}
+        {isMe && hidden.length > 0 && (
+          <p className="muted small" style={{ margin: "6px 0 0" }}>
+            Başkaları profilinde {hidden.map((t) => TYPES[t].plural.toLocaleLowerCase("tr")).join(", ")} göremez. <Link href="/settings">Değiştir</Link>
+          </p>
+        )}
         <div className="profile-meta">
-          <span><b>{entries.length}</b> kayıt</span>
+          <span><b>{entries.filter((e) => e.status !== "planned").length}</b> kayıt</span>
           <button onClick={() => openUserList("followers")}><b>{followers}</b> takipçi</button>
           <button onClick={() => openUserList("following")}><b>{following}</b> takip</button>
           {profile.location && <span>{profile.location}</span>}

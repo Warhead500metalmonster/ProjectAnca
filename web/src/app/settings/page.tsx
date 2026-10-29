@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { EntryType, Profile } from "@/lib/types";
+import type { AvatarCrop, EntryType, Profile } from "@/lib/types";
 import { ACCENTS, PROFILE_THEMES, SOCIALS, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
-import { cssUrl, today } from "@/lib/format";
+import { cssUrl, safeUrl, today } from "@/lib/format";
 import { fetchEntries } from "@/lib/data";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
 import { Avatar } from "@/components/ui";
+import { AvatarCropper } from "@/components/AvatarCropper";
 import { youtubeId } from "@/components/ProfileSong";
 import { DEFAULT_COLOR, applyTheme } from "@/lib/theme";
 
@@ -49,6 +50,9 @@ function SettingsForm({ me }: { me: Profile }) {
   const [scale, setScale] = useState<5 | 10>(me.rating_scale === 10 ? 10 : 5);
   const [siteColor, setSiteColor] = useState(me.site_color || "");
   const [song, setSong] = useState({ url: me.song_url || "", title: me.song_title || "", volume: me.song_volume || 15 });
+  const [avatar, setAvatar] = useState(me.avatar_url || "");
+  const [crop, setCrop] = useState<AvatarCrop>(me.avatar_crop || { x: 50, y: 50, z: 1 });
+  const [hiddenTypes, setHiddenTypes] = useState<EntryType[]>(me.hidden_types || []);
   // Renk seçilince site hemen o renge döner; kaydetmeden çıkarsa eskisine
   const pickSiteColor = (c: string) => { setSiteColor(c); applyTheme(c); };
   const saved = useRef(me.site_color);
@@ -96,6 +100,9 @@ function SettingsForm({ me }: { me: Profile }) {
         song_url: song.url.trim() || null,
         song_title: song.title.trim() || null,
         song_volume: song.volume,
+        // Yeni alanlar yalnızca kullanıldığında gönderilir (veritabanı güncellenmeden de profil kaydedilebilsin)
+        ...((me.avatar_crop || crop.z > 1 || crop.x !== 50 || crop.y !== 50) && { avatar_crop: crop }),
+        ...((me.hidden_types?.length || hiddenTypes.length) && { hidden_types: hiddenTypes }),
       }).eq("id", me.id).select().single());
       setMe(updated);
       saved.current = updated.site_color;
@@ -122,11 +129,25 @@ function SettingsForm({ me }: { me: Profile }) {
       </div>
       <div className="field">
         <label htmlFor="p-avatar">Profil fotoğrafı (https:// ile başlayan resim linki)</label>
-        <input id="p-avatar" name="avatar" type="url" defaultValue={me.avatar_url || ""} placeholder="https://…" />
+        <input id="p-avatar" name="avatar" type="url" value={avatar} onChange={(e) => { setAvatar(e.target.value); setCrop({ x: 50, y: 50, z: 1 }); }} placeholder="https://…" />
       </div>
+      {safeUrl(avatar) && <AvatarCropper url={avatar} crop={crop} onChange={setCrop} />}
       <div className="field">
         <label htmlFor="p-banner">Kapak görseli (profilin üstündeki geniş resim, https://)</label>
         <input id="p-banner" name="banner" type="url" defaultValue={me.banner_url || ""} placeholder="https://…" />
+      </div>
+
+      <h3 className="set-h">Profilimde gösterilecek türler <span className="muted small">· işaretini kaldırdığın türü başkaları profilinde göremez</span></h3>
+      <div className="chips" style={{ marginBottom: 8 }}>
+        {TYPE_KEYS.map((t) => {
+          const shown = !hiddenTypes.includes(t);
+          return (
+            <label key={t} className={`chip ${shown ? "active" : ""}`}>
+              <input type="checkbox" hidden checked={shown} onChange={() => setHiddenTypes((h) => (shown ? [...h, t] : h.filter((x) => x !== t)))} />
+              {shown ? "✓ " : ""}{TYPES[t].plural}
+            </label>
+          );
+        })}
       </div>
 
       <h3 className="set-h">Profil teması <span className="muted small">· profiline girenler görür</span></h3>

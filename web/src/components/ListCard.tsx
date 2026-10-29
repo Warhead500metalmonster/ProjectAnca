@@ -18,7 +18,7 @@ export function ListCard({ l, owner = false }: { l: List; owner?: boolean }) {
       <div className="list-card-body">
         <b>{l.title}</b>
         <span className="muted">
-          {items.length} içerik{l.is_public ? "" : " · gizli"}
+          {items.length} içerik{l.is_public ? "" : l.unlisted ? " · liste dışı" : " · gizli"}
           {owner && l.profiles?.username ? ` · @${l.profiles.username}` : ""}
         </span>
       </div>

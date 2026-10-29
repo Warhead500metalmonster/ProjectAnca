@@ -78,7 +78,8 @@ export function ProfileSong({ url, title, volume }: { url: string; title?: strin
           onStateChange: (e: any) => {
             if (dead) return;
             if (e.data === 1) setState("playing");
-            else if (e.data === 2 || e.data === 0 || e.data === 5) player.current.playVideo();
+            else if (e.data === 0) { player.current.seekTo(0, true); player.current.playVideo(); } // bitince başa sar, döngüde çalsın
+            else if (e.data === 2 || e.data === 5) player.current.playVideo();
           },
           onError: () => { if (!dead) setState("error"); },
         },

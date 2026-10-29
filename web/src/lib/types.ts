@@ -21,12 +21,17 @@ export interface Profile {
   song_title?: string | null;
   song_volume?: number | null;
   home_layout?: HomeLayout | null; // profil ana sayfasının düzeni
-  muted_until?: string | null;     // yönetici susturduysa bu zamana kadar yazı yazamaz
+  muted_until?: string | null;
+  avatar_crop?: AvatarCrop | null; // profil fotoğrafının görünen kısmı
+  hidden_types?: EntryType[] | null; // başkalarına profilde gösterilmeyen türler     // yönetici susturduysa bu zamana kadar yazı yazamaz
   created_at: string;
 }
 
 // Profil ana sayfası: sahibinin seçtiği bölümler (sırasıyla) ve üstte duran serbest yazı
 export interface HomeLayout { sections: string[]; text?: string }
+
+// x, y: odak noktası (yüzde), z: yakınlaştırma (1 = hiç)
+export interface AvatarCrop { x: number; y: number; z: number }
 
 export type ProfileLite = Pick<Profile, "id" | "username" | "display_name" | "avatar_url">;
 
@@ -80,6 +85,7 @@ export interface List {
   title: string;
   description: string | null;
   is_public: boolean;
+  unlisted?: boolean; // liste dışı: listelerde görünmez, linki olan açar
   created_at: string;
   updated_at: string;
   profiles?: Partial<Profile> | null;

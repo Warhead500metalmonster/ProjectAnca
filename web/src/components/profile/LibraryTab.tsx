@@ -107,7 +107,7 @@ export function LibraryTab() {
             .filter(([k]) => k === "all" || entries.some((e) => e.type === k))
             .map(([k, icon, label]) => (
               <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => { setType(k); setYear(""); setFinishYear(""); setPlatform(""); }}>
-                {icon} {label}<span className="count">{k === "all" ? visible.length : visible.filter((e) => e.type === k).length}</span>
+                {icon} {label}<span className="count">{entries.filter((e) => e.status !== "planned" && (k === "all" || e.type === k)).length}</span>
               </button>
             ))}
         </div>

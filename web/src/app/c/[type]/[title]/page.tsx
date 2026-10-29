@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import type { Entry, EntryType, Item, PageEdit } from "@/lib/types";
 import { ENTRY_COLS, TYPES, statusLabel } from "@/lib/constants";
-import { avgText, contentKey, cssUrl, fmtDur, forumHref, likeEsc, num, playSec, safeUrl, scoreText } from "@/lib/format";
+import { NON_LATIN, avgText, contentKey, cssUrl, fmtDur, forumHref, likeEsc, num, playSec, safeUrl, scoreText } from "@/lib/format";
 import { aniDetail, fetchPageEdit, tmdbCreator, tmdbDetail, tmdbImage } from "@/lib/data";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
@@ -29,6 +29,7 @@ async function loadInfo(extId: string): Promise<Info | null> {
       cover: tmdbImage(d.poster_path), backdrop: tmdbImage(d.backdrop_path, "w1280"), overview: d.tagline ? `${d.tagline}\n\n${d.overview || ""}` : d.overview,
       genres: (d.genres || []).map((g) => g.name),
       facts: ([
+        ["Orijinal adı", ((o) => (o && o !== (d.title || d.name) ? o : ""))(d.original_title || d.original_name)],
         ["Yönetmen / Yaratıcı", tmdbCreator(d) || ""],
         ["Oyuncular", (d.credits?.cast || []).slice(0, 5).map((c) => c.name).join("\n")],
         ["Süre", runtime ? `${runtime} dk${d.episode_run_time ? " (bölüm)" : ""}` : ""],
@@ -94,7 +95,7 @@ export default function ContentPage() {
     cover: safeUrl(info?.cover) || safeUrl(ref?.cover) || undefined, backdrop: safeUrl(info?.backdrop) || undefined,
     description: (info?.overview || "").trim(), genres: info?.genres,
   };
-  const name = edit.title || title;
+  const name = edit.title || (NON_LATIN.test(title) && info?.title && !NON_LATIN.test(info.title) ? info.title : title); // okunmayan alfabede kayıtlıysa İngilizce adı
   const cover = safeUrl(edit.cover) || source.cover;
   const backdrop = safeUrl(edit.backdrop) || source.backdrop || cover;
   const year = edit.year || source.year;

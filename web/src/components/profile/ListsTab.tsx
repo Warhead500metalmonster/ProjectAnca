@@ -16,8 +16,11 @@ export function ListsTab() {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
   // Gizli listeleri veritabanı sadece sahibine gösterir
-  const { data, error } = useLoad(() => q<List[]>(sb().from("lists").select("*, list_items(id, type, title, cover, rawg_id, position)")
-    .eq("user_id", profile.id).order("updated_at", { ascending: false })), [profile.id, version]);
+  // Başkaları sadece herkese açık listeleri görür (liste dışı olanlar linkle açılır, burada çıkmaz)
+  const { data, error } = useLoad(() => {
+    const req = sb().from("lists").select("*, list_items(id, type, title, cover, rawg_id, position)").eq("user_id", profile.id);
+    return q<List[]>((isMe ? req : req.eq("is_public", true)).order("updated_at", { ascending: false }));
+  }, [profile.id, version, isMe]);
 
   return (
     <section className="section">

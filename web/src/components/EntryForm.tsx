@@ -30,7 +30,7 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
   const [title, setTitle] = useState(src && src.type !== "game" ? src.title : "");
   const [year, setYear] = useState(src?.year?.toString() || "");
   const [creator, setCreator] = useState(src?.creator || "");
-  const [cover, setCover] = useState(src?.cover || "");
+  const [cover, setCover] = useState(src?.cover || (game ? gameFromRawg(game).cover : null) || ""); // oyunda da değiştirilebilir
   const [extId, setExtId] = useState(src?.ext_id || null); // seçilen film/dizi/animenin dış kaynak kimliği
   const [custom, setCustom] = useState(false);              // elle / linkle girildi: kaydedince ortak kataloğa yazılır
   const [status, setStatus] = useState(entry?.status || "completed");
@@ -102,6 +102,7 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
     setError("");
     if (isGame && f.raw) {
       setPicked(gameFromRawg(f.raw));
+      setCover(gameFromRawg(f.raw).cover || "");
       loadGameOptions(f.raw.id); // arama sonucunda geliştirici yok, detaydan gelir
       return;
     }
@@ -132,8 +133,10 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
     let data: Partial<Entry>;
     if (isGame) {
       if (!picked) return setError("Listeden bir oyun seçmelisin.");
-      const { rawg_id, title, year, cover, creator } = picked;
-      data = { rawg_id, title, year, cover, creator };
+      const { rawg_id, title, year, creator } = picked;
+      const url = cover.trim();
+      if (url && !safeUrl(url)) return setError("Kapak linki http:// ya da https:// ile başlamalı.");
+      data = { rawg_id, title, year, cover: url || picked.cover, creator };
     } else {
       const name = title.trim();
       const url = cover.trim();
@@ -240,7 +243,7 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
           <label htmlFor="f-title">{isGame ? "Oyun ara" : type === "music" ? "Albüm / şarkı" : "İsim"}</label>
           {isGame && picked ? (
             <div className="picked">
-              {safeUrl(picked.cover) ? <img src={picked.cover!} alt="" /> : <span className="noimg" />}
+              {safeUrl(cover) || safeUrl(picked.cover) ? <img src={(safeUrl(cover) || picked.cover)!} alt="" /> : <span className="noimg" />}
               <div className="info"><b>{picked.title}</b><span>{[picked.year, picked.creator].filter(Boolean).join(" · ")}</span></div>
               <button type="button" className="btn" onClick={() => { setPicked(null); setTitle(""); }}>Değiştir</button>
             </div>
@@ -356,10 +359,14 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
           </div>
         </div>
         <label className="check"><input type="checkbox" checked={favorite} onChange={(e) => setFavorite(e.target.checked)} /> ♥ Favorilerime ekle <span className="muted">(her kategoride en fazla 10)</span></label>
-        {!isGame && (
+        {(!isGame || picked) && (
           <div className="field">
-            <label htmlFor="f-cover">Kapak görseli (URL)</label>
-            <input id="f-cover" type="url" placeholder="https://…" value={cover} onChange={(e) => setCover(e.target.value)} />
+            <label htmlFor="f-cover">Kapak görseli <span className="muted">· beğenmediysen başka bir resmin linkini yapıştır</span></label>
+            <div className="cover-pick">
+              {safeUrl(cover) ? <img src={cover} alt="" /> : <span className="noimg" />}
+              <input id="f-cover" type="url" placeholder="https://…" value={cover} onChange={(e) => setCover(e.target.value)} />
+              {isGame && picked?.cover && cover !== picked.cover && <button type="button" className="link" onClick={() => setCover(picked.cover || "")}>Orijinaline dön</button>}
+            </div>
           </div>
         )}
         <div className="field">

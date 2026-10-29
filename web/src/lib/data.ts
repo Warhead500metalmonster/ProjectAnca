@@ -1,6 +1,6 @@
 import type { CatalogItem, Entry, EntryType, Item, PageEdit, RawgGame } from "./types";
 import { ENTRY_COLS, TYPES } from "./constants";
-import { contentKey, likeEsc, norm, smallImage } from "./format";
+import { NON_LATIN, contentKey, likeEsc, norm, smallImage } from "./format";
 import { rawg } from "./rawg";
 import { q, sb } from "./supabase";
 
@@ -156,7 +156,7 @@ export async function searchTmdb(type: "movie" | "show", text: string): Promise<
 
 export interface TmdbDetail {
   id: number; title?: string; name?: string; overview?: string; tagline?: string; runtime?: number; episode_run_time?: number[];
-  release_date?: string; first_air_date?: string; poster_path?: string | null; backdrop_path?: string | null;
+  release_date?: string; first_air_date?: string; poster_path?: string | null; backdrop_path?: string | null; original_title?: string; original_name?: string;
   vote_average?: number; number_of_seasons?: number; number_of_episodes?: number;
   genres?: { name: string }[]; created_by?: { name: string }[]; networks?: { name: string }[];
   credits?: { crew?: { job: string; name: string }[]; cast?: { name: string; character?: string }[] };
@@ -293,4 +293,15 @@ export async function musicMeta(kind: "album" | "track", artist: string, title: 
   if (dzCover) return { cover: dzCover, year: null };
   const it = (await itunes(text, kind === "album" ? "album" : "song", 1).catch(() => []))[0];
   return { cover: it?.artworkUrl100 ? bigArtwork(it.artworkUrl100) : null, year: parseInt(it?.releaseDate || "") || null };
+}
+
+// Eski kayıtlarda Japonca / Korece gibi okunmayan film ve dizi adlarını İngilizce adıyla düzelt (kişi kendi kayıtlarını, bir kez)
+export async function fixForeignTitles(mine: Entry[]) {
+  const bad = mine.filter((e) => (e.type === "movie" || e.type === "show") && e.ext_id?.startsWith("tmdb:") && NON_LATIN.test(e.title)).slice(0, 60);
+  for (const e of bad) {
+    const d = await tmdbDetail(e.ext_id!).catch(() => null);
+    const title = d?.title || d?.name;
+    if (title && !NON_LATIN.test(title)) await sb().from("entries").update({ title: title.slice(0, 200) }).eq("id", e.id);
+  }
+  return bad.length;
 }

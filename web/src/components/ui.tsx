@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { Entry, Profile } from "@/lib/types";
+import type { AvatarCrop, Entry, Profile } from "@/lib/types";
 import { BADGES, SOCIALS, TYPES, activityVerb, statusLabel } from "@/lib/constants";
 import { daysTaken, fmtDur, fmtHoursShort, num, playSec, safeUrl, scoreShort, scoreText, timeAgo, avgText } from "@/lib/format";
 import { useApp } from "./AppProvider";
@@ -15,6 +15,15 @@ export function Avatar({ p, cls = "" }: { p: Who; cls?: string }) {
   const { badges } = useApp();
   const crown = p?.id && badges.get(p.id)?.includes("owner") ? " crown" : "";
   const url = safeUrl(p?.avatar_url);
+  const c = (p as { avatar_crop?: AvatarCrop | null } | null | undefined)?.avatar_crop;
+  // Kırpılmışsa: kutu sabit, içindeki resim seçilen noktaya göre kaydırılıp büyütülür
+  if (url && c && (c.z > 1 || c.x !== 50 || c.y !== 50)) {
+    return (
+      <span className={`avatar ${cls}${crown} cropped`}>
+        <img src={url} alt="" style={{ objectPosition: `${c.x}% ${c.y}%`, transform: `scale(${c.z})`, transformOrigin: `${c.x}% ${c.y}%` }} />
+      </span>
+    );
+  }
   if (url) return <img className={`avatar ${cls}${crown}`} src={url} alt="" />;
   let h = 0;
   for (const c of p?.username || "") h = (h * 31 + c.charCodeAt(0)) % 360;
@@ -129,7 +138,8 @@ export function Stats({ list }: { list: Entry[] }) {
   const year = new Date().getFullYear().toString();
   const secs = list.reduce((s, i) => s + playSec(i), 0);
   const items: [string | number, string][] = [
-    [list.length, "Toplam kayıt"],
+    [list.filter((i) => i.status !== "planned").length, "Toplam kayıt"],
+    [list.filter((i) => i.status === "planned").length, "Planlanan"],
     [list.filter((i) => i.status === "completed").length, "Bitirilen"],
     [list.filter((i) => i.status === "active").length, "Devam eden"],
     [list.filter((i) => i.status === "completed" && (i.date || "").startsWith(year)).length, "Bu yıl bitirilen"],

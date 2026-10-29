@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { Entry, RawgGame, Status } from "@/lib/types";
 import { norm, smallImage } from "@/lib/format";
-import { musicMeta, tmdb, tmdbImage } from "@/lib/data";
+import { anilist, musicMeta, tmdb, tmdbImage } from "@/lib/data";
 import { STATUSES, STORES, TYPES, statusLabel } from "@/lib/constants";
 import { rawg } from "@/lib/rawg";
 import { q, sb } from "@/lib/supabase";
@@ -29,6 +29,8 @@ const IMPORT_PICKS: { key: string; name: string; how: string; gets: string }[] =
   { key: "backloggd", name: "Backloggd", how: "Tarayıcı düğmesiyle", gets: "Durumların ve puanların" },
   { key: "hltb", name: "HowLongToBeat", how: "Dosyanı seç", gets: "Süreler, puanlar, notlar, tarihler" },
   { key: "letterboxd", name: "Letterboxd", how: "Dosyanı seç", gets: "Filmler, puanlar, incelemeler" },
+  { key: "mal", name: "MyAnimeList", how: "Dosyanı seç", gets: "Animelerin, puanların, bölümlerin" },
+  { key: "anilist", name: "AniList", how: "Kullanıcı adını yaz", gets: "Animelerin, puanların, bölümlerin" },
   { key: "music", name: "Spotify ve Last.fm", how: "Kullanıcı adı ya da dosya", gets: "Albümlerin ve sanatçıların" },
   { key: "epic", name: "Epic Games", how: "Listeyi kopyala, yapıştır", gets: "Oyunların" },
   { key: "switch", name: "Nintendo Switch", how: "Listeyi kopyala, yapıştır", gets: "Oyunların" },
@@ -90,6 +92,7 @@ function Importer() {
             : pick === "letterboxd" ? <Letterboxd />
             : pick === "music" ? <Music />
             : pick === "simkl" ? <Simkl />
+            : pick === "mal" || pick === "anilist" ? <AnimeImport key={pick} kind={pick} />
             : <ListImport key={pick} initial={pick!} />}
         </>
       )}
@@ -448,6 +451,179 @@ function Letterboxd() {
           </div>
         </>
       )}
+    </section>
+  );
+}
+
+// ---------- Anime: MyAnimeList dosyası ya da AniList kullanıcı adı ----------
+
+interface AnimeRow {
+  title: string; year: number | null; creator: string | null; cover: string | null; ext_id: string | null;
+  status: Status; rating: number; date: string | null; started: string | null; progress: string | null; notes: string | null;
+}
+interface AniMediaLite { id: number; idMal?: number | null; title: { romaji?: string; english?: string }; coverImage?: { large?: string }; startDate?: { year?: number }; episodes?: number | null; studios?: { nodes: { name: string }[] } }
+
+const MEDIA_FIELDS = "id idMal title { romaji english } coverImage { large } startDate { year } episodes studios(isMain: true) { nodes { name } }";
+const MAL_STATUS: Record<string, Status> = { completed: "completed", watching: "active", "on-hold": "paused", dropped: "dropped", "plan to watch": "planned" };
+const ANI_STATUS: Record<string, Status> = { COMPLETED: "completed", CURRENT: "active", REPEATING: "active", PAUSED: "paused", DROPPED: "dropped", PLANNING: "planned" };
+const malDate = (s: string) => (/^\d{4}-\d{2}-\d{2}$/.test(s) && !s.startsWith("0000") ? s.replace(/-00/g, "-01") : null);
+const aniDate = (d?: { year?: number | null; month?: number | null; day?: number | null } | null) =>
+  d?.year ? `${d.year}-${String(d.month || 1).padStart(2, "0")}-${String(d.day || 1).padStart(2, "0")}` : null;
+const epNote = (st: Status, seen: number, total?: number | null) =>
+  st !== "completed" && st !== "planned" && seen ? `${seen}${total ? ` / ${total}` : ""} bölüm` : null;
+const aniTitle = (m: AniMediaLite) => m.title.english || m.title.romaji || "";
+
+// AniList soruları dakikada sınırlı: çok gelirse biraz bekleyip tekrar sor
+async function aniRetry<T>(query: string, variables: Record<string, unknown>): Promise<T> {
+  for (let i = 0; ; i++) {
+    try { return await anilist<T>(query, variables); }
+    catch (err) { if (i >= 4) throw err; await new Promise((res) => setTimeout(res, 4000 * (i + 1))); }
+  }
+}
+
+function AnimeImport({ kind }: { kind: "mal" | "anilist" }) {
+  const { me, mine, toast, refresh } = useApp();
+  const [rows, setRows] = useState<AnimeRow[] | null>(null);
+  const [user, setUser] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [step, setStep] = useState<{ done: number; total: number } | null>(null);
+  const haveExt = new Set(mine.filter((e) => e.type === "anime" && e.ext_id).map((e) => e.ext_id));
+  const haveTitle = new Set(mine.filter((e) => e.type === "anime").map((e) => norm(e.title)));
+  const isNew = (a: AnimeRow) => !(a.ext_id && haveExt.has(a.ext_id)) && !haveTitle.has(norm(a.title));
+
+  // MyAnimeList: Profil → Export (anime listesi) ile inen .xml (ya da .xml.gz açılmış hali)
+  async function readMal(files: FileList | null) {
+    const f = files?.[0];
+    if (!f) return;
+    const doc = new DOMParser().parseFromString(await f.text(), "text/xml");
+    const txt = (el: Element, tag: string) => el.getElementsByTagName(tag)[0]?.textContent?.trim() || "";
+    const list = [...doc.getElementsByTagName("anime")].map((a) => ({
+      mal: Number(txt(a, "series_animedb_id")), title: txt(a, "series_title"), total: Number(txt(a, "series_episodes")) || null,
+      seen: Number(txt(a, "my_watched_episodes")) || 0, start: malDate(txt(a, "my_start_date")), end: malDate(txt(a, "my_finish_date")),
+      score: Number(txt(a, "my_score")) || 0, status: MAL_STATUS[txt(a, "my_status").toLowerCase()] || "planned", note: txt(a, "my_comments"),
+    })).filter((a) => a.title);
+    if (!list.length) return toast("Bu dosyada anime bulunamadı. MyAnimeList'ten indirdiğin anime listesi .xml dosyasını seç.");
+    setBusy(true);
+    try {
+      // AniList'te MyAnimeList numarasıyla eşleştir: kapak, İngilizce ad, stüdyo gelsin
+      const ids = [...new Set(list.map((a) => a.mal).filter(Boolean))];
+      const found = new Map<number, AniMediaLite>();
+      for (let i = 0; i < ids.length; i += 50) {
+        setStep({ done: i, total: ids.length });
+        const d = await aniRetry<{ Page: { media: AniMediaLite[] } }>(
+          `query ($ids: [Int]) { Page(perPage: 50) { media(idMal_in: $ids, type: ANIME) { ${MEDIA_FIELDS} } } }`, { ids: ids.slice(i, i + 50) },
+        ).catch(() => ({ Page: { media: [] } }));
+        for (const m of d.Page.media) if (m.idMal) found.set(m.idMal, m);
+      }
+      setRows(list.map((a) => {
+        const m = found.get(a.mal);
+        return {
+          title: ((m && aniTitle(m)) || a.title).slice(0, 200), year: m?.startDate?.year || null, creator: m?.studios?.nodes[0]?.name || null,
+          cover: m?.coverImage?.large || null, ext_id: m ? `anilist:${m.id}` : null, status: a.status, rating: Math.min(10, a.score),
+          date: a.status === "completed" ? a.end : null, started: a.start, progress: epNote(a.status, a.seen, a.total), notes: a.note.slice(0, 5000) || null,
+        };
+      }));
+    } finally {
+      setBusy(false);
+      setStep(null);
+    }
+  }
+
+  // AniList: herkese açık listeyi kullanıcı adıyla getir
+  async function loadAniList(ev: React.FormEvent) {
+    ev.preventDefault();
+    const name = user.trim().replace(/^.*anilist\.co\/user\//i, "").replace(/\/.*$/, "");
+    if (!name) return;
+    setBusy(true);
+    try {
+      type AniEntry = { status: string; score: number; progress: number; notes?: string | null; startedAt?: { year?: number; month?: number; day?: number }; completedAt?: { year?: number; month?: number; day?: number }; media: AniMediaLite };
+      const d = await aniRetry<{ MediaListCollection: { lists: { entries: AniEntry[] }[] } }>(
+        `query ($u: String) { MediaListCollection(userName: $u, type: ANIME) { lists { entries { status score(format: POINT_10_DECIMAL) progress notes
+          startedAt { year month day } completedAt { year month day } media { ${MEDIA_FIELDS} } } } } }`, { u: name });
+      const seen = new Set<number>();
+      const list: AnimeRow[] = [];
+      for (const e of d.MediaListCollection.lists.flatMap((l) => l.entries)) {
+        if (seen.has(e.media.id)) continue; // özel listelerde aynı anime tekrar gelir
+        seen.add(e.media.id);
+        const st = ANI_STATUS[e.status] || "planned";
+        list.push({
+          title: aniTitle(e.media).slice(0, 200), year: e.media.startDate?.year || null, creator: e.media.studios?.nodes[0]?.name || null,
+          cover: e.media.coverImage?.large || null, ext_id: `anilist:${e.media.id}`, status: st, rating: Math.min(10, Math.round((e.score || 0) * 2) / 2),
+          date: st === "completed" ? aniDate(e.completedAt) : null, started: aniDate(e.startedAt), progress: epNote(st, e.progress, e.media.episodes),
+          notes: e.notes?.slice(0, 5000) || null,
+        });
+      }
+      if (!list.length) return toast("Bu kullanıcının listesinde anime yok ya da listesi gizli.");
+      setRows(list);
+    } catch {
+      toast("Bu kullanıcı bulunamadı ya da listesi gizli. AniList kullanıcı adını kontrol et.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function run() {
+    if (!me || !rows) return;
+    const fresh = rows.filter(isNew);
+    setBusy(true);
+    setStep({ done: 0, total: fresh.length });
+    try {
+      const failed = await insertAll(fresh.map((a): Row => ({
+        type: "anime", title: a.title, year: a.year, creator: a.creator, cover: a.cover, ext_id: a.ext_id, rawg_id: null,
+        status: a.status, rating: a.rating, date: a.date, started_on: a.started, progress: a.progress, notes: a.notes,
+        updated_at: new Date(a.date ? a.date + "T12:00" : Date.now()).toISOString(),
+      })), me.id);
+      toast(`${fresh.length - failed} anime kütüphanene eklendi${failed ? `, ${failed} tanesi kaydedilemedi` : ""}`);
+      setRows(null);
+      refresh();
+    } catch (err) {
+      toast("Aktarılamadı: " + (err as Error).message);
+    } finally {
+      setBusy(false);
+      setStep(null);
+    }
+  }
+
+  const fresh = rows?.filter(isNew) || [];
+  const count = (st: Status) => fresh.filter((a) => a.status === st).length;
+  return (
+    <section className="section import-card">
+      <div className="section-head"><h2>{kind === "mal" ? "MyAnimeList" : "AniList"}</h2></div>
+      {kind === "mal" ? (
+        <div className="muted small import-help">
+          <ol className="import-steps">
+            <li><a className="grad" href="https://myanimelist.net/panel.php?go=export" target="_blank" rel="noreferrer">MyAnimeList dışa aktarma sayfasını</a> aç
+              (giriş yapmış olmalısın), <b>Anime List</b> seçiliyken <b>Export My List</b>&apos;e bas.</li>
+            <li>İnen <b>.gz</b> dosyasına çift tıkla; içinden <b>.xml</b> dosyası çıkar.</li>
+            <li>O <b>.xml</b> dosyasını aşağıdan seç. Durumların, puanların, bölümlerin, başlama / bitirme tarihlerin ve notların gelir.</li>
+          </ol>
+        </div>
+      ) : (
+        <p className="muted small" style={{ marginTop: 0 }}>AniList kullanıcı adını yaz (ya da profil linkini yapıştır). Listen herkese açık olmalı.
+          Durumların, puanların, bölümlerin, tarihlerin ve notların gelir.</p>
+      )}
+      {!rows ? (
+        kind === "mal"
+          ? <label className={`btn file-btn ${busy ? "disabled" : ""}`}>{busy ? "Eşleştiriliyor…" : ".xml dosyasını seç"}<input type="file" accept=".xml,text/xml" disabled={busy} onChange={(e) => readMal(e.target.files)} /></label>
+          : (
+            <form className="admin-add" onSubmit={loadAniList}>
+              <input className="input" placeholder="AniList kullanıcı adın" value={user} onChange={(e) => setUser(e.target.value)} />
+              <button className="btn primary" disabled={busy || !user.trim()}>{busy ? "Getiriliyor…" : "Animelerimi getir"}</button>
+            </form>
+          )
+      ) : (
+        <>
+          <div className="import-bar">
+            <span><b>{rows.length}</b> anime bulundu{rows.length - fresh.length ? ` · ${rows.length - fresh.length} tanesi zaten kütüphanende` : ""}
+              {" "}· {count("completed")} izlendi, {count("active")} izleniyor, {count("planned")} planlandı{count("dropped") ? `, ${count("dropped")} bırakıldı` : ""}</span>
+          </div>
+          <div className="actions">
+            <button className="btn" disabled={busy} onClick={() => setRows(null)}>Vazgeç</button>
+            <button className="btn primary" disabled={busy || !fresh.length} onClick={run}>{busy ? "Ekleniyor…" : `${fresh.length} animeyi ekle`}</button>
+          </div>
+        </>
+      )}
+      {step && <Progress done={step.done} total={step.total} label={rows ? "Animeler ekleniyor…" : "Animeler AniList'te eşleştiriliyor…"} />}
     </section>
   );
 }

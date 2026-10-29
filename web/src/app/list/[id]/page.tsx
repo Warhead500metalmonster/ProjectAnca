@@ -88,13 +88,20 @@ function ListView({ list, base }: { list: List; base: Entry[] }) {
     <>
       <section className="list-head">
         <div className="crumbs"><Link href={`/u/${owner.username}/lists`}>@{owner.username} listeleri</Link></div>
-        <h1>{list.title} {!list.is_public && <span className="tag">Gizli</span>}</h1>
+        <h1>{list.title} {!list.is_public && <span className="tag">{list.unlisted ? "Liste dışı" : "Gizli"}</span>}</h1>
         {list.description && <p className="list-desc">{list.description}</p>}
         <div className="view-user">
           <Avatar p={owner} cls="sm" /> <Link href={`/u/${owner.username}`}><Name p={owner} /></Link>
           <span>· {items.length} içerik · {timeAgo(list.updated_at)} güncellendi</span>
         </div>
-        {isOwner && <div className="actions" style={{ marginTop: 12 }}><button className="btn" onClick={() => setEditing(true)}>✎ Listeyi düzenle</button></div>}
+        {isOwner && (
+          <div className="actions" style={{ marginTop: 12 }}>
+            <button className="btn" onClick={() => setEditing(true)}>✎ Listeyi düzenle</button>
+            {list.unlisted && !list.is_public && (
+              <button className="btn" onClick={() => navigator.clipboard.writeText(location.href).then(() => toast("Link kopyalandı; kime verirsen o açabilir"), () => toast(location.href))}>Linki kopyala</button>
+            )}
+          </div>
+        )}
       </section>
 
       {items.length > 0 && (

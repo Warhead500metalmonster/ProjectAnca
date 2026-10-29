@@ -3,19 +3,20 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Entry, HomeLayout, List } from "@/lib/types";
-import { PROFILE_COLS } from "@/lib/constants";
-import { playSec } from "@/lib/format";
+import { PROFILE_COLS, TYPES } from "@/lib/constants";
+import { fmtDate, playSec } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { useProfile } from "@/components/ProfileShell";
-import { EntryCard, FeedItem, RichText, Stats } from "@/components/ui";
+import { Cover, EntryCard, FeedItem, Rating, RichText, Stats } from "@/components/ui";
 import { ListCard } from "@/components/ListCard";
 import { FavoritesSection } from "./LibraryTab";
 
 // Profil ana sayfasının bölümleri: sahibi hangilerinin hangi sırayla görüneceğini seçer
 const SECTIONS: [string, string][] = [
   ["favs", "Favoriler"],
+  ["played", "Son bitirdikleri"],
   ["playing", "Şu an devam ettikleri"],
   ["recent", "Son eklenenler"],
   ["top", "En yüksek puan verdikleri"],
@@ -25,7 +26,7 @@ const SECTIONS: [string, string][] = [
   ["lists", "Listeler"],
   ["stats", "Özet"],
 ];
-const DEFAULT = ["favs", "playing", "recent", "reviews", "stats"];
+const DEFAULT = ["favs", "played", "playing", "recent", "reviews", "stats"];
 const label = (k: string) => SECTIONS.find(([x]) => x === k)?.[1] || k;
 
 export function HomeTab() {
@@ -63,6 +64,16 @@ function HomeSection({ k }: { k: string }) {
 
   switch (k) {
     case "favs": return <FavoritesSection />;
+    case "played": {
+      // Ekleme tarihine göre değil, bitirme tarihine göre (en son bitirilen önce)
+      const list = entries.filter((e) => e.status === "completed" && e.date).sort((a, b) => b.date!.localeCompare(a.date!) || byUpdated(a, b)).slice(0, 12);
+      return list.length ? (
+        <section className="section">
+          <div className="section-head"><h2>{label(k)}</h2><Link className="link" href={`${base}/library`}>Tümü</Link></div>
+          <div className="strip">{list.map((e) => <DatedCard key={e.id} e={e} />)}</div>
+        </section>
+      ) : null;
+    }
     case "playing": return strip(entries.filter((e) => e.status === "active").sort(byUpdated).slice(0, 12));
     case "recent": return strip(entries.filter((e) => e.status !== "planned").sort(byUpdated).slice(0, 12), `${base}/library`); // planlananlar kalabalık etmesin
     case "top": return strip(entries.filter((e) => e.rating > 0).sort((a, b) => b.rating - a.rating || byUpdated(a, b)).slice(0, 12));
@@ -86,6 +97,18 @@ function HomeSection({ k }: { k: string }) {
     ) : null;
   }
   return null;
+}
+
+// Kapak, altında bitirme tarihi ve puan (Backloggd'daki "Recently Played" gibi)
+function DatedCard({ e }: { e: Entry }) {
+  const { openView } = useApp();
+  const t = TYPES[e.type];
+  return (
+    <button className="card dated" onClick={() => openView(e)} title={e.title}>
+      <div className={`poster ${t.square ? "square" : ""}`}><div className="ph">{t.label}</div><Cover src={e.cover} /></div>
+      <div className="dated-meta"><span>{fmtDate(e.date!).replace(/ \d{4}$/, (y) => (y.trim() === String(new Date().getFullYear()) ? "" : y))}</span>{e.rating ? <Rating r={e.rating} /> : null}</div>
+    </button>
+  );
 }
 
 // Sahibinin düzenleme kutusu: bölümleri aç / kapat, sırala, üste bir yazı ekle
