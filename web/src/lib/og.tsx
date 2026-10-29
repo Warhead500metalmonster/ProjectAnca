@@ -235,6 +235,24 @@ export async function wrapCard(username: string, year = String(new Date().getFul
   };
 }
 
+export async function eventCard(id: string): Promise<Card | null> {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const rows = await rest<{ title: string; description: string | null; cover: string | null; starts_on: string; ends_on: string | null; options: { label: string; cover?: string | null }[] }[]>(
+    `events?id=eq.${id}&select=title,description,cover,starts_on,ends_on,options&limit=1`);
+  const ev = rows?.[0];
+  if (!ev) return null;
+  const n = await restCount(`event_members?event_id=eq.${id}`);
+  const fmt = (d: string) => new Date(d + "T00:00").toLocaleDateString("tr", { day: "numeric", month: "long", year: "numeric" });
+  const started = ev.starts_on <= new Date().toISOString().slice(0, 10);
+  return {
+    kicker: "Etkinlik", title: ev.title,
+    sub: started ? "Şu an sürüyor, sen de katıl" : `Başlangıç: ${fmt(ev.starts_on)}`,
+    line: [n ? `${n} kişi katıldı` : "İlk katılan sen ol", ev.options.length > 1 ? ev.options.map((o) => o.label).join(" · ") : ""].filter(Boolean).join(" · "),
+    backdrop: ev.cover || ev.options[0]?.cover, covers: ev.options.map((o) => o.cover),
+    description: clip(ev.description, 160) || `${ev.title}: Ancalog etkinliği. Katıl, sürümünü seç, birlikte oynayalım.`,
+  };
+}
+
 // <head> içine: başlık, açıklama, paylaşım yazıları (görseli aynı klasördeki opengraph-image ekler)
 export function metaOf(c: Card | null, path: string, fallback: string) {
   if (!c) return { title: `${fallback} · Ancalog` };

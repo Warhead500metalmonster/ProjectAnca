@@ -5,6 +5,15 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-10-30T00:30:00+04:00",
+    title: "Etkinlikler geldi: ilki Ocarina of Time!",
+    body: "Artık hep birlikte oynuyoruz. İlk etkinliğimiz 5 Kasım'da başlıyor: Hep birlikte Ocarina of Time. İsteyen 1998'in orijinalini, isteyen 3DS'i, isteyen yeni Switch 2 remake'ini oynasın.\n"
+      + "Etkinlik sayfasında sürümünü seçip katılırsın; istersen oyun kütüphanene de eklenir. Nerede olduğunu yazabilir, bitirince işaretleyebilirsin; kimin hangi sürümde olduğu ve kimin kaçıncı bitirdiği görünür.\n"
+      + "Etkinlik sohbetinde yazışabilirsin; spoiler içeren mesajlar gizli durur, dokununca açılır.\n"
+      + "Bir etkinliği bitirene \"Etkinlik ruhu\" rozeti. Katıldığın etkinlikler profilinde görünür, başladığı gün sana haber veririz. Biten etkinlikler Geçmiş etkinlikler'de saklanır.\n"
+      + "Bütün etkinlikler: menüden Etkinlikler, ya da ana sayfadaki etkinlik kartı.",
+  },
+  {
     date: "2026-10-29T23:55:00+04:00",
     title: "Profil sayıları artık Profili düzenle'de",
     body: "Adının yanındaki büyük sayıları Profili düzenle → Profilimdeki sayılar'dan gizleyebilir, hangilerinin görüneceğini ve neyin sayılacağını seçebilirsin. Sadece animeleri ya da sadece film ve dizileri saymak için o türe basman yeter. Profilindeki sayıların yanındaki ⚙ seni doğrudan oraya götürür.\n"

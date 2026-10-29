@@ -72,6 +72,7 @@ export const BADGES: Record<string, { icon: string; name: string; desc: string; 
   dev: { icon: "⚒", name: "Geliştirici", desc: "Ancalog'u yapan ve geliştiren ekipten", tone: "dev" },
   admin: { icon: "◆", name: "Yönetici", desc: "Ancalog'u yöneten ekipten", tone: "blue" },
   founder: { icon: "★", name: "Öncü", desc: "Ancalog'a ilk katılanlardan biri", tone: "violet" },
+  event: { icon: "✦", name: "Etkinlik ruhu", desc: "Bir Ancalog etkinliğini sonuna kadar götür", tone: "", earn: 1 },
   critic: { icon: "◆", name: "Eleştirmen", desc: "10 inceleme yaz", tone: "", earn: 10, progress: (e) => e.filter((x) => x.notes?.trim()).length },
   completionist: { icon: "◆", name: "Tamamlayıcı", desc: "50 oyun bitir", tone: "", earn: 50, progress: doneOf("game") },
   marathon: { icon: "◆", name: "Maratoncu", desc: "Toplam 1000 saat logla", tone: "", earn: 1000, progress: hoursOf },

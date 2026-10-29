@@ -11,8 +11,11 @@ import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { Avatar, Name, UserRow } from "@/components/ui";
 import { NOTICE_TONES, type Notice, fetchNotice } from "@/components/Announcement";
+import { EventForm } from "@/components/EventForm";
+import { EventCard } from "@/components/EventBanner";
+import { eventState, fetchEvents, memberCounts } from "@/lib/events";
 
-const TABS = [["home", "Genel"], ["reports", "Raporlar"], ["members", "Üyeler"], ["content", "İçerikler"], ["comments", "Moderasyon"]] as const;
+const TABS = [["home", "Genel"], ["reports", "Raporlar"], ["members", "Üyeler"], ["content", "İçerikler"], ["comments", "Moderasyon"], ["events", "Etkinlikler"]] as const;
 type Tab = (typeof TABS)[number][0];
 // Yöneticinin elle verebileceği rozetler (site sahibi / yönetici rozeti hariç)
 const GRANTABLE = Object.keys(BADGES).filter((b) => b !== "owner" && b !== "admin" && b !== "dev");
@@ -41,6 +44,7 @@ export default function AdminPage() {
       {tab === "members" && <><Admins /><Members /><BlockedWords /></>}
       {tab === "content" && <><Catalog /><Edits /></>}
       {tab === "comments" && <><Reviews /><Comments /><ForumPosts /><PublicLists /></>}
+      {tab === "events" && <EventsAdmin />}
     </>
   );
 }
@@ -675,7 +679,7 @@ interface Report {
   id: string; kind: string; target_id: string; target_user: string | null; reason: string; note: string | null; excerpt: string | null;
   status: "open" | "resolved" | "dismissed"; created_at: string; reporter: Profile | null; target: Profile | null;
 }
-const KIND_NAMES: Record<string, string> = { profile: "Profil", entry: "Kayıt / inceleme", comment: "Yorum", list: "Liste", forum_thread: "Forum konusu", forum_post: "Forum cevabı", message: "Mesaj" };
+const KIND_NAMES: Record<string, string> = { profile: "Profil", entry: "Kayıt / inceleme", comment: "Yorum", list: "Liste", forum_thread: "Forum konusu", forum_post: "Forum cevabı", message: "Mesaj", event_post: "Etkinlik mesajı" };
 
 function Reports() {
   const { toast, isAdmin, badges, loadBadges } = useApp();
@@ -700,6 +704,7 @@ function Reports() {
     else if (r.kind === "comment") ({ error } = await sb().from("comments").delete().eq("id", r.target_id));
     else if (r.kind === "forum_thread") ({ error } = await sb().from("forum_threads").delete().eq("id", r.target_id));
     else if (r.kind === "forum_post") ({ error } = await sb().from("forum_posts").delete().eq("id", r.target_id));
+    else if (r.kind === "event_post") ({ error } = await sb().from("event_posts").delete().eq("id", r.target_id.split("/")[1]));
     else if (r.kind === "profile" && r.target)
       ({ error } = await sb().rpc("admin_reset_profile", { p_username: r.target.username, p_parts: ["name", "bio", "avatar", "banner", "bg", "song", "home"] }));
     if (error) return toast("Olmadı: " + error.message);
@@ -739,7 +744,7 @@ function Reports() {
   const canAct = (t: Profile | null) => !!t && isAdmin && !(badges.get(t.id) || []).includes("owner");
   const href = (r: Report) => r.kind === "profile" || r.kind === "message" ? `/u/${r.target?.username}`
     : r.kind === "entry" ? `/u/${r.target?.username}?entry=${r.target_id}` : r.kind === "list" ? `/list/${r.target_id}`
-    : r.kind === "forum_thread" ? `/forum/${r.target_id}` : null;
+    : r.kind === "forum_thread" ? `/forum/${r.target_id}` : r.kind === "event_post" ? `/events/${r.target_id.split("/")[0]}` : null;
 
   return (
     <section className="section">
@@ -788,5 +793,39 @@ function Reports() {
           </div>
         )}
     </section>
+  );
+}
+
+// Etkinlikler: yeni etkinlik aç, var olanları gör (düzenlemek ya da silmek için etkinliğin sayfasındaki düğmeler)
+function EventsAdmin() {
+  const { version, refresh } = useApp();
+  const [creating, setCreating] = useState(false);
+  const { data } = useLoad(async () => {
+    const events = await fetchEvents();
+    return { events, counts: await memberCounts(events.map((e) => e.id)) };
+  }, [version]);
+  const events = data?.events || [];
+  return (
+    <>
+      <section className="section">
+        <div className="section-head">
+          <h2>Etkinlikler</h2>
+          {!creating && <button className="btn primary" onClick={() => setCreating(true)}>+ Yeni etkinlik</button>}
+        </div>
+        <p className="muted small">Ad, açıklama, başlangıç tarihi ve süresini seç; istersen sürümler ekle (ör. Orijinal / 3DS / Switch 2). Biten etkinlikler kendiliğinden <b>Geçmiş etkinlikler</b> arşivine geçer.
+          Düzenlemek ya da silmek için etkinliğin sayfasına gir.</p>
+      </section>
+      {creating && <EventForm onDone={(id) => { setCreating(false); if (id) refresh(); }} />}
+      {(["live", "upcoming", "ended"] as const).map((st) => {
+        const list = events.filter((e) => eventState(e) === st);
+        return list.length ? (
+          <section key={st} className="section">
+            <div className="section-head"><h2>{st === "live" ? "Sürenler" : st === "upcoming" ? "Yaklaşanlar" : "Geçmiş etkinlikler"}</h2></div>
+            <div className="ev-cards">{list.map((e) => <EventCard key={e.id} ev={e} count={data?.counts[e.id] || 0} />)}</div>
+          </section>
+        ) : null;
+      })}
+      {data && !events.length && !creating && <div className="empty">Henüz etkinlik yok. Yukarıdan ilkini aç.</div>}
+    </>
   );
 }

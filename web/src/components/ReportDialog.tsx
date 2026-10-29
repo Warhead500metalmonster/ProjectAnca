@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "./AppProvider";
 
-export type ReportKind = "profile" | "entry" | "comment" | "list" | "forum_thread" | "forum_post" | "message";
+// event_post: id "etkinlikId/mesajId" biçiminde (yönetim etkinliğe gidebilsin)
+export type ReportKind = "profile" | "entry" | "comment" | "list" | "forum_thread" | "forum_post" | "message" | "event_post";
 // id: raporlanan şeyin kimliği; user: sahibi; excerpt: yazının o anki hali (sonra silinse de yönetim görsün); label: pencerede ne raporlandığı
 export interface ReportTarget { kind: ReportKind; id: string; user?: string | null; excerpt?: string | null; label: string }
 

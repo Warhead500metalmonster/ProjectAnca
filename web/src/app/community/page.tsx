@@ -15,6 +15,7 @@ import { Cover, Feed, UserRow } from "@/components/ui";
 import { ImportPromo } from "@/components/ImportPromo";
 import { BestMatches } from "@/components/BestMatches";
 import { Announcements } from "@/components/Announcements";
+import { EventBanner } from "@/components/EventBanner";
 
 interface Slim { rawg_id: number | null; title: string; cover: string | null; rating: number }
 
@@ -94,6 +95,7 @@ export default function Community() {
       </section>
       {!me && <ImportPromo signedIn={false} compact />}
       <Announcements />
+      <EventBanner />
       {games.length > 0 && (
         <section className="section">
           <div className="section-head">

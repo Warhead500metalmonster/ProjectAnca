@@ -18,6 +18,7 @@ import { GettingStarted } from "@/components/GettingStarted";
 import { ImportPromo } from "@/components/ImportPromo";
 import { Announcements } from "@/components/Announcements";
 import { FriendPicks } from "@/components/FriendPicks";
+import { EventBanner } from "@/components/EventBanner";
 import { UpcomingStrip } from "@/components/UpcomingStrip";
 import { Avatar, EntryCard, Feed, Stars, Stats, displayName } from "@/components/ui";
 
@@ -190,6 +191,7 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
         </div>
       )}
       <Announcements onHome />
+      <EventBanner />
       <GettingStarted user={user} mine={mine} />
       {mine.length < 30 && <ImportPromo signedIn compact={mine.length > 0} />}
       <section className="section"><div className="stats"><Stats list={mine} /></div></section>

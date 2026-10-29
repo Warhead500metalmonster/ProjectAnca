@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { cacheLife } from "next/cache";
 import { listCard, metaOf } from "@/lib/og";
 
+// Sayfa tarayıcıda yüklenir; başlık linkteki kimliğe göre sunucuda hazırlanır (anlık geçiş denetimi dışında)
+export const instant = false;
+
 // Link paylaşılınca çıkan başlık ve açıklama (sayfanın kendisi tarayıcıda yüklenir)
 async function meta(p: { id: string }): Promise<Metadata> {
   "use cache";

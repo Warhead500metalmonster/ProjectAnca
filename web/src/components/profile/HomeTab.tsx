@@ -14,6 +14,7 @@ import { useProfile } from "@/components/ProfileShell";
 import { Cover, EntryCard, FeedItem, Rating, RatingBars, RichText, Stats } from "@/components/ui";
 import { ListCard } from "@/components/ListCard";
 import { FavoritesSection } from "./LibraryTab";
+import { ProfileEvents } from "./ProfileEvents";
 
 // Profil ana sayfasının bölümleri: sahibi istediği bölümü istediği kadar ekler, her birinde türleri ve başlığı ayrı seçer
 const SECTIONS: [string, string][] = [
@@ -67,6 +68,7 @@ export function HomeTab() {
         <div className="empty">{isMe ? <>Henüz kaydın yok. Steam, PlayStation, Backloggd, Letterboxd, MyAnimeList... başka yerdeki kütüphaneni birkaç dakikada getir.<br />
           <Link className="btn primary" href="/import">Kütüphanemi getir</Link></> : "Henüz kayıt yok."}</div>
       )}
+      <ProfileEvents />
       {blocks.map((b) => <HomeSection key={b.id} b={b} />)}
     </>
   );

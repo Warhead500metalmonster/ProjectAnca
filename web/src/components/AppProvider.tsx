@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { useRouter } from "next/navigation";
 import type { Entry, Item, Profile, RawgGame } from "@/lib/types";
 import { BADGES } from "@/lib/constants";
-import { contentKey } from "@/lib/format";
+import { contentKey, today } from "@/lib/format";
 import { fetchEntries, fixForeignTitles, friendsOnMyPlans } from "@/lib/data";
 import { applyTheme } from "@/lib/theme";
 import { steamAutoSync } from "@/lib/steamSync";
@@ -251,6 +251,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       notify("Bugün çıkıyor", text, "/calendar");
     }).catch(() => {});
   }, [me, mine, toast]);
+
+  // Katıldığı etkinlik bugün başlıyorsa günde bir kez haber ver
+  const eventsChecked = useRef(false);
+  useEffect(() => {
+    if (!me || eventsChecked.current) return;
+    eventsChecked.current = true;
+    const key = `ancalog.evRemind.${me.id}`;
+    const day = today();
+    q<{ events: { id: string; title: string; starts_on: string } | null }[]>(sb().from("event_members").select("events(id, title, starts_on)").eq("user_id", me.id))
+      .then((rows) => {
+        let seen: string[] = [];
+        try { seen = JSON.parse(localStorage.getItem(key) || "[]"); } catch { /* yok say */ }
+        const due = rows.map((r) => r.events).filter((e) => e && e.starts_on === day && !seen.includes(e.id)) as { id: string; title: string }[];
+        if (!due.length) return;
+        try { localStorage.setItem(key, JSON.stringify([...seen, ...due.map((e) => e.id)].slice(-50))); } catch { /* yok say */ }
+        toast(`Bugün başlıyor: ${due[0].title}! Herkese iyi oyunlar.`);
+        notify("Etkinlik bugün başlıyor", `${due[0].title}: hep birlikte başlıyoruz!`, `/events/${due[0].id}`);
+      }).catch(() => {});
+  }, [me, toast]);
 
   // Kişisel site rengi (çıkış yapınca varsayılana döner)
   useEffect(() => { if (ready) applyTheme(me?.site_color); }, [ready, me?.site_color]);
