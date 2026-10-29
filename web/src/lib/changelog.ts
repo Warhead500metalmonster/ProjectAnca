@@ -5,6 +5,11 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-10-30T01:34:00+04:00",
+    title: "Üstteki dönen kapakları gizle",
+    body: "Profilinin üstünde dönen kapakları istemiyorsan, kendi profilinde şeridin köşesindeki \"Bu şeridi gizle\"ye bas. Üst kısım tamamen şeffaf olur, arka plan resmin oradan görünür. Geri açmak istersen: Ayarlar → Kapak görseli görünsün.",
+  },
+  {
     date: "2026-10-30T01:20:00+04:00",
     title: "Kapak kadrajı, rozetten etkinliğe",
     body: "Ayarlar'da kapak görselinin ve arka plan resminin kadrajını seçebilirsin: resmi tutup sürükle, yakınlaştır; hangi kısmı görünsün sen karar ver.\n"

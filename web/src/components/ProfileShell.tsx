@@ -51,7 +51,7 @@ export function ProfileShell({ children }: { children: React.ReactNode }) {
 }
 
 function Shell({ data: raw, children }: { data: ProfileData; children: React.ReactNode }) {
-  const { me, openForm, openView, isFriend, mine, isOwner, badges, blocked, toggleBlock, report } = useApp();
+  const { me, openForm, openView, isFriend, mine, isOwner, badges, blocked, toggleBlock, report, toast, refresh, setMe } = useApp();
   const path = usePathname();
   const isMe = me?.id === raw.profile.id;
   // Sahibinin gizlediği türler (ör. oyunlar) başkalarına profilin hiçbir yerinde görünmez; sahibi hepsini görür
@@ -100,6 +100,16 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
   const founder = (badges.get(raw.profile.id) || []).includes("owner");
   const memberLine = raw.memberNo ? <b className="member-no">Ancalog&apos;un {num(raw.memberNo)}. üyesi</b> : null; // gizli profilde de görünür
   const iBlocked = blocked.has(raw.profile.id); // engellediğim kişinin profilinde içerik gösterilmez
+  // Sahibi üstte dönen kapakları tek dokunuşla kapatır; üst kısım şeffaf kalır (Ayarlar'dan geri açılır)
+  async function hideStrip() {
+    try {
+      setMe(await q<Profile>(sb().from("profiles").update({ home_layout: { ...profile.home_layout, banner: false } }).eq("id", profile.id).select().single()));
+      toast("Şerit gizlendi. Geri açmak için: Ayarlar → Kapak görseli görünsün");
+      refresh();
+    } catch (err) {
+      toast("Kaydedilemedi: " + (err as Error).message);
+    }
+  }
   const locked = !isMe && (iBlocked || privacy === "private" || (privacy === "friends" && !isFriend(profile.id)));
 
   return (
@@ -116,6 +126,7 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
         <div className={`profile-banner ${banner ? "img" : ""} ${!banner && (glass || !showBanner) ? `clear ${bg ? "" : "short"}` : ""}`} >
           {banner && <div className="pb-img" style={{ backgroundImage: cssUrl(banner), ...cropStyle(profile.home_layout?.bannerCrop) }} aria-hidden="true" />}
           {!banner && !glass && showBanner && <CoverMarquee covers={[...new Set(entries.map((e) => safeUrl(e.cover)).filter(Boolean))].slice(0, 24)} />}
+          {!banner && !glass && showBanner && isMe && <button className="pb-hide" onClick={hideStrip}>Bu şeridi gizle</button>}
         </div>
         <div className="profile-head">
           <Avatar p={profile} cls="lg" />

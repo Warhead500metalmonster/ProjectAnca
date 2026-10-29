@@ -2156,3 +2156,9 @@ a.badge-card.link-card:hover { transform: translateY(-2px); }
 .cropper.wide, .cropper.screen { flex-direction: column; align-items: stretch; }
 .cropper-box.wide { width: 100%; height: auto; aspect-ratio: 4.6 / 1; border-radius: 12px; }
 .cropper-box.screen { width: 100%; max-width: 420px; height: auto; aspect-ratio: 16 / 9; border-radius: 12px; }
+
+/* Profil sahibine: üstte dönen kapak şeridini gizle */
+.pb-hide { position: absolute; z-index: 2; top: 14px; right: max(16px, calc(50vw - 584px)); padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .2);
+  background: rgba(8, 12, 13, .6); color: #fff; font-size: 12px; cursor: pointer; opacity: 0; transition: opacity .2s; backdrop-filter: blur(6px); }
+.profile-banner:hover .pb-hide, .pb-hide:focus-visible { opacity: 1; }
+@media (hover: none) { .pb-hide { opacity: .85; } }

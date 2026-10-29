@@ -163,8 +163,9 @@ function SettingsForm({ me }: { me: Profile }) {
           <AvatarCropper shape="wide" url={bannerUrl.trim()} crop={bannerCrop} onChange={setBannerCrop} />
         </div>
       )}
-      <label className="check"><input type="checkbox" checked={showBanner} onChange={(e) => setShowBanner(e.target.checked)} /> Kapak görseli görünsün
-        <span className="muted small">· kapatırsan üst kısım boş kalır, arka plan resmin ya da temanın rengi oradan görünür</span></label>
+      <label className="check"><input type="checkbox" checked={showBanner} onChange={(e) => setShowBanner(e.target.checked)} />
+        {safeUrl(bannerUrl.trim()) ? "Kapak görseli görünsün" : "Kapak görseli görünsün (görsel yoksa üstte kapakların döner)"}
+        <span className="muted small">· kapatırsan üst kısım tamamen şeffaf olur, arka plan resmin ya da temanın rengi oradan görünür</span></label>
 
       <h3 className="set-h" id="sayilar">Profilimdeki sayılar <span className="muted small">· adının yanındaki kayıt, takipçi gibi büyük sayılar</span></h3>
       <CountsPicker value={counts} onChange={setCounts} />
