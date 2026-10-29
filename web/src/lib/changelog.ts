@@ -4,12 +4,10 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
-    date: "2026-10-30",
+    date: "2026-10-29",
     title: "Duyurular ana sayfada, daha geniş kayıt penceresi",
-    body: "En yeni duyuru artık ana sayfanın üstünde ince bir satır olarak görünüyor.
-"
-      + "Bilgisayarda yeni kayıt penceresi ve Ayarlar daha geniş, daha az kaydırma.
-"
+    body: "En yeni duyuru artık ana sayfanın üstünde ince bir satır olarak görünüyor.\n"
+      + "Bilgisayarda yeni kayıt penceresi ve Ayarlar daha geniş, daha az kaydırma.\n"
       + "İstatistiklerdeki tür adlarının önünde çıkan gereksiz işaret düzeltildi.",
   },
   {
