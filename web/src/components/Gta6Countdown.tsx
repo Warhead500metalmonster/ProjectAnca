@@ -23,7 +23,7 @@ export function Gta6Countdown() {
 
   return (
     <aside className="gta6">
-      <Link className="gta6-in" href={`/search?q=${encodeURIComponent("Grand Theft Auto VI")}&type=game`}>
+      <Link className="gta6-in" href="/game/972995">
         <div className="gta6-title">
           <b>GTA VI</b>
           <span>19 Kasım 2026, 00.00 TSİ</span>
