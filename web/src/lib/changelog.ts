@@ -5,6 +5,12 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-10-30T11:02:00+04:00",
+    title: "Daha derli toplu ekranlar",
+    body: "Telefonda profilindeki sayıların yazıları artık üst üste binmiyor. Kendi profilinde gizlilik notları tek satırda, \"Değiştir\" doğrudan Gizlilik ayarlarını açıyor; aynı işi yapan ikinci \"+ Ekle\" düğmesi kalktı.\n"
+      + "Etkinlik sayfasında alttaki sabit Katıl düğmesi, üstteki Katıl ekrandan çıkınca beliriyor. Sosyal'deki okunmamış mesaj sayısı artık küçük bir rozet.",
+  },
+  {
     date: "2026-10-30T01:54:00+04:00",
     title: "Kütüphane ve daha sade bir site",
     body: "Üst menüde yeni Kütüphane: her oyun, film, dizi, anime ve albüm burada. Adını yaz, aynı anda her yerde aransın; sonuçlar türlerine göre raflarda gelir. Telefonda üstteki büyüteçten açılır.\n"

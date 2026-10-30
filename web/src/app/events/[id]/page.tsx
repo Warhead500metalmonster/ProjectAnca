@@ -78,8 +78,8 @@ export default function EventPage() {
               <Rewards ev={ev} />
               <HowTo kind={new Set(ev.options.map((o) => o.kind || ev.kind)).size > 1 ? null : ev.options[0]?.kind || ev.kind} />
               <Versions ev={ev} members={members} my={my} onChange={reload} />
-              {/* Telefonda ekranın altında sabit Katıl düğmesi */}
-              <a className="ev-sticky btn primary" href="#ev-versions">Etkinliğe katıl</a>
+              {/* Telefonda ekranın altında sabit Katıl düğmesi: üstteki Katıl görünürken çıkmaz, iki düğme üst üste binmesin */}
+              <StickyJoin />
             </>
           )}
         </>
@@ -574,4 +574,17 @@ function Spotlight({ ev, m, members, self }: { ev: AncEvent; m: EventMember; mem
       </div>
     </section>
   );
+}
+
+// Üstteki etkinlik kartının Katıl düğmesi ekrandan çıkınca altta beliren sabit düğme
+function StickyJoin() {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const hero = document.querySelector(".ev-hero-actions");
+    if (!hero) return;
+    const io = new IntersectionObserver(([e]) => setShow(!e.isIntersecting && e.boundingClientRect.top < 0));
+    io.observe(hero);
+    return () => io.disconnect();
+  }, []);
+  return show ? <a className="ev-sticky btn primary" href="#ev-versions">Etkinliğe katıl</a> : null;
 }

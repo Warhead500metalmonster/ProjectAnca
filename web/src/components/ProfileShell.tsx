@@ -51,7 +51,7 @@ export function ProfileShell({ children }: { children: React.ReactNode }) {
 }
 
 function Shell({ data: raw, children }: { data: ProfileData; children: React.ReactNode }) {
-  const { me, openForm, openView, isFriend, mine, isOwner, badges, blocked, toggleBlock, report, toast, refresh, setMe } = useApp();
+  const { me, openView, isFriend, mine, isOwner, badges, blocked, toggleBlock, report, toast, refresh, setMe } = useApp();
   const path = usePathname();
   const isMe = me?.id === raw.profile.id;
   // Sahibinin gizlediği türler (ör. oyunlar) başkalarına profilin hiçbir yerinde görünmez; sahibi hepsini görür
@@ -146,7 +146,7 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
           </div>}
           <div className="profile-actions">
             {isMe
-              ? <><Link className="btn" href="/settings">Profili düzenle</Link><button className="btn primary" onClick={() => openForm(null)}>+ Ekle</button></>
+              ? <Link className="btn" href="/settings">Profili düzenle</Link> /* + Ekle üst çubukta (telefonda alttaki +) zaten var */
               : <>
                 {match !== null && !locked && <Link className="match-pill" href={`/u/${profile.username}/compare`} title="Zevkleriniz ne kadar uyuşuyor">Uyum %{match}</Link>}
                 {/* Arkadaşlar birbirine; site sahibi herkese, herkes de site sahibine yazabilir */}
@@ -167,14 +167,12 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
         </div>
         <BadgeChips id={profile.id} max={3} more={`/u/${profile.username}/badges`} />
         {profile.bio && !locked && <p className="profile-bio">{profile.bio}</p>}
-        {isMe && privacy !== "public" && (
+        {/* Sadece sahibine, tek satırda: profilini başkaları nasıl görüyor (gizliyse türlerden bahsetmeye gerek yok) */}
+        {isMe && (privacy !== "public" || hidden.length > 0) && (
           <p className="muted small profile-note" style={{ margin: "6px 0 0" }}>
-            Profilin {privacy === "private" ? "gizli: kütüphaneni sadece sen görüyorsun" : "sadece arkadaşlarına açık"}. <Link href="/settings">Değiştir</Link>
-          </p>
-        )}
-        {isMe && hidden.length > 0 && (
-          <p className="muted small profile-note" style={{ margin: "6px 0 0" }}>
-            Başkaları profilinde {hidden.map((t) => TYPES[t].plural.toLocaleLowerCase("tr")).join(", ")} göremez. <Link href="/settings">Değiştir</Link>
+            {privacy === "private" ? "Profilin gizli: kütüphaneni sadece sen görüyorsun."
+              : `${privacy === "friends" ? "Profilin sadece arkadaşlarına açık." : ""}${hidden.length ? ` Başkaları ${hidden.map((t) => TYPES[t].label.toLocaleLowerCase("tr")).join(", ").replace(/, ([^,]*)$/, " ve $1")} kayıtlarını görmez.` : ""}`}
+            {" "}<Link href="/settings#gizlilik">Değiştir</Link>
           </p>
         )}
         {locked ? (
