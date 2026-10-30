@@ -5,6 +5,11 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-10-30T22:27:00+04:00",
+    title: "GTA VI geri sayımı",
+    body: "19 Kasım 2026, 00.00 TSİ'ye kadar saniye saniye geri sayıyoruz! Ana sayfa, Topluluk ve Keşfet'in en üstünde. Oyun çıkınca sayaç kendiliğinden kalkacak.",
+  },
+  {
     date: "2026-10-30T18:43:00+04:00",
     title: "Kullanıcı bizden üstündür",
     body: "Ana sayfanın altında artık Biz kimiz ve Sıkça sorulanlar var; tüm sorular Sıkça sorulanlar sayfasında.\n"

@@ -17,6 +17,7 @@ import { NextBadges } from "@/components/profile/BadgesTab";
 import { GettingStarted } from "@/components/GettingStarted";
 import { ImportPromo } from "@/components/ImportPromo";
 import { HomeInfo } from "@/components/Faq";
+import { Gta6Countdown } from "@/components/Gta6Countdown";
 import { Announcements } from "@/components/Announcements";
 import { FriendPicks } from "@/components/FriendPicks";
 import { EventBanner } from "@/components/EventBanner";
@@ -49,6 +50,7 @@ function Landing({ version }: { version: number }) {
 
   return (
     <>
+      <Gta6Countdown />
       <section className="hero2">
         <CoverMarquee covers={covers} />
         <div className="hero2-text">
@@ -175,6 +177,7 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
 
   return (
     <>
+      <Gta6Countdown />
       <section className="hero2 compact">
         <CoverMarquee covers={heroCovers} />
         <div className="hero2-text">

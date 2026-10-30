@@ -11,6 +11,7 @@ import { rawg } from "@/lib/rawg";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
 import { Cover, UserRow } from "@/components/ui";
+import { Gta6Countdown } from "@/components/Gta6Countdown";
 
 type Sort = "logged" | "completed" | "active" | "rating" | "newest" | "oldest" | "title";
 const SORTS: [Sort, string][] = [
@@ -98,6 +99,7 @@ export default function SearchPage() {
 
   return (
     <>
+      <Gta6Countdown />
       <section className="search-hero">
         <h1>Keşfet</h1>
         <p className="muted search-sub">Her oyun, film, dizi, anime ve albüm burada. Adını yaz, aynı anda her yerde aransın; bir şeye tıkla, sayfasını gör, kütüphanene ekle.</p>

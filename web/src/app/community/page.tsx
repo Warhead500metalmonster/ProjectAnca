@@ -16,6 +16,7 @@ import { ImportPromo } from "@/components/ImportPromo";
 import { BestMatches } from "@/components/BestMatches";
 import { Announcements } from "@/components/Announcements";
 import { EventBanner } from "@/components/EventBanner";
+import { Gta6Countdown } from "@/components/Gta6Countdown";
 
 interface Slim { rawg_id: number | null; title: string; cover: string | null; rating: number }
 
@@ -89,6 +90,7 @@ export default function Community() {
 
   return (
     <>
+      <Gta6Countdown />
       <section className="mosaic-head">
         <div className="mosaic">{covers.map((c, i) => <img key={i} src={c} alt="" loading="lazy" onError={(e) => e.currentTarget.remove()} />)}</div>
         <div className="mosaic-text"><h1>Topluluk</h1><p>Herkes neyi oynuyor, neyi izliyor? Keşfet, takip et.</p></div>
