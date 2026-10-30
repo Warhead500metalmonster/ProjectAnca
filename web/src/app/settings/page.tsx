@@ -97,6 +97,14 @@ function SettingsForm({ me }: { me: Profile }) {
     if (r?.ok) { const d = await r.json(); setSong((s) => (s.title ? s : { ...s, title: `${d.author.replace(/\s*-\s*Topic$/i, "")} — ${d.title}`.slice(0, 120) })); }
   }
 
+  // Kaydedilmemiş değişiklik varken sekme kapanır ya da Vazgeç'e basılırsa sor
+  const dirty = useRef(false);
+  useEffect(() => {
+    const warn = (e: BeforeUnloadEvent) => { if (dirty.current) e.preventDefault(); };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, []);
+
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
@@ -138,6 +146,7 @@ function SettingsForm({ me }: { me: Profile }) {
         ...((me.hidden_types?.length || hiddenTypes.length) && { hidden_types: hiddenTypes }),
         ...(privacy !== (me.privacy || "public") && { privacy }), // yalnızca değişince (veritabanı güncellenmeden de kaydedilebilsin)
       }).eq("id", me.id).select().single());
+      dirty.current = false;
       setMe(updated);
       saved.current = updated.site_color;
       toast("Profil kaydedildi ✓");
@@ -150,7 +159,9 @@ function SettingsForm({ me }: { me: Profile }) {
   }
 
   return (
-    <form className="auth settings" onSubmit={submit}>
+    <form className="auth settings" onSubmit={submit}
+      onChange={() => { dirty.current = true; }}
+      onClick={(e) => { if ((e.target as HTMLElement).closest(".theme-cards, .swatches")) dirty.current = true; }}>
       <div className="set-top">
         <Avatar p={me} cls="lg" />
         <div>
@@ -322,7 +333,7 @@ function SettingsForm({ me }: { me: Profile }) {
       <div className="set-save">
         {error ? <p className="form-error">{error}</p> : <span className="muted small">Değişiklikler kaydedince profiline yansır.</span>}
         <span className="spacer" />
-        <Link className="btn ghost" href={`/u/${me.username}`}>Vazgeç</Link>
+        <Link className="btn ghost" href={`/u/${me.username}`} onClick={(e) => { if (dirty.current && !confirm("Değişikliklerin kaydedilmedi. Yine de çıkmak istiyor musun?")) e.preventDefault(); }}>Vazgeç</Link>
         <button className="btn primary" disabled={busy}>{busy ? "Kaydediliyor…" : "Kaydet"}</button>
       </div>
     </form>

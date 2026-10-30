@@ -16,6 +16,7 @@ import { Goals } from "@/components/Goals";
 import { NextBadges } from "@/components/profile/BadgesTab";
 import { GettingStarted } from "@/components/GettingStarted";
 import { ImportPromo } from "@/components/ImportPromo";
+import { HomeInfo } from "@/components/Faq";
 import { Announcements } from "@/components/Announcements";
 import { FriendPicks } from "@/components/FriendPicks";
 import { EventBanner } from "@/components/EventBanner";
@@ -101,6 +102,7 @@ function Landing({ version }: { version: number }) {
         <div className="section-head"><h2>Toplulukta son hareketler</h2><Link href="/community">Tümü →</Link></div>
         {data ? <Feed list={data.slice(3, 13)} /> : <div className="loading">Yükleniyor…</div>}
       </section>
+      <HomeInfo signedIn={false} />
     </>
   );
 }
@@ -218,7 +220,7 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
       {mine.length > 0 && (
         <section className="section">
           <div className="section-head"><h2>Son loglarım</h2><Link href={`/u/${user.username}`}>Hepsi →</Link></div>
-          <div className="wall">{mine.slice(0, 24).map((e) => <EntryCard key={e.id} e={e} kind wall />)}</div>
+          <div className="wall">{mine.slice(0, 12).map((e) => <EntryCard key={e.id} e={e} kind wall />)}</div>
         </section>
       )}
       <section className="section feed-col">
@@ -238,6 +240,7 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
           } />
         ) : <Feed list={community} />}
       </section>
+      <HomeInfo signedIn />
     </>
   );
 }

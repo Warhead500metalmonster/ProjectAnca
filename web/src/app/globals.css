@@ -2215,3 +2215,19 @@ a.badge-card.link-card:hover { transform: translateY(-2px); }
   .profile-counts .counts-edit { flex: 0 0 auto; padding: 2px; }
   .pb-hide { opacity: .6; font-size: 11px; padding: 4px 10px; }
 }
+
+/* Ana sayfanın altı: biz kimiz ve sıkça sorulanlar */
+.home-info { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 24px; align-items: start; scroll-margin-top: 80px; }
+.home-about { padding: 22px 24px; border-radius: 16px; border: 1px solid var(--border); background: var(--panel); }
+.home-about h2 { margin: 0 0 8px; }
+.home-about p { margin: 0 0 10px; }
+.home-motto { font-family: var(--head); font-size: 24px; line-height: 1.2; font-weight: 700; color: var(--accent-2); }
+.home-about ul { margin: 0 0 16px; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.home-about-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.home-faq .help-q:first-of-type { margin-top: 0; }
+@media (max-width: 800px) { .home-info { grid-template-columns: minmax(0, 1fr); } }
+
+/* Sayfa bulunamadı ve beklenmedik hata */
+.page-oops { max-width: 520px; margin: 60px auto; text-align: center; }
+.page-oops h1 { margin-bottom: 8px; }
+.page-oops .hero-actions { justify-content: center; margin-top: 16px; flex-wrap: wrap; }

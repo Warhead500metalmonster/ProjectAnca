@@ -34,7 +34,7 @@ export default function AboutPage() {
         ne izlediğini görebileceğim bir yer istedim. Bulamayınca kendim yaptım.
       </p>
       <p>
-        Benim için en önemli kural şu: site kullanımı kolay olsun. Yeni bir özellik eklerken önce &quot;bu işi zorlaştırır mı?&quot; diye bakıyorum.
+        Mottomuz şu: <b>kullanıcı bizden üstündür</b>. Yeni bir özellik eklerken önce &quot;bu senin işini zorlaştırır mı?&quot; diye bakıyorum.
       </p>
 
       <h2>Ben kimim?</h2>
@@ -48,7 +48,7 @@ export default function AboutPage() {
       <h2>Sözüm</h2>
       <ul>
         <li><b>Seni burada tutmaya çalışmam.</b> Kayıtların senindir: puanların, sürelerin, incelemelerin, listelerin. İstediğin gün{" "}
-          <Link className="grad" href="/settings">Ayarlar</Link>&apos;dan hepsini tek tıkla Excel, JSON ya da Letterboxd biçiminde indirip başka yere taşıyabilirsin. Soru sorulmaz, gönül koyulmaz.</li>
+          <Link className="grad" href="/settings#hesap">Ayarlar → Hesap</Link>&apos;tan hepsini tek tıkla Excel, JSON ya da Letterboxd biçiminde indirip başka yere taşıyabilirsin. Soru sorulmaz, gönül koyulmaz.</li>
         <li><b>Gidersen iz kalmaz.</b> Hesabını sildiğinde kayıtların, yorumların ve mesajların da silinir.</li>
         <li><b>Gelmek de gitmek kadar kolay.</b> Başka sitelerdeki geçmişini <Link className="grad" href="/import">İçe aktar</Link>&apos;dan birkaç dakikada getirirsin; sıfırdan başlamazsın.</li>
         <li><b>Ücretsiz.</b> Reklam yok, veri satışı yok, takip çerezi yok, &quot;premium&quot; yok. Ayrıntılar <Link className="grad" href="/privacy">Gizlilik ve KVKK</Link> sayfasında.</li>
@@ -61,7 +61,7 @@ export default function AboutPage() {
         <li><b>Getir:</b> Steam, PlayStation, Backloggd, Letterboxd, MyAnimeList ve daha fazlasındaki geçmişini <Link className="grad" href="/import">İçe aktar</Link>&apos;dan topluca getir.</li>
         <li><b>Takip et:</b> arkadaşlarını <Link className="grad" href="/community">Topluluk</Link>&apos;tan bul; ne oynadıkları ana sayfana düşer, zevkinizin ne kadar uyuştuğunu görürsün.</li>
         <li><b>Süsle:</b> profil fotoğrafı, kapak, tema rengi, arka plan ve profil şarkısı <Link className="grad" href="/settings">Ayarlar</Link>&apos;da.</li>
-        <li>Takıldığın yer olursa <Link className="grad" href="/help">kullanım rehberine</Link> bak ya da bana yaz.</li>
+        <li>Takıldığın yer olursa <Link className="grad" href="/help">sıkça sorulanlara</Link> bak ya da bana yaz.</li>
       </ul>
 
       <h2>Yasaklar (kısaca)</h2>

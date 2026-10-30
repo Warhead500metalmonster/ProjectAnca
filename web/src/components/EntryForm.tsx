@@ -260,18 +260,22 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
   const places = uniq([...(isGame ? picked?.platforms || [] : []), ...t.places]);
   const stores = uniq([...(picked?.stores || []), ...STORES]);
   const credit = searchCredit(type);
+  // Yazdığın inceleme, not ya da verdiğin puan sormadan kaybolmasın (sadece isim yazdıysan sormayız, darlamayalım)
+  const dirty = review !== (entry?.notes || "") || note !== (entry?.progress || "") || dropNote !== (entry?.drop_note || "") || rating !== (Number(entry?.rating) || 0);
+  const canLeave = () => !dirty || confirm("Yazdıkların kaydedilmedi. Yine de çıkmak istiyor musun?");
+  const leave = () => { if (canLeave()) ref.current?.close(); };
   // 5'lik ölçekte 5 yıldız (her yarım = 1 puan), 10'lukta 10 yıldız (her yarım = 0,5 puan)
   const n = scale === 10 ? 10 : 5, step = 10 / n;
 
   return (
-    <dialog ref={ref} onClose={onClose}>
+    <dialog ref={ref} onClose={onClose} onCancel={(e) => { if (!canLeave()) e.preventDefault(); }}>
       <form id="form" onSubmit={submit}>
         <div className="dialog-head">
           <h2>{entry ? "Kaydı düzenle" : "Yeni kayıt"}</h2>
-          <button type="button" className="icon-btn" aria-label="Kapat" onClick={() => ref.current?.close()}>✕</button>
+          <button type="button" className="icon-btn" aria-label="Kapat" onClick={leave}>✕</button>
         </div>
         {!entry && !item && !game && (
-          <Link className="form-import" href="/import" onClick={() => ref.current?.close()}>
+          <Link className="form-import" href="/import" onClick={(e) => { if (canLeave()) ref.current?.close(); else e.preventDefault(); }}>
             <b>Tek tek uğraşma.</b> Steam, PlayStation, Backloggd, Letterboxd, MyAnimeList... bütün kütüphaneni tek seferde getir →
           </Link>
         )}
@@ -478,7 +482,7 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
         <div className="actions">
           {entry && <button type="button" className="btn danger" onClick={remove}>Sil</button>}
           <span className="spacer" />
-          <button type="button" className="btn" onClick={() => ref.current?.close()}>Vazgeç</button>
+          <button type="button" className="btn" onClick={leave}>Vazgeç</button>
           <button type="submit" className="btn primary" disabled={saving}>Kaydet</button>
         </div>
       </form>

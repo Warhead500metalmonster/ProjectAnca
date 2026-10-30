@@ -35,7 +35,7 @@ export function GettingStarted({ user, mine }: { user: Profile; mine: Entry[] })
   return (
     <section className="section start-card">
       <div className="start-head">
-        <div><h2>Nasıl başlarım?</h2><span className="muted small">{steps.length - left} / {steps.length} tamam · <Link className="link" href="/help">Kısa kullanım rehberi</Link></span></div>
+        <div><h2>Nasıl başlarım?</h2><span className="muted small">{steps.length - left} / {steps.length} tamam · <Link className="link" href="/help">Sıkça sorulanlar</Link></span></div>
         <button className="icon-btn" aria-label="Kapat" title="Bir daha gösterme" onClick={hide}>✕</button>
       </div>
       <ol className="start-steps">

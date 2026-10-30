@@ -5,6 +5,15 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-10-30T18:43:00+04:00",
+    title: "Kullanıcı bizden üstündür",
+    body: "Ana sayfanın altında artık Biz kimiz ve Sıkça sorulanlar var; tüm sorular Sıkça sorulanlar sayfasında.
+"
+      + "Yazdıkların boşa gitmesin: yeni kayıtta inceleme, not ya da puan girdiysen, Profili düzenle'de de değişiklik yaptıysan kaydetmeden çıkarken soruyoruz.
+"
+      + "Teknik hata yazıları yerine anlaşılır Türkçe mesajlar, yanlış bir linke gidersen de seni yolda bırakmayan bir sayfa geliyor.",
+  },
+  {
     date: "2026-10-30T11:02:00+04:00",
     title: "Daha derli toplu ekranlar",
     body: "Telefonda profilindeki sayıların yazıları artık üst üste binmiyor. Kendi profilinde gizlilik notları tek satırda, \"Değiştir\" doğrudan Gizlilik ayarlarını açıyor; aynı işi yapan ikinci \"+ Ekle\" düğmesi kalktı.\n"

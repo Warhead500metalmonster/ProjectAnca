@@ -37,13 +37,22 @@ export function sb(): SupabaseClient {
 }
 
 // Supabase cevabını aç: hata varsa fırlat
+// Veritabanının teknik hata yazıları kullanıcıya gösterilmesin; bizim yazdığımız Türkçe hatalar olduğu gibi geçer
+export const NO_PERMISSION = "Bunu yapmaya iznin yok gibi görünüyor.";
+function friendly(message: string): string {
+  if (/failed to fetch|networkerror|load failed|network request failed/i.test(message)) return "İnternet bağlantısı kopmuş gibi görünüyor. Bağlantını kontrol edip tekrar dener misin?";
+  if (/jwt|refresh token|not authenticated/i.test(message)) return "Oturumun süresi dolmuş. Çıkış yapıp tekrar giriş yaparsan düzelir.";
+  if (/row-level security|permission denied/i.test(message)) return NO_PERMISSION;
+  if (/duplicate key/i.test(message)) return "Bu zaten eklenmiş.";
+  return message;
+}
 export async function q<T>(req: PromiseLike<{ data: unknown; error: { message: string } | null }>): Promise<T> {
   const { data, error } = await req;
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(friendly(error.message));
   return data as T;
 }
 export async function countOf(req: PromiseLike<{ count: number | null; error: { message: string } | null }>) {
   const { count, error } = await req;
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(friendly(error.message));
   return count || 0;
 }

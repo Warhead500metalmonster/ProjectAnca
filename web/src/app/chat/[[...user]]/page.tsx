@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import type { Message, Profile } from "@/lib/types";
 import { timeAgo } from "@/lib/format";
-import { q, sb } from "@/lib/supabase";
+import { q, sb, NO_PERMISSION } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
 import { Avatar, Name } from "@/components/ui";
 import { SocialTabs } from "@/components/SocialTabs";
@@ -78,7 +78,7 @@ export default function ChatPage() {
       setMsgs((list) => [m, ...list]);
       setText("");
     } catch (err) {
-      toast((err as Error).message.includes("row-level security")
+      toast((err as Error).message === NO_PERMISSION
         ? "Sadece karşılıklı takipleştiğin arkadaşlarına (ve site sahibine) yazabilirsin." : "Gönderilemedi: " + (err as Error).message);
     } finally {
       setSending(false);
