@@ -12,8 +12,8 @@ export const CHANGELOG: ChangelogItem[] = [
   },
   {
     date: "2026-10-30T01:54:00+04:00",
-    title: "Kütüphane ve daha sade bir site",
-    body: "Üst menüde yeni Kütüphane: her oyun, film, dizi, anime ve albüm burada. Adını yaz, aynı anda her yerde aransın; sonuçlar türlerine göre raflarda gelir. Telefonda üstteki büyüteçten açılır.\n"
+    title: "Keşfet ve daha sade bir site",
+    body: "Üst menüde yeni Keşfet: her oyun, film, dizi, anime ve albüm burada. Adını yaz, aynı anda her yerde aransın; sonuçlar türlerine göre raflarda gelir. Telefonda üstteki büyüteçten açılır.\n"
       + "Yeni kayıt penceresi sadeleşti: tür, isim, durum, puan ve inceleme önde; süre, tarihler, mağaza, not, etiket ve kapak \"Daha fazla ayrıntı\"nın altında. Pencere açılınca direkt yazmaya başlayabilirsin.\n"
       + "Ana sayfada aynı şeyi iki kez anlatan kutular kalktı, akışta oynama süresi artık bir kez yazıyor.",
   },

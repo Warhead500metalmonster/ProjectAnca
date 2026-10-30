@@ -99,7 +99,7 @@ export default function SearchPage() {
   return (
     <>
       <section className="search-hero">
-        <h1>Kütüphane</h1>
+        <h1>Keşfet</h1>
         <p className="muted search-sub">Her oyun, film, dizi, anime ve albüm burada. Adını yaz, aynı anda her yerde aransın; bir şeye tıkla, sayfasını gör, kütüphanene ekle.</p>
         <input className="input big" type="search" autoFocus value={text} placeholder="Ne arıyorsun? Ör. Zelda, Breaking Bad, Frieren…" onChange={(e) => setText(e.target.value)} />
         <div className="tabs">
