@@ -189,7 +189,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .catch(console.error)
       .finally(() => setReady(true));
 
-    const { data: sub } = client.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = client.auth.onAuthStateChange((event, session) => {
+      // Şifre yenileme linkinden gelindi: nereye düşerse düşsün yeni şifre sayfasına götür
+      if (event === "PASSWORD_RECOVERY" && location.pathname !== "/reset-password") setTimeout(() => router.replace("/reset-password"));
       const id = session?.user.id ?? null;
       if (id === userId.current) return;
       // Supabase, bu callback içinde doğrudan başka Supabase çağrısı yapılmasını önermiyor

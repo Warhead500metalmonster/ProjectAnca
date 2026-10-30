@@ -201,11 +201,6 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
       <GettingStarted user={user} mine={mine} />
       {/* Büyük içe aktarma tanıtımı sadece hiç kaydı olmayana; diğerlerinde "Nasıl başlarım?" kartındaki ilk adım aynı işi görüyor */}
       {mine.length === 0 && <ImportPromo signedIn />}
-      <section className="section"><div className="stats"><Stats list={mine} /></div></section>
-      <section className="section home-goals">
-        <Goals profile={user} entries={mine} isMe />
-        <NextBadges userId={user.id} username={user.username} entries={mine} />
-      </section>
       {active.length > 0 && (
         <section className="section">
           <div className="section-head"><h2>Devam ettiklerin</h2><Link href={`/u/${user.username}/library`}>Kütüphanem →</Link></div>
@@ -220,10 +215,15 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
       )}
       <UpcomingStrip userId={user.id} mine={mine} />
       <FriendPicks following={followingIds} mine={mine} />
+      <section className="section home-stats"><div className="stats"><Stats list={mine} /></div></section>
+      <section className="section home-goals">
+        <Goals profile={user} entries={mine} isMe />
+        <NextBadges userId={user.id} username={user.username} entries={mine} />
+      </section>
       {mine.length > 0 && (
         <section className="section">
           <div className="section-head"><h2>Son loglarım</h2><Link href={`/u/${user.username}`}>Hepsi →</Link></div>
-          <div className="wall">{mine.slice(0, 12).map((e) => <EntryCard key={e.id} e={e} kind wall />)}</div>
+          <div className="wall home-wall">{mine.slice(0, 12).map((e) => <EntryCard key={e.id} e={e} kind wall />)}</div>
         </section>
       )}
       <section className="section feed-col">

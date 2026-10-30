@@ -5,6 +5,12 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-10-30T23:01:00+04:00",
+    title: "Şifremi unuttum, daha rahat telefon",
+    body: "Şifreni unutursan artık hesabın kilitli kalmıyor: giriş sayfasındaki \"Şifremi unuttum\" ile e-postana yenileme linki gelir. Şifreni Ayarlar → Hesap'tan da değiştirebilirsin, yazarken \"Göster\"e basıp görebilirsin.\n"
+      + "Telefonda ana sayfa önce devam ettiklerini gösteriyor. Oyun ve dizi sayfalarında ad ve Kütüphaneme ekle en üstte, profilde sekmeler ekranda kalıyor, düğmeler parmağa daha uygun.",
+  },
+  {
     date: "2026-10-30T22:27:00+04:00",
     title: "GTA VI geri sayımı",
     body: "19 Kasım 2026, 00.00 TSİ'ye kadar saniye saniye geri sayıyoruz! Ana sayfa, Topluluk ve Keşfet'in en üstünde. Oyun çıkınca sayaç kendiliğinden kalkacak.",

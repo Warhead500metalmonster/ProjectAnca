@@ -2233,29 +2233,94 @@ a.badge-card.link-card:hover { transform: translateY(-2px); }
 .page-oops .hero-actions { justify-content: center; margin-top: 16px; flex-wrap: wrap; }
 
 /* GTA VI geri sayımı: oyunun resmiyle banner, çıkınca kendiliğinden kalkar (resim açılmazsa gün batımı rengi kalır) */
-.gta6 { position: relative; margin: 0 0 36px; border-radius: 18px; overflow: hidden; color: #fff; box-shadow: 0 12px 34px rgba(224, 69, 123, .28);
-  background: linear-gradient(90deg, rgba(20, 6, 40, .82), rgba(20, 6, 40, .15) 50%, rgba(20, 6, 40, .7)),
+.gta6 { position: relative; margin: 0 0 36px; border-radius: 18px; overflow: hidden; color: #fff; border: 1px solid rgba(255, 255, 255, .16); transition: box-shadow .2s, border-color .2s;
+  box-shadow: 0 12px 34px rgba(224, 69, 123, .28);
+  background: linear-gradient(90deg, rgba(20, 6, 40, .86), rgba(20, 6, 40, .12) 48%, rgba(20, 6, 40, .72)),
     url("https://media.rawg.io/media/games/734/7342a1cd82c8997ec620084ae4c2e7e4.jpg") center 35% / cover no-repeat,
     linear-gradient(100deg, #2a0f4f 0%, #8f1f7e 38%, #e8456f 68%, #ff9a3c 100%); }
+.gta6:hover { border-color: rgba(255, 138, 180, .7); box-shadow: 0 14px 42px rgba(224, 69, 123, .45); }
 .gta6-in { position: relative; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 28px; flex-wrap: wrap; min-height: 200px; padding: 22px 26px; color: inherit; text-decoration: none; }
 .gta6-in:hover { color: inherit; }
-.gta6-title { display: flex; flex-direction: column; gap: 2px; }
-.gta6-title b { font-family: var(--head); font-size: clamp(30px, 4vw, 42px); line-height: 1; letter-spacing: -.01em; font-style: italic; text-shadow: 0 2px 14px rgba(0, 0, 0, .35); }
-.gta6-title span { font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, .88); }
+.gta6-title { display: flex; flex-direction: column; gap: 3px; }
+.gta6-title small { font-size: 11.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: rgba(255, 255, 255, .85); text-shadow: 0 1px 6px rgba(0, 0, 0, .6); }
+.gta6-title b { font-family: var(--head); font-size: clamp(36px, 5vw, 54px); line-height: 1; letter-spacing: -.01em; font-style: italic; padding-right: .1em;
+  background: linear-gradient(90deg, #ff8ab4, #ffc27a 55%, #7ce8e0); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 2px 10px rgba(0, 0, 0, .55)); }
+.gta6-title span { font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, .9); text-shadow: 0 1px 6px rgba(0, 0, 0, .6); }
 .gta6-clock { display: flex; gap: 8px; }
-.gta6-clock > div { display: flex; flex-direction: column; align-items: center; min-width: 68px; padding: 8px 6px 6px; border-radius: 12px;
-  background: rgba(16, 6, 32, .5); border: 1px solid rgba(255, 255, 255, .2); backdrop-filter: blur(4px); }
-.gta6-clock b { font-family: var(--head); font-size: 28px; line-height: 1.05; font-variant-numeric: tabular-nums; }
-.gta6-clock span { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: rgba(255, 255, 255, .8); }
-.gta6-clock .sec { border-color: #ffd76a; }
-.gta6-clock .sec b { color: #ffd76a; }
+.gta6-clock > div { display: flex; flex-direction: column; align-items: center; min-width: 72px; padding: 10px 6px 8px; border-radius: 12px; overflow: hidden;
+  background: rgba(16, 6, 32, .62); border: 1px solid rgba(255, 255, 255, .18); backdrop-filter: blur(6px); }
+.gta6-clock b { font-family: var(--head); font-size: 32px; line-height: 1.05; font-variant-numeric: tabular-nums; animation: gta-tick .3s ease-out; }
+.gta6-clock span { margin-top: 2px; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: rgba(255, 255, 255, .75); }
+@keyframes gta-tick { from { transform: translateY(-35%); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .gta6-clock b { animation: none; } }
 @media (max-width: 640px) {
-  .gta6 { margin-bottom: 30px; }
-  .gta6 { background: linear-gradient(rgba(20, 6, 40, .25), rgba(20, 6, 40, .85)),
-      url("https://media.rawg.io/media/games/734/7342a1cd82c8997ec620084ae4c2e7e4.jpg") center / cover no-repeat,
+  .gta6 { margin-bottom: 26px; background: linear-gradient(rgba(20, 6, 40, .2) 25%, rgba(20, 6, 40, .9)),
+      url("https://media.rawg.io/media/games/734/7342a1cd82c8997ec620084ae4c2e7e4.jpg") center 30% / cover no-repeat,
       linear-gradient(100deg, #2a0f4f 0%, #8f1f7e 38%, #e8456f 68%, #ff9a3c 100%); }
-  .gta6-in { flex-direction: column; align-items: stretch; justify-content: flex-end; min-height: 230px; padding: 14px; }
-  .gta6-clock > div { flex: 1; min-width: 0; }
-  .gta6-clock b { font-size: 24px; }
+  .gta6-in { flex-direction: column; align-items: stretch; justify-content: flex-end; min-height: 220px; padding: 14px; gap: 10px; }
+  .gta6-clock { gap: 6px; }
+  .gta6-clock > div { flex: 1; min-width: 0; padding: 8px 2px 6px; }
+  .gta6-clock b { font-size: 25px; }
   .gta6-clock span { font-size: 9.5px; letter-spacing: .03em; }
+}
+
+/* Şifre kutusu: Göster / Gizle, etiketin yanında Şifremi unuttum */
+.pass-wrap { position: relative; }
+.pass-wrap input { width: 100%; padding-right: 70px; }
+.pass-eye { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; font-weight: 600; }
+.label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+
+/* Telefon düzeni: önce en önemlisi, parmağa uygun düğmeler, gereksiz uzunluk yok */
+@media (max-width: 640px) {
+  /* iPhone yazı kutusuna dokununca sayfayı yakınlaştırmasın */
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]), select, textarea { font-size: 16px; }
+
+  /* Parmakla rahat basılsın */
+  .tab { padding: 9px 14px; }
+  .chip, .home-types .chip, .home-add .chip { padding: 7px 12px; font-size: 13px; }
+  .report-link { padding: 8px 4px; }
+  .icon-btn { min-width: 36px; min-height: 36px; }
+  .section-head a, .section-head .link { padding: 6px 0; }
+
+  /* Ana sayfa */
+  .ev-feature .ev-fan, .ev-feature-opts { display: none; }
+  .ev-list-page .ev-feature .ev-fan { display: block; }
+  .ev-list-page .ev-feature-opts { display: block; }
+  .ev-feature-bg::after { background: linear-gradient(to top, rgba(7, 10, 11, .96) 55%, rgba(7, 10, 11, .6)); }
+  .home-stats .stats { display: flex; overflow-x: auto; scrollbar-width: none; margin: 0 -12px; padding: 0 12px 4px; }
+  .home-stats .stat { flex: 0 0 100px; }
+  .home-wall > :nth-child(n+9) { display: none; }
+
+  /* Oyun ve içerik sayfası: kapak, ad, ana düğme, sonra ayrıntılar */
+  .gh { padding-top: 64px; }
+  .gh-inner { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+  .gh-left, .gh-main { display: contents; }
+  .gh-cover { width: 104px; flex: none; order: 1; }
+  .gh-counts { flex: 1 1 0; min-width: 0; order: 1; padding-bottom: 4px; flex-wrap: nowrap; }
+  .gh-main > * { order: 4; width: 100%; margin-top: 0; }
+  .gh-main > .crumbs { display: none; }
+  .gh-main > h1 { order: 2; font-size: 28px; }
+  .gh-main > .gh-dev { order: 2; font-size: 16px; margin-top: -8px; }
+  .gh-left > .btn { order: 3; flex: 1 1 40%; min-width: 0; padding-left: 8px; padding-right: 8px; }
+  .gh-left > .btn.primary { flex-basis: 100%; }
+  .gh-score { order: 5; width: 100%; }
+
+  /* Profil: fotoğraf ve ad yan yana, sekmeler ekranda kalır */
+  .profile .profile-banner, .profile .profile-banner.clear { height: 120px; }
+  .profile-head { flex-direction: row; flex-wrap: wrap; align-items: flex-end; text-align: left; margin-top: -40px; padding: 0 8px; gap: 10px 12px; }
+  .profile-head .avatar.lg { --s: 76px; border-width: 3px; }
+  .profile-info { flex: 1 1 0; min-width: 0; padding-bottom: 2px; }
+  .profile-actions { width: 100%; }
+  .profile-actions > .btn { flex: 1; }
+  .profile-bio { text-align: left; }
+  .profile-meta, .badge-row { justify-content: flex-start; }
+  .socials { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .socials > * { flex: none; }
+  .subnav { position: sticky; top: var(--m-top); z-index: 6; background: rgb(10, 13, 14); }
+
+  /* Üst kısımlar kısa */
+  .mosaic-head { padding: 26px 16px 12px; }
+  .mosaic-text h1 { font-size: 28px; }
+  .search-sub { display: none; }
+  .footer { font-size: 12px; }
 }

@@ -324,6 +324,8 @@ function SettingsForm({ me }: { me: Profile }) {
         <h3 className="set-h">Başka sitelerden</h3>
         <p className="muted small" style={{ margin: 0 }}>Letterboxd, Backloggd, Steam, MyAnimeList ve diğerlerinden kütüphaneni getir.</p>
         <div><Link className="btn" href="/import">Başka siteden içe aktar</Link></div>
+        <h3 className="set-h">Şifre</h3>
+        <div><Link className="btn" href="/reset-password">Şifremi değiştir</Link></div>
         <ExportData me={me} />
         <DeleteAllLogs me={me} />
         <DeleteAccount me={me} />

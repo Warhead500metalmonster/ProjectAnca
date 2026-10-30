@@ -25,11 +25,12 @@ export function Gta6Countdown() {
     <aside className="gta6">
       <Link className="gta6-in" href="/game/972995">
         <div className="gta6-title">
+          <small>Çıkışına kalan süre</small>
           <b>GTA VI</b>
           <span>19 Kasım 2026, 00.00 TSİ</span>
         </div>
         <div className="gta6-clock" role="timer" aria-label={`GTA VI çıkışına ${parts.map(([n, l]) => `${n} ${l}`).join(" ")} kaldı`}>
-          {parts.map(([n, l]) => <div key={l} className={l === "saniye" ? "sec" : ""}><b>{n}</b><span>{l}</span></div>)}
+          {parts.map(([n, l]) => <div key={l}><b key={n}>{n}</b><span>{l}</span></div>)}
         </div>
       </Link>
     </aside>

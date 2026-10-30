@@ -195,7 +195,11 @@ export function LibraryTab() {
             : <div className="grid">{list.slice(0, shown).map((e) => <EntryCard key={e.id} e={e} kind={type === "all"} />)}</div>
         ) : (
           <div className="empty">
-            {entries.length ? "Bu filtreye uyan kayıt yok." : isMe
+            {entries.length ? (
+              filterCount > 0 || needle ? <>Bu aramaya uyan kayıt yok.<br /><button className="btn" onClick={() => { clear(); setText(""); }}>Filtreleri temizle</button></>
+                : plannedHere > 0 && !showPlanned ? <>Burada sadece planladıkların var.<br /><button className="btn" onClick={() => setShowPlanned(true)}>Planlananları göster ({plannedHere})</button></>
+                : "Burada henüz kayıt yok."
+            ) : isMe
               ? <>Henüz hiçbir şey loglamadın. Başka sitelerdeki kütüphaneni birkaç dakikada getirebilirsin.<br />
                 <Link className="btn primary" href="/import">Kütüphanemi getir</Link>{" "}
                 <button className="btn" onClick={() => openForm(null, { type: statusType ?? undefined })}>+ Tek tek ekle</button></>

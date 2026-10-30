@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { q, sb, setRemember } from "@/lib/supabase";
 import { authError } from "@/lib/auth";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export default function Signup() {
   const [error, setError] = useState("");
@@ -61,7 +62,11 @@ export default function Signup() {
         <span className="muted" style={{ fontSize: 12 }}>3-20 karakter: harf, rakam ve _ . Profil linkin bu olur.</span>
       </div>
       <div className="field"><label htmlFor="s-email">E-posta</label><input id="s-email" name="email" type="email" required autoComplete="email" /></div>
-      <div className="field"><label htmlFor="s-pass">Şifre</label><input id="s-pass" name="password" type="password" required minLength={6} autoComplete="new-password" /></div>
+      <div className="field">
+        <label htmlFor="s-pass">Şifre</label>
+        <PasswordInput id="s-pass" name="password" required minLength={6} autoComplete="new-password" />
+        <span className="muted" style={{ fontSize: 12 }}>En az 6 karakter.</span>
+      </div>
       {error && <p className="form-error">{error}</p>}
       <button className="btn primary big" disabled={busy}>Hesap oluştur</button>
       <p className="muted small" style={{ margin: 0, textAlign: "center" }}>
