@@ -7,10 +7,8 @@ export const CHANGELOG: ChangelogItem[] = [
   {
     date: "2026-10-30T18:43:00+04:00",
     title: "Kullanıcı bizden üstündür",
-    body: "Ana sayfanın altında artık Biz kimiz ve Sıkça sorulanlar var; tüm sorular Sıkça sorulanlar sayfasında.
-"
-      + "Yazdıkların boşa gitmesin: yeni kayıtta inceleme, not ya da puan girdiysen, Profili düzenle'de de değişiklik yaptıysan kaydetmeden çıkarken soruyoruz.
-"
+    body: "Ana sayfanın altında artık Biz kimiz ve Sıkça sorulanlar var; tüm sorular Sıkça sorulanlar sayfasında.\n"
+      + "Yazdıkların boşa gitmesin: yeni kayıtta inceleme, not ya da puan girdiysen, Profili düzenle'de de değişiklik yaptıysan kaydetmeden çıkarken soruyoruz.\n"
       + "Teknik hata yazıları yerine anlaşılır Türkçe mesajlar, yanlış bir linke gidersen de seni yolda bırakmayan bir sayfa geliyor.",
   },
   {
