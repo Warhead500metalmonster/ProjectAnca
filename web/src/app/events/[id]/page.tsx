@@ -208,7 +208,7 @@ function Versions({ ev, members, my, onChange }: { ev: AncEvent; members: EventM
           const mineHere = my && (my.choice || "") === o.id;
           return (
             <button key={o.id || "one"} className={`ev-opt ${mineHere ? "on" : ""}`} disabled={busy} onClick={() => pick(o)}>
-              <div className="ev-opt-art">{safeUrl(o.cover) ? <img src={o.cover!} alt="" /> : <span className="ev-opt-ph">{o.label}</span>}</div>
+              <div className="ev-opt-art">{safeUrl(o.cover) ? <img src={safeUrl(o.cover)} alt="" /> : <span className="ev-opt-ph">{o.label}</span>}</div>
               <div className="ev-opt-body">
                 <b>{o.label}</b>
                 {o.sub && <span className="muted small">{o.sub}</span>}
@@ -518,7 +518,7 @@ function Spotlight({ ev, m, members, self }: { ev: AncEvent; m: EventMember; mem
   const kind = kindOf(ev, m.choice);
   return (
     <section className={`ev-spot ${m.status}`}>
-      {safeUrl(opt?.cover) && <div className="ev-spot-art" style={{ backgroundImage: cssUrl(opt!.cover!) }} aria-hidden="true" />}
+      {safeUrl(opt?.cover) && <div className="ev-spot-art" style={{ backgroundImage: cssUrl(wideImage(opt!.cover)) }} aria-hidden="true" />}
       <div className="ev-spot-in">
         <div className="ev-spot-who">
           <Link href={`/u/${m.profiles?.username}`}><Avatar p={m.profiles} cls="lg" /></Link>

@@ -2,6 +2,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { fullImage } from "@/lib/format";
 
 // Görseli site içinde büyük gösterir: yumuşakça büyüyerek açılır, oklarla / klavyeyle gezilir, Esc ya da boşluğa tıklayınca kapanır
 export function Lightbox({ images, start, onClose }: { images: string[]; start: number; onClose: () => void }) {
@@ -24,7 +25,7 @@ export function Lightbox({ images, start, onClose }: { images: string[]; start: 
 
   return (
     <div className={`lightbox ${closing ? "closing" : ""}`} role="dialog" aria-modal="true" onClick={(e) => { e.stopPropagation(); close(); }}>
-      <img key={images[i]} src={images[i]} alt="" referrerPolicy="no-referrer" onClick={(e) => e.stopPropagation()} />
+      <img key={images[i]} src={fullImage(images[i]) || images[i]} alt="" referrerPolicy="no-referrer" onClick={(e) => e.stopPropagation()} />
       <button className="lb-close" aria-label="Kapat" onClick={(e) => { e.stopPropagation(); close(); }}>✕</button>
       {images.length > 1 && (
         <>

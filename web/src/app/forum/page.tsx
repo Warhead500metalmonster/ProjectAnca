@@ -58,7 +58,7 @@ function Forum() {
 
       {item && (
         <div className="forum-item">
-          {item.cover && <img src={item.cover} alt="" />}
+          {safeUrl(item.cover) && <img src={safeUrl(item.cover)} alt="" />}
           <div className="grow"><span className="muted small">Bu içerikle ilgili konular</span><b><Link href={contentHref(item)}>{item.title}</Link></b></div>
           <Link className="btn" href="/forum">Tüm forum</Link>
         </div>

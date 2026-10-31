@@ -6,7 +6,7 @@ import Link from "next/link";
 import { redirect, useParams } from "next/navigation";
 import type { Entry, PageEdit, RawgGame, RawgRef } from "@/lib/types";
 import { ENTRY_COLS } from "@/lib/constants";
-import { avgText, cssUrl, fmtDate, fmtDur, forumHref, oneRatingEach, playSec, resized, safeUrl, scoreText, smallImage } from "@/lib/format";
+import { avgText, cssUrl, fmtDate, fmtDur, forumHref, oneRatingEach, playSec, resized, safeUrl, scoreText, smallImage, wideImage } from "@/lib/format";
 import { rawg, RAWG_MOVED } from "@/lib/rawg";
 import { fetchPageEdit } from "@/lib/data";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
@@ -59,7 +59,7 @@ export default function GamePage() {
   };
   const name = edit.title || source.title || "";
   const art = safeUrl(edit.cover) || source.cover;
-  const backdrop = safeUrl(edit.backdrop) || safeUrl(g?.artwork) || art;
+  const backdrop = safeUrl(edit.backdrop) || safeUrl(g?.artwork) || wideImage(art);
   const images = [...(art ? [art] : []), ...shots.map((s) => resized(s.image, 1280))];
   const rated = oneRatingEach(logs);
   const avg = rated.length ? rated.reduce((s, l) => s + Number(l.rating), 0) / rated.length : 0;

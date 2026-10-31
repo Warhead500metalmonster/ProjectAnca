@@ -1,9 +1,21 @@
 import type { Entry, Item } from "./types";
 
-// Eski kaynaktan görsel yüklenmez; IGDB kapakları keskin görünsün diye yüksek çözünürlükle gelir
-export const safeUrl = (u?: string | null) => (/^https?:\/\//i.test(u || "") && !/^https?:\/\/media\.rawg\.io\//i.test(u || "") ? (u as string).replace("/t_cover_big/", "/t_cover_big_2x/") : "");
-// Geniş kartlarda (etkinlikler) kapak büyütüleceği için daha büyük boyu
-export const wideImage = (u?: string | null) => safeUrl(u).replace("/t_cover_big_2x/", "/t_720p/");
+// Kayıtlarda küçük boy adresi dursa bile her görsel kaynağın en yüksek boyutuyla gösterilir (veritabanı değişmez)
+const HI_RES: [RegExp, string][] = [
+  [/(images\.igdb\.com\/.*)\/t_(?:thumb|micro|cover_small|cover_med|cover_big)\//, "$1/t_cover_big_2x/"],
+  [/(image\.tmdb\.org\/t\/p)\/w(?:92|154|185|342|500)\//, "$1/w780/"],
+  [/(anilist\.co\/.*\/cover)\/(?:small|medium)\//, "$1/large/"],
+  [/(\.fastly\.net\/i\/u)\/\d+x\d+\//, "$1/770x0/"],
+  [/(mzstatic\.com\/.*)\/\d+x\d+bb\./, "$1/1000x1000bb."],
+  [/(dzcdn\.net\/.*)\/\d+x\d+-/, "$1/1000x1000-"],
+  [/(howlongtobeat\.com\/[^?]*)\?width=\d+/, "$1"],
+];
+// Eski kaynaktan görsel yüklenmez
+export const safeUrl = (u?: string | null) => (/^https?:\/\//i.test(u || "") && !/^https?:\/\/media\.rawg\.io\//i.test(u || "") ? HI_RES.reduce((url, [from, to]) => url.replace(from, to), u as string) : "");
+// Kapağın geniş bir alana yayıldığı yerler (etkinlik kartı, sayfa arka planı)
+export const wideImage = (u?: string | null) => safeUrl(u).replace("/t_cover_big_2x/", "/t_1080p/").replace("/t/p/w780/", "/t/p/w1280/");
+// Tam ekran gösterim
+export const fullImage = (u?: string | null) => safeUrl(u).replace(/\/t_(?:cover_big_2x|screenshot_huge)\//, "/t_1080p/").replace("/t/p/w780/", "/t/p/original/");
 
 // style içine güvenle konabilen url(); tırnak ve parantezler kodlanır
 export const cssUrl = (u: string) => `url('${u.replace(/["'()\\\s<>&]/g, (c) => "%" + c.charCodeAt(0).toString(16))}')`;
@@ -59,7 +71,7 @@ export function mixedCovers(list: { type: string; cover?: string | null }[], max
   const rank = (s: string) => { let h = 7; for (const c of s + today()) h = (h * 31 + c.charCodeAt(0)) | 0; return h; };
   const groups = new Map<string, string[]>();
   for (const e of list) {
-    const url = safeUrl(e.cover).replace("/t_cover_big_2x/", "/t_cover_big/"); // şeritte küçük ve soluk görünür, sayfayı yormasın
+    const url = safeUrl(e.cover);
     if (url) groups.set(e.type, [...(groups.get(e.type) || []), url]);
   }
   const lines = [...groups.values()].map((g) => [...new Set(g)].sort((a, b) => rank(a) - rank(b)));

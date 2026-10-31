@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import type { Entry, EntryType, Item, PageEdit } from "@/lib/types";
 import { ENTRY_COLS, TYPES } from "@/lib/constants";
-import { NON_LATIN, avgText, contentKey, cssUrl, fmtDur, forumHref, likeEsc, num, oneRatingEach, playSec, safeUrl, scoreText } from "@/lib/format";
+import { NON_LATIN, avgText, contentKey, cssUrl, fmtDur, forumHref, likeEsc, num, oneRatingEach, playSec, safeUrl, scoreText, wideImage } from "@/lib/format";
 import { aniDetail, fetchPageEdit, tmdbCreator, tmdbDetail, tmdbImage } from "@/lib/data";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
@@ -98,7 +98,7 @@ export default function ContentPage() {
   };
   const name = edit.title || (NON_LATIN.test(title) && info?.title && !NON_LATIN.test(info.title) ? info.title : title); // okunmayan alfabede kayıtlıysa İngilizce adı
   const cover = safeUrl(edit.cover) || source.cover;
-  const backdrop = safeUrl(edit.backdrop) || source.backdrop || cover;
+  const backdrop = safeUrl(edit.backdrop) || source.backdrop || wideImage(cover);
   const year = edit.year || source.year;
   const creator = edit.creator || source.creator;
   const genres = edit.genres || info?.genres;

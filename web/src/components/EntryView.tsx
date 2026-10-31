@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { Comment, Entry } from "@/lib/types";
 import { PROFILE_COLS, TYPES, statusLabel } from "@/lib/constants";
-import { contentHref, cssUrl, daysTaken, fmtDate, fmtDur, itemOf, num, playSec, safeUrl, scoreText, timeAgo } from "@/lib/format";
+import { contentHref, cssUrl, daysTaken, fmtDate, fmtDur, itemOf, num, playSec, safeUrl, scoreText, timeAgo, wideImage } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
 import { Avatar, Name, Rating, RichText, epText } from "./ui";
 import { useApp } from "./AppProvider";
@@ -36,7 +36,7 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
 
   const t = TYPES[e.type];
   const p = e.profiles || {};
-  const cover = safeUrl(e.cover);
+  const cover = wideImage(e.cover);
   const isMine = me?.id === e.user_id;
   const my = me && !isMine ? myEntry(e) : undefined;
   const liked = !!me && !!likers?.includes(me.id);

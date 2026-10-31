@@ -15,17 +15,19 @@ export const displayName = (p: Who) => p?.display_name || p?.username || "?";
 export function Avatar({ p, cls = "" }: { p: Who; cls?: string }) {
   const { badges } = useApp();
   const crown = p?.id && badges.get(p.id)?.includes("owner") ? " crown" : "";
-  const url = safeUrl(p?.avatar_url);
+  const [broken, setBroken] = useState(""); // linki ölen fotoğraf (süresi dolan Discord linkleri) yerine harfli avatar
+  const raw = safeUrl(p?.avatar_url);
+  const url = raw === broken ? "" : raw;
   const c = (p as { avatar_crop?: AvatarCrop | null } | null | undefined)?.avatar_crop;
   // Kırpılmışsa: kutu sabit, içindeki resim seçilen noktaya göre kaydırılıp büyütülür
   if (url && c && (c.z > 1 || c.x !== 50 || c.y !== 50)) {
     return (
       <span className={`avatar ${cls}${crown} cropped`}>
-        <img src={url} alt="" style={{ objectPosition: `${c.x}% ${c.y}%`, transform: `scale(${c.z})`, transformOrigin: `${c.x}% ${c.y}%` }} />
+        <img src={url} alt="" onError={() => setBroken(url)} style={{ objectPosition: `${c.x}% ${c.y}%`, transform: `scale(${c.z})`, transformOrigin: `${c.x}% ${c.y}%` }} />
       </span>
     );
   }
-  if (url) return <img className={`avatar ${cls}${crown}`} src={url} alt="" />;
+  if (url) return <img className={`avatar ${cls}${crown}`} src={url} alt="" onError={() => setBroken(url)} />;
   let h = 0;
   for (const c of p?.username || "") h = (h * 31 + c.charCodeAt(0)) % 360;
   return (

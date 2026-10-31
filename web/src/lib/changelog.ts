@@ -5,6 +5,11 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-11-01T03:35:00+04:00",
+    title: "Bütün kapaklar en yüksek kalitede",
+    body: "Oyun, film, dizi, anime ve müzik kapakları artık her yerde kaynağın en yüksek boyutuyla görünüyor. Bir görsele tıklayınca tam ekranda daha da keskin açılıyor. Oyun aramasında yarım kelime de çalışıyor ve profil fotoğrafının linki bozulursa kırık resim yerine harfli avatar çıkıyor.",
+  },
+  {
     date: "2026-11-01T03:05:00+04:00",
     title: "Sohbet fotoğrafları site içinde açılıyor",
     body: "Mesajlarda, forumda, yorumlarda ve etkinlik sohbetinde paylaşılan bir fotoğrafa tıklayınca artık yeni sekme açılmıyor, oyun görselleri gibi site içinde büyüyor. Bir mesajda birden çok fotoğraf varsa oklarla gezebilirsin.",
