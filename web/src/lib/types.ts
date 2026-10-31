@@ -161,7 +161,7 @@ export interface PageEdit {
   genres?: string[];
 }
 
-// RAWG cevabından kullandığımız alanlar
+// Oyun bilgilerinden kullandığımız alanlar (/api/rawg bu biçimde döner; kaynak IGDB)
 export interface RawgGame {
   id: number;
   name: string;
@@ -179,6 +179,7 @@ export interface RawgGame {
   genres?: RawgRef[];
   platforms?: { platform: RawgRef }[];
   stores?: { store: RawgRef }[];
+  artwork?: string | null;   // sayfa arka planı için geniş görsel
 }
 
 export interface RawgRef { id: number; name: string; slug: string }

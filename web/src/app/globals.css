@@ -2236,7 +2236,7 @@ a.badge-card.link-card:hover { transform: translateY(-2px); }
 .gta6 { position: relative; margin: 0 0 36px; border-radius: 18px; overflow: hidden; color: #fff; border: 1px solid rgba(255, 255, 255, .16); transition: box-shadow .2s, border-color .2s;
   box-shadow: 0 12px 34px rgba(224, 69, 123, .28);
   background: linear-gradient(90deg, rgba(20, 6, 40, .86), rgba(20, 6, 40, .12) 48%, rgba(20, 6, 40, .72)),
-    url("https://media.rawg.io/media/resize/1280/-/games/734/7342a1cd82c8997ec620084ae4c2e7e4.jpg") center 35% / cover no-repeat,
+    url("https://images.igdb.com/igdb/image/upload/t_1080p/ar6w51.jpg") center 35% / cover no-repeat,
     linear-gradient(100deg, #2a0f4f 0%, #8f1f7e 38%, #e8456f 68%, #ff9a3c 100%); }
 .gta6:hover { border-color: rgba(255, 138, 180, .7); box-shadow: 0 14px 42px rgba(224, 69, 123, .45); }
 .gta6-in { position: relative; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 28px; flex-wrap: wrap; min-height: 200px; padding: 22px 26px; color: inherit; text-decoration: none; }
@@ -2255,7 +2255,7 @@ a.badge-card.link-card:hover { transform: translateY(-2px); }
 @media (prefers-reduced-motion: reduce) { .gta6-clock b { animation: none; } }
 @media (max-width: 640px) {
   .gta6 { margin-bottom: 26px; background: linear-gradient(rgba(20, 6, 40, .2) 25%, rgba(20, 6, 40, .9)),
-      url("https://media.rawg.io/media/resize/640/-/games/734/7342a1cd82c8997ec620084ae4c2e7e4.jpg") center 30% / cover no-repeat,
+      url("https://images.igdb.com/igdb/image/upload/t_720p/ar6w51.jpg") center 30% / cover no-repeat,
       linear-gradient(100deg, #2a0f4f 0%, #8f1f7e 38%, #e8456f 68%, #ff9a3c 100%); }
   .gta6-in { flex-direction: column; align-items: stretch; justify-content: flex-end; min-height: 220px; padding: 14px; gap: 10px; }
   .gta6-clock { gap: 6px; }

@@ -255,7 +255,7 @@ export const fetchPageEdit = (key: string) =>
   q<{ data: PageEdit } | null>(sb().from("content_edits").select("data").eq("key", key).maybeSingle())
     .then((r) => r?.data || {}).catch(() => ({} as PageEdit));
 
-// Bir türde içerik ara: oyunda RAWG, müzikte iTunes + Deezer, film/dizide TMDB, animede AniList.
+// Bir türde içerik ara: oyunda IGDB, müzikte iTunes + Deezer, film/dizide TMDB, animede AniList.
 // Oyun dışında kullanıcıların daha önce eklediği içerikler de en üstte çıkar (aynı şey iki kez eklenmesin diye).
 export async function findContent(type: EntryType, text: string): Promise<Found[]> {
   if (type === "game") return searchGames(text, 20); // öneri kutusu kaydırılır, aranan oyun ilk 6da olmayabilir
@@ -267,7 +267,7 @@ export async function findContent(type: EntryType, text: string): Promise<Found[
   return [...ours, ...theirs.filter((f) => !seen.has(`${norm(f.title)}|${norm(f.creator)}`))].slice(0, 12);
 }
 export const SEARCH_CREDITS: Record<EntryType, [string, string]> = {
-  game: ["RAWG", "https://rawg.io"],
+  game: ["IGDB", "https://www.igdb.com"],
   music: ["Apple Music · Deezer", "https://www.deezer.com"],
   movie: ["TMDB", "https://www.themoviedb.org"],
   show: ["TMDB", "https://www.themoviedb.org"],

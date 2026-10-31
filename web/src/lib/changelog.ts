@@ -5,6 +5,12 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-11-01T03:00:00+04:00",
+    title: "Oyun bilgileri artık IGDB'den",
+    body: "Oyun araması, kapaklar, açıklamalar ve ekran görüntüleri artık IGDB'den geliyor. Kayıtların, puanların ve incelemelerin olduğu gibi duruyor, senin bir şey yapmana gerek yok.\n"
+      + "Oyunu ararken noktalama işareti yazmana gerek yok: demons souls yazınca da Demon's Souls çıkar. Oyun sayfalarında artık eleştirmen puanı var.",
+  },
+  {
     date: "2026-11-01T01:57:00+04:00",
     title: "Aynı içeriğe birden çok log: Replay",
     body: "Bir oyunu, filmi ya da diziyi kaç kez oynadıysan, izlediysen o kadar ayrı log tutabilirsin. Her logun kendi durumu, puanı, tarihi ve incelemesi olur, yanında Replay yazar.\n"

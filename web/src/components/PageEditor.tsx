@@ -9,7 +9,7 @@ import { useApp } from "./AppProvider";
 interface Props {
   editKey: string;          // g:<rawg id> ya da tür:isim
   edit: PageEdit;           // şu anki düzenleme
-  source: PageEdit;         // RAWG / TMDB'den gelen hâli (boş alanlarda örnek olarak görünür)
+  source: PageEdit;         // IGDB / TMDB'den gelen hâli (boş alanlarda örnek olarak görünür)
   creatorLabel: string;
   onClose: () => void;
 }
@@ -72,7 +72,7 @@ export function PageEditor({ editKey, edit, source, creatorLabel, onClose }: Pro
           <h2>Sayfayı düzenle</h2>
           <button type="button" className="icon-btn" aria-label="Kapat" onClick={() => ref.current?.close()}>✕</button>
         </div>
-        <p className="muted" style={{ margin: 0, fontSize: 14 }}>Boş bıraktığın alan kaynaktan (RAWG, TMDB…) gelmeye devam eder. Değişikliği herkes görür.</p>
+        <p className="muted" style={{ margin: 0, fontSize: 14 }}>Boş bıraktığın alan kaynaktan (IGDB, TMDB…) gelmeye devam eder. Değişikliği herkes görür.</p>
         <div className="field"><label htmlFor="pe-title">Ad</label><input id="pe-title" maxLength={200} value={f.title} placeholder={source.title} onChange={set("title")} /></div>
         <div className="row">
           <div className="field grow"><label htmlFor="pe-creator">{creatorLabel}</label><input id="pe-creator" maxLength={200} value={f.creator} placeholder={source.creator} onChange={set("creator")} /></div>

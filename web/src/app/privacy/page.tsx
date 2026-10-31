@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = { title: "Gizlilik ve KVKK · Ancalog" };
 
-const UPDATED = "31 Ekim 2026";
+const UPDATED = "1 Kasım 2026";
 
 export default function Privacy() {
   return (
@@ -93,7 +93,7 @@ export default function Privacy() {
         <li>Site yalnızca şifreli bağlantı (HTTPS) ile çalışır.</li>
         <li>Şifreler geri çevrilemez biçimde şifrelenerek (hash) saklanır; kimse göremez.</li>
         <li>Veritabanında satır düzeyinde güvenlik kuralları vardır: bir kullanıcı yalnızca kendi kayıtlarını, listelerini ve profilini değiştirebilir; başkasının gizli listesini ya da mesajlarını göremez.</li>
-        <li>Steam, TMDB ve RAWG gibi servislerin anahtarları sunucuda tutulur, tarayıcına gönderilmez.</li>
+        <li>Steam, TMDB ve IGDB gibi servislerin anahtarları sunucuda tutulur, tarayıcına gönderilmez.</li>
         <li>Hiçbir sistem kusursuz değildir. Bir veri ihlali olursa, KVKK&apos;ya uygun olarak en kısa sürede etkilenen kullanıcılara ve Kişisel Verileri Koruma Kurulu&apos;na bildirim yapılır.</li>
       </ul>
 
@@ -103,11 +103,12 @@ export default function Privacy() {
         <li><a href="https://supabase.com/privacy" target="_blank" rel="noopener">Supabase</a>: veritabanı ve giriş sistemi</li>
         <li><a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener">Vercel</a>: sitenin barındırılması</li>
       </ul>
-      <p>Arama ve bilgi için şu servislere <b>yalnızca aradığın kelime</b> gönderilir, kişisel bilgin gönderilmez: RAWG, TMDB, AniList, Apple (iTunes), Deezer.
+      <p>Arama ve bilgi için şu servislere <b>yalnızca aradığın kelime</b> gönderilir, kişisel bilgin gönderilmez: IGDB, TMDB, AniList, Apple (iTunes), Deezer.
         İçe aktarırken yalnızca yazdığın kimlik (Steam profil kimliği, Xbox gamertag&apos;i, Last.fm kullanıcı adı, Spotify albüm linki, Simkl kodu) ilgili hizmete
         (Steam, OpenXBL, Last.fm, Spotify, Simkl) sorulur. Bir profilde şarkı çaldığında oynatıcı YouTube&apos;dan yüklenir. Bu hizmetlerin kendi gizlilik kuralları geçerlidir.
         Şifre yenileme ve kayıt onayı e-postaları giriş sistemi üzerinden gönderilir.</p>
       <p><b>Fotoğraf linkleri ve dış görseller:</b> sohbetlere, foruma ve yorumlara yapıştırılan fotoğraflar ile profil fotoğrafı, kapak ve arka plan görselleri Ancalog&apos;da barındırılmaz, linkin ait olduğu siteden (Imgur, Discord gibi) yüklenir.
+        Oyun kapakları ve ekran görüntüleri de IGDB&apos;nin (Twitch) sunucusundan yüklenir; önceden eklenmiş kayıtların bir kısmındaki kapaklar RAWG&apos;nin sunucusundan gelir.
         Sayfayı açtığında tarayıcın o siteye bağlanır ve IP adresin o siteye görünebilir. Ancalog bu sitelerin ne kaydettiğini kontrol edemez.</p>
       <p>Bu sağlayıcıların sunucuları yurt dışında olabileceğinden verilerin yurt dışına aktarılabilir. Aktarım, hizmetin sunulabilmesi için gerekli olduğu ölçüde ve 6698 sayılı Kanun&apos;un 9. maddesi çerçevesinde yapılır.</p>
 

@@ -51,7 +51,7 @@ export const scoreText = (r: number, scale: number, digits = 1) => scale === 10 
 export const avgText = (r: number, scale: number) => scale === 10 ? `${num(r, 1)}/10` : `${num(r / 2, 1)}/5`;
 export const scoreShort = (r: number, scale: number) => scale === 10 ? num(r) : num(r / 2, 2);
 
-// ---------- İçerik kimliği: oyunlarda RAWG id, diğerlerinde tür + isim ----------
+// ---------- İçerik kimliği: oyunlarda rawg_id (eski oyunlarda RAWG, yenilerde eksi işaretli IGDB numarası), diğerlerinde tür + isim ----------
 
 // Japonca, Korece, Çince, Kiril, Arap, Yunan, Tay alfabesi: Türk okuyucu için okunmaz, İngilizce adı tercih edilir
 export const NON_LATIN = /[Ͱ-ϿЀ-ӿ֐-ۿ฀-๿぀-ヿ㐀-鿿가-힯]/;

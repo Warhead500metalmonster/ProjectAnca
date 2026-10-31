@@ -238,7 +238,7 @@ async function findExternal(text: string, type: EntryType | "all", from: string,
   };
 }
 
-// Tek türde arama: oyun RAWG, film/dizi TMDB, anime AniList, müzik iTunes ve Deezer
+// Tek türde arama: oyun IGDB, film/dizi TMDB, anime AniList, müzik iTunes ve Deezer
 async function findKind(text: string, type: EntryType, from: string, to: string, sort: Sort): Promise<(Item & { sub?: string })[]> {
   const t = text.trim();
   const y1 = /^\d{4}$/.test(from) ? Number(from) : null, y2 = /^\d{4}$/.test(to) ? Number(to) : null;
@@ -246,7 +246,7 @@ async function findKind(text: string, type: EntryType, from: string, to: string,
   const inRange = (y: number | null) => !lo || (y !== null && y >= lo && y <= hi!);
   {
     if (type === "game") {
-      // Yazı varken sıralamayı RAWG'ye bırak: "en çok eklenen"e zorlamak alakasız oyunları öne çıkarıyordu
+      // Yazı varken sıralamayı arama sonucuna bırak: "en çok eklenen"e zorlamak alakasız oyunları öne çıkarıyordu
       const ordering = { rating: "-rating", newest: "-released", oldest: "released", title: "name" }[sort as string] || (t ? "" : "-added");
       const p: Record<string, string | number> = { page_size: 18, ...(ordering && { ordering }) };
       if (t) { p.search = t; p.search_precise = "true"; }

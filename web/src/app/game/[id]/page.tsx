@@ -6,7 +6,7 @@ import Link from "next/link";
 import { redirect, useParams } from "next/navigation";
 import type { Entry, PageEdit, RawgGame, RawgRef } from "@/lib/types";
 import { ENTRY_COLS } from "@/lib/constants";
-import { avgText, cssUrl, fmtDate, fmtDur, forumHref, num, oneRatingEach, playSec, resized, safeUrl, scoreText, smallImage } from "@/lib/format";
+import { avgText, cssUrl, fmtDate, fmtDur, forumHref, oneRatingEach, playSec, resized, safeUrl, scoreText, smallImage } from "@/lib/format";
 import { rawg, RAWG_MOVED } from "@/lib/rawg";
 import { fetchPageEdit } from "@/lib/data";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
@@ -21,7 +21,7 @@ import { ListsWith } from "@/components/ListsWith";
 const names = (list?: { name: string }[]) => (list || []).map((x) => x.name);
 
 // Tür, platform, geliştirici, yayıncı ve mağazaya tıklayınca o gruptaki oyunlar listelenir
-const BY_SLUG = ["genres", "developers", "publishers"];
+const BY_SLUG = ["genres"];
 const gamesHref = (kind: string, r: RawgRef) => `/games?${new URLSearchParams({ [kind]: BY_SLUG.includes(kind) ? r.slug : String(r.id), label: r.name })}`;
 const refLinks = (kind: string, list?: RawgRef[]) => list?.length
   ? <>{list.map((r, i) => <span key={r.id}>{i ? <br /> : null}<Link className="flink" href={gamesHref(kind, r)}>{r.name}</Link></span>)}</>
@@ -59,7 +59,7 @@ export default function GamePage() {
   };
   const name = edit.title || source.title || "";
   const art = safeUrl(edit.cover) || source.cover;
-  const backdrop = safeUrl(edit.backdrop) || art;
+  const backdrop = safeUrl(edit.backdrop) || safeUrl(g?.artwork) || art;
   const images = [...(art ? [art] : []), ...shots.map((s) => resized(s.image, 1280))];
   const rated = oneRatingEach(logs);
   const avg = rated.length ? rated.reduce((s, l) => s + Number(l.rating), 0) / rated.length : 0;
@@ -80,7 +80,6 @@ export default function GamePage() {
     ["Geliştirici", edit.creator || refLinks("developers", g?.developers)],
     ["Yayıncı", refLinks("publishers", g?.publishers)],
     ["Çıkış tarihi", g?.released ? fmtDate(g.released) : edit.year ? String(edit.year) : ""],
-    ["Ortalama süre (RAWG)", g?.playtime ? `${num(g.playtime)} sa` : ""],
     ["Ortalama süre (Ancalog)", avgSec ? fmtDur(Math.round(avgSec / 60) * 60 || Math.round(avgSec)) : ""],
     ["Mağazalar", refLinks("stores", g?.stores?.map((s) => s.store))],
     ["Yaş sınırı", g?.esrb_rating?.name || ""],
@@ -122,7 +121,7 @@ export default function GamePage() {
             <div><b>★ {avg ? avgText(avg, scale) : "–"}</b><span>{rated.length} oy · Ancalog</span><RatingBars ratings={rated.map((l) => Number(l.rating))} /></div>
             {mine?.rating ? <div><b className="you">★ {scoreText(Number(mine.rating), scale)}</b><span>Senin puanın</span></div> : null}
             {friendAvg ? <div title="Takip ettiklerinin bu içeriğe verdiği puanların ortalaması"><b className="friends">★ {avgText(friendAvg.avg, scale)}</b><span>{friendAvg.n} takip ettiğin</span></div> : null}
-            {g?.metacritic ? <div><b className="mc">{g.metacritic}</b><span>Metacritic</span></div> : null}
+            {g?.metacritic ? <div><b className="mc">{g.metacritic}</b><span>Eleştirmen puanı</span></div> : null}
           </div>
         </div>
       </section>
@@ -130,7 +129,7 @@ export default function GamePage() {
         <aside className="facts">
           {facts.map(([k, v]) => <div key={k}><span>{k}</span><b>{v}</b></div>)}
           <span className="muted" style={{ fontSize: 12 }}>
-            Oyun bilgileri: <a href={`https://rawg.io/games/${g?.slug || id}`} target="_blank" rel="noopener" style={{ color: "var(--accent-2)" }}>RAWG</a>
+            Oyun bilgileri: <a href={g?.slug ? `https://www.igdb.com/games/${g.slug}` : "https://www.igdb.com"} target="_blank" rel="noopener" style={{ color: "var(--accent-2)" }}>IGDB</a>
           </span>
         </aside>
         <div>

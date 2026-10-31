@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = { title: "Kullanım Koşulları · Ancalog" };
 
 // Son güncelleme tarihini metin değişince güncelle
-const UPDATED = "31 Ekim 2026";
+const UPDATED = "1 Kasım 2026";
 
 export default function Terms() {
   return (
@@ -111,11 +111,13 @@ export default function Terms() {
       <h3>Üçüncü kişilere ait içerik ve markalar</h3>
       <p>Oyun, film, dizi, albüm ve anime adları, kapak görselleri, ekran görüntüleri, logolar ve açıklamalar ilgili hak sahiplerine aittir;
         Ancalog&apos;da yalnızca tanıtım, bilgi ve kişisel arşiv amacıyla, kaynağı belirtilerek gösterilir. Bu içerikler üzerinde Ancalog herhangi bir hak iddia etmez.</p>
-      <p>Bilgiler <a href="https://rawg.io" target="_blank" rel="noopener">RAWG</a>, <a href="https://www.themoviedb.org" target="_blank" rel="noopener">TMDB</a>,
+      <p>Bilgiler <a href="https://www.igdb.com" target="_blank" rel="noopener">IGDB</a>, <a href="https://www.themoviedb.org" target="_blank" rel="noopener">TMDB</a>,
         {" "}<a href="https://anilist.co" target="_blank" rel="noopener">AniList</a>, Apple Music (iTunes) ve Deezer&apos;dan, bu servislerin kendi kullanım koşullarına uygun olarak alınır.
+        Oyun bilgileri, kapakları ve ekran görüntüleri Twitch&apos;in bir hizmeti olan IGDB&apos;den, <a href="https://www.twitch.tv/p/legal/developer-agreement/" target="_blank" rel="noopener">Twitch Geliştirici Sözleşmesi</a> kapsamında alınır;
+        önceden eklenmiş kayıtların bir kısmındaki kapaklar RAWG kaynaklıdır. Bu site IGDB ve Twitch ile bağlantılı değildir, onlar tarafından onaylanmış değildir.
         Bu site TMDB API&apos;sini kullanır ancak TMDB tarafından onaylanmış değildir. Steam&apos;den içe aktarma <a href="https://steamcommunity.com/dev/apiterms" target="_blank" rel="noopener">Steam Web API</a> ile yapılır.
         Profil şarkıları sitede barındırılmaz, YouTube&apos;un kendi oynatıcısıyla çalınır; bu kullanımda <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">YouTube Hizmet Şartları</a> geçerlidir.</p>
-      <p>Ancalog; RAWG, TMDB, AniList, MyAnimeList, Apple, Deezer, YouTube, Google, Steam, Valve, Sony Interactive Entertainment (PlayStation), Microsoft (Xbox), OpenXBL,
+      <p>Ancalog; IGDB, Twitch, RAWG, TMDB, AniList, MyAnimeList, Apple, Deezer, YouTube, Google, Steam, Valve, Sony Interactive Entertainment (PlayStation), Microsoft (Xbox), OpenXBL,
         Epic Games, Nintendo, HowLongToBeat, Backloggd, Playnite, Letterboxd, Serializd, Simkl, Spotify ya da Last.fm ile bağlantılı değildir ve bu şirketler tarafından onaylanmaz, desteklenmez
         ya da sponsor edilmez. Adı geçen tüm markalar ve ticari adlar sahiplerine aittir; yalnızca ilgili hizmeti tanımlamak için anılır.</p>
 
@@ -194,7 +196,7 @@ export default function Terms() {
         <p>İçe aktarma tamamen senin isteğinle, senin kendi verin için yapılır ve hiçbir sitenin şifresi istenmez. Steam&apos;in resmi API&apos;si kullanılır; PlayStation ve Backloggd düğmeleri
           senin tarayıcında, zaten ekranda gördüğün listeyi toplar. Yine de o sitelerin kendi kurallarına uymak senin sorumluluğunda; içine sinmezse o yöntemi kullanma, oyunları elle de ekleyebilirsin.</p></details>
       <details className="help-q"><summary>Kapaklar, oyun görselleri ve açıklamalar telif ihlali değil mi?</summary>
-        <p>Bunlar hak sahiplerine aittir; Ancalog bunları RAWG, TMDB, AniList, Apple ve Deezer gibi servislerin izin verdiği şekilde, kaynağını belirterek, sadece tanıtım ve kişisel arşiv amacıyla gösterir
+        <p>Bunlar hak sahiplerine aittir; Ancalog bunları IGDB, TMDB, AniList, Apple ve Deezer gibi servislerin izin verdiği şekilde, kaynağını belirterek, sadece tanıtım ve kişisel arşiv amacıyla gösterir
           ve üzerlerinde hak iddia etmez. Hakkını ihlal eden bir şey görürsen 7. maddedeki yolla bildir, kaldırırız.</p></details>
       <details className="help-q"><summary>İncelememde spoiler, küfür ya da sert eleştiri olabilir mi?</summary>
         <p>Sert eleştiri serbest: bir oyunu, filmi, albümü istediğin kadar beğenmeyebilirsin. Spoiler yazacaksan <b>Spoiler gizle</b> ile gizle. Küfür kişilere yönelikse, hakaret ya da nefret söylemi içeriyorsa yasak.</p></details>

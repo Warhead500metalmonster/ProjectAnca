@@ -31,7 +31,7 @@ export async function restCount(path: string): Promise<number> {
 }
 
 export async function rawgGame(id: string) {
-  if (!/^\d+$/.test(id)) return null;
+  if (!/^-?\d+$/.test(id)) return null;
   try {
     // Anahtar sunucudaki /api/rawg'de duruyor; kart da oradan sorar
     const r = await fetch(`${SITE}/api/rawg?path=games/${id}`, { next: { revalidate: 86400 } });

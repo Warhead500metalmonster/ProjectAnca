@@ -8,7 +8,7 @@ Oyun, film, dizi, müzik ve anime günlüğü + topluluk. Oynadığın, izlediğ
 
 **Kütüphane**
 - Oyun, film, dizi, müzik ve anime tek yerde
-- Arama: oyunlar [RAWG](https://rawg.io), film ve diziler [TMDB](https://www.themoviedb.org), animeler [AniList](https://anilist.co), müzik Apple Music + Deezer; aramada olmayan şarkı YouTube / Spotify / SoundCloud linkiyle ya da elle eklenir ve herkesin kullandığı ortak kataloğa bir kez yazılır
+- Arama: oyunlar [IGDB](https://www.igdb.com), film ve diziler [TMDB](https://www.themoviedb.org), animeler [AniList](https://anilist.co), müzik Apple Music + Deezer; aramada olmayan şarkı YouTube / Spotify / SoundCloud linkiyle ya da elle eklenir ve herkesin kullandığı ortak kataloğa bir kez yazılır
 - Kayıtta platform, mağaza, emülatör, başlama / bitirme tarihi, kaç günde bitti, süre ve ilerleme (saat-dakika-saniye), not, inceleme
 - 5 ya da 10 üzerinden puan: herkes puanları kendi seçtiği ölçekte görür
 - **Steam'den içe aktarma** (oyunlar ve oynama süreleri) ve **Letterboxd'dan içe aktarma** (CSV)
@@ -53,7 +53,8 @@ Veriler [Supabase](https://supabase.com)'de durur. Sitedeki Supabase anahtarı h
 3. Vercel ortam değişkenleri:
    - `TMDB_KEY`: film / dizi araması
    - `STEAM_KEY`: Steam'den içe aktarma ([buradan alınır](https://steamcommunity.com/dev/apikey))
-   - İsteğe bağlı: `RAWG_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (girilmezse koddaki varsayılanlar kullanılır)
+   - `IGDB_CLIENT_ID`, `IGDB_CLIENT_SECRET`: oyun bilgileri ([buradan alınır](https://dev.twitch.tv/console/apps), uygulama türü Gizli olmalı)
+   - İsteğe bağlı: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (girilmezse koddaki varsayılanlar kullanılır)
 
 ## Yerel çalıştırma
 

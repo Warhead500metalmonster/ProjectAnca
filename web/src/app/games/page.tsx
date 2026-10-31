@@ -12,7 +12,7 @@ import { Cover } from "@/components/ui";
 
 // Oyun sayfasında türe, platforma, geliştiriciye, yayıncıya ya da mağazaya tıklanınca gelinen liste
 const KINDS: [string, string][] = [["genres", "Tür"], ["platforms", "Platform"], ["developers", "Geliştirici"], ["publishers", "Yayıncı"], ["stores", "Mağaza"]];
-const SORTS: [string, string][] = [["-added", "En popüler"], ["-metacritic", "Metacritic puanı"], ["-rating", "Oyuncu puanı"], ["-released", "En yeni çıkan"], ["released", "En eski çıkan"]];
+const SORTS: [string, string][] = [["-added", "En popüler"], ["-metacritic", "Eleştirmen puanı"], ["-rating", "Oyuncu puanı"], ["-released", "En yeni çıkan"], ["released", "En eski çıkan"]];
 const PAGE = 24;
 
 export default function GamesPage() {
@@ -84,7 +84,7 @@ export default function GamesPage() {
                   <Link key={g.id} className="card" href={`/game/${g.id}`}>
                     <div className="poster">
                       <div className="ph"></div><Cover src={g.background_image ? smallImage(g.background_image) : null} />
-                      {data.counts.get(g.id) ? <span className="rating">{data.counts.get(g.id)}</span> : g.metacritic ? <span className="rating">MC {g.metacritic}</span> : null}
+                      {data.counts.get(g.id) ? <span className="rating">{data.counts.get(g.id)}</span> : g.metacritic ? <span className="rating">★ {g.metacritic}</span> : null}
                     </div>
                     <div className="card-title">{g.name}</div>
                     <div className="card-meta">{[g.released?.slice(0, 4), g.genres?.slice(0, 2).map((x) => x.name).join(", ")].filter(Boolean).join(" · ")}</div>
@@ -96,7 +96,7 @@ export default function GamesPage() {
               )}
             </>
           ) : <div className="empty">Bu filtrede oyun bulunamadı.</div>}
-        <p className="muted" style={{ fontSize: 12, marginTop: 16 }}>Oyun bilgileri: <a href="https://rawg.io" target="_blank" rel="noopener">RAWG</a></p>
+        <p className="muted" style={{ fontSize: 12, marginTop: 16 }}>Oyun bilgileri: <a href="https://www.igdb.com" target="_blank" rel="noopener">IGDB</a></p>
       </section>
     </>
   );

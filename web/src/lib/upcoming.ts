@@ -1,5 +1,5 @@
 // Çıkış takvimi: planladığın oyunların, filmlerin çıkış günü; izlediğin dizilerin ve animelerin bir sonraki bölümü.
-// Tarihler RAWG, TMDB ve AniList'ten gelir; günde iki kez tazelenir (tarayıcıda saklanır, kimseye gönderilmez).
+// Tarihler IGDB, TMDB ve AniList'ten gelir; günde iki kez tazelenir (tarayıcıda saklanır, kimseye gönderilmez).
 import type { Entry, RawgGame } from "./types";
 import { anilist, tmdbDetail } from "./data";
 import { rawg } from "./rawg";
