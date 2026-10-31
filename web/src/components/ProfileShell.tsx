@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import type { Entry, Profile } from "@/lib/types";
-import { fmtDate, cssUrl, num, safeUrl } from "@/lib/format";
+import { fmtDate, cssUrl, mixedCovers, num, safeUrl } from "@/lib/format";
 import { fetchEntries } from "@/lib/data";
 import { PROFILE_THEMES, TYPES } from "@/lib/constants";
 import { compat } from "@/lib/compat";
@@ -125,7 +125,7 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
             arkada resim yoksa boş alan daralır, ad ve fotoğraf yukarı çıkar */}
         <div className={`profile-banner ${banner ? "img" : ""} ${!banner && (glass || !showBanner) ? `clear ${bg ? "" : "short"}` : ""}`} >
           {banner && <div className="pb-img" style={{ backgroundImage: cssUrl(banner), ...cropStyle(profile.home_layout?.bannerCrop) }} aria-hidden="true" />}
-          {!banner && !glass && showBanner && <CoverMarquee covers={[...new Set(entries.map((e) => safeUrl(e.cover)).filter(Boolean))].slice(0, 24)} />}
+          {!banner && !glass && showBanner && <CoverMarquee covers={mixedCovers(entries, 24)} />}
           {!banner && !glass && showBanner && isMe && <button className="pb-hide" onClick={hideStrip}>Bu şeridi gizle</button>}
         </div>
         <div className="profile-head">

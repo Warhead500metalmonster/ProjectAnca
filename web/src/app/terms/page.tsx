@@ -113,11 +113,11 @@ export default function Terms() {
         Ancalog&apos;da yalnızca tanıtım, bilgi ve kişisel arşiv amacıyla, kaynağı belirtilerek gösterilir. Bu içerikler üzerinde Ancalog herhangi bir hak iddia etmez.</p>
       <p>Bilgiler <a href="https://www.igdb.com" target="_blank" rel="noopener">IGDB</a>, <a href="https://www.themoviedb.org" target="_blank" rel="noopener">TMDB</a>,
         {" "}<a href="https://anilist.co" target="_blank" rel="noopener">AniList</a>, Apple Music (iTunes) ve Deezer&apos;dan, bu servislerin kendi kullanım koşullarına uygun olarak alınır.
-        Oyun bilgileri, kapakları ve ekran görüntüleri Twitch&apos;in bir hizmeti olan IGDB&apos;den, <a href="https://www.twitch.tv/p/legal/developer-agreement/" target="_blank" rel="noopener">Twitch Geliştirici Sözleşmesi</a> kapsamında alınır;
-        önceden eklenmiş kayıtların bir kısmındaki kapaklar RAWG kaynaklıdır. Bu site IGDB ve Twitch ile bağlantılı değildir, onlar tarafından onaylanmış değildir.
+        Oyun bilgileri, kapakları ve ekran görüntüleri Twitch&apos;in bir hizmeti olan IGDB&apos;den, <a href="https://www.twitch.tv/p/legal/developer-agreement/" target="_blank" rel="noopener">Twitch Geliştirici Sözleşmesi</a> kapsamında alınır.
+        Bu site IGDB ve Twitch ile bağlantılı değildir, onlar tarafından onaylanmış değildir.
         Bu site TMDB API&apos;sini kullanır ancak TMDB tarafından onaylanmış değildir. Steam&apos;den içe aktarma <a href="https://steamcommunity.com/dev/apiterms" target="_blank" rel="noopener">Steam Web API</a> ile yapılır.
         Profil şarkıları sitede barındırılmaz, YouTube&apos;un kendi oynatıcısıyla çalınır; bu kullanımda <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">YouTube Hizmet Şartları</a> geçerlidir.</p>
-      <p>Ancalog; IGDB, Twitch, RAWG, TMDB, AniList, MyAnimeList, Apple, Deezer, YouTube, Google, Steam, Valve, Sony Interactive Entertainment (PlayStation), Microsoft (Xbox), OpenXBL,
+      <p>Ancalog; IGDB, Twitch, TMDB, AniList, MyAnimeList, Apple, Deezer, YouTube, Google, Steam, Valve, Sony Interactive Entertainment (PlayStation), Microsoft (Xbox), OpenXBL,
         Epic Games, Nintendo, HowLongToBeat, Backloggd, Playnite, Letterboxd, Serializd, Simkl, Spotify ya da Last.fm ile bağlantılı değildir ve bu şirketler tarafından onaylanmaz, desteklenmez
         ya da sponsor edilmez. Adı geçen tüm markalar ve ticari adlar sahiplerine aittir; yalnızca ilgili hizmeti tanımlamak için anılır.</p>
 

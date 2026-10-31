@@ -5,6 +5,11 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-11-01T03:05:00+04:00",
+    title: "Sohbet fotoğrafları site içinde açılıyor",
+    body: "Mesajlarda, forumda, yorumlarda ve etkinlik sohbetinde paylaşılan bir fotoğrafa tıklayınca artık yeni sekme açılmıyor, oyun görselleri gibi site içinde büyüyor. Bir mesajda birden çok fotoğraf varsa oklarla gezebilirsin.",
+  },
+  {
     date: "2026-11-01T03:00:00+04:00",
     title: "Oyun bilgileri artık IGDB'den",
     body: "Oyun araması, kapaklar, açıklamalar ve ekran görüntüleri artık IGDB'den geliyor. Kayıtların, puanların ve incelemelerin olduğu gibi duruyor, senin bir şey yapmana gerek yok.\n"

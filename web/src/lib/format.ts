@@ -1,6 +1,6 @@
 import type { Entry, Item } from "./types";
 
-export const safeUrl = (u?: string | null) => (/^https?:\/\//i.test(u || "") ? (u as string) : "");
+export const safeUrl = (u?: string | null) => (/^https?:\/\//i.test(u || "") && !/^https?:\/\/media\.rawg\.io\//i.test(u || "") ? (u as string) : ""); // eski kaynaktan görsel yüklenmez
 
 // style içine güvenle konabilen url(); tırnak ve parantezler kodlanır
 export const cssUrl = (u: string) => `url('${u.replace(/["'()\\\s<>&]/g, (c) => "%" + c.charCodeAt(0).toString(16))}')`;
@@ -50,6 +50,20 @@ export const scoreText = (r: number, scale: number, digits = 1) => scale === 10 
 // Ortalamalar tek ondalıkla
 export const avgText = (r: number, scale: number) => scale === 10 ? `${num(r, 1)}/10` : `${num(r / 2, 1)}/5`;
 export const scoreShort = (r: number, scale: number) => scale === 10 ? num(r) : num(r / 2, 2);
+
+// Kayan kapak şeritleri için: her türden sırayla, karışık (gün içinde sıra sabit, her gün değişir)
+export function mixedCovers(list: { type: string; cover?: string | null }[], max = 48) {
+  const rank = (s: string) => { let h = 7; for (const c of s + today()) h = (h * 31 + c.charCodeAt(0)) | 0; return h; };
+  const groups = new Map<string, string[]>();
+  for (const e of list) {
+    const url = safeUrl(e.cover);
+    if (url) groups.set(e.type, [...(groups.get(e.type) || []), url]);
+  }
+  const lines = [...groups.values()].map((g) => [...new Set(g)].sort((a, b) => rank(a) - rank(b)));
+  const out: string[] = [];
+  for (let i = 0; out.length < max && lines.some((g) => i < g.length); i++) for (const g of lines) if (i < g.length && out.length < max) out.push(g[i]);
+  return out;
+}
 
 // ---------- İçerik kimliği: oyunlarda rawg_id (eski oyunlarda RAWG, yenilerde eksi işaretli IGDB numarası), diğerlerinde tür + isim ----------
 

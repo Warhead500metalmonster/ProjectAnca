@@ -46,7 +46,7 @@ export const clip = (s: string | null | undefined, n: number) => {
 
 // Görseli önceden indirip gömülü hale getirir; açılmayan ya da desteklenmeyen biçimdekiler atlanır (kart bozulmasın)
 async function embed(url: string | null | undefined): Promise<string | null> {
-  if (!url || !/^https?:\/\//i.test(url)) return null;
+  if (!url || !/^https?:\/\//i.test(url) || /^https?:\/\/media\.rawg\.io\//i.test(url)) return null;
   try {
     const r = await fetch(url, { signal: AbortSignal.timeout(4000), next: { revalidate: 86400 } });
     const type = (r.headers.get("content-type") || "").split(";")[0];

@@ -5,7 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { Entry } from "@/lib/types";
 import { LOCAL_KEY, STATUSES, TYPES } from "@/lib/constants";
-import { safeUrl } from "@/lib/format";
+import { mixedCovers, safeUrl } from "@/lib/format";
 import { fetchEntries, fetchFeed } from "@/lib/data";
 import { rawg } from "@/lib/rawg";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
@@ -46,7 +46,7 @@ function Landing({ version }: { version: number }) {
   const { data, error } = useLoad(() => fetchFeed({ limit: 40 }), [version]);
   if (error) return <div className="empty">Bir şeyler ters gitti: {error}</div>;
 
-  const covers = [...new Set((data || []).map((e) => safeUrl(e.cover)).filter(Boolean))];
+  const covers = mixedCovers(data || []);
   const people = [...new Map((data || []).filter((e) => e.profiles?.username).map((e) => [e.profiles!.username, e.profiles])).values()].slice(0, 5);
 
   return (
@@ -171,9 +171,9 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
   const view = tab ?? (friends.length ? "friends" : "all");
   const active = mine.filter((e) => e.status === "active");
   const backlog = mine.filter((e) => e.status === "planned").sort((a, b) => a.created_at.localeCompare(b.created_at)); // en eski bekleyen önce
-  // Önce kendi kapakların; azsa topluluğunkilerle tamamla
-  const own = [...new Set(mine.map((e) => safeUrl(e.cover)).filter(Boolean))];
-  const heroCovers = own.length >= 8 ? own : [...own, ...community.map((e) => safeUrl(e.cover)).filter(Boolean)];
+  // Önce kendi kapakların (her türden karışık); azsa topluluğunkilerle tamamla
+  const own = mixedCovers(mine);
+  const heroCovers = own.length >= 8 ? own : [...own, ...mixedCovers(community)];
   const hour = new Date().getHours();
   const hello = hour < 6 ? "İyi geceler" : hour < 12 ? "Günaydın" : hour < 18 ? "Selam" : "İyi akşamlar";
 

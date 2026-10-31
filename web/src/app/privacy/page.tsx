@@ -108,7 +108,7 @@ export default function Privacy() {
         (Steam, OpenXBL, Last.fm, Spotify, Simkl) sorulur. Bir profilde şarkı çaldığında oynatıcı YouTube&apos;dan yüklenir. Bu hizmetlerin kendi gizlilik kuralları geçerlidir.
         Şifre yenileme ve kayıt onayı e-postaları giriş sistemi üzerinden gönderilir.</p>
       <p><b>Fotoğraf linkleri ve dış görseller:</b> sohbetlere, foruma ve yorumlara yapıştırılan fotoğraflar ile profil fotoğrafı, kapak ve arka plan görselleri Ancalog&apos;da barındırılmaz, linkin ait olduğu siteden (Imgur, Discord gibi) yüklenir.
-        Oyun kapakları ve ekran görüntüleri de IGDB&apos;nin (Twitch) sunucusundan yüklenir; önceden eklenmiş kayıtların bir kısmındaki kapaklar RAWG&apos;nin sunucusundan gelir.
+        Oyun kapakları ve ekran görüntüleri de IGDB&apos;nin (Twitch) sunucusundan yüklenir.
         Sayfayı açtığında tarayıcın o siteye bağlanır ve IP adresin o siteye görünebilir. Ancalog bu sitelerin ne kaydettiğini kontrol edemez.</p>
       <p>Bu sağlayıcıların sunucuları yurt dışında olabileceğinden verilerin yurt dışına aktarılabilir. Aktarım, hizmetin sunulabilmesi için gerekli olduğu ölçüde ve 6698 sayılı Kanun&apos;un 9. maddesi çerçevesinde yapılır.</p>
 

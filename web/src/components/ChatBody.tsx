@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { safeUrl } from "@/lib/format";
 import { useApp } from "./AppProvider";
+import { Lightbox } from "./Lightbox";
 import { RichText } from "./ui";
 
 // Bütün sohbetlerin ortak parçaları (mesajlar, forum, yorumlar, etkinlik sohbeti): link ile fotoğraf ve yanıtlama
@@ -25,21 +26,23 @@ export function imagesIn(body: string): { text: string; images: string[] } {
 }
 
 // Fotoğraf açılmazsa boş kutu yerine linki göster
-function PostImage({ src }: { src: string }) {
+function PostImage({ src, onOpen }: { src: string; onOpen: () => void }) {
   const [failed, setFailed] = useState(false);
   return failed
     ? <a href={src} target="_blank" rel="noopener noreferrer nofollow" className="ev-img-broken">Fotoğraf açılamadı: {src}</a>
-    : <a href={src} target="_blank" rel="noopener noreferrer nofollow" className="ev-post-img"><img src={src} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} /></a>;
+    : <button type="button" className="ev-post-img" aria-label="Fotoğrafı büyüt" onClick={onOpen}><img src={src} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} /></button>;
 }
 
 // Mesajın kendisi: yazı (spoilerlar gizli) ve içindeki fotoğraflar. image: eski etkinlik mesajlarının ayrı fotoğrafı
 export function ChatBody({ text, image }: { text: string; image?: string | null }) {
   const { text: rest, images } = imagesIn(text);
   const all = [...new Set([...(image && safeUrl(image) ? [image] : []), ...images])];
+  const [shown, setShown] = useState<number | null>(null); // site içinde büyük gösterilen fotoğraf
   return (
     <>
       {rest && rest !== "📷" && <div className="chat-text"><RichText text={rest} /></div>}
-      {all.map((src) => <PostImage key={src} src={src} />)}
+      {all.map((src, i) => <PostImage key={src} src={src} onOpen={() => setShown(i)} />)}
+      {shown !== null && <Lightbox images={all} start={shown} onClose={() => setShown(null)} />}
     </>
   );
 }
