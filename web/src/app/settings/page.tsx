@@ -53,6 +53,12 @@ const SET_TABS = [
 ] as const;
 type SetTab = (typeof SET_TABS)[number][0];
 
+// Discord linkleri bir süre sonra ölür; fotoğraf kaybolmadan önce söyleyelim
+function ExpiringLink({ url }: { url: string }) {
+  if (!/(cdn|media)\.discord(app)?\.(com|net)\//i.test(url)) return null;
+  return <p className="muted small" style={{ margin: "6px 0 0" }}>Discord linkleri birkaç hafta sonra çalışmaz olur ve görsel başkalarında kaybolur. Imgur ya da catbox.moe gibi kalıcı bir yere yüklemeni öneririz.</p>;
+}
+
 export default function Settings() {
   const { me, ready } = useApp();
   if (!ready) return <div className="loading">Yükleniyor…</div>;
@@ -210,6 +216,7 @@ function SettingsForm({ me }: { me: Profile }) {
       <div className="field">
         <label htmlFor="p-avatar">Profil fotoğrafı (https:// ile başlayan resim linki)</label>
         <input id="p-avatar" name="avatar" type="url" value={avatar} onChange={(e) => { setAvatar(e.target.value); setCrop({ x: 50, y: 50, z: 1 }); }} placeholder="https://…" />
+        <ExpiringLink url={avatar} />
       </div>
       {safeUrl(avatar) && <AvatarCropper url={avatar} crop={crop} onChange={setCrop} />}
       <h3 className="set-h">Bağlantılar</h3>
@@ -251,6 +258,7 @@ function SettingsForm({ me }: { me: Profile }) {
       <div className="field">
         <label htmlFor="p-banner">Kapak görseli (profilin üstündeki geniş resim, https://)</label>
         <input id="p-banner" name="banner" type="url" value={bannerUrl} onChange={(e) => setBannerUrl(e.target.value)} placeholder="https://…" />
+        <ExpiringLink url={bannerUrl} />
       </div>
       {safeUrl(bannerUrl.trim()) && (
         <div className="field">
@@ -269,6 +277,7 @@ function SettingsForm({ me }: { me: Profile }) {
       <div className="field">
         <label htmlFor="p-bg">Arka plan resmi <span className="muted">· Steam&apos;deki gibi profilinin arkasını kaplar (resim, GIF ya da .mp4 / .webm linki)</span></label>
         <input id="p-bg" type="url" placeholder="https://…" value={bgUrl} onChange={(e) => setBgUrl(e.target.value)} />
+        <ExpiringLink url={bgUrl} />
       </div>
       {bgUrl.trim().startsWith("https://") && !/\.(mp4|webm)(\?|$)/i.test(bgUrl) && (
         <div className="field">
