@@ -209,7 +209,7 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
           </>
         )}
       </div>
-      {song && <ProfileSong url={song} title={profile.song_title} volume={profile.song_volume} />}
+      {song && <ProfileSong url={song} title={profile.song_title} volume={profile.song_volume} start={profile.home_layout?.song?.start} end={profile.home_layout?.song?.end} loop={profile.home_layout?.song?.loop !== false} />}
       {userList && (
         <dialog ref={listDialog} onClose={() => setUserList(null)} onClick={(e) => e.target === listDialog.current && listDialog.current?.close()}>
           <div className="dialog-head pad">

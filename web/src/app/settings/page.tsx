@@ -35,6 +35,15 @@ function cleanSocial(key: string, raw: string): string | null | undefined {
   return /^[\w.-]{1,50}$/.test(handle) ? handle : undefined;
 }
 
+// 83 → "1:23" ve "1:23" → 83; boş 0, anlaşılmazsa null
+const fmtClock = (sec?: number) => (sec ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}` : "");
+function parseClock(text: string): number | null {
+  const m = text.trim().match(/^(?:(\d{1,2}):)?(?:(\d{1,3}):)?(\d{1,5})$/);
+  if (!text.trim()) return 0;
+  if (!m) return null;
+  return (Number(m[1] || 0) * (m[2] !== undefined ? 3600 : 60)) + Number(m[2] || 0) * 60 + Number(m[3]);
+}
+
 // Ayarların sekmeleri: [anahtar, ad, kısa açıklama]
 const SET_TABS = [
   ["profil", "Profil", "Ad, fotoğraf, bağlantılar"],
@@ -80,6 +89,10 @@ function SettingsForm({ me }: { me: Profile }) {
   const [scale, setScale] = useState<5 | 10>(me.rating_scale === 10 ? 10 : 5);
   const [siteColor, setSiteColor] = useState(me.site_color || "");
   const [song, setSong] = useState({ url: me.song_url || "", title: me.song_title || "", volume: me.song_volume || 15 });
+  const songPart = me.home_layout?.song;
+  const [songStart, setSongStart] = useState(fmtClock(songPart?.start));
+  const [songEnd, setSongEnd] = useState(fmtClock(songPart?.end));
+  const [songLoop, setSongLoop] = useState(songPart?.loop !== false);
   const [avatar, setAvatar] = useState(me.avatar_url || "");
   const [crop, setCrop] = useState<AvatarCrop>(me.avatar_crop || { x: 50, y: 50, z: 1 });
   const [hiddenTypes, setHiddenTypes] = useState<EntryType[]>(me.hidden_types || []);
@@ -92,6 +105,9 @@ function SettingsForm({ me }: { me: Profile }) {
   // Link yapıştırılınca şarkı adını kendiliğinden doldur
   async function songLink(url: string) {
     setSong((s) => ({ ...s, url }));
+    // Linkte başlangıç varsa (YouTube'da "şu saniyeden paylaş") kendiliğinden gelsin
+    const t = url.match(/[?&]t=(?:(\d+)m)?(\d+)s?/);
+    if (t && !songStart) setSongStart(fmtClock(Number(t[1] || 0) * 60 + Number(t[2])));
     if (!youtubeId(url) || song.title) return;
     const r = await fetch(`/api/oembed?url=${encodeURIComponent(url)}`).catch(() => null);
     if (r?.ok) { const d = await r.json(); setSong((s) => (s.title ? s : { ...s, title: `${d.author.replace(/\s*-\s*Topic$/i, "")} — ${d.title}`.slice(0, 120) })); }
@@ -120,6 +136,11 @@ function SettingsForm({ me }: { me: Profile }) {
       if (v) socials[s.key] = v;
     }
     if (song.url && !youtubeId(song.url)) { setTab("gorunum"); return setError("Profil şarkısı için bir YouTube linki yapıştır."); }
+    const startSec = parseClock(songStart), endSec = parseClock(songEnd);
+    if (startSec === null || endSec === null) { setTab("gorunum"); return setError("Şarkının başlangıç ve bitişini 1:23 gibi yaz."); }
+    if (endSec && endSec <= startSec) { setTab("gorunum"); return setError("Şarkının bitişi başlangıcından sonra olmalı."); }
+    const songNext = { ...(startSec && { start: startSec }), ...(endSec && { end: endSec }), loop: songLoop };
+    const songChanged = JSON.stringify(songNext) !== JSON.stringify({ ...(songPart?.start && { start: songPart.start }), ...(songPart?.end && { end: songPart.end }), loop: songPart?.loop !== false });
     setBusy(true);
     try {
       const updated = await q<Profile>(sb().from("profiles").update({
@@ -132,8 +153,8 @@ function SettingsForm({ me }: { me: Profile }) {
         accent: !theme && /^#[0-9a-f]{6}$/i.test(accent) ? accent : null,
         profile_theme: theme || null,
         bg_url: bgUrl.trim() || null,
-        ...((showBanner !== (me.home_layout?.banner !== false) || countsChanged || cropChanged || showEvents !== (me.home_layout?.events !== false)) && {
-          home_layout: { ...me.home_layout, banner: showBanner, events: showEvents, bannerCrop, bgCrop, ...(countsChanged && { counts: cleanCounts(counts) }) },
+        ...((showBanner !== (me.home_layout?.banner !== false) || countsChanged || cropChanged || songChanged || showEvents !== (me.home_layout?.events !== false)) && {
+          home_layout: { ...me.home_layout, banner: showBanner, events: showEvents, bannerCrop, bgCrop, song: songNext, ...(countsChanged && { counts: cleanCounts(counts) }) },
         }),
         rating_scale: scale,
         socials,
@@ -268,7 +289,19 @@ function SettingsForm({ me }: { me: Profile }) {
         <label htmlFor="p-song-vol">Ses: %{song.volume}</label>
         <input id="p-song-vol" type="range" min={1} max={60} value={song.volume} onChange={(e) => setSong((s) => ({ ...s, volume: Number(e.target.value) }))} />
       </div>
-      <p className="muted small">Profiline girenler bu şarkıyı arkada kısık sesle duyar, köşede adı yazar. Kaldırmak için linki silip kaydet.</p>
+      <div className="row">
+        <div className="field grow">
+          <label htmlFor="p-song-start">Şuradan başlasın</label>
+          <input id="p-song-start" inputMode="numeric" placeholder="0:00" maxLength={8} value={songStart} onChange={(e) => setSongStart(e.target.value)} />
+        </div>
+        <div className="field grow">
+          <label htmlFor="p-song-end">Şurada bitsin <span className="muted">· isteğe bağlı</span></label>
+          <input id="p-song-end" inputMode="numeric" placeholder="sonuna kadar" maxLength={8} value={songEnd} onChange={(e) => setSongEnd(e.target.value)} />
+        </div>
+      </div>
+      <label className="check"><input type="checkbox" checked={songLoop} onChange={(e) => setSongLoop(e.target.checked)} /> Bitince başa dönsün (döngü)
+        <span className="muted small">· kapatırsan bir kez çalıp susar</span></label>
+      <p className="muted small">Profiline girenler bu şarkıyı arkada kısık sesle duyar, köşede adı yazar. Sevdiğin nakaratı seçip döngüye alabilirsin. Kaldırmak için linki silip kaydet.</p>
       <h3 className="set-h">Site rengi <span className="muted small">· sadece sen görürsün</span></h3>
       <div className="swatches">
         <button type="button" className={`swatch ${!siteColor ? "on" : ""}`} style={{ background: DEFAULT_COLOR }} onClick={() => pickSiteColor("")} title="Varsayılan (yeşil)" />

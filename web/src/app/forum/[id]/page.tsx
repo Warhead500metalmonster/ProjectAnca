@@ -11,7 +11,8 @@ import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { SocialTabs } from "@/components/SocialTabs";
-import { Avatar, Name, RichText } from "@/components/ui";
+import { Avatar, Name } from "@/components/ui";
+import { ChatBody, DraftPhotos, PhotoAdd, ReplyQuote, ReplyingTo, withPhoto, type ReplyTarget } from "@/components/ChatBody";
 
 export default function ThreadPage() {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +21,7 @@ export default function ThreadPage() {
   const [tick, setTick] = useState(0);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null);
 
   const { data, error } = useLoad(async () => {
     const [thread, posts] = await Promise.all([
@@ -39,8 +41,9 @@ export default function ThreadPage() {
     if (!body) return;
     setBusy(true);
     try {
-      await q(sb().from("forum_posts").insert({ thread_id: id, body }));
+      await q(sb().from("forum_posts").insert({ thread_id: id, body, ...(replyTo && { reply_to: replyTo.id }) }));
       setText("");
+      setReplyTo(null);
       setTick((n) => n + 1);
     } catch (err) {
       toast("Gönderilemedi: " + (err as Error).message);
@@ -84,7 +87,7 @@ export default function ThreadPage() {
             <div className="grow"><span className="muted small">Tartışılan</span><b>{t.item.title}{t.item.year ? ` (${t.item.year})` : ""}</b></div>
           </Link>
         )}
-        <p className="post-body"><RichText text={t.body} /></p>
+        <div className="post-body"><ChatBody text={t.body} /></div>
         {mineOrAdmin(t.user_id) && (
           <div className="post-tools">
             {isAdmin && <button className="link" onClick={() => run(q(sb().from("forum_threads").update({ pinned: !t.pinned }).eq("id", id)), t.pinned ? "Sabitleme kalktı" : "Konu sabitlendi")}>{t.pinned ? "Sabitlemeyi kaldır" : "Sabitle"}</button>}
@@ -100,7 +103,7 @@ export default function ThreadPage() {
 
       <h3 className="set-h">{posts.length ? `${posts.length} cevap` : "Henüz cevap yok"}</h3>
       {posts.filter((p) => !blocked.has(p.user_id)).map((p) => (
-        <article key={p.id} className="post">
+        <article key={p.id} id={`msg-${p.id}`} className="post">
           <header>
             <Avatar p={p.profiles} />
             <div className="grow">
@@ -116,14 +119,20 @@ export default function ThreadPage() {
                 label: `@${p.profiles?.username} kullanıcısının "${t.title}" konusundaki cevabı` })}>Raporla</button>
             )}
           </header>
-          <p className="post-body"><RichText text={p.body} /></p>
+          {p.reply_to && (() => { const pp = posts.find((x) => x.id === p.reply_to); return <ReplyQuote parent={pp && { id: pp.id, user_id: pp.user_id, body: pp.body }} name={pp?.profiles?.display_name || pp?.profiles?.username} />; })()}
+          <div className="post-body"><ChatBody text={p.body} /></div>
+          {me && !t.locked && (
+            <div className="post-tools"><button className="link reply-btn" onClick={() => { setReplyTo({ id: p.id, name: p.profiles?.display_name || p.profiles?.username || "Bu kişi", body: p.body }); document.getElementById("forum-reply")?.focus(); }}>Yanıtla</button></div>
+          )}
         </article>
       ))}
 
       {t.locked ? <div className="empty">Bu konu kilitlendi, yeni cevap yazılamaz.</div> : me ? (
         <form className="forum-new" onSubmit={reply}>
-          <textarea className="input" rows={4} maxLength={5000} placeholder="Cevabını yaz… (spoiler için ||böyle|| yaz)" value={text} onChange={(e) => setText(e.target.value)} />
-          <div className="row-end"><button className="btn primary" disabled={busy || !text.trim()}>{busy ? "Gönderiliyor…" : "Cevapla"}</button></div>
+          {replyTo && <ReplyingTo reply={replyTo} onCancel={() => setReplyTo(null)} />}
+          <textarea id="forum-reply" className="input" rows={4} maxLength={5000} placeholder="Cevabını yaz… (spoiler için ||böyle|| yaz)" value={text} onChange={(e) => setText(e.target.value)} />
+          <DraftPhotos text={text} />
+          <div className="row-end"><PhotoAdd onAdd={(url) => setText((x) => withPhoto(x, url))} /><span className="spacer" /><button className="btn primary" disabled={busy || !text.trim()}>{busy ? "Gönderiliyor…" : "Cevapla"}</button></div>
         </form>
       ) : (
         <div className="empty"><Link className="btn primary" href="/login">Cevap yazmak için giriş yap</Link></div>

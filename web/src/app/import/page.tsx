@@ -7,7 +7,7 @@ import type { Entry, RawgGame, Status } from "@/lib/types";
 import { norm, smallImage } from "@/lib/format";
 import { anilist, musicMeta, tmdb, tmdbCreator, tmdbDetail, tmdbImage } from "@/lib/data";
 import { STATUSES, STORES, TYPES, statusLabel } from "@/lib/constants";
-import { rawg } from "@/lib/rawg";
+import { rawg, bestGame } from "@/lib/rawg";
 import { q, sb } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
@@ -146,7 +146,7 @@ const looseKey = (t: string) =>
 function similarHit(found: RawgGame[], title: string) {
   const k = looseKey(title);
   if (!k) return null;
-  const exact = found.find((x) => looseKey(x.name) === k);
+  const exact = bestGame(found, title) || found.find((x) => looseKey(x.name) === k);
   if (exact) return exact;
   // Biri diğerinin başıysa (ör. "Cyberpunk 2077 Ultimate" = "Cyberpunk 2077") ama devam oyunu değilse (Dark Souls ≠ Dark Souls III)
   const near = found.map((x) => ({ x, n: looseKey(x.name) })).filter(({ n }) => {
@@ -255,8 +255,8 @@ function Steam() {
       const myRawg = new Set(mine.map((e) => e.rawg_id).filter(Boolean));
       const rows = (await pool(chosen, async (g): Promise<Row | null> => {
         // RAWG'de eşleştir: oyun sayfası, kapak ve çıkış yılı gelsin
-        const found = (await rawg<{ results?: RawgGame[] }>("games", { search: g.name, search_precise: "true", page_size: 3 }).catch(() => ({ results: [] }))).results || [];
-        const hit = found.find((x) => norm(x.name) === norm(g.name)) || found[0];
+        const found = (await rawg<{ results?: RawgGame[] }>("games", { search: g.name, search_precise: "true", page_size: 5 }).catch(() => ({ results: [] }))).results || [];
+        const hit = bestGame(found, g.name) || found[0];
         if (hit && myRawg.has(hit.id)) return null;
         if (hit) myRawg.add(hit.id);
         return steamRow(g, hit, steamStatus(g, ach));
@@ -1233,8 +1233,8 @@ function AccountGames({ kind }: { kind: "xbox" }) {
     try {
       const myRawg = new Set(mine.map((e) => e.rawg_id).filter(Boolean));
       const rows = (await pool(chosen, async (g): Promise<Row | null> => {
-        const found = (await rawg<{ results?: RawgGame[] }>("games", { search: g.name, search_precise: "true", page_size: 3 }).catch(() => ({ results: [] }))).results || [];
-        const hit = found.find((x) => norm(x.name) === norm(g.name)) || found[0];
+        const found = (await rawg<{ results?: RawgGame[] }>("games", { search: g.name, search_precise: "true", page_size: 5 }).catch(() => ({ results: [] }))).results || [];
+        const hit = bestGame(found, g.name) || found[0];
         if (hit && myRawg.has(hit.id)) return null;
         if (hit) myRawg.add(hit.id);
         return {

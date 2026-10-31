@@ -82,7 +82,7 @@ export async function searchMusic(text: string): Promise<Found[]> {
 }
 
 export async function searchGames(text: string, limit = 6): Promise<Found[]> {
-  const data = await rawg<{ results?: RawgGame[] }>("games", { search: text, page_size: limit });
+  const data = await rawg<{ results?: RawgGame[] }>("games", { search: text, search_precise: "true", page_size: limit });
   return (data.results || []).map((g) => ({
     type: "game", title: g.name, year: parseInt(g.released || "") || null, creator: null,
     cover: g.background_image ? smallImage(g.background_image) : null, rawg_id: g.id,

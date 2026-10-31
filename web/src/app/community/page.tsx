@@ -13,7 +13,6 @@ import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { Cover, Feed, UserRow } from "@/components/ui";
 import { ImportPromo } from "@/components/ImportPromo";
-import { BestMatches } from "@/components/BestMatches";
 import { Announcements } from "@/components/Announcements";
 import { EventBanner } from "@/components/EventBanner";
 import { Gta6Countdown } from "@/components/Gta6Countdown";
@@ -65,6 +64,7 @@ export default function Community() {
   }, [version], supabaseConfigured());
 
   const [found, setFound] = useState<Profile[] | null>(null);
+  const [allMembers, setAllMembers] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
 
@@ -121,11 +121,10 @@ export default function Community() {
           </div>}
         </section>
       )}
-      <section className="section">
-        <div className="section-head"><h2>Ancalog sıralaması</h2><Link href="/top">En yüksek ve en düşük puanlılar →</Link></div>
-        <p className="muted" style={{ margin: 0 }}>Üyelerin puanlarına göre en sevilen ve en sevilmeyen oyunlar, filmler, diziler, albümler ve animeler.</p>
-      </section>
-      <BestMatches />
+      <Link className="rank-cta" href="/top">
+        <span><b>Sıralamalar</b><small>En çok bitirenler, en uyumlular, en sevilen oyunlar</small></span>
+        <span aria-hidden="true">→</span>
+      </Link>
       {lists.length > 0 && (
         <section className="section">
           <div className="section-head"><h2>Yeni listeler</h2></div>
@@ -142,8 +141,9 @@ export default function Community() {
           <input className="input" type="search" placeholder="Kullanıcı ara…" style={{ width: "100%", marginBottom: 12 }} autoComplete="off"
             onChange={(e) => search(e.target.value)} />
           <div className="user-list">
-            {list.length ? list.map((p) => <UserRow key={p.id} p={p} />) : <div className="muted" style={{ padding: 12 }}>Kimse bulunamadı.</div>}
+            {list.length ? list.slice(0, found || allMembers ? undefined : 8).map((p) => <UserRow key={p.id} p={p} />) : <div className="muted" style={{ padding: 12 }}>Kimse bulunamadı.</div>}
           </div>
+          {!found && !allMembers && list.length > 8 && <button className="feed-more" onClick={() => setAllMembers(true)}>Daha fazla üye göster</button>}
         </section>
       </div>
     </>

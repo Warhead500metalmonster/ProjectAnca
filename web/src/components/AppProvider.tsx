@@ -281,6 +281,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Kişisel site rengi (çıkış yapınca varsayılana döner)
   useEffect(() => { if (ready) applyTheme(me?.site_color); }, [ready, me?.site_color]);
 
+  // Çevrimiçi sayısı için: giriş yapmış kişi sekme açıkken iki dakikada bir "buradayım" der (kim olduğu kimseye görünmez)
+  useEffect(() => {
+    if (!me?.id) return;
+    const ping = () => { if (document.visibilityState === "visible") sb().rpc("touch_presence").then(() => {}, () => {}); };
+    ping();
+    const t = setInterval(ping, 120000);
+    document.addEventListener("visibilitychange", ping);
+    return () => { clearInterval(t); document.removeEventListener("visibilitychange", ping); };
+  }, [me?.id]);
+
   // Kayıt ekleyip değiştirdikçe rozetleri tazele (veritabanı hak edilen rozeti hemen verir)
   useEffect(() => {
     if (version) loadBadges();

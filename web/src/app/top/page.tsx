@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { EntryType } from "@/lib/types";
 import { TYPES, TYPE_KEYS } from "@/lib/constants";
 import { avgText, contentHref } from "@/lib/format";
@@ -9,14 +10,34 @@ import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { Cover } from "@/components/ui";
+import { Leaderboard } from "@/components/Leaderboard";
+import { BestMatches } from "@/components/BestMatches";
 
 interface Ranked { type: EntryType; title: string; year: number | null; creator: string | null; cover: string | null; rawg_id: number | null; ext_id: string | null; avg: number; votes: number }
 
 const fetchRanked = (type: EntryType, min: number, asc: boolean, limit: number) =>
   q<Ranked[]>(sb().rpc("ranked_content", { p_type: type, p_min: min, p_asc: asc, p_limit: limit }));
 
-// Ancalog sıralaması: üyelerin verdiği puanların ortalamasına göre en yüksek ve en düşük içerikler
+const TABS = [["kisiler", "Kişiler"], ["uyum", "Uyum"], ["icerik", "En sevilenler"]] as const;
+
+// Sıralamalar: kim ne kadar bitirdi, kim kiminle uyumlu, en sevilen içerikler
 export default function TopPage() {
+  const tab = useSearchParams().get("tab") || "kisiler";
+  return (
+    <>
+      <section className="search-hero">
+        <h1>Sıralamalar</h1>
+        <nav className="social-tabs top-tabs">
+          {TABS.map(([k, label]) => <Link key={k} href={k === "kisiler" ? "/top" : `/top?tab=${k}`} className={tab === k ? "active" : ""} replace scroll={false}>{label}</Link>)}
+        </nav>
+      </section>
+      {tab === "uyum" ? <BestMatches /> : tab === "icerik" ? <ContentRanks /> : <Leaderboard />}
+    </>
+  );
+}
+
+// Üyelerin verdiği puanların ortalamasına göre en yüksek ve en düşük içerikler
+function ContentRanks() {
   const { scale } = useApp();
   const [type, setType] = useState<EntryType>("game");
   const [asc, setAsc] = useState(false);
@@ -25,9 +46,8 @@ export default function TopPage() {
 
   return (
     <>
-      <section className="search-hero">
-        <h1>Ancalog sıralaması</h1>
-        <p className="muted" style={{ margin: 0 }}>Üyelerin verdiği puanların ortalamasına göre. Az kişinin puanladığı içerikler yanıltmasın diye en az oy sayısını seçebilirsin.</p>
+      <section className="section top-types">
+        <p className="muted" style={{ margin: "0 0 10px" }}>Üyelerin verdiği puanların ortalamasına göre. Az kişinin puanladığı içerikler yanıltmasın diye en az oy sayısını seçebilirsin.</p>
         <div className="tabs" style={{ marginBottom: 0 }}>
           {TYPE_KEYS.map((t) => <button key={t} className={`tab ${type === t ? "active" : ""}`} onClick={() => setType(t)}>{TYPES[t].plural}</button>)}
         </div>

@@ -7,7 +7,7 @@ import type { Entry, EntryType, Item, Profile, RawgGame } from "@/lib/types";
 import { TYPES, TYPE_KEYS } from "@/lib/constants";
 import { avgText, contentHref, contentKey, likeEsc, smallImage } from "@/lib/format";
 import { anilist, fetchAll, searchMusic, tmdb, tmdbImage, SEARCH_CREDITS } from "@/lib/data";
-import { rawg } from "@/lib/rawg";
+import { rawg, retry } from "@/lib/rawg";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
 import { Cover, UserRow } from "@/components/ui";
@@ -67,6 +67,8 @@ export default function SearchPage() {
   const [users, setUsers] = useState<Profile[]>([]);
   const [local, setLocal] = useState<Agg[] | null>(null);
   const [external, setExternal] = useState<(Item & { sub?: string })[] | null>(null);
+  const [failed, setFailed] = useState<EntryType[]>([]); // ulaşılamayan kaynaklar: "sonuç yok" sanılmasın
+  const [again, setAgain] = useState(0);
   const seq = useRef(0);
   const written = useRef(params.get("q") || ""); // adrese en son bizim yazdığımız arama
 
@@ -84,15 +86,22 @@ export default function SearchPage() {
       router.replace(`${path}${qs.size ? `?${qs}` : ""}`, { scroll: false });
       setLocal(null);
       setExternal(null);
+      setFailed([]);
       const [u, l, x] = await Promise.all([findUsers(text), findLocal(text, type, from, to), findExternal(text, type, from, to, sort)]);
       if (s !== seq.current) return;
+      // Aranan ada en yakınlar önce: tam eşleşen, sonra adı öyle başlayan
+      const needle = text.trim().toLocaleLowerCase("tr");
+      const rank = (a: Agg) => { const t = a.title.toLocaleLowerCase("tr"); return !needle ? 0 : t === needle ? 0 : t.startsWith(needle) ? 1 : 2; };
+      const sorted = l.sort((a, b) => (sort === "logged" ? rank(a) - rank(b) : 0) || SORTERS[sort](a, b)).slice(0, 48);
+      const seen = new Set(sorted.map(contentKey));
       setUsers(u);
-      setLocal(l.sort(SORTERS[sort]).slice(0, 48));
-      setExternal(x);
+      setLocal(sorted);
+      setExternal(x.items.filter((i) => !seen.has(contentKey(i)))); // yukarıda çıkan aşağıda tekrar etmesin
+      setFailed(x.failed);
     }, 300);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, type, from, to, sort]);
+  }, [text, type, from, to, sort, again]);
 
   const yearOk = (v: string) => !v || /^\d{4}$/.test(v);
   const credit = type !== "all" ? SEARCH_CREDITS[type] : SEARCH_CREDITS.game;
@@ -151,6 +160,12 @@ export default function SearchPage() {
           ) : <div className="empty">Bu filtrelere uyan loglanmış içerik yok.</div>}
       </section>}
 
+      {failed.length > 0 && (
+        <div className="search-failed">
+          <span>{failed.map((k) => TYPES[k].plural).join(", ")} şu an aranamadı. Bağlantı anlık kopmuş olabilir.</span>
+          <button className="btn" onClick={() => setAgain((n) => n + 1)}>Tekrar dene</button>
+        </div>
+      )}
       {external === null ? <section className="section"><div className="loading">Her yerde aranıyor…</div></section>
         : (type === "all" ? TYPE_KEYS : [type]).map((k) => {
           const list = external.filter((x) => x.type === k);
@@ -199,23 +214,30 @@ async function findLocal(text: string, type: EntryType | "all", from: string, to
   return aggregate(rows);
 }
 
-// Dış kaynaktan arama: oyun RAWG, film/dizi TMDB, anime AniList, müzik iTunes
-async function findExternal(text: string, type: EntryType | "all", from: string, to: string, sort: Sort): Promise<(Item & { sub?: string })[]> {
+// Dış kaynaklardan arama. Tümü: hepsinde aynı anda (Google gibi tek kutu), her türden ilk 12.
+// Biri çalışmazsa bir kez daha denenir, olmazsa diğerleri yine gelir ve kullanıcıya söylenir.
+async function findExternal(text: string, type: EntryType | "all", from: string, to: string, sort: Sort) {
+  const all = type === "all";
+  const kinds: EntryType[] = !all ? [type] : text.trim() ? ["game", "movie", "show", "anime", "music"] : ["game", "movie", "show", "anime"];
+  const got = await Promise.all(kinds.map((k) => retry(() => findKind(text, k, from, to, sort)).then((r) => ({ k, r: r as (Item & { sub?: string })[] | null }), () => ({ k, r: null }))));
+  return {
+    items: got.flatMap((g) => (all ? (g.r || []).slice(0, 12) : g.r || [])),
+    failed: got.filter((g) => !g.r).map((g) => g.k),
+  };
+}
+
+// Tek türde arama: oyun RAWG, film/dizi TMDB, anime AniList, müzik iTunes ve Deezer
+async function findKind(text: string, type: EntryType, from: string, to: string, sort: Sort): Promise<(Item & { sub?: string })[]> {
   const t = text.trim();
   const y1 = /^\d{4}$/.test(from) ? Number(from) : null, y2 = /^\d{4}$/.test(to) ? Number(to) : null;
   const lo = y1 ?? y2, hi = y2 ?? y1;
   const inRange = (y: number | null) => !lo || (y !== null && y >= lo && y <= hi!);
-  // Tümü: oyun, film, dizi, anime ve müzikte aynı anda ara (Google gibi tek kutu); her türden ilk 12
-  if (type === "all") {
-    const kinds: EntryType[] = t ? ["game", "movie", "show", "anime", "music"] : ["game", "movie", "show", "anime"];
-    const all = await Promise.all(kinds.map((k) => findExternal(text, k, from, to, sort).then((r) => r.slice(0, 12))));
-    return all.flat();
-  }
-  try {
+  {
     if (type === "game") {
-      const ordering = { rating: "-rating", newest: "-released", oldest: "released", title: "name" }[sort as string] || "-added";
-      const p: Record<string, string | number> = { page_size: 18, ordering };
-      if (t) p.search = t;
+      // Yazı varken sıralamayı RAWG'ye bırak: "en çok eklenen"e zorlamak alakasız oyunları öne çıkarıyordu
+      const ordering = { rating: "-rating", newest: "-released", oldest: "released", title: "name" }[sort as string] || (t ? "" : "-added");
+      const p: Record<string, string | number> = { page_size: 18, ...(ordering && { ordering }) };
+      if (t) { p.search = t; p.search_precise = "true"; }
       if (lo) p.dates = `${lo}-01-01,${hi}-12-31`;
       if (!t && sort === "oldest" && !lo) p.dates = "1970-01-01,2100-12-31";
       const data = await rawg<{ results?: RawgGame[] }>("games", p);
@@ -257,6 +279,6 @@ async function findExternal(text: string, type: EntryType | "all", from: string,
       }));
     }
     if (type === "music" && t) return (await searchMusic(t)).filter((m) => inRange(m.year));
-  } catch { /* dış kaynak çalışmazsa sadece Ancalog sonuçları görünür */ }
+  }
   return [];
 }

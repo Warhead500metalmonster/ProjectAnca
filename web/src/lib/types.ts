@@ -40,6 +40,7 @@ export interface HomeLayout {
   events?: boolean; // false: katıldığı etkinlikler profilde görünmez
   bannerCrop?: AvatarCrop; // kapak görselinin kadrajı
   bgCrop?: AvatarCrop;     // arka plan resminin kadrajı
+  song?: { start?: number; end?: number; loop?: boolean }; // profil şarkısı: kaçıncı saniyede başlasın, nerede bitsin, dönsün mü
 }
 
 // x, y: odak noktası (yüzde), z: yakınlaştırma (1 = hiç)
@@ -125,6 +126,7 @@ export interface Comment {
   entry_id: string;
   user_id: string;
   body: string;
+  reply_to?: string | null;
   created_at: string;
   profiles?: Partial<Profile> | null;
 }
@@ -134,6 +136,7 @@ export interface Message {
   sender_id: string;
   receiver_id: string;
   body: string;
+  reply_to?: string | null;
   created_at: string;
   read_at: string | null;
 }
@@ -211,6 +214,7 @@ export interface ForumPost {
   thread_id: string;
   user_id: string;
   body: string;
+  reply_to?: string | null;
   created_at: string;
   profiles?: Partial<Profile> | null;
 }

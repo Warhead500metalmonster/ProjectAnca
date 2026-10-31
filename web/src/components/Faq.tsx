@@ -12,6 +12,8 @@ const QA: [string, React.ReactNode][] = [
   ["Bir kaydı nasıl değiştiririm ya da silerim?", <>Kaydın kapağına bas, açılan pencerede <b>Düzenle</b>&apos;ye bas. Silme düğmesi de oradadır.</>],
   ["Keşfet nedir?", <>Her oyunu, filmi, diziyi, animeyi ve albümü tek kutudan aradığın yer. <Link className="grad" href="/search">Keşfet</Link>&apos;te adını yaz, sonuçlar türlerine göre gelsin; birine tıkla, sayfasını gör, kütüphanene ekle.</>],
   ["Etkinlikler nedir?", <>Aynı oyunu, filmi ya da diziyi hep birlikte oynayıp izlediğimiz dönemler. <Link className="grad" href="/events">Etkinlikler</Link>&apos;den birine gir, sürümünü seçip katıl, herkes kendi hızında ilerlesin. Bitirene özel rozet var; acele yok.</>],
+  ["Sıralamalar nerede?", <><Link className="grad" href="/top">Sıralamalar</Link> sayfasında kimin en çok bitirdiğini, kimlerin en uyumlu olduğunu ve en sevilen içerikleri görürsün. Topluluk sayfasından ulaşırsın. Sadece profili herkese açık olanlar listelenir.</>],
+  ["Sohbette fotoğraf nasıl atılır, nasıl yanıtlanır?", <>Mesajlarda, forumda, yorumlarda ve etkinlik sohbetinde <b>Fotoğraf</b>&apos;a basıp resmin linkini yapıştır (Imgur, Discord, .jpg, .png…). Birine cevap vermek için mesajının altındaki <b>Yanıtla</b>&apos;ya bas.</>],
   ["Favorilerimi nasıl sıralarım?", <>Profilinde Favoriler&apos;in yanındaki <b>Sırala</b>&apos;ya bas, kapakları sürükle (telefonda oklarla taşı), <b>Sırayı kaydet</b>&apos;e bas.</>],
   ["Arkadaşlarımla nasıl mesajlaşırım?", <>Birbirinizi takip edince <b>Sosyal → Mesajlar</b>&apos;da görünür.</>],
   ["Forum nedir?", <><b>Sosyal → Forum</b>&apos;da herkes konu açıp oyun, film, dizi konuşabilir. Bir oyunun sayfasındaki <b>Forumda tartış</b> düğmesi o oyunun konularına götürür.</>],

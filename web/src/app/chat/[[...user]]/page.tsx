@@ -9,6 +9,7 @@ import { q, sb, NO_PERMISSION } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
 import { Avatar, Name } from "@/components/ui";
 import { SocialTabs } from "@/components/SocialTabs";
+import { ChatBody, DraftPhotos, PhotoAdd, ReplyQuote, ReplyingTo, excerptOf, withPhoto, type ReplyTarget } from "@/components/ChatBody";
 
 // Karşılıklı takipleşen arkadaşlar mesajlaşabilir; site sahibine ise herkes yazabilir (soru, sorun, şikayet için)
 // ve site sahibi herkese cevap verebilir. Veritabanı da bunu zorunlu tutar.
@@ -20,6 +21,7 @@ export default function ChatPage() {
   const [msgs, setMsgs] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [reply, setReply] = useState<ReplyTarget | null>(null);
   const box = useRef<HTMLDivElement>(null);
   const friendIds = [...following].filter((id) => followers.has(id));
   const ownerIds = [...badges].filter(([, b]) => b.includes("owner")).map(([id]) => id);
@@ -74,9 +76,10 @@ export default function ChatPage() {
     if (!body || !friend) return;
     setSending(true);
     try {
-      const m = await q<Message>(sb().from("messages").insert({ receiver_id: friend.id, body }).select().single());
+      const m = await q<Message>(sb().from("messages").insert({ receiver_id: friend.id, body, ...(reply && { reply_to: reply.id }) }).select().single());
       setMsgs((list) => [m, ...list]);
       setText("");
+      setReply(null);
     } catch (err) {
       toast((err as Error).message === NO_PERMISSION
         ? "Sadece karşılıklı takipleştiğin arkadaşlarına (ve site sahibine) yazabilirsin." : "Gönderilemedi: " + (err as Error).message);
@@ -103,7 +106,7 @@ export default function ChatPage() {
               <Avatar p={f} />
               <div className="grow">
                 <b><Name p={f} />{isSiteOwner(f.id) && <em className="owner-tag">Kurucu</em>}</b>
-                <span>{m ? `${m.sender_id === me.id ? "Sen: " : ""}${m.body}` : isSiteOwner(f.id) ? "Soru, sorun ya da şikayetin için yaz" : "Henüz mesaj yok"}</span>
+                <span>{m ? `${m.sender_id === me.id ? "Sen: " : ""}${excerptOf(m.body)}` : isSiteOwner(f.id) ? "Soru, sorun ya da şikayetin için yaz" : "Henüz mesaj yok"}</span>
               </div>
               {n > 0 && <span className="unread">{n}</span>}
             </Link>
@@ -124,7 +127,7 @@ export default function ChatPage() {
               <span style={{ flex: 1 }} />
               <button className="report-link" onClick={() => report({ kind: "message", id: friend.id, user: friend.id,
                 excerpt: convo.filter((m) => m.sender_id === friend.id).slice(-5).map((m) => m.body).join(" / ") || null,
-                label: `@${friend.username} ile mesajlaşma (son mesajları rapora eklenir)` })}>Raporla</button>
+                label: `@${friend.username} ile mesajlaşman. Haksız karar verilmesin diye sohbetinizin tamamı yönetime görünür.` })}>Raporla</button>
               <button className="report-link" onClick={() => toggleBlock(friend)}>{blocked.has(friend.id) ? "Engeli kaldır" : "Engelle"}</button>
             </header>
             <div className="msgs" ref={box}>
@@ -132,17 +135,26 @@ export default function ChatPage() {
                 const mine = m.sender_id === me.id;
                 const showTime = i === convo.length - 1 || new Date(convo[i + 1].created_at).getTime() - new Date(m.created_at).getTime() > 600000;
                 return (
-                  <div key={m.id} className={`bubble ${mine ? "me" : ""}`}>
-                    <p>{m.body}</p>
-                    {showTime && <small>{timeAgo(m.created_at)}{mine && m.read_at ? " · görüldü" : ""}</small>}
+                  <div key={m.id} id={`msg-${m.id}`} className={`bubble ${mine ? "me" : ""}`}>
+                    {m.reply_to && (() => { const pm = convo.find((x) => x.id === m.reply_to); return <ReplyQuote parent={pm && { id: pm.id, body: pm.body }} name={pm && (pm.sender_id === me.id ? "Sen" : friend.display_name || friend.username)} />; })()}
+                    <div className="bubble-body"><ChatBody text={m.body} /></div>
+                    <div className="bubble-foot">
+                      {showTime && <small>{timeAgo(m.created_at)}{mine && m.read_at ? " · görüldü" : ""}</small>}
+                      <button type="button" className="link reply-btn" onClick={() => { setReply({ id: m.id, name: mine ? "Kendi mesajın" : friend.display_name || friend.username, body: m.body }); document.getElementById("chat-input")?.focus(); }}>Yanıtla</button>
+                    </div>
                   </div>
                 );
               }) : <p className="muted center">{isSiteOwner(friend.id) ? "Siteyle ilgili sorunu, sorunu ya da önerini yaz; en kısa sürede cevap verilir." : "İlk mesajı sen yaz"}</p>}
             </div>
-            <form className="chat-form" onSubmit={send}>
-              <input value={text} maxLength={2000} autoFocus placeholder="Mesaj yaz…" onChange={(e) => setText(e.target.value)} />
-              <button className="btn primary" disabled={sending || !text.trim()}>Gönder</button>
-            </form>
+            <div className="chat-compose">
+              {reply && <ReplyingTo reply={reply} onCancel={() => setReply(null)} />}
+              <DraftPhotos text={text} />
+              <form className="chat-form" onSubmit={send}>
+                <PhotoAdd onAdd={(url) => setText((t) => withPhoto(t, url))} />
+                <input id="chat-input" value={text} maxLength={2000} autoFocus placeholder="Mesaj yaz…" onChange={(e) => setText(e.target.value)} />
+                <button className="btn primary" disabled={sending || !text.trim()}>Gönder</button>
+              </form>
+            </div>
           </>
         ) : username && friends ? (
           <div className="empty">@{username} ile karşılıklı takipleşmiyorsunuz. Arkadaşlarınla ve site sahibiyle mesajlaşabilirsin.</div>

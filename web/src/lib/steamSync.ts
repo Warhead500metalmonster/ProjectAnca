@@ -3,7 +3,7 @@
 // Kütüphaneden silinen oyunlar geri gelmez: sadece son senkrondan sonra oynanmış yeni oyunlar eklenir.
 import type { Entry, RawgGame } from "./types";
 import { norm, smallImage } from "./format";
-import { rawg } from "./rawg";
+import { rawg, bestGame } from "./rawg";
 import { q, sb } from "./supabase";
 
 export interface SteamGame { appid: number; name: string; minutes: number; last: number }
@@ -68,8 +68,8 @@ export async function steamAutoSync(uid: string, mine: Entry[]): Promise<{ timed
   const fresh = since ? games.filter((g) => g.minutes > 0 && g.last * 1000 > since && !haveExt.has(`steam:${g.appid}`) && !haveTitle.has(norm(g.name))).slice(0, 20) : [];
   const added: string[] = [];
   for (const g of fresh) {
-    const found = (await rawg<{ results?: RawgGame[] }>("games", { search: g.name, search_precise: "true", page_size: 3 }).catch(() => ({ results: [] }))).results || [];
-    const hit = found.find((x) => norm(x.name) === norm(g.name));
+    const found = (await rawg<{ results?: RawgGame[] }>("games", { search: g.name, search_precise: "true", page_size: 5 }).catch(() => ({ results: [] }))).results || [];
+    const hit = bestGame(found, g.name) ?? undefined;
     if (hit && haveRawg.has(hit.id)) continue;
     const { error } = await sb().from("entries").insert({ ...steamRow(g, hit), user_id: uid });
     if (!error) added.push(hit?.name || g.name);

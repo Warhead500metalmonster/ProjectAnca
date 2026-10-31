@@ -37,7 +37,8 @@ export default function Privacy() {
         <li><b>Mesajların ve forum yazıların:</b> karşılıklı takipleştiğin kişilerle ve kurucuyla yazışmaların, forumda açtığın konular ve yazdığın cevaplar.</li>
         <li><b>Gizlilik ve güvenlik tercihlerin:</b> profil gizlilik seçimin (herkese açık / sadece arkadaşlar / gizli), profilde gizlediğin türler ve engellediğin kişilerin listesi.</li>
         <li><b>Raporlar:</b> bir şeyi raporladığında; raporlayan olarak hesabın, raporlanan içeriğin türü ve kimliği, sahibinin hesabı, seçtiğin sebep, isteğe bağlı notun ve
-          raporlanan yazının o anki hali (yazı sonradan silinse de yönetim inceleyebilsin diye). Bir mesajlaşmayı raporlarsan karşı tarafın son birkaç mesajı rapora eklenir.</li>
+          raporlanan yazının o anki hali (yazı sonradan silinse de yönetim inceleyebilsin diye). Bir mesajlaşmayı raporlarsan, haksız karar verilmesin diye yöneticiler o iki kişi arasındaki sohbetin tamamını görebilir.</li>
+        <li><b>Son görülme zamanın:</b> yalnızca sitedeki çevrimiçi ve aktif üye sayısını hesaplamak için tutulur, kimseye gösterilmez; hesabını silince silinir.</li>
         <li><b>Yönetim kayıtları:</b> sana gönderilen uyarılar ve okuyup okumadığın, susturma süresi, yönetimin verdiği rozetler.</li>
         <li><b>İçe aktarma:</b> yalnızca senin başlattığın aktarımda ve yalnızca kütüphanene eklenecek bilgiler (içerik adı, durum, puan, süre, tarih, not, platform) alınır.
           <ul>
@@ -78,7 +79,7 @@ export default function Privacy() {
         <li><b>Yetkili makamlar:</b> mahkemeler, savcılıklar, kolluk ve diğer yetkili kamu kurum ve kuruluşları kanuna uygun olarak talep ederse; hesap bilgilerin, paylaştığın içerikler,
           mesaj kayıtların ve altyapı sağlayıcılarının tuttuğu teknik kayıtlar (giriş zamanları, IP adresleri gibi) bu makamlarla paylaşılır (KVKK m.8/2 ve m.28).</li>
         <li><b>Yöneticiler:</b> kurucu ve atadığı yöneticiler. Raporları ve raporlara eklenen yazıları görür, herkese açık içerikleri düzenleyebilir ya da kaldırabilir, uyarı gönderebilir;
-          e-posta adresini ve şifreni göremez, raporlanmamış mesajlarını okumaz.</li>
+          e-posta adresini ve şifreni göremez, raporlanmamış mesajlarını okumaz. Raporlanan bir sohbetin tamamını yalnızca o raporu incelemek için görür.</li>
       </ul>
 
       <h2>4. Güvenlik</h2>

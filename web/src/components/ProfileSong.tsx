@@ -36,10 +36,11 @@ const GESTURES = ["pointerdown", "keydown", "touchstart"] as const;
 const LEVEL_KEY = "ancalog.songVolume";
 const savedLevel = () => { try { const v = localStorage.getItem(LEVEL_KEY); return v === null ? null : Number(v); } catch { return null; } };
 
-export function ProfileSong({ url, title, volume }: { url: string; title?: string | null; volume?: number | null }) {
+// start/end: sahibinin seçtiği kısım (saniye); loop: bitince o kısmın başına dönsün mü
+export function ProfileSong({ url, title, volume, start = 0, end, loop = true }: { url: string; title?: string | null; volume?: number | null; start?: number; end?: number; loop?: boolean }) {
   const host = useRef<HTMLDivElement>(null);
   const player = useRef<any>(null);
-  const [state, setState] = useState<"loading" | "ready" | "playing" | "error">("loading");
+  const [state, setState] = useState<"loading" | "ready" | "playing" | "ended" | "error">("loading");
   // Telefon: iPhone ve çoğu telefon görünmeyen videoyu çalmaz, sesi de sayfadaki dokunuşla açtırmaz.
   // Orada şarkının küçük kapağı düğmenin ta kendisi olur: dokununca YouTube'un kendisi sesli çalar.
   const [touch] = useState(() => typeof window !== "undefined" && matchMedia("(hover: none)").matches);
@@ -69,9 +70,7 @@ export function ProfileSong({ url, title, volume }: { url: string; title?: strin
       player.current = new YT.Player(target, {
         videoId: id, width: 200, height: 200, host: "https://www.youtube-nocookie.com",
         // Sessiz otomatik oynatmaya her tarayıcı izin verir
-        playerVars: touch
-          ? { autoplay: 0, mute: 0, loop: 1, playlist: id, controls: 0, disablekb: 1, playsinline: 1, rel: 0 }
-          : { autoplay: 1, mute: 1, loop: 1, playlist: id, controls: 0, disablekb: 1, playsinline: 1, rel: 0 },
+        playerVars: { ...(touch ? { autoplay: 0, mute: 0 } : { autoplay: 1, mute: 1 }), start, ...(end && { end }), controls: 0, disablekb: 1, playsinline: 1, rel: 0 },
         events: {
           onReady: () => {
             ready = true;
@@ -80,11 +79,15 @@ export function ProfileSong({ url, title, volume }: { url: string; title?: strin
             player.current.playVideo();
             if (navigator.userActivation?.hasBeenActive) onGesture(); // siteden tıklayıp geldiyse ses hemen açık
           },
-          // Hep çalsın: herhangi bir sebeple durursa yeniden başlat
+          // Çalmaya devam etsin: herhangi bir sebeple durursa yeniden başlat; bitince sahibinin seçimine göre
           onStateChange: (e: any) => {
             if (dead) return;
             if (e.data === 1) setState("playing");
-            else if (e.data === 0) { player.current.seekTo(0, true); player.current.playVideo(); } // bitince başa sar, döngüde çalsın
+            else if (e.data === 0) {
+              if (!loop) return setState("ended");
+              if (end) player.current.loadVideoById({ videoId: id, startSeconds: start, endSeconds: end }); // seçilen kısmın başına
+              else { player.current.seekTo(start, true); player.current.playVideo(); }
+            }
             else if (e.data === 2 || e.data === 5) player.current.playVideo();
           },
           onError: () => { if (!dead) setState("error"); },
@@ -98,7 +101,7 @@ export function ProfileSong({ url, title, volume }: { url: string; title?: strin
       player.current = null;
       target.remove();
     };
-  }, [id, touch]);
+  }, [id, touch, start, end, loop]);
 
   function changeLevel(v: number) {
     setLevel(v);

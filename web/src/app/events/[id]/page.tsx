@@ -11,6 +11,7 @@ import { q, sb } from "@/lib/supabase";
 import type { ProfileLite } from "@/lib/types";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
+import { ChatBody, DraftPhotos, PhotoAdd, ReplyQuote, ReplyingTo, withPhoto, type ReplyTarget } from "@/components/ChatBody";
 import { Avatar, Name, RichText } from "@/components/ui";
 import { EventForm } from "@/components/EventForm";
 import { friendsLine } from "@/components/EventBanner";
@@ -339,38 +340,13 @@ function People({ ev, members }: { ev: AncEvent; members: EventMember[] }) {
 }
 
 // Etkinlik sohbeti: herkes okur, giriş yapan yazar. Spoiler işaretli mesajlar dokununca açılır.
-// Yazıdaki resim linklerini ayır: doğrudan resim dosyaları, Imgur ve Discord linkleri
-const IMG_URL = /https:\/\/[^\s<>"]+?(?:\.(?:jpe?g|png|gif|webp|avif)(?:\?[^\s<>"]*)?|(?=\s|$))/gi;
-function imagesIn(body: string): { text: string; images: string[] } {
-  const images: string[] = [];
-  const text = body.replace(IMG_URL, (url) => {
-    let u = url;
-    const imgur = u.match(/^https:\/\/(?:www\.)?imgur\.com\/([A-Za-z0-9]{5,10})$/); // sayfa linki → resmin kendisi
-    if (imgur) u = `https://i.imgur.com/${imgur[1]}.jpeg`;
-    const isImg = /\.(jpe?g|png|gif|webp|avif)(\?|$)/i.test(u) || /^https:\/\/(i\.imgur\.com|media\.discordapp\.net|cdn\.discordapp\.com)\//i.test(u);
-    if (!isImg) return url;
-    images.push(u);
-    return "";
-  }).trim();
-  return { text, images };
-}
-
-// Fotoğraf açılmazsa boş kutu yerine linki göster
-function PostImage({ src }: { src: string }) {
-  const [failed, setFailed] = useState(false);
-  return failed
-    ? <a href={src} target="_blank" rel="noopener noreferrer nofollow" className="ev-img-broken">Fotoğraf açılamadı: {src}</a>
-    : <a href={src} target="_blank" rel="noopener noreferrer nofollow" className="ev-post-img"><img src={src} alt="" loading="lazy" onError={() => setFailed(true)} /></a>;
-}
-
-interface EventPost { id: string; event_id: string; user_id: string; body: string; spoiler: boolean; image?: string | null; created_at: string; profiles?: ProfileLite | null }
+interface EventPost { id: string; event_id: string; user_id: string; body: string; spoiler: boolean; image?: string | null; reply_to?: string | null; created_at: string; profiles?: ProfileLite | null }
 
 function EventChat({ ev, joined, closed }: { ev: AncEvent; joined: boolean; closed: boolean }) {
   const { me, isAdmin, blocked, toast, report } = useApp();
   const [text, setText] = useState("");
   const [spoiler, setSpoiler] = useState(false);
-  const [image, setImage] = useState(""); // fotoğraf linki (isteğe bağlı)
-  const [photo, setPhoto] = useState(false); // fotoğraf kutusu açık mı
+  const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null);
   const [busy, setBusy] = useState(false);
   const [shown, setShown] = useState<Set<string>>(new Set()); // açılan spoilerlar
   const [v, setV] = useState(0);
@@ -380,16 +356,13 @@ function EventChat({ ev, joined, closed }: { ev: AncEvent; joined: boolean; clos
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
-    if (!me || (!text.trim() && !image.trim())) return;
-    const img = image.trim();
-    if (img && !/^https:\/\/\S+$/i.test(img)) return toast("Fotoğraf linki https:// ile başlamalı.");
+    if (!me || !text.trim()) return;
     setBusy(true);
     try {
-      await q(sb().from("event_posts").insert({ event_id: ev.id, user_id: me.id, body: text.trim().slice(0, 1000) || "📷", spoiler, ...(img && { image: img }) }));
+      await q(sb().from("event_posts").insert({ event_id: ev.id, user_id: me.id, body: text.trim().slice(0, 1000), spoiler, ...(replyTo && { reply_to: replyTo.id }) }));
       setText("");
       setSpoiler(false);
-      setImage("");
-      setPhoto(false);
+      setReplyTo(null);
       setV((n) => n + 1);
     } catch (err) {
       toast("Gönderilemedi: " + (err as Error).message);
@@ -409,19 +382,15 @@ function EventChat({ ev, joined, closed }: { ev: AncEvent; joined: boolean; clos
       <div className="section-head"><h2>Etkinlik sohbeti</h2>{posts.length > 0 && <span className="muted small">{posts.length} mesaj</span>}</div>
       {closed ? <p className="ev-closed">Etkinlik bittiği için sohbet kapandı. Yazılanlar arşivde duruyor.</p> : me ? (
         <form className="ev-chat-form" onSubmit={send}>
-          <textarea className="input" rows={2} maxLength={1000} value={text} onChange={(e) => setText(e.target.value)}
+          {replyTo && <ReplyingTo reply={replyTo} onCancel={() => setReplyTo(null)} />}
+          <textarea id="event-input" className="input" rows={2} maxLength={1000} value={text} onChange={(e) => setText(e.target.value)}
             placeholder={joined ? "Nasıl gidiyor? Takıldığın yer, sevdiğin an, ipucu isteği…" : "Etkinlik hakkında bir şey yaz…"} />
-          {photo && (
-            <div className="ev-photo-in">
-              <input className="input" type="url" placeholder="Fotoğraf linki (https://… .jpg, .png, .gif, Imgur, Discord…)" value={image} onChange={(e) => setImage(e.target.value)} />
-              {/^https:\/\/\S+$/i.test(image.trim()) && <img src={image.trim()} alt="Önizleme" onError={(e) => (e.currentTarget.style.display = "none")} onLoad={(e) => (e.currentTarget.style.display = "")} />}
-            </div>
-          )}
+          <DraftPhotos text={text} />
           <div className="ev-chat-tools">
-            <button type="button" className={`btn ${photo ? "on" : ""}`} onClick={() => { setPhoto(!photo); if (photo) setImage(""); }}>📷 Fotoğraf</button>
+            <PhotoAdd onAdd={(url) => setText((t) => withPhoto(t, url))} />
             <label className="check"><input type="checkbox" checked={spoiler} onChange={(e) => setSpoiler(e.target.checked)} /> Spoiler içeriyor (gizli gösterilsin)</label>
             <span className="spacer" />
-            <button className="btn primary" disabled={busy || (!text.trim() && !image.trim())}>Gönder</button>
+            <button className="btn primary" disabled={busy || !text.trim()}>Gönder</button>
           </div>
         </form>
       ) : <p className="muted small">Yazmak için <Link href="/login">giriş yap</Link>.</p>}
@@ -430,7 +399,7 @@ function EventChat({ ev, joined, closed }: { ev: AncEvent; joined: boolean; clos
           {posts.map((x) => {
             const hidden = x.spoiler && !shown.has(x.id) && x.user_id !== me?.id;
             return (
-              <div key={x.id} className="ev-post">
+              <div key={x.id} id={`msg-${x.id}`} className="ev-post">
                 <Link href={`/u/${x.profiles?.username}`}><Avatar p={x.profiles} /></Link>
                 <div className="ev-post-main">
                   <div className="ev-post-head">
@@ -445,15 +414,13 @@ function EventChat({ ev, joined, closed }: { ev: AncEvent; joined: boolean; clos
                   </div>
                   {hidden
                     ? <button className="ev-spoiler" onClick={() => setShown((s) => new Set(s).add(x.id))}>Spoiler içeriyor. Görmek için dokun.</button>
-                    : (() => {
-                      // Mesaja yapıştırılan resim linkleri de fotoğraf olarak görünür (düğmeyi kullanmayanlar için)
-                      const { text: rest, images } = imagesIn(x.body);
-                      const all = [...new Set([...(x.image && safeUrl(x.image) ? [x.image] : []), ...images])];
-                      return <>
-                        {rest && rest !== "📷" && <div className="ev-post-body"><RichText text={rest} /></div>}
-                        {all.map((src) => <PostImage key={src} src={src} />)}
-                      </>;
-                    })()}
+                    : (
+                      <>
+                        {x.reply_to && (() => { const px = posts.find((y) => y.id === x.reply_to); return <ReplyQuote parent={px && { id: px.id, user_id: px.user_id, body: px.body, image: px.image, spoiler: px.spoiler }} name={px?.profiles?.display_name || px?.profiles?.username} />; })()}
+                        <ChatBody text={x.body} image={x.image} />
+                      </>
+                    )}
+                  {me && !closed && <button className="link reply-btn" onClick={() => { setReplyTo({ id: x.id, name: x.profiles?.display_name || x.profiles?.username || "Bu kişi", body: x.spoiler ? "Spoiler" : x.body, image: x.image }); document.getElementById("event-input")?.focus(); }}>Yanıtla</button>}
                 </div>
               </div>
             );

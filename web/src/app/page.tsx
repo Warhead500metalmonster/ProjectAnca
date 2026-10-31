@@ -18,6 +18,7 @@ import { GettingStarted } from "@/components/GettingStarted";
 import { ImportPromo } from "@/components/ImportPromo";
 import { HomeInfo } from "@/components/Faq";
 import { Gta6Countdown } from "@/components/Gta6Countdown";
+import { SiteStats } from "@/components/SiteStats";
 import { Announcements } from "@/components/Announcements";
 import { FriendPicks } from "@/components/FriendPicks";
 import { EventBanner } from "@/components/EventBanner";
@@ -65,7 +66,7 @@ function Landing({ version }: { version: number }) {
       </section>
 
       <EventBanner />
-      <ImportPromo signedIn={false} />
+      <ImportPromo signedIn={false} compact />
 
       <div className="bento">
         <div className="tile big">
@@ -104,6 +105,7 @@ function Landing({ version }: { version: number }) {
         <div className="section-head"><h2>Toplulukta son hareketler</h2><Link href="/community">Tümü →</Link></div>
         {data ? <Feed list={data.slice(3, 13)} /> : <div className="loading">Yükleniyor…</div>}
       </section>
+      <SiteStats />
       <HomeInfo signedIn={false} />
     </>
   );
@@ -215,11 +217,15 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
       )}
       <UpcomingStrip userId={user.id} mine={mine} />
       <FriendPicks following={followingIds} mine={mine} />
-      <section className="section home-stats"><div className="stats"><Stats list={mine} /></div></section>
-      <section className="section home-goals">
-        <Goals profile={user} entries={mine} isMe />
-        <NextBadges userId={user.id} username={user.username} entries={mine} />
-      </section>
+      {/* Sade yüzey: sayılar, hedef ve rozetler isteyene bir dokunuş uzakta */}
+      <details className="section home-more">
+        <summary>İstatistiklerim, hedefim ve rozetlerim</summary>
+        <section className="section home-stats"><div className="stats"><Stats list={mine} /></div></section>
+        <section className="section home-goals">
+          <Goals profile={user} entries={mine} isMe />
+          <NextBadges userId={user.id} username={user.username} entries={mine} />
+        </section>
+      </details>
       {mine.length > 0 && (
         <section className="section">
           <div className="section-head"><h2>Son loglarım</h2><Link href={`/u/${user.username}`}>Hepsi →</Link></div>
@@ -243,6 +249,7 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
           } />
         ) : <Feed list={community} />}
       </section>
+      <SiteStats />
       <HomeInfo signedIn />
     </>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { ChatBody, DraftPhotos, PhotoAdd, ReplyQuote, ReplyingTo, withPhoto, type ReplyTarget } from "@/components/ChatBody";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { Comment, Entry } from "@/lib/types";
@@ -15,6 +16,7 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
   const ref = useRef<HTMLDialogElement>(null);
   const [likers, setLikers] = useState<string[] | null>(null);
   const [comments, setComments] = useState<Comment[] | null>(null);
+  const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [fav, setFav] = useState(!!e.favorite);
@@ -81,9 +83,10 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
     if (!body || !me) return;
     setBusy(true);
     try {
-      const c = await q<Comment>(sb().from("comments").insert({ entry_id: e.id, body }).select(`*, profiles(${PROFILE_COLS})`).single());
+      const c = await q<Comment>(sb().from("comments").insert({ entry_id: e.id, body, ...(replyTo && { reply_to: replyTo.id }) }).select(`*, profiles(${PROFILE_COLS})`).single());
       setComments((list) => [...(list || []), c]);
       setText("");
+      setReplyTo(null);
       refresh();
     } catch (err) {
       toast("Yorum gönderilemedi: " + (err as Error).message);
@@ -170,7 +173,7 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
           </div>
           <div className="comments">
             {comments?.filter((c) => !blocked.has(c.user_id)).map((c) => (
-              <div className="comment" key={c.id}>
+              <div className="comment" key={c.id} id={`msg-${c.id}`}>
                 <Link href={`/u/${c.profiles?.username}`} onClick={close}><Avatar p={c.profiles} cls="sm" /></Link>
                 <div>
                   <div className="comment-head">
@@ -182,15 +185,22 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
                         label: `@${c.profiles?.username} kullanıcısının "${e.title}" kaydına yorumu` }); }}>Raporla</button>
                     )}
                   </div>
-                  <p><RichText text={c.body} /></p>
+                  {c.reply_to && (() => { const pc = comments.find((x) => x.id === c.reply_to); return <ReplyQuote parent={pc && { id: pc.id, user_id: pc.user_id, body: pc.body }} name={pc?.profiles?.display_name || pc?.profiles?.username} />; })()}
+                  <ChatBody text={c.body} />
+                  {me && <button type="button" className="link reply-btn" onClick={() => { setReplyTo({ id: c.id, name: c.profiles?.display_name || c.profiles?.username || "Bu kişi", body: c.body }); document.getElementById("comment-input")?.focus(); }}>Yanıtla</button>}
                 </div>
               </div>
             ))}
             {me ? (
-              <form className="comment-form" onSubmit={sendComment}>
-                <input value={text} maxLength={1000} placeholder="Yorum yaz… (spoiler için ||böyle|| yaz)" onChange={(ev) => setText(ev.target.value)} />
-                <button className="btn primary" disabled={busy || !text.trim()}>Gönder</button>
-              </form>
+              <div className="comment-compose">
+                {replyTo && <ReplyingTo reply={replyTo} onCancel={() => setReplyTo(null)} />}
+                <DraftPhotos text={text} />
+                <form className="comment-form" onSubmit={sendComment}>
+                  <PhotoAdd onAdd={(url) => setText((x) => withPhoto(x, url))} />
+                  <input id="comment-input" value={text} maxLength={1000} placeholder="Yorum yaz… (spoiler için ||böyle|| yaz)" onChange={(ev) => setText(ev.target.value)} />
+                  <button className="btn primary" disabled={busy || !text.trim()}>Gönder</button>
+                </form>
+              </div>
             ) : <p className="muted" style={{ margin: 0 }}><Link href="/login" onClick={close} className="grad">Giriş yap</Link>, yorum yaz.</p>}
           </div>
 

@@ -5,6 +5,15 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-10-31T20:18:00+04:00",
+    title: "Büyük güncelleme",
+    body: "Sohbetlerde Yanıtla ve Fotoğraf: mesajlarda, forumda, yorumlarda ve etkinlik sohbetinde birine yanıt verebilir, resim linki atabilirsin.\n"
+      + "Yeni Sıralamalar sayfası: en çok bitirenler, en çok kayıt girenler, en çok süre harcayanlar, uyum ve en sevilenler. Topluluk sayfasından ulaşırsın; ilk bakışta site daha sade.\n"
+      + "Profil şarkının istediğin yerinden başlamasını, bitmesini ve döngüye girmesini Ayarlar → Görünüm'den seçebilirsin.\n"
+      + "Arama daha doğru sonuç veriyor. God of War artık yanlışlıkla 2023 tarihli kayda eşleşmiyor.\n"
+      + "Ana sayfanın altında Ancalog'un canlı sayıları var. Bir sohbeti raporlarsan yönetim sohbetin tamamını görür, böylece haksız karar verilmez.",
+  },
+  {
     date: "2026-10-30T23:01:00+04:00",
     title: "Şifremi unuttum, daha rahat telefon",
     body: "Şifreni unutursan artık hesabın kilitli kalmıyor: giriş sayfasındaki \"Şifremi unuttum\" ile e-postana yenileme linki gelir. Şifreni Ayarlar → Hesap'tan da değiştirebilirsin, yazarken \"Göster\"e basıp görebilirsin.\n"

@@ -9,6 +9,7 @@ import { contentHref, likeEsc, safeUrl, timeAgo, today } from "@/lib/format";
 import { countOf, q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
+import { ChatBody } from "@/components/ChatBody";
 import { Avatar, Name, UserRow } from "@/components/ui";
 import { NOTICE_TONES, type Notice, fetchNotice } from "@/components/Announcement";
 import { EventForm } from "@/components/EventForm";
@@ -687,6 +688,67 @@ interface Report {
 }
 const KIND_NAMES: Record<string, string> = { profile: "Profil", entry: "Kayıt / inceleme", comment: "Yorum", list: "Liste", forum_thread: "Forum konusu", forum_post: "Forum cevabı", message: "Mesaj", event_post: "Etkinlik mesajı" };
 
+const CONTEXT_LABEL: Record<string, string> = { message: "Sohbetin tamamını gör", event_post: "Etkinlik sohbetinin tamamını gör", forum_post: "Konunun tamamını gör", comment: "Bütün yorumları gör" };
+interface ContextLine { id: string; who: string; hit: boolean; body: string; at: string }
+
+// Haksız karar verilmesin: raporlanan yazının bağlamı; kim ne dedi, öncesi sonrası. Raporlanan kişinin yazıları ya da yazının kendisi vurgulu
+function ReportContext({ r }: { r: Report }) {
+  const [lines, setLines] = useState<ContextLine[] | null>(null);
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function show() {
+    if (open) return setOpen(false);
+    setOpen(true);
+    if (lines) return;
+    setBusy(true);
+    setError("");
+    try {
+      type Row = { id: string; user_id: string; body: string; created_at: string; profiles?: { username?: string } | null };
+      const cols = "id, user_id, body, created_at, profiles(username)";
+      const withName = (rows: Row[], hit: string) => rows.map((x) => ({ id: x.id, who: `@${x.profiles?.username || "silinmiş"}`, hit: x.id === hit, body: x.body, at: x.created_at }));
+      if (r.kind === "message") {
+        const rows = await q<{ id: string; sender_id: string; body: string; created_at: string }[]>(sb().rpc("report_conversation", { p_report: r.id }));
+        setLines(rows.map((x) => ({ id: x.id, who: `@${(x.sender_id === r.target_user ? r.target : r.reporter)?.username || "silinmiş"}`, hit: x.sender_id === r.target_user, body: x.body, at: x.created_at })));
+      } else if (r.kind === "event_post") {
+        const [ev, post] = r.target_id.split("/");
+        setLines(withName(await q<Row[]>(sb().from("event_posts").select(cols).eq("event_id", ev).order("created_at").limit(1000)), post));
+      } else if (r.kind === "forum_post") {
+        const p = await q<{ thread_id: string } | null>(sb().from("forum_posts").select("thread_id").eq("id", r.target_id).maybeSingle());
+        setLines(p ? withName(await q<Row[]>(sb().from("forum_posts").select(cols).eq("thread_id", p.thread_id).order("created_at").limit(1000)), r.target_id) : []);
+      } else {
+        const c = await q<{ entry_id: string } | null>(sb().from("comments").select("entry_id").eq("id", r.target_id).maybeSingle());
+        setLines(c ? withName(await q<Row[]>(sb().from("comments").select(cols).eq("entry_id", c.entry_id).order("created_at").limit(1000)), r.target_id) : []);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="report-context">
+      <button className="btn" onClick={show} aria-expanded={open}>{open ? "Gizle" : CONTEXT_LABEL[r.kind]}</button>
+      {open && (busy ? <div className="loading">Yükleniyor…</div>
+        : error ? <p className="form-error">Yüklenemedi: {error}</p>
+        : !lines?.length ? <p className="muted small">Burada yazı kalmamış, silinmiş olabilir. Raporlanan yazının o anki hali yukarıda.</p>
+        : (
+          <div className="report-lines">
+            {r.kind === "message" && <p className="muted small">Bu sohbet özeldir; yalnızca bu raporu incelemek için aç, başkasıyla paylaşma. Vurgulu olanlar raporlanan kişinin yazdıkları.</p>}
+            {lines.map((l) => (
+              <div key={l.id} className={`report-line ${l.hit ? "hit" : ""}`}>
+                <div className="report-line-head"><b>{l.who}</b><span className="muted small">{new Date(l.at).toLocaleString("tr")}</span></div>
+                <ChatBody text={l.body} />
+              </div>
+            ))}
+          </div>
+        ))}
+    </div>
+  );
+}
+
 function Reports() {
   const { toast, isAdmin, badges, loadBadges } = useApp();
   const [v, setV] = useState(0);
@@ -782,6 +844,7 @@ function Reports() {
                   </div>
                   {r.excerpt && <blockquote className="report-excerpt">{r.excerpt}</blockquote>}
                   {r.note && <p className="report-note"><span className="muted small">Raporlayanın notu:</span> {r.note}</p>}
+                  {CONTEXT_LABEL[r.kind] && <ReportContext r={r} />}
                   {r.status === "open" && (
                     <div className="report-actions">
                       {link && <Link className="btn" href={link} target="_blank">Gör</Link>}

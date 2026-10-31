@@ -42,7 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <span>Veriler: <a href="https://rawg.io" target="_blank" rel="noopener">RAWG</a> · <a href="https://www.themoviedb.org" target="_blank" rel="noopener">TMDB</a> · <a href="https://anilist.co" target="_blank" rel="noopener">AniList</a> · <a href="https://music.apple.com" target="_blank" rel="noopener">Apple Music</a> · <a href="https://www.deezer.com" target="_blank" rel="noopener">Deezer</a></span>
             <span className="muted">Oyun, film, dizi, albüm ve anime adları, kapakları ve logoları sahiplerine aittir; Ancalog bu şirketlerle bağlantılı değildir.
               Bu site TMDB API&apos;sini kullanır ancak TMDB tarafından onaylanmış değildir. <Link href="/terms">Fikri mülkiyet</Link></span>
-            <span><Link href="/import">Kütüphaneni getir</Link> · <Link href="/about">Biz kimiz?</Link> · <Link href="/help">Sıkça sorulanlar</Link> · <Link href="/forum">Forum</Link> · <Link href="/chat/arno4436">Bize yaz</Link></span>
+            <span><Link href="/import">Kütüphaneni getir</Link> · <Link href="/about">Biz kimiz?</Link> · <Link href="/help">Sıkça sorulanlar</Link> · <Link href="/top">Sıralamalar</Link> · <Link href="/forum">Forum</Link> · <Link href="/chat/arno4436">Bize yaz</Link></span>
             <span><Link href="/terms">Kullanım Koşulları</Link> · <Link href="/privacy">Gizlilik ve KVKK</Link> · © 2026 Ancalog</span>
           </footer>
         </AppProvider>

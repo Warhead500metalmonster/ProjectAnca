@@ -3,11 +3,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { redirect, useParams } from "next/navigation";
 import type { Entry, PageEdit, RawgGame, RawgRef } from "@/lib/types";
 import { ENTRY_COLS, statusLabel } from "@/lib/constants";
 import { avgText, cssUrl, fmtDate, fmtDur, forumHref, num, playSec, resized, safeUrl, scoreText, smallImage } from "@/lib/format";
-import { rawg } from "@/lib/rawg";
+import { rawg, RAWG_MOVED } from "@/lib/rawg";
 import { fetchPageEdit } from "@/lib/data";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
@@ -28,6 +28,7 @@ const refLinks = (kind: string, list?: RawgRef[]) => list?.length
 
 export default function GamePage() {
   const { id } = useParams<{ id: string }>();
+  if (RAWG_MOVED[Number(id)]) redirect(`/game/${RAWG_MOVED[Number(id)]}`);
   const { me, version, openForm, pickList, scale, isAdmin, following } = useApp();
   const [more, setMore] = useState(false);
   const [shown, setShown] = useState<number | null>(null); // büyük gösterilen görsel
