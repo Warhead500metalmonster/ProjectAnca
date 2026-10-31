@@ -69,6 +69,7 @@ export default function SearchPage() {
   const [external, setExternal] = useState<(Item & { sub?: string })[] | null>(null);
   const [failed, setFailed] = useState<EntryType[]>([]); // ulaşılamayan kaynaklar: "sonuç yok" sanılmasın
   const [again, setAgain] = useState(0);
+  const [showFilters, setShowFilters] = useState(!!(params.get("from") || params.get("to") || params.get("sort")));
   const seq = useRef(0);
   const written = useRef(params.get("q") || ""); // adrese en son bizim yazdığımız arama
 
@@ -87,7 +88,7 @@ export default function SearchPage() {
       setLocal(null);
       setExternal(null);
       setFailed([]);
-      const [u, l, x] = await Promise.all([findUsers(text), findLocal(text, type, from, to), findExternal(text, type, from, to, sort)]);
+      const [u, l, x] = await Promise.all([findUsers(text), findLocal(text, type, from, to, sort), findExternal(text, type, from, to, sort)]);
       if (s !== seq.current) return;
       // Aranan ada en yakınlar önce: tam eşleşen, sonra adı öyle başlayan
       const needle = text.trim().toLocaleLowerCase("tr");
@@ -118,7 +119,10 @@ export default function SearchPage() {
             <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => setType(k)}>{icon} {label}</button>
           ))}
         </div>
-        <div className="filters">
+        <button type="button" className={`link filters-toggle ${showFilters ? "on" : ""}`} aria-expanded={showFilters} onClick={() => setShowFilters(!showFilters)}>
+          {showFilters ? "▾" : "▸"} Filtreler{from || to || sort !== "logged" ? " (açık)" : ""}
+        </button>
+        {showFilters && <div className="filters">
           <label className="inline">Çıkış yılı
             <input className="input year" inputMode="numeric" maxLength={4} placeholder="2006" value={from} onChange={(e) => setFrom(e.target.value.replace(/\D/g, ""))} />
             –
@@ -128,7 +132,7 @@ export default function SearchPage() {
             {SORTS.map(([k, l]) => <option key={k} value={k}>↕ {l}</option>)}
           </select>
           {(from || to || sort !== "logged" || type !== "all") && <button className="link" onClick={() => { setFrom(""); setTo(""); setSort("logged"); setType("all"); }}>Filtreleri temizle</button>}
-        </div>
+        </div>}
         {(!yearOk(from) || !yearOk(to)) && <p className="form-error">Yılı 4 haneli yaz (ör. 2006).</p>}
       </section>
 
@@ -202,7 +206,15 @@ async function findUsers(text: string): Promise<Profile[]> {
   return q<Profile[]>(sb().from("profiles").select("*").ilike("username", `%${term}%`).limit(8)).catch(() => []);
 }
 
-async function findLocal(text: string, type: EntryType | "all", from: string, to: string): Promise<Agg[]> {
+async function findLocal(text: string, type: EntryType | "all", from: string, to: string, sort: Sort): Promise<Agg[]> {
+  // Sunucuda say: binlerce kaydı tarayıcıya indirmeye gerek yok (027). Veritabanı güncellenmediyse aşağıdaki eski yol
+  try {
+    const rows = await q<Agg[]>(sb().rpc("search_content", {
+      p_text: text.trim() ? likeEsc(text.trim()) : null, p_type: type === "all" ? null : type,
+      p_from: /^\d{4}$/.test(from) ? Number(from) : null, p_to: /^\d{4}$/.test(to) ? Number(to) : null, p_sort: sort, p_limit: 48,
+    }));
+    return rows.map((r) => ({ ...r, n: Number(r.n), done: Number(r.done), active: Number(r.active), avg: Number(r.avg) }));
+  } catch { /* eski yol */ }
   const rows = await fetchAll<Entry>((a, b) => {
     let req = sb().from("entries").select("type, title, year, creator, cover, rawg_id, ext_id, status, rating").order("id").range(a, b);
     if (type !== "all") req = req.eq("type", type);
@@ -210,7 +222,7 @@ async function findLocal(text: string, type: EntryType | "all", from: string, to
     if (/^\d{4}$/.test(to)) req = req.lte("year", Number(to));
     if (text.trim()) req = req.ilike("title", `%${likeEsc(text.trim())}%`);
     return req;
-  }, 10000).catch(() => []);
+  }, 2000).catch(() => []);
   return aggregate(rows);
 }
 

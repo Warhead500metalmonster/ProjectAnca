@@ -160,13 +160,13 @@ function ListView({ list, base }: { list: List; base: Entry[] }) {
                   ) : it.note && <p className="li-note">{it.note}</p>}
                   <div className="li-actions">
                     {me && (e && e.user_id === me.id
-                      ? <button className="icon-btn" title="Kaydımı aç" onClick={() => openView({ ...e, profiles: me })}>Aç</button>
-                      : !e && <button className="icon-btn" title="Kütüphaneme ekle" onClick={() => openForm(null, { item: itemOf(it) })}>＋</button>)}
+                      ? <button className="icon-btn" aria-label="Kaydımı aç" title="Kaydımı aç" onClick={() => openView({ ...e, profiles: me })}>Aç</button>
+                      : !e && <button className="icon-btn" aria-label="Kütüphaneme ekle" title="Kütüphaneme ekle" onClick={() => openForm(null, { item: itemOf(it) })}>＋</button>)}
                     {isOwner && <>
-                      <button className="icon-btn" title={it.note ? "Notu düzenle" : "Not ekle"} onClick={() => setNoteFor({ id: it.id, text: it.note || "" })}>✎</button>
-                      <button className="icon-btn" title="Öne al" onClick={() => move(it, -1)} disabled={i === 0}>←</button>
-                      <button className="icon-btn" title="Geri al" onClick={() => move(it, 1)} disabled={i === items.length - 1}>→</button>
-                      <button className="icon-btn" title="Listeden çıkar" onClick={() => removeItem(it)}>✕</button>
+                      <button className="icon-btn" aria-label={it.note ? "Notu düzenle" : "Not ekle"} title={it.note ? "Notu düzenle" : "Not ekle"} onClick={() => setNoteFor({ id: it.id, text: it.note || "" })}>✎</button>
+                      <button className="icon-btn" aria-label="Öne al" title="Öne al" onClick={() => move(it, -1)} disabled={i === 0}>←</button>
+                      <button className="icon-btn" aria-label="Geri al" title="Geri al" onClick={() => move(it, 1)} disabled={i === items.length - 1}>→</button>
+                      <button className="icon-btn" aria-label="Listeden çıkar" title="Listeden çıkar" onClick={() => removeItem(it)}>✕</button>
                     </>}
                   </div>
                 </div>

@@ -64,7 +64,10 @@ export function PhotoAdd({ onAdd }: { onAdd: (url: string) => void }) {
   }
   return (
     <span className="photo-add">
-      <button type="button" className={`btn ${open ? "on" : ""}`} aria-expanded={open} onClick={() => setOpen(!open)}>Fotoğraf</button>
+      <button type="button" className={`btn ${open ? "on" : ""}`} aria-expanded={open} aria-label="Fotoğraf ekle" title="Fotoğraf ekle" onClick={() => setOpen(!open)}>
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3" /><circle cx="9" cy="10" r="2" /><path d="m4 18 5-5 3 3 3-3 5 5" /></svg>
+        <span>Fotoğraf</span>
+      </button>
       {open && (
         <span className="photo-add-in">
           <input className="input" type="url" autoFocus placeholder="Fotoğraf linkini yapıştır (https://…)" value={url} onChange={(e) => setUrl(e.target.value)}

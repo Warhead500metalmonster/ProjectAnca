@@ -2236,7 +2236,7 @@ a.badge-card.link-card:hover { transform: translateY(-2px); }
 .gta6 { position: relative; margin: 0 0 36px; border-radius: 18px; overflow: hidden; color: #fff; border: 1px solid rgba(255, 255, 255, .16); transition: box-shadow .2s, border-color .2s;
   box-shadow: 0 12px 34px rgba(224, 69, 123, .28);
   background: linear-gradient(90deg, rgba(20, 6, 40, .86), rgba(20, 6, 40, .12) 48%, rgba(20, 6, 40, .72)),
-    url("https://media.rawg.io/media/games/734/7342a1cd82c8997ec620084ae4c2e7e4.jpg") center 35% / cover no-repeat,
+    url("https://media.rawg.io/media/resize/1280/-/games/734/7342a1cd82c8997ec620084ae4c2e7e4.jpg") center 35% / cover no-repeat,
     linear-gradient(100deg, #2a0f4f 0%, #8f1f7e 38%, #e8456f 68%, #ff9a3c 100%); }
 .gta6:hover { border-color: rgba(255, 138, 180, .7); box-shadow: 0 14px 42px rgba(224, 69, 123, .45); }
 .gta6-in { position: relative; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 28px; flex-wrap: wrap; min-height: 200px; padding: 22px 26px; color: inherit; text-decoration: none; }
@@ -2255,7 +2255,7 @@ a.badge-card.link-card:hover { transform: translateY(-2px); }
 @media (prefers-reduced-motion: reduce) { .gta6-clock b { animation: none; } }
 @media (max-width: 640px) {
   .gta6 { margin-bottom: 26px; background: linear-gradient(rgba(20, 6, 40, .2) 25%, rgba(20, 6, 40, .9)),
-      url("https://media.rawg.io/media/games/734/7342a1cd82c8997ec620084ae4c2e7e4.jpg") center 30% / cover no-repeat,
+      url("https://media.rawg.io/media/resize/640/-/games/734/7342a1cd82c8997ec620084ae4c2e7e4.jpg") center 30% / cover no-repeat,
       linear-gradient(100deg, #2a0f4f 0%, #8f1f7e 38%, #e8456f 68%, #ff9a3c 100%); }
   .gta6-in { flex-direction: column; align-items: stretch; justify-content: flex-end; min-height: 220px; padding: 14px; gap: 10px; }
   .gta6-clock { gap: 6px; }
@@ -2431,3 +2431,50 @@ a.badge-card.link-card:hover { transform: translateY(-2px); }
 .profile .profile-banner.clear.short { height: 92px; }
 @media (min-width: 1101px) { .profile-banner { height: 240px; } }
 @media (max-width: 640px) { .profile .profile-banner.clear { height: 72px; } .profile .profile-banner.clear.short { height: 56px; } }
+
+/* Genel cila: klavyeyle gezinme, yükleniyor göstergesi, dokunma geri bildirimi */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-behavior: smooth; }
+a:focus-visible, button:focus-visible, summary:focus-visible, select:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+::selection { background: rgb(var(--accent-rgb) / .35); }
+.loading { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.loading::before { content: ""; width: 16px; height: 16px; flex: none; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .15); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.btn:active, .tab:active, .chip:active { transform: scale(.97); }
+.home-more summary, .help-q summary { transition: color .15s; }
+.home-more summary:hover, .help-q summary:hover { color: var(--accent-2); }
+.filters-toggle { align-self: flex-start; font-size: 13.5px; font-weight: 600; color: var(--muted); padding: 4px 0; }
+.filters-toggle:hover, .filters-toggle.on { color: var(--text); }
+.filters { margin-top: 0; }
+.photo-add .btn { display: inline-flex; align-items: center; gap: 6px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .loading::before { animation-duration: 2s; } .btn:active, .tab:active, .chip:active { transform: none; } }
+
+/* Telefon: ikinci tur */
+@media (max-width: 640px) {
+  /* Sohbet ekranı tam boy, yazı kutusu rahat */
+  .chat { height: calc(100dvh - var(--m-top) - var(--m-nav) - 28px); min-height: 360px; }
+  .chat-compose { padding-top: 4px; gap: 4px; }
+  .chat-form { padding: 8px; gap: 6px; }
+  .comment-form { gap: 6px; }
+  .photo-add .btn { width: 40px; height: 40px; padding: 0; justify-content: center; border-radius: 50%; }
+  .photo-add .btn span { display: none; }
+  .chat-form .btn.primary, .comment-form .btn.primary { padding-left: 14px; padding-right: 14px; }
+  .photo-add-in { width: calc(100vw - 40px); }
+  .msgs { padding: 12px 10px; }
+  .bubble { max-width: 88%; }
+
+  /* Keşfet: altı sekme tek ekrana sığsın */
+  .search-hero .tabs { gap: 0; justify-content: space-between; }
+  .search-hero .tabs .tab { padding: 8px 9px; font-size: 14px; }
+
+  /* Rozetler: kartlar yan yana, sayfa bitmek bilmesin */
+  .badge-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .badge-card { padding: 10px; }
+
+  /* Formlar ve düğmeler */
+  .btn { min-height: 40px; }
+  .auth { margin: 12px auto; padding: 20px 16px; }
+  .auth.settings { padding: 18px 14px; }
+  .rank-cta { margin-top: 20px; padding: 14px; }
+  dialog { max-height: calc(100dvh - 24px); }
+  .legal { font-size: 15px; }
+}

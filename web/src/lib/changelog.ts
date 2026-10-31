@@ -5,6 +5,13 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-10-31T20:56:00+04:00",
+    title: "Daha hızlı, telefonda daha rahat",
+    body: "Ana sayfa çok daha hızlı açılıyor. Keşfet'te arama ve sohbetler artık daha az internet harcıyor.\n"
+      + "Telefonda sohbet ekranı tam boy oldu, yazı kutusu genişledi. Keşfet'in filtreleri bir düğmenin arkasına geçti, altı sekmenin hepsi ekrana sığıyor. Rozetler yan yana diziliyor.\n"
+      + "Gizlilik Politikası ve Kullanım Koşulları, son eklenen özellikleri de anlatacak şekilde güncellendi: etkinlikler, Sıralamalar, fotoğraf linkleri, raporlanan sohbetler ve Steam otomatik güncelleme.",
+  },
+  {
     date: "2026-10-31T20:18:00+04:00",
     title: "Büyük güncelleme",
     body: "Sohbetlerde Yanıtla ve Fotoğraf: mesajlarda, forumda, yorumlarda ve etkinlik sohbetinde birine yanıt verebilir, resim linki atabilirsin.\n"

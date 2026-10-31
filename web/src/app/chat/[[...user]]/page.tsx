@@ -42,16 +42,24 @@ export default function ChatPage() {
   const isSiteOwner = (id: string) => ownerIds.includes(id);
 
   // Mesajları çek; sohbet açıkken birkaç saniyede bir yenile
-  const load = useCallback(async () => {
+  const lastKey = useRef("");
+  const load = useCallback(async (force = false) => {
     if (!me) return;
+    if (document.visibilityState !== "visible" && !force) return; // sekme arkadaysa boşuna sorma
+    // Önce en yeni mesaja bak; değişiklik yoksa 500 mesajı yeniden indirme
+    const head = await q<{ id: string; read_at: string | null }[]>(sb().from("messages").select("id, read_at").order("created_at", { ascending: false }).limit(1));
+    const key = `${head[0]?.id}|${head[0]?.read_at}`;
+    if (key === lastKey.current && !force) return;
+    lastKey.current = key;
     const list = await q<Message[]>(sb().from("messages").select("*").order("created_at", { ascending: false }).limit(500));
     setMsgs((old) => (old.length === list.length && old[0]?.id === list[0]?.id && old[0]?.read_at === list[0]?.read_at ? old : list));
   }, [me]);
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- tarayıcı deposundan / ağdan gelen veri
-    load().catch(() => {});
+    load(true).catch(() => {});
     const timer = setInterval(() => load().catch(() => {}), 4000);
-    return () => clearInterval(timer);
+    const onShow = () => load().catch(() => {});
+    document.addEventListener("visibilitychange", onShow);
+    return () => { clearInterval(timer); document.removeEventListener("visibilitychange", onShow); };
   }, [load]);
 
   const friend = friends?.find((f) => f.username === username);

@@ -50,7 +50,7 @@ export function Leaderboard() {
       </div>
       <div className="chips" style={{ marginBottom: 14 }}>
         {(["all", ...TYPE_KEYS] as (EntryType | "all")[]).map((t) => (
-          <button key={t} className={`chip ${kind === t ? "active" : ""}`} onClick={() => { setKind(t); reset(); }}>{t === "all" ? "Genel" : TYPES[t].plural}</button>
+          <button key={t} className={`chip ${kind === t ? "active" : ""}`} onClick={() => { setKind(t); reset(); }}>{t === "all" ? "Genel" : TYPES[t].label}</button>
         ))}
       </div>
       {error ? <div className="empty">Sıralama şu an yüklenemedi. Biraz sonra tekrar dener misin?</div>
