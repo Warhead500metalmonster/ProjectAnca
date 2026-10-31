@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import Link from "next/link";
 import type { Entry, EntryType, HomeBlock, HomeLayout, List, Profile } from "@/lib/types";
 import { PROFILE_COLS, TYPES, TYPE_KEYS } from "@/lib/constants";
@@ -68,8 +68,14 @@ export function HomeTab() {
         <div className="empty">{isMe ? <>Henüz kaydın yok. Steam, PlayStation, Backloggd, Letterboxd, MyAnimeList... başka yerdeki kütüphaneni birkaç dakikada getir.<br />
           <Link className="btn primary" href="/import">Kütüphanemi getir</Link></> : "Henüz kayıt yok."}</div>
       )}
-      <ProfileEvents />
-      {blocks.map((b) => <HomeSection key={b.id} b={b} />)}
+      {/* Katıldığı etkinlikler Özet'in hemen üstünde; Özet kapalıysa en altta */}
+      {blocks.map((b) => (
+        <Fragment key={b.id}>
+          {b.k === "stats" && <ProfileEvents />}
+          <HomeSection b={b} />
+        </Fragment>
+      ))}
+      {!blocks.some((b) => b.k === "stats") && <ProfileEvents />}
     </>
   );
 }

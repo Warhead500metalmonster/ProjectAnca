@@ -13,7 +13,7 @@ export const CHANGELOG: ChangelogItem[] = [
     date: "2026-11-01T03:00:00+04:00",
     title: "Oyun bilgileri artık IGDB'den",
     body: "Oyun araması, kapaklar, açıklamalar ve ekran görüntüleri artık IGDB'den geliyor. Kayıtların, puanların ve incelemelerin olduğu gibi duruyor, senin bir şey yapmana gerek yok.\n"
-      + "Oyunu ararken noktalama işareti yazmana gerek yok: demons souls yazınca da Demon's Souls çıkar. Oyun sayfalarında artık eleştirmen puanı var.",
+      + "Oyunu ararken noktalama işareti yazmana gerek yok, yarım kelimeyle de bulursun: sekiro sha yazınca Sekiro: Shadows Die Twice çıkar. Oyun sayfalarında artık eleştirmen puanı var.",
   },
   {
     date: "2026-11-01T01:57:00+04:00",

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { type AncEvent, type EventMember, eventState, kindOf, statusText } from "@/lib/events";
-import { cssUrl, safeUrl } from "@/lib/format";
+import { cssUrl, wideImage } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
@@ -27,7 +27,7 @@ export function ProfileEvents() {
         {list.map((m) => {
           const ev = m.events!;
           const opt = ev.options?.find((o) => o.id === m.choice);
-          const art = safeUrl(opt?.cover) || safeUrl(ev.cover);
+          const art = wideImage(opt?.cover) || wideImage(ev.cover);
           const state = eventState(ev);
           return (
             <Link key={ev.id} href={`/events/${ev.id}`} className={`pev ${m.status} ${state}`} style={art ? { backgroundImage: cssUrl(art) } : undefined}>

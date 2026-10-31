@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { type AncEvent, type EventMember, type EventOption, type MemberStatus, addToLibrary, dateLine, eventBadgeKey, eventState, fetchEvent, kindOf, libraryEntry, statusText, verbs } from "@/lib/events";
 import { BADGES, PROFILE_COLS, TYPES } from "@/lib/constants";
-import { cssUrl, safeUrl, timeAgo, today } from "@/lib/format";
+import { cssUrl, safeUrl, timeAgo, today, wideImage } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
 import type { ProfileLite } from "@/lib/types";
 import { useLoad } from "@/lib/useLoad";
@@ -114,7 +114,7 @@ function Hero({ ev, members, my }: { ev: AncEvent; members: EventMember[]; my?: 
     } catch { /* paylaşım penceresi kapatıldı */ }
   }
   const done = members.filter((m) => m.status === "done").length;
-  const art = safeUrl(ev.cover) || safeUrl(ev.options[0]?.cover);
+  const art = wideImage(ev.cover) || wideImage(ev.options[0]?.cover);
   const covers = ev.options.map((o) => safeUrl(o.cover)).filter(Boolean).slice(0, 3);
   return (
     <section className={`ev-hero ${state}`} style={art ? { backgroundImage: cssUrl(art) } : undefined}>

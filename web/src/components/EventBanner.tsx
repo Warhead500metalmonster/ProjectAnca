@@ -4,12 +4,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { type AncEvent, type EventStats, dateLine, eventState, fetchEvents, memberStats } from "@/lib/events";
-import { cssUrl, safeUrl, today } from "@/lib/format";
+import { cssUrl, safeUrl, today, wideImage } from "@/lib/format";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "./AppProvider";
 import { Avatar } from "./ui";
 
-const art = (ev: AncEvent) => safeUrl(ev.cover) || safeUrl(ev.options[0]?.cover);
+const art = (ev: AncEvent) => wideImage(ev.cover) || wideImage(ev.options[0]?.cover);
 const stateName = { upcoming: "Yakında", live: "Şu an sürüyor", ended: "Arşivde" } as const;
 
 // Başlamasına ne kadar kaldı: "5 gün 23 saat" (dakikada bir tazelenir)

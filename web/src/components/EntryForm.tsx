@@ -57,6 +57,7 @@ export function EntryForm({ entry, game, type: initialType, item, replay: asRepl
   const [saving, setSaving] = useState(false);
   const [suggestions, setSuggestions] = useState<Found[] | null>(null);
   const [suggestNote, setSuggestNote] = useState("");
+  const [searching, setSearching] = useState(false);
   const [more, setMore] = useState(() => !!(entry?.store || entry?.emulated || entry?.dlc || playtime || progressSec || started || note || tags.length));
 
   const t = TYPES[type];
@@ -100,8 +101,9 @@ export function EntryForm({ entry, game, type: initialType, item, replay: asRepl
     searchSeq.current++;
     setSuggestions(null);
     setSuggestNote("");
+    setSearching(text.trim().length >= 2);
     if (text.trim().length < 2) return;
-    searchTimer.current = setTimeout(() => search(text.trim()), 300);
+    searchTimer.current = setTimeout(() => search(text.trim()), 200);
   }
 
   async function search(text: string) {
@@ -109,17 +111,19 @@ export function EntryForm({ entry, game, type: initialType, item, replay: asRepl
     try {
       const list = await findContent(type, text);
       if (seq !== searchSeq.current) return;
+      setSearching(false);
       setSuggestions(list);
       if (!list.length && type === "music") setSuggestNote(isLink(text) ? "Bu link açılamadı. Adını elle yazabilirsin." : "Bulamadın mı? YouTube, YouTube Music ya da Spotify linkini yapıştır, bilgiler otomatik gelsin. Ya da adını ve sanatçısını elle yaz, herkes için Ancalog'a eklenir.");
       else setSuggestNote(list.length ? "" : isGame ? "Sonuç yok. Farklı yazmayı dene." : "");
       if (!list.length && !isGame && type !== "music") setSuggestions(null); // elle yazmak serbest
     } catch {
-      if (seq === searchSeq.current) { setSuggestions([]); setSuggestNote("Arama şu an çalışmıyor."); }
+      if (seq === searchSeq.current) { setSearching(false); setSuggestions([]); setSuggestNote("Arama şu an çalışmıyor."); }
     }
   }
 
   function pick(f: Found) {
     searchSeq.current++;
+    setSearching(false);
     setSuggestions(null);
     setError("");
     if (isGame && f.raw) {
@@ -146,6 +150,8 @@ export function EntryForm({ entry, game, type: initialType, item, replay: asRepl
     setExtId(null);
     setError("");
     setSuggestions(null);
+    setSearching(false);
+    searchSeq.current++;
   }
 
   async function submit(ev: React.FormEvent) {
@@ -295,6 +301,7 @@ export function EntryForm({ entry, game, type: initialType, item, replay: asRepl
                 if (e.key === "ArrowDown") { e.preventDefault(); (e.currentTarget.parentElement?.querySelector(".suggest button") as HTMLElement | null)?.focus(); }
               }} />
           )}
+          {searching && !suggestions && <div className="suggest"><div className="note">Aranıyor…</div></div>}
           {suggestions && (
             <div className="suggest" onKeyDown={(e) => {
               const b = document.activeElement as HTMLElement;

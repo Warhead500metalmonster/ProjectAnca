@@ -8,7 +8,10 @@ export async function GET(request: Request) {
   const path = searchParams.get("path") || "";
   if (!ALLOWED.test(path)) return Response.json({ error: "bad path" }, { status: 400 });
   try {
-    return await igdbProxy(path, searchParams);
+    const res = await igdbProxy(path, searchParams);
+    // Aynı arama ikinci kez anında gelsin
+    if (res.ok) res.headers.set("Cache-Control", "public, s-maxage=600, stale-while-revalidate=3600");
+    return res;
   } catch (e) {
     return Response.json({ error: (e as Error).message }, { status: 502 });
   }

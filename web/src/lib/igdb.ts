@@ -15,8 +15,8 @@ interface IgdbGame {
   involved_companies?: { developer?: boolean; publisher?: boolean; company?: Ref }[];
 }
 
-const CARD = "name,slug,game_type,first_release_date,cover.image_id,artworks.image_id,aggregated_rating,total_rating,total_rating_count,genres.name,genres.slug,platforms.name,platforms.slug";
-const FULL = `${CARD},summary,involved_companies.developer,involved_companies.publisher,involved_companies.company.name,involved_companies.company.slug`;
+const CARD = "name,slug,game_type,first_release_date,cover.image_id,aggregated_rating,total_rating,total_rating_count,genres.name,genres.slug,platforms.name,platforms.slug";
+const FULL = `${CARD},artworks.image_id,summary,involved_companies.developer,involved_companies.publisher,involved_companies.company.name,involved_companies.company.slug`;
 // Paketler, modlar, bölümler, sezonlar, güncellemeler aramayı kirletmesin
 const REAL_GAMES = "version_parent = null & game_type != (3,5,6,7,12,13,14)";
 const SORTS: Record<string, string> = {
@@ -30,7 +30,7 @@ let token: { value: string; until: number } | null = null;
 async function getToken() {
   if (token && token.until > Date.now()) return token.value;
   const r = await fetch("https://id.twitch.tv/oauth2/token", {
-    method: "POST", cache: "no-store",
+    method: "POST", next: { revalidate: 86400 }, // her sunucu açılışında yeniden istenip aramayı yavaşlatmasın
     body: new URLSearchParams({ client_id: process.env.IGDB_CLIENT_ID!, client_secret: process.env.IGDB_CLIENT_SECRET!, grant_type: "client_credentials" }),
   });
   if (!r.ok) throw new Error(`token ${r.status}`);
@@ -113,13 +113,18 @@ function filters(p: URLSearchParams) {
 async function list(p: URLSearchParams) {
   const size = Math.min(Number(p.get("page_size")) || 20, 50);
   const page = Math.max(Number(p.get("page")) || 1, 1);
-  const text = p.get("search")?.trim().replace(/"/g, "");
+  const text = p.get("search")?.trim().replace(/["\\]/g, "");
   const ordering = p.get("ordering") || "";
   const where = filters(p);
   if (text) {
-    const { rows, count } = await ask<IgdbGame>("games", `search "${text}"; fields ${CARD}; where ${where.join(" & ")}; limit 50;`);
+    // IGDB araması yarım kelimeyi bulmaz ("hollow kn"): yazarken de sonuç çıksın diye kelimeleri adında geçenlere de bakılır
+    const [found, partial] = await Promise.all([
+      ask<IgdbGame>("games", `search "${text}"; fields ${CARD}; where ${where.join(" & ")}; limit 30;`),
+      ask<IgdbGame>("games", `fields ${CARD}; where ${[...text.split(/\s+/).map((w) => `name ~ *"${w}"*`), ...where].join(" & ")}; sort total_rating_count desc; limit 30;`),
+    ]);
+    const rows = [...new Map([...found.rows, ...partial.rows].map((g) => [g.id, g])).values()];
     const ranked = !ordering ? rankByName(rows, text) : rows;
-    return { count, results: await withIds(ranked.slice((page - 1) * size, page * size)) };
+    return { count: rows.length, results: await withIds(ranked.slice((page - 1) * size, page * size)) };
   }
   const sort = SORTS[ordering] || SORTS["-added"];
   const field = sort.split(" ")[0];
