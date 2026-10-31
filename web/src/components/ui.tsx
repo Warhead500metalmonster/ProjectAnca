@@ -211,6 +211,7 @@ export function EntryCard({ e, kind = false, edit = false, wall = false }: { e: 
         {e.favorite && <span className="fav" title="Favori">♥</span>}
         {e.status !== "owned" && <span className={`st badge ${e.status}`}>{statusLabel(e.status, e.type)}</span>}
         {e.rating ? <span className="rating">★ {scoreShort(e.rating, scale)}</span> : null}
+        {e.replay && <span className="replay-pill">Replay</span>}
         {episodic && !edit && e.episode ? <span className="ep-pill">{e.episode}{e.episodes_total ? `/${e.episodes_total}` : ""}. bölüm</span> : null}
         {wall && <div className="hover"><b>{e.title}</b>{meta && <span>{meta}</span>}</div>}
       </div>
@@ -234,6 +235,7 @@ export const epText = (e: Entry) => e.episode
 export function entryTags(e: Entry, { store = false, time = true } = {}) {
   const days = daysTaken(e);
   return [
+    e.replay ? "Replay" : "",
     e.platform,
     e.emulated ? "Emülatör" : "",
     e.dlc ? "DLC dahil" : "",

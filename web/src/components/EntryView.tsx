@@ -50,7 +50,7 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
     [t.time, fmtDur(playSec(e))],
     ["Şu anki ilerleme", fmtDur(e.progress_sec)],
     ["Bölüm", epText(e)],
-    ["Kaçıncı kez", e.plays?.length ? `${e.plays.length + 1}. kez` : ""],
+    ["Kaçıncı kez", e.plays?.length ? `${e.plays.length + 1}. kez` : e.replay ? "Replay" : ""],
   ].filter(([, v]) => v) as [string, string][];
 
   async function toggleLike() {

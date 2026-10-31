@@ -58,6 +58,9 @@ export const NON_LATIN = /[Ͱ-ϿЀ-ӿ֐-ۿ฀-๿぀-ヿ㐀-鿿가-힯]/;
 export const norm = (s?: string | null) => String(s || "").trim().toLocaleLowerCase("tr");
 export const contentKey = (x: Pick<Item, "type" | "title" | "rawg_id">) =>
   x.type === "game" && x.rawg_id ? `g:${x.rawg_id}` : `${x.type}:${norm(x.title)}`;
+// Bir kişinin birden çok logu varsa puan ortalamasına bir kez girer (liste en yeniden eskiye, en son güncellediği sayılır)
+export const oneRatingEach = <T extends { user_id: string; rating: number }>(logs: T[]) =>
+  [...new Map(logs.filter((l) => l.rating).reverse().map((l) => [l.user_id, l])).values()];
 export const contentHref = (x: Pick<Item, "type" | "title" | "rawg_id" | "ext_id">) =>
   x.type === "game" && x.rawg_id ? `/game/${x.rawg_id}`
     : `/c/${x.type}/${encodeURIComponent(x.title)}${x.ext_id ? `?ext=${encodeURIComponent(x.ext_id)}` : ""}`;

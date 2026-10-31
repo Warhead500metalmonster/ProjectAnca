@@ -5,13 +5,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { redirect, useParams } from "next/navigation";
 import type { Entry, PageEdit, RawgGame, RawgRef } from "@/lib/types";
-import { ENTRY_COLS, statusLabel } from "@/lib/constants";
-import { avgText, cssUrl, fmtDate, fmtDur, forumHref, num, playSec, resized, safeUrl, scoreText, smallImage } from "@/lib/format";
+import { ENTRY_COLS } from "@/lib/constants";
+import { avgText, cssUrl, fmtDate, fmtDur, forumHref, num, oneRatingEach, playSec, resized, safeUrl, scoreText, smallImage } from "@/lib/format";
 import { rawg, RAWG_MOVED } from "@/lib/rawg";
 import { fetchPageEdit } from "@/lib/data";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
+import { MyLogs } from "@/components/MyLogs";
 import { Feed, RatingBars } from "@/components/ui";
 import { Lightbox } from "@/components/Lightbox";
 import { PageEditor } from "@/components/PageEditor";
@@ -60,7 +61,7 @@ export default function GamePage() {
   const art = safeUrl(edit.cover) || source.cover;
   const backdrop = safeUrl(edit.backdrop) || art;
   const images = [...(art ? [art] : []), ...shots.map((s) => resized(s.image, 1280))];
-  const rated = logs.filter((l) => l.rating);
+  const rated = oneRatingEach(logs);
   const avg = rated.length ? rated.reduce((s, l) => s + Number(l.rating), 0) / rated.length : 0;
   // Takip ettiklerinin ortalaması (en az bir kişi puan verdiyse)
   const fr = rated.filter((l) => following.has(l.user_id));
@@ -71,7 +72,7 @@ export default function GamePage() {
     creator: edit.creator || source.creator || null, cover: safeUrl(edit.cover) || logs[0]?.cover || (g?.background_image ? smallImage(g.background_image) : null),
     rawg_id: Number(id), ext_id: null };
   const mine = me && logs.find((l) => l.user_id === me.id);
-  const count = (s: Entry["status"]) => logs.filter((l) => l.status === s).length;
+  const count = (s: Entry["status"]) => logs.filter((l) => l.status === s && !l.replay).length;
   const devs = edit.creator || names(g?.developers).join(", ");
   const desc = edit.description || source.description || "";
   const year = edit.year || (g?.released ? Number(g.released.slice(0, 4)) : null);
@@ -99,7 +100,7 @@ export default function GamePage() {
               <span><b>{count("planned")}</b>planlı</span>
             </div>
             {!me ? <Link className="btn primary wide" href="/login">+ Kütüphaneme ekle</Link>
-              : mine ? <button className="btn primary wide" onClick={() => openForm(mine)}>{statusLabel(mine.status, "game")} · Düzenle</button>
+              : mine ? <MyLogs logs={logs} item={item} />
               : g ? <button className="btn primary wide" onClick={() => openForm(null, { game: g })}>+ Kütüphaneme ekle</button> : null}
             {item.title && <button className="btn wide" onClick={() => pickList(item)}>Listeye ekle</button>}
             {item.title && <Link className="btn wide" href={forumHref(item)}>Forumda tartış</Link>}

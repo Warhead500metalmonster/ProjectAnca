@@ -5,6 +5,12 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-11-01T01:57:00+04:00",
+    title: "Aynı içeriğe birden çok log: Replay",
+    body: "Bir oyunu, filmi ya da diziyi kaç kez oynadıysan, izlediysen o kadar ayrı log tutabilirsin. Her logun kendi durumu, puanı, tarihi ve incelemesi olur, yanında Replay yazar.\n"
+      + "İçeriğin sayfasında ya da bir kaydı düzenlerken Yeni log ekle düğmesine basman yeterli. Bıraktığın bir oyuna da yeni log açabilirsin.",
+  },
+  {
     date: "2026-10-31T20:56:00+04:00",
     title: "Daha hızlı, telefonda daha rahat",
     body: "Ana sayfa çok daha hızlı açılıyor. Keşfet'te arama ve sohbetler artık daha az internet harcıyor.\n"

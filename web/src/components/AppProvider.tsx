@@ -17,7 +17,7 @@ import { EntryView } from "./EntryView";
 import { ReportDialog, type ReportTarget } from "./ReportDialog";
 import { ListPicker } from "./ListPicker";
 
-interface FormOpts { game?: RawgGame | null; type?: Entry["type"]; item?: Item | null }
+interface FormOpts { game?: RawgGame | null; type?: Entry["type"]; item?: Item | null; replay?: boolean }
 
 interface Ctx {
   me: Profile | null;
@@ -70,7 +70,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(!supabaseConfigured());
   const [version, setVersion] = useState(0);
   const [toastMsg, setToastMsg] = useState("");
-  const [form, setForm] = useState<{ entry: Entry | null; opts: FormOpts } | null>(null);
+  const [form, setForm] = useState<{ entry: Entry | null; opts: FormOpts; n: number } | null>(null);
   const [viewing, setViewing] = useState<Entry | null>(null);
   const [picking, setPicking] = useState<Item | null>(null);
   const userId = useRef<string | null>(null);
@@ -341,7 +341,7 @@ Seni takip edemez, sana yazamaz, kayıtlarına yorum yapamaz. Aranızdaki takipl
 
   const openForm: Ctx["openForm"] = useCallback((entry = null, opts = {}) => {
     if (!me) return router.push("/login");
-    setForm({ entry, opts });
+    setForm((f) => ({ entry, opts, n: (f?.n || 0) + 1 })); // form açıkken yeni log istenirse temiz bir form gelsin
   }, [me, router]);
 
   const pickList = useCallback((item: Item) => {
@@ -351,7 +351,7 @@ Seni takip edemez, sana yazamaz, kayıtlarına yorum yapamaz. Aranızdaki takipl
 
   const myEntry = useCallback((x: Item) => {
     const k = contentKey(x);
-    return mine.find((e) => contentKey(e) === k);
+    return mine.find((e) => contentKey(e) === k && !e.replay) ?? mine.find((e) => contentKey(e) === k);
   }, [mine]);
 
   const myBadges = (me && badges.get(me.id)) || [];
@@ -364,7 +364,7 @@ Seni takip edemez, sana yazamaz, kayıtlarına yorum yapamaz. Aranızdaki takipl
   return (
     <AppCtx.Provider value={value}>
       {children}
-      {form && <EntryForm entry={form.entry} {...form.opts} onClose={() => setForm(null)} />}
+      {form && <EntryForm key={form.n} entry={form.entry} {...form.opts} onClose={() => setForm(null)} />}
       {viewing && <EntryView entry={viewing} onClose={() => setViewing(null)} onEdit={(e) => { setViewing(null); openForm(e); }} />}
       {picking && <ListPicker item={picking} onClose={() => setPicking(null)} />}
       {reporting && <ReportDialog target={reporting} onClose={() => setReporting(null)} />}

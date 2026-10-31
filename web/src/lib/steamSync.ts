@@ -54,7 +54,7 @@ export async function steamAutoSync(uid: string, mine: Entry[]): Promise<{ timed
   // Oynama süreleri
   const byApp = new Map(games.map((g) => [`steam:${g.appid}`, g]));
   const changes = mine.flatMap((e) => {
-    const g = e.ext_id ? byApp.get(e.ext_id) : undefined;
+    const g = e.ext_id && !e.replay ? byApp.get(e.ext_id) : undefined; // Steam toplam süreyi verir, replay loguna yazılmaz
     return g && g.minutes && g.minutes * 60 !== e.playtime_sec ? [{ id: e.id, minutes: g.minutes }] : [];
   });
   for (const c of changes) {

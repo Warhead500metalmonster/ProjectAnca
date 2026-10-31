@@ -77,7 +77,8 @@ export interface Entry {
   season?: number | null;   // dizi/animede kaçıncı sezon
   episode?: number | null;  // kaçıncı bölümde
   episodes_total?: number | null;
-  plays?: Play[] | null;    // tekrar oynama/izleme: önceki seferler
+  plays?: Play[] | null;    // tekrar oynama/izleme: önceki seferler (eski kayıtlar; yenileri ayrı log)
+  replay?: boolean | null;  // aynı içeriğin ikinci, üçüncü... logu
   tags?: string[] | null;   // kendi etiketleri
   created_at: string;
   updated_at: string;

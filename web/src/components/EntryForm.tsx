@@ -5,17 +5,17 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { Entry, EntryType, FormGame, Item, RawgGame } from "@/lib/types";
 import { STATUSES, STORES, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
-import { fmtDate, safeUrl, scoreText, today } from "@/lib/format";
+import { contentKey, fmtDate, itemOf, safeUrl, scoreText, today } from "@/lib/format";
 import { gameFromRawg, rawg } from "@/lib/rawg";
 import { type Found, addCatalog, findContent, isLink, searchCredit, tmdbCreator, tmdbDetail } from "@/lib/data";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "./AppProvider";
 import { HmsInput } from "./ui";
 
-interface Props { entry: Entry | null; game?: RawgGame | null; type?: EntryType; item?: Item | null; onClose: () => void }
+interface Props { entry: Entry | null; game?: RawgGame | null; type?: EntryType; item?: Item | null; replay?: boolean; onClose: () => void }
 
-export function EntryForm({ entry, game, type: initialType, item, onClose }: Props) {
-  const { me, toast, refresh, scale, mine } = useApp();
+export function EntryForm({ entry, game, type: initialType, item, replay: asReplay, onClose }: Props) {
+  const { me, toast, refresh, scale, mine, openForm } = useApp();
   const ref = useRef<HTMLDialogElement>(null);
   const searchSeq = useRef(0);       // geç gelen eski cevapları yok saymak için
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -47,6 +47,7 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
   const [review, setReview] = useState(entry?.notes || "");
   const [rating, setRating] = useState(Number(entry?.rating) || 0); // 0-10
   const [favorite, setFavorite] = useState(!!entry?.favorite);
+  const [replay, setReplay] = useState(!!(entry ? entry.replay : asReplay));
   const [season, setSeason] = useState(entry?.season?.toString() || "");
   const [episode, setEpisode] = useState(entry?.episode?.toString() || "");
   const [epTotal, setEpTotal] = useState(entry?.episodes_total?.toString() || "");
@@ -61,7 +62,10 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
   const t = TYPES[type];
   const isGame = type === "game";
   const episodic = type === "show" || type === "anime";
-  const verb = isGame ? "oynamaya" : type === "music" ? "dinlemeye" : "izlemeye";
+  const did = isGame ? "oynadım" : type === "music" ? "dinledim" : "izledim";
+  // Bu içeriğin başka bir logu var mı? Varsa yenisi ayrı bir sefer: Replay
+  const nowKey = contentKey({ type, title: isGame ? picked?.title || "" : title.trim(), rawg_id: isGame ? picked?.rawg_id ?? null : null });
+  const hasOther = mine.some((e) => e.id !== entry?.id && contentKey(e) === nowKey);
   const myTags = [...new Set(mine.flatMap((e) => e.tags || []))].filter((x) => !tags.includes(x)).sort((a, b) => a.localeCompare(b, "tr"));
 
   // Etiket: yazıp Enter'a ya da virgüle bas; küçük harfe çevrilir, aynısı iki kez eklenmez
@@ -166,6 +170,10 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
     // Bitti işaretlenip tarih girilmediyse bugünü yaz (yıllık istatistik için)
     const finished = date || (status === "completed" ? today() : null);
     if (startedOn && finished && startedOn > finished) return setError("Başlama tarihi bitirme tarihinden sonra olamaz.");
+    if (hasOther && !replay && (!entry || contentKey(entry) !== nowKey)) {
+      setReplay(true);
+      return setError("Bu zaten kütüphanende var. Ayrı bir log olsun diye Replay'i işaretledim, onaylıyorsan Kaydet'e bir kez daha bas.");
+    }
     Object.assign(data, {
       type, status, date: finished, started_on: startedOn,
       platform: platform.trim() || null,
@@ -185,6 +193,7 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
       progress: note.trim() || null,
       rating,
       favorite,
+      ...((replay || entry?.replay) && { replay }),
       notes: review.trim() || null,
       updated_at: new Date().toISOString(),
     });
@@ -198,18 +207,15 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
           .catch(() => null); // katalog çalışmazsa kayıt yine de kaydedilsin
         if (c) Object.assign(data, { title: c.title, creator: c.creator, year: c.year, cover: c.cover, ext_id: c.ext_id });
       }
-      if (data.rawg_id && entry?.rawg_id !== data.rawg_id) {
-        const dupe = await q<{ id: string }[]>(db.from("entries").select("id").eq("user_id", me.id).eq("rawg_id", data.rawg_id).limit(1));
-        if (dupe.length) return setError("Bu oyun zaten kütüphanende var.");
-      }
       if (entry) await q(db.from("entries").update(data).eq("id", entry.id));
       else await q(db.from("entries").insert({ ...data, user_id: me.id }));
       ref.current?.close();
-      toast(cheer(data.status === "completed" && entry?.status !== "completed", finished, entry ? null : mine.length + 1) || (entry ? "Kayıt güncellendi ✓" : "Kütüphanene eklendi ✓"));
+      toast(cheer(data.status === "completed" && entry?.status !== "completed", finished, entry ? null : mine.length + 1) || (entry ? "Kayıt güncellendi ✓" : replay ? "Yeni log eklendi ✓" : "Kütüphanene eklendi ✓"));
       refresh();
     } catch (err) {
       const msg = (err as Error).message;
       setError(msg.includes("favori") ? msg
+        : /replay/.test(msg) ? "Replay özelliği birkaç dakika içinde açılacak."
         : /season|episode|tags/.test(msg) ? "Bölüm ve etiket alanları birkaç dakika içinde açılacak; şimdilik onları boş bırakıp kaydedebilirsin."
         : "Kaydedilemedi: " + msg);
     } finally {
@@ -225,23 +231,9 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
     setReview(review.slice(0, from) + "||" + picked + "||" + review.slice(to));
   }
 
-  // Tekrar oynama / izleme: bu seferin bilgileri geçmişe taşınır, kayıt baştan "devam ediyor" olur
-  async function again() {
-    if (!entry) return;
-    const play = { started_on: entry.started_on, date: entry.date, rating: Number(entry.rating) || 0, playtime_sec: entry.playtime_sec ?? null };
-    try {
-      await q(sb().from("entries").update({
-        plays: [...(entry.plays || []), play], status: "active", started_on: today(), date: null, progress_sec: null,
-        ...(entry.episode != null && { episode: null, season: entry.season != null ? 1 : null }),
-        updated_at: new Date().toISOString(),
-      }).eq("id", entry.id));
-      ref.current?.close();
-      toast(`${(entry.plays?.length || 0) + 2}. kez başladın, keyfini çıkar!`);
-      refresh();
-    } catch (err) {
-      const msg = (err as Error).message;
-      setError(/plays/.test(msg) ? "Bu özellik birkaç dakika içinde açılacak." : "Kaydedilemedi: " + msg);
-    }
+  // Tekrar oynama / izleme: bu kayıt olduğu gibi kalır, aynı içerik için yeni bir log açılır
+  function addLog() {
+    if (entry && canLeave()) openForm(null, { item: itemOf(entry), replay: true });
   }
 
   async function remove() {
@@ -390,6 +382,7 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
             <button type="button" className="link clear" onClick={() => setRating(0)}>temizle</button>
           </div>
         </div>
+        {(hasOther || replay) && <label className="check"><input type="checkbox" checked={replay} onChange={(e) => setReplay(e.target.checked)} /> ↻ Replay <span className="muted">(daha önce de {did}, bu ayrı bir sefer)</span></label>}
         <label className="check"><input type="checkbox" checked={favorite} onChange={(e) => setFavorite(e.target.checked)} /> ♥ Favorilerime ekle <span className="muted">(her kategoride en fazla 10)</span></label>
         <div className="field">
           <label htmlFor="f-review" className="review-label">
@@ -467,7 +460,7 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
         )}
           </div>
         )}
-        {entry && (entry.plays?.length || entry.status === "completed") ? (
+        {entry ? (
           <div className="replays">
             {entry.plays?.length ? (
               <div className="muted small">
@@ -475,7 +468,7 @@ export function EntryForm({ entry, game, type: initialType, item, onClose }: Pro
                 {entry.plays.map((p, i) => <span key={i}>{i ? " · " : ""}{i + 1}. kez{p.date ? ` (${fmtDate(p.date)})` : ""}{p.rating ? ` ★ ${scoreText(p.rating, scale)}` : ""}</span>)}
               </div>
             ) : null}
-            {entry.status === "completed" && <button type="button" className="btn" onClick={again}>↻ Yeniden {verb} başla</button>}
+            <button type="button" className="btn" onClick={addLog}>↻ Yeni log ekle (replay)</button>
           </div>
         ) : null}
         {error && <p className="form-error">{error}</p>}

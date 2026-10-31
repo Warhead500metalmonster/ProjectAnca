@@ -12,8 +12,19 @@ export function scoreOf(common: number, rated: number, diffSum: number, mineN: n
   return rated >= 3 ? Math.round((0.7 * agree + 0.3 * overlap) * 100) : Math.round(overlap * 60);
 }
 
+// Aynı içeriğin replay logları uyumda bir kez sayılır (asıl log tercih edilir)
+function oneLogEach(list: Entry[]) {
+  const seen = new Map<string, Entry>();
+  for (const e of list) {
+    const k = contentKey(e), had = seen.get(k);
+    if (!had || (had.replay && !e.replay)) seen.set(k, e);
+  }
+  return [...seen.values()];
+}
+
 // İki kütüphaneyi karşılaştırır: ortak içerikler ve puan uyumu üzerinden 0-100 arası bir "uyum" puanı
-export function compat(mine: Entry[], theirs: Entry[]) {
+export function compat(allMine: Entry[], allTheirs: Entry[]) {
+  const mine = oneLogEach(allMine), theirs = oneLogEach(allTheirs);
   const map = new Map(mine.map((e) => [contentKey(e), e]));
   const common: Pair[] = [];
   for (const t of theirs) {

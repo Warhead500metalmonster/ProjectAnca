@@ -5,12 +5,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import type { Entry, EntryType, Item, PageEdit } from "@/lib/types";
-import { ENTRY_COLS, TYPES, statusLabel } from "@/lib/constants";
-import { NON_LATIN, avgText, contentKey, cssUrl, fmtDur, forumHref, likeEsc, num, playSec, safeUrl, scoreText } from "@/lib/format";
+import { ENTRY_COLS, TYPES } from "@/lib/constants";
+import { NON_LATIN, avgText, contentKey, cssUrl, fmtDur, forumHref, likeEsc, num, oneRatingEach, playSec, safeUrl, scoreText } from "@/lib/format";
 import { aniDetail, fetchPageEdit, tmdbCreator, tmdbDetail, tmdbImage } from "@/lib/data";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
+import { MyLogs } from "@/components/MyLogs";
 import { Feed, RatingBars } from "@/components/ui";
 import { Lightbox } from "@/components/Lightbox";
 import { PageEditor } from "@/components/PageEditor";
@@ -102,7 +103,7 @@ export default function ContentPage() {
   const creator = edit.creator || source.creator;
   const genres = edit.genres || info?.genres;
   const item: Item = { type, title, year: year || null, creator: creator || null, cover: cover || null, rawg_id: null, ext_id: extId };
-  const rated = logs.filter((l) => l.rating);
+  const rated = oneRatingEach(logs);
   const avg = rated.length ? rated.reduce((s, l) => s + Number(l.rating), 0) / rated.length : 0;
   // Takip ettiklerinin ortalaması (en az bir kişi puan verdiyse)
   const fr = rated.filter((l) => following.has(l.user_id));
@@ -110,7 +111,7 @@ export default function ContentPage() {
   const timed = logs.filter((l) => playSec(l) > 0);
   const avgSec = timed.length ? timed.reduce((s, l) => s + playSec(l), 0) / timed.length : 0;
   const mine = me && logs.find((l) => l.user_id === me.id);
-  const count = (s: Entry["status"]) => logs.filter((l) => l.status === s).length;
+  const count = (s: Entry["status"]) => logs.filter((l) => l.status === s && !l.replay).length;
   const desc = edit.description || source.description || "";
   const facts: [string, string][] = [
     ...(info?.facts || (creator ? [[t.creator, creator]] as [string, string][] : [])),
@@ -132,7 +133,7 @@ export default function ContentPage() {
               <span><b>{count("planned")}</b>planlı</span>
             </div>
             {!me ? <Link className="btn primary wide" href="/login">+ Kütüphaneme ekle</Link>
-              : mine ? <button className="btn primary wide" onClick={() => openForm(mine)}>{statusLabel(mine.status, type)} · Düzenle</button>
+              : mine ? <MyLogs logs={logs} item={item} />
               : <button className="btn primary wide" onClick={() => openForm(null, { item })}>+ Kütüphaneme ekle</button>}
             <button className="btn wide" onClick={() => pickList(item)}>Listeye ekle</button>
             <Link className="btn wide" href={forumHref(item)}>Forumda tartış</Link>

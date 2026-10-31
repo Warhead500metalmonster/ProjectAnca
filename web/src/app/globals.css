@@ -2478,3 +2478,6 @@ a:focus-visible, button:focus-visible, summary:focus-visible, select:focus-visib
   dialog { max-height: calc(100dvh - 24px); }
   .legal { font-size: 15px; }
 }
+
+/* Replay logu: kapakta durumun üstünde küçük etiket */
+.poster .replay-pill { position: absolute; left: 8px; bottom: 34px; z-index: 1; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: rgba(0, 0, 0, .75); color: var(--accent-2); }
