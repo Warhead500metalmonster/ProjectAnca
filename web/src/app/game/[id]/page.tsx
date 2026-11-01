@@ -103,8 +103,10 @@ export default function GamePage() {
             {!me ? <Link className="btn primary wide" href="/login">+ Kütüphaneme ekle</Link>
               : mine ? <MyLogs logs={logs} item={item} />
               : g ? <button className="btn primary wide" onClick={() => openForm(null, { game: g })}>+ Kütüphaneme ekle</button> : null}
-            {item.title && <button className="btn wide" onClick={() => pickList(item)}>Listeye ekle</button>}
-            {item.title && <Link className="btn wide" href={forumHref(item)}>Forumda tartış</Link>}
+            {item.title && <div className="gh-pair">
+              <button className="btn" onClick={() => pickList(item)}>Listeye ekle</button>
+              <Link className="btn" href={forumHref(item)}>Tartış</Link>
+            </div>}
             {isAdmin && <button className="btn wide ghost" onClick={() => setEditing(true)}>Sayfayı düzenle</button>}
             {isAdmin && Number(id) > 0 && <button className={`btn wide ${g ? "ghost" : "primary"}`} onClick={() => setLinking(true)}>IGDB ile eşleştir</button>}
           </div>
@@ -147,7 +149,7 @@ export default function GamePage() {
             </div>
           )}
           <section className="section">
-            <div className="section-head"><h2>Ancalog&apos;da kimler logladı</h2></div>
+            <div className="section-head"><h2>Loglayanlar</h2></div>
             <Feed list={logs} empty={<div className="empty">Henüz kimse loglamadı. İlk sen ol!</div>} />
           </section>
           <ListsWith rawgId={Number(id) || undefined} />

@@ -1,12 +1,11 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { List, Profile } from "@/lib/types";
 import { PROFILE_COLS } from "@/lib/constants";
 import { ListCard } from "@/components/ListCard";
-import { safeUrl } from "@/lib/format";
 import { fetchAll, fetchFeed } from "@/lib/data";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
@@ -14,8 +13,6 @@ import { useApp } from "@/components/AppProvider";
 import { Cover, Feed, UserRow } from "@/components/ui";
 import { ImportPromo } from "@/components/ImportPromo";
 import { Announcements } from "@/components/Announcements";
-import { EventBanner } from "@/components/EventBanner";
-import { Gta6Countdown } from "@/components/Gta6Countdown";
 
 interface Slim { rawg_id: number | null; title: string; cover: string | null; rating: number }
 
@@ -44,8 +41,12 @@ async function popularGames(users?: string[]): Promise<(Slim & { n: number })[]>
   }).filter(Boolean) as (Slim & { n: number })[];
 }
 
+// Sekmeler: hepsi alt alta olunca sayfa bitmiyordu; her şey bir dokunuş uzakta
+const TABS = [["akis", "Son hareketler"], ["populer", "Popüler"], ["listeler", "Listeler"], ["uyeler", "Üyeler"], ["duyurular", "Duyurular"]] as const;
+
 export default function Community() {
   const { version, me, following } = useApp();
+  const tab = useSearchParams().get("tab") || "akis";
   const [popWho, setPopWho] = useState<"all" | "following">("all");
   const followIds = [...following].sort().join(",");
   // Takip ettiklerinin popüler oyunları: seçilince ayrıca yüklenir
@@ -64,7 +65,6 @@ export default function Community() {
   }, [version], supabaseConfigured());
 
   const [found, setFound] = useState<Profile[] | null>(null);
-  const [allMembers, setAllMembers] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
 
@@ -84,34 +84,34 @@ export default function Community() {
 
   const popular = popWho === "following" ? popFollowing : games; // en çok loglanan oyunlar (kişi sayısına göre)
 
-  const unique = [...new Set([...games, ...feed].map((e) => safeUrl(e.cover)).filter(Boolean))].slice(0, 30);
-  const covers = unique.length ? Array.from({ length: 30 }, (_, i) => unique[i % unique.length]) : []; // az kapak varsa tekrarla
   const list = found ?? members;
 
   return (
     <>
-      <Gta6Countdown />
-      <section className="mosaic-head">
-        <div className="mosaic">{covers.map((c, i) => <img key={i} src={c} alt="" loading="lazy" onError={(e) => e.currentTarget.remove()} />)}</div>
-        <div className="mosaic-text"><h1>Topluluk</h1><p>Herkes neyi oynuyor, neyi izliyor? Keşfet, takip et.</p></div>
-      </section>
-      {!me && <ImportPromo signedIn={false} compact />}
-      <Announcements />
-      <EventBanner />
-      {games.length > 0 && (
+      <div className="page-head">
+        <h1>Topluluk</h1>
+        <div className="page-head-links">
+          <Link className="btn" href="/top">Sıralamalar</Link>
+          <Link className="btn" href="/forum">Forum</Link>
+        </div>
+      </div>
+      <nav className="subnav">
+        {TABS.map(([k, label]) => <Link key={k} href={k === "akis" ? "/community" : `/community?tab=${k}`} className={tab === k ? "active" : ""} replace scroll={false}>{label}</Link>)}
+      </nav>
+      {tab === "populer" && (
         <section className="section">
           <div className="section-head">
-            <h2>Popüler oyunlar</h2>
+            <h2>En çok loglanan oyunlar</h2>
             {me ? (
               <div className="mini-tabs">
                 <button className={popWho === "all" ? "active" : ""} onClick={() => setPopWho("all")}>Herkes</button>
                 <button className={popWho === "following" ? "active" : ""} onClick={() => setPopWho("following")}>Takip ettiklerim</button>
               </div>
-            ) : <span className="muted">en çok loglananlar</span>}
+            ) : null}
           </div>
           {!popular ? <div className="loading">Yükleniyor…</div>
             : !popular.length ? <div className="muted">{following.size ? "Takip ettiklerin henüz oyun loglamamış." : "Henüz kimseyi takip etmiyorsun. Üyeler kısmından birini takip et, onların popüler oyunları burada görünür."}</div>
-            : <div className="strip">
+            : <div className="grid">
             {popular.map((g) => (
               <Link className="card" href={`/game/${g.rawg_id}`} key={g.rawg_id}>
                 <div className="poster"><div className="ph">Oyun</div><Cover src={g.cover} /><span className="rating" title="Bu oyunu loglayan kişi sayısı">{g.n} kişi</span></div>
@@ -121,31 +121,28 @@ export default function Community() {
           </div>}
         </section>
       )}
-      <Link className="rank-cta" href="/top">
-        <span><b>Sıralamalar</b><small>En çok bitirenler, en uyumlular, en sevilen oyunlar</small></span>
-        <span aria-hidden="true">→</span>
-      </Link>
-      {lists.length > 0 && (
+      {tab === "listeler" && (
         <section className="section">
-          <div className="section-head"><h2>Yeni listeler</h2></div>
-          <div className="list-grid">{lists.slice(0, 8).map((l) => <ListCard key={l.id} l={l} owner />)}</div>
+          {lists.length ? <div className="list-grid">{lists.slice(0, 12).map((l) => <ListCard key={l.id} l={l} owner />)}</div>
+            : <div className="empty">Henüz herkese açık liste yok.</div>}
         </section>
       )}
-      <div className="cols section">
-        <section>
-          <div className="section-head"><h2>Son hareketler</h2></div>
+      {tab === "akis" && (
+        <section className="section feed-col">
           <Feed list={feed} />
         </section>
-        <section>
-          <div className="section-head"><h2>Üyeler</h2></div>
+      )}
+      {tab === "uyeler" && (
+        <section className="section">
           <input className="input" type="search" placeholder="Kullanıcı ara…" style={{ width: "100%", marginBottom: 12 }} autoComplete="off"
             onChange={(e) => search(e.target.value)} />
-          <div className="user-list">
-            {list.length ? list.slice(0, found || allMembers ? undefined : 8).map((p) => <UserRow key={p.id} p={p} />) : <div className="muted" style={{ padding: 12 }}>Kimse bulunamadı.</div>}
+          <div className="members">
+            {list.length ? list.map((p) => <UserRow key={p.id} p={p} />) : <div className="muted" style={{ padding: 12 }}>Kimse bulunamadı.</div>}
           </div>
-          {!found && !allMembers && list.length > 8 && <button className="feed-more" onClick={() => setAllMembers(true)}>Daha fazla üye göster</button>}
         </section>
-      </div>
+      )}
+      {tab === "duyurular" && <Announcements />}
+      {!me && <ImportPromo signedIn={false} compact />}
     </>
   );
 }

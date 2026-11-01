@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useApp } from "./AppProvider";
 
-// Sosyal bölümünün iki sekmesi: özel mesajlar ve herkese açık forum
+// Mesajlar bölümünün iki sekmesi: özel mesajlar ve herkese açık forum
 export function SocialTabs() {
   const path = usePathname();
   const { unread } = useApp();

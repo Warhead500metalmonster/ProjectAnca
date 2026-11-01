@@ -15,7 +15,7 @@ import { HmsInput } from "./ui";
 interface Props { entry: Entry | null; game?: RawgGame | null; type?: EntryType; item?: Item | null; replay?: boolean; onClose: () => void }
 
 export function EntryForm({ entry, game, type: initialType, item, replay: asReplay, onClose }: Props) {
-  const { me, toast, refresh, scale, mine, openForm } = useApp();
+  const { me, toast, refresh, scale, mine, mineLoaded, openForm } = useApp();
   const ref = useRef<HTMLDialogElement>(null);
   const searchSeq = useRef(0);       // geç gelen eski cevapları yok saymak için
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -279,7 +279,8 @@ export function EntryForm({ entry, game, type: initialType, item, replay: asRepl
           <h2>{entry ? "Kaydı düzenle" : "Yeni kayıt"}</h2>
           <button type="button" className="icon-btn" aria-label="Kapat" onClick={leave}>✕</button>
         </div>
-        {!entry && !item && !game && (
+        {/* Kütüphanesi boş olana bir kez yeter; her açılışta karşısına çıkmasın */}
+        {!entry && !item && !game && mineLoaded && !mine.length && (
           <Link className="form-import" href="/import" onClick={(e) => { if (canLeave()) ref.current?.close(); else e.preventDefault(); }}>
             <b>Tek tek uğraşma.</b> Steam, PlayStation, Backloggd, Letterboxd, MyAnimeList... bütün kütüphaneni tek seferde getir →
           </Link>
@@ -342,18 +343,13 @@ export function EntryForm({ entry, game, type: initialType, item, replay: asRepl
             </div>
           </div>
         )}
-        <div className="row">
-          <div className="field grow">
-            <label htmlFor="f-status">Durum</label>
-            <select id="f-status" value={status} onChange={(e) => setStatus(e.target.value as Entry["status"])}>
-              {STATUSES.map((s) => <option key={s} value={s}>{statusLabel(s, type)}</option>)}
-            </select>
-          </div>
-          <div className="field grow">
-            <label htmlFor="f-platform">{t.where}</label>
-            <input id="f-platform" list="platformList" maxLength={60} autoComplete="off" value={platform} onChange={(e) => setPlatform(e.target.value)}
-              placeholder={isGame ? "Listeden seç ya da kendin yaz" : ""} />
-            <datalist id="platformList">{places.map((p) => <option key={p} value={p} />)}</datalist>
+        {/* Açılır liste yerine hepsi görünür: tek dokunuşla seçilir */}
+        <div className="field">
+          <label>Durum</label>
+          <div className="type-picker status-picker" role="radiogroup" aria-label="Durum">
+            {STATUSES.filter((s) => s !== "owned" || status === "owned").map((s) => (
+              <button type="button" role="radio" aria-checked={status === s} key={s} className={status === s ? "active" : ""} onClick={() => setStatus(s)}>{statusLabel(s, type)}</button>
+            ))}
           </div>
         </div>
         {episodic && (
@@ -396,11 +392,17 @@ export function EntryForm({ entry, game, type: initialType, item, replay: asRepl
             <button type="button" className="link clear" onClick={() => setRating(0)}>temizle</button>
           </div>
         </div>
+        <div className="field">
+          <label htmlFor="f-platform">{t.where} <span className="muted">· isteğe bağlı</span></label>
+          <input id="f-platform" list="platformList" maxLength={60} autoComplete="off" value={platform} onChange={(e) => setPlatform(e.target.value)}
+            placeholder={isGame ? "Listeden seç ya da kendin yaz" : ""} />
+          <datalist id="platformList">{places.map((p) => <option key={p} value={p} />)}</datalist>
+        </div>
         {(hasOther || replay) && <label className="check"><input type="checkbox" checked={replay} onChange={(e) => setReplay(e.target.checked)} /> ↻ Replay <span className="muted">(daha önce de {did}, bu ayrı bir sefer)</span></label>}
-        <label className="check"><input type="checkbox" checked={favorite} onChange={(e) => setFavorite(e.target.checked)} /> ♥ Favorilerime ekle <span className="muted">(her kategoride en fazla 10)</span></label>
+        <label className="check"><input type="checkbox" checked={favorite} onChange={(e) => setFavorite(e.target.checked)} /> ♥ Favorilerime ekle</label>
         <div className="field">
           <label htmlFor="f-review" className="review-label">
-            <span>İnceleme <span className="muted">· profilinde bu kayda tıklayanlar okuyup beğenebilir, yorum yapabilir</span></span>
+            <span>İnceleme <span className="muted">· isteğe bağlı</span></span>
             <button type="button" className="link" onClick={spoilerize} title="Seçtiğin yazıyı spoiler olarak gizler">Spoiler gizle</button>
           </label>
           <textarea id="f-review" rows={3} maxLength={5000} value={review} onChange={(e) => setReview(e.target.value)} />

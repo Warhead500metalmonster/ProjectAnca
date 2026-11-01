@@ -43,8 +43,6 @@ export function LibraryTab() {
   const type = picked && (picked === "all" || entries.some((e) => e.type === picked)) ? picked : firstType;
   const setType = (t: EntryType | "all") => setPick({ pid: profile.id, t });
   const [statuses, setStatuses] = useState<Set<Status>>(new Set());
-  // Planlananlar (backlog, istek listesi) kalabalık etmesin diye ilk açılışta gizli; görmek isteyen açar
-  const [showPlanned, setShowPlanned] = useState(false);
   const [year, setYear] = useState("");
   const [finishYear, setFinishYear] = useState("");
   const [platform, setPlatform] = useState("");
@@ -67,7 +65,8 @@ export function LibraryTab() {
   const toggle = <T,>(set: Set<T>, x: T) => { const n = new Set(set); if (n.has(x)) n.delete(x); else n.add(x); return n; };
 
   // Binlerce logda her tuşta baştan süzüp sıralamak yazmayı yavaşlatıyordu: her hesap sadece kendi girdisi değişince yapılır
-  const hidePlanned = !showPlanned && !statuses.has("planned");
+  // Planlananlar (backlog, istek listesi) kalabalık etmesin diye Hepsi'nde yok; kendi sekmesinde görünür
+  const hidePlanned = !statuses.has("planned");
   const visible = useMemo(() => hidePlanned ? entries.filter((e) => e.status !== "planned") : entries, [entries, hidePlanned]);
   const scoped = useMemo(() => type === "all" ? visible : visible.filter((e) => e.type === type), [visible, type]);
   const plannedHere = useMemo(() => entries.filter((e) => e.status === "planned" && (type === "all" || e.type === type)).length, [entries, type]);
@@ -76,6 +75,11 @@ export function LibraryTab() {
     for (const e of entries) if (e.status !== "planned") { m.set(e.type, (m.get(e.type) || 0) + 1); m.set("all", (m.get("all") || 0) + 1); }
     return m;
   }, [entries]);
+  const statusCounts = useMemo(() => {
+    const m = new Map<Status, number>();
+    for (const e of entries) if (type === "all" || e.type === type) m.set(e.status, (m.get(e.status) || 0) + 1);
+    return m;
+  }, [entries, type]);
   const years = useMemo(() => uniqSorted(scoped.map((e) => e.year)), [scoped]);
   const finishYears = useMemo(() => uniqSorted(scoped.filter((e) => e.status === "completed").map((e) => e.date?.slice(0, 4))), [scoped]);
   const platforms = useMemo(() => uniqSorted(scoped.map((e) => e.platform), false), [scoped]);
@@ -103,10 +107,10 @@ export function LibraryTab() {
     (!flags.has("dlc") || e.dlc) &&
     (!needle || haystack.get(e.id)!.includes(needle)),
   ), [sorted, haystack, statuses, year, finishYear, platform, tag, minRating, flags, needle]);
-  const filterCount = statuses.size + [year, finishYear, platform, minRating, tag].filter(Boolean).length + flags.size;
+  const filterCount = [year, finishYear, platform, minRating, tag].filter(Boolean).length + flags.size;
   const statusType = type === "all" ? null : type;
   // Sayfa sayfa göster; filtre ya da sıralama değişince baştan başla
-  const pageKey = [type, showPlanned, [...statuses].join(), year, finishYear, platform, minRating, tag, [...flags].join(), sort, needle, view].join("|");
+  const pageKey = [type, [...statuses].join(), year, finishYear, platform, minRating, tag, [...flags].join(), sort, needle, view].join("|");
   const [paging, setPaging] = useState({ key: pageKey, n: PAGE });
   const shown = paging.key === pageKey ? paging.n : PAGE;
   const more = () => setPaging({ key: pageKey, n: shown + PAGE });
@@ -123,46 +127,33 @@ export function LibraryTab() {
           {([...TYPE_KEYS.map((k) => [k, "", TYPES[k].label]), ["all", "", "Tümü"]] as [EntryType | "all", string, string][])
             .filter(([k]) => k === "all" || entries.some((e) => e.type === k))
             .map(([k, icon, label]) => (
-              <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => { setType(k); setYear(""); setFinishYear(""); setPlatform(""); }}>
+              <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => { setType(k); setStatuses(new Set()); setYear(""); setFinishYear(""); setPlatform(""); }}>
                 {icon} {label}<span className="count">{tabCounts.get(k) || 0}</span>
               </button>
             ))}
+        </div>
+        {/* En çok kullanılan süzgeç hep görünür: Oynandı, Oynuyorum, Planlandı... */}
+        <div className="chips status-tabs">
+          <button className={`chip ${!statuses.size ? "active" : ""}`} onClick={() => setStatuses(new Set())}>Hepsi</button>
+          {STATUSES.filter((s) => statusCounts.get(s)).map((s) => (
+            <button key={s} className={`chip ${statuses.has(s) ? "active" : ""}`} onClick={() => setStatuses(new Set([s]))}>{statusLabel(s, statusType)} <span className="muted">{num(statusCounts.get(s)!)}</span></button>
+          ))}
         </div>
         <div className="lib-bar">
           <input className="input" type="search" placeholder="Kütüphanede ara…" value={text} autoComplete="off" onChange={(e) => setText(e.target.value)} />
           <button className={`btn ${showFilters || filterCount ? "on" : ""}`} onClick={() => setShowFilters(!showFilters)}>
             Filtrele{filterCount ? ` (${filterCount})` : ""}
           </button>
-          {plannedHere > 0 && !statuses.has("planned") && (
-            <button className={`btn ${showPlanned ? "on" : ""}`} onClick={() => setShowPlanned(!showPlanned)}>
-              {showPlanned ? "Planlananları gizle" : `Planlananları göster (${plannedHere})`}
-            </button>
-          )}
           <select aria-label="Sırala" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
-            {SORTS.map(([k, label]) => <option key={k} value={k}>↕ {label}</option>)}
+            {SORTS.map(([k, label]) => <option key={k} value={k}>Sırala: {label}</option>)}
           </select>
           <div className="seg">
-            <button type="button" className={view === "grid" ? "active" : ""} title="Izgara" onClick={() => pickView("grid")}>▦</button>
-            <button type="button" className={view === "list" ? "active" : ""} title="Liste" onClick={() => pickView("list")}>☰</button>
+            <button type="button" className={view === "grid" ? "active" : ""} title="Kapaklar" aria-label="Kapaklar" onClick={() => pickView("grid")}>▦</button>
+            <button type="button" className={view === "list" ? "active" : ""} title="Liste" aria-label="Liste" onClick={() => pickView("list")}>☰</button>
           </div>
         </div>
-        {tagList.length > 0 && (
-          <div className="lib-tags">
-            {tagList.slice(0, 30).map(([x, n]) => (
-              <button key={x} className={`tag ${tag === x ? "active" : ""}`} onClick={() => setTag(tag === x ? "" : x)}>#{x} <span className="muted">{n}</span></button>
-            ))}
-          </div>
-        )}
         {showFilters && (
           <div className="filter-panel">
-            <div className="fp-row">
-              <span className="fp-label">Durum</span>
-              <div className="chips">
-                {STATUSES.map((s) => (
-                  <button key={s} className={`chip ${statuses.has(s) ? "active" : ""}`} onClick={() => setStatuses(toggle(statuses, s))}>{statusLabel(s, statusType)}</button>
-                ))}
-              </div>
-            </div>
             <div className="fp-row">
               <span className="fp-label">Ayrıntı</span>
               <div className="chips">
@@ -194,10 +185,20 @@ export function LibraryTab() {
                 <button className={`chip ${flags.has("dlc") ? "active" : ""}`} onClick={() => setFlags(toggle(flags, "dlc"))}>DLC dahil</button>
               </div>
             </div>
+            {tagList.length > 0 && (
+              <div className="fp-row">
+                <span className="fp-label">Etiket</span>
+                <div className="lib-tags" style={{ margin: 0 }}>
+                  {tagList.slice(0, 30).map(([x, n]) => (
+                    <button key={x} className={`tag ${tag === x ? "active" : ""}`} onClick={() => setTag(tag === x ? "" : x)}>#{x} <span className="muted">{n}</span></button>
+                  ))}
+                </div>
+              </div>
+            )}
             {filterCount > 0 && <button className="link" onClick={clear}>Filtreleri temizle</button>}
           </div>
         )}
-        {(filterCount > 0 || needle) && <p className="muted count-note">{list.length} sonuç</p>}
+        {(filterCount > 0 || statuses.size > 0 || needle) && <p className="muted count-note">{list.length} sonuç</p>}
         {list.length ? (
           view === "list"
             ? <div className="rows">{list.slice(0, shown).map((e) => <Row key={e.id} e={e} isMe={isMe} />)}</div>
@@ -205,8 +206,8 @@ export function LibraryTab() {
         ) : (
           <div className="empty">
             {entries.length ? (
-              filterCount > 0 || needle ? <>Bu aramaya uyan kayıt yok.<br /><button className="btn" onClick={() => { clear(); setText(""); }}>Filtreleri temizle</button></>
-                : plannedHere > 0 && !showPlanned ? <>Burada sadece planladıkların var.<br /><button className="btn" onClick={() => setShowPlanned(true)}>Planlananları göster ({plannedHere})</button></>
+              filterCount > 0 || statuses.size > 0 || needle ? <>Bu aramaya uyan kayıt yok.<br /><button className="btn" onClick={() => { clear(); setText(""); }}>Filtreleri temizle</button></>
+                : plannedHere > 0 ? <>Burada sadece planladıkların var.<br /><button className="btn" onClick={() => setStatuses(new Set(["planned"]))}>Planlananları göster ({plannedHere})</button></>
                 : "Burada henüz kayıt yok."
             ) : isMe
               ? <>Henüz hiçbir şey loglamadın. Başka sitelerdeki kütüphaneni birkaç dakikada getirebilirsin.<br />

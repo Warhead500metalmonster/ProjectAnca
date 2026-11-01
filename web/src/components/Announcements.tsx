@@ -40,7 +40,7 @@ export function Announcements({ onHome = false }: { onHome?: boolean }) {
     const it = items[0];
     if (!it) return null;
     return (
-      <Link className={`ann-home ann k-${it.kind} ${it.pinned ? "pinned" : ""}`} href="/community" title="Bütün duyurular">
+      <Link className={`ann-home ann k-${it.kind} ${it.pinned ? "pinned" : ""}`} href="/community?tab=duyurular" title="Bütün duyurular">
         <span className="ann-tag">{it.pinned ? "Sabit" : it.kind === "post" ? "Duyuru" : "Yenilik"}</span>
         <b className="ann-title">{it.title}</b>
         <span className="ann-date">{timeAgo(it.at)}</span>

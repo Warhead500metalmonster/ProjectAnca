@@ -214,7 +214,7 @@ export default function Terms() {
         <p>Kurucu ve onun atadığı yöneticiler. Hepsi aynı yetkiye sahiptir: raporları inceler, uyarı gönderir, içerik siler, susturur, gerekirse hesap kapatır, duyuru yazar.
           E-posta adresini ve şifreni kimse göremez. Yöneticiler kurucuya işlem yapamaz.</p></details>
       <details className="help-q"><summary>Kurallar değişirse nereden öğrenirim?</summary>
-        <p>Önemli değişiklikler <Link href="/community">Topluluk → Duyurular</Link>&apos;da ve sitenin üstündeki duyuru alanında yazılır. Bu sayfanın en üstünde son güncelleme tarihi var.</p></details>
+        <p>Önemli değişiklikler <Link href="/community?tab=duyurular">Topluluk → Duyurular</Link>&apos;da ve sitenin üstündeki duyuru alanında yazılır. Bu sayfanın en üstünde son güncelleme tarihi var.</p></details>
       <details className="help-q"><summary>Sorumun cevabı burada yok.</summary>
         <p><Link href="/chat/arno4436">Kurucuya yaz</Link>; takipleşmenize gerek yok. Cevabı sık sorulan bir şeyse buraya da eklenir.</p></details>
 

@@ -59,7 +59,7 @@ export function HomeTab() {
       {isMe && !editing && (
         <div className="home-edit-bar">
           {!layout?.sections && isNewProfile(profile) && <span className="muted small">Profilin sade başladı. İstersen favorilerini, sayılarını, istatistiklerini vitrine koy:</span>}
-          <button className="btn" onClick={() => setEditing(true)}>Ana sayfayı düzenle</button>
+          <button className="btn" onClick={() => setEditing(true)}>Bölümleri düzenle</button>
         </div>
       )}
       {editing && <HomeEditor layout={layout} blocks={blocks} onClose={() => setEditing(false)} />}
@@ -186,7 +186,7 @@ function HomeEditor({ layout, blocks, onClose }: { layout?: HomeLayout | null; b
 
   return (
     <section className="section home-editor">
-      <h2>Ana sayfanı düzenle</h2>
+      <h2>Profil bölümlerini düzenle</h2>
       <p className="muted small">Profiline girenler önce bu sayfayı görür. İstediğin bölümü istediğin kadar ekle; her birinde hangi türlerin görüneceğini ve başlığını ayrı seç.
         Örneğin bir Favoriler sadece oyunlar, bir başkası animeler olabilir.</p>
       <CountsPicker value={counts} onChange={setCounts} />

@@ -2531,3 +2531,109 @@ body::before { content: ""; position: fixed; inset: 0; z-index: -2; pointer-even
 .link-results { position: static; max-height: 50vh; overflow-y: auto; box-shadow: none; margin-top: 10px; }
 .link-results img, .link-results .noimg { width: 44px; height: 62px; }
 .link-results .name small { display: block; color: var(--muted); font-size: 12px; }
+
+/* ---------- Sade arayüz: Steam, Backloggd, Letterboxd rahatlığı ---------- */
+/* Üst çubuk: yazılı menü, altı çizili seçili sayfa, her sayfada arama */
+.top-search { display: none; }
+@media (min-width: 641px) {
+  .topbar, html .topbar { background: rgb(12, 15, 16); backdrop-filter: none; gap: 14px; min-height: 58px; padding-top: 0; padding-bottom: 0; }
+  .brand { font-size: 21px; margin-right: 8px; }
+  .top-gap { display: none; }
+  .nav { align-self: stretch; gap: 0; }
+  .nav a svg, .nav-add, .nav a.nav-me { display: none; }
+  .nav a, .nav a:hover, .nav a.active { padding: 0 11px; border-radius: 0; background: none; box-shadow: inset 0 -2px 0 transparent; }
+  .nav a:hover { color: var(--text); }
+  .nav a.active { color: var(--text); font-weight: 600; box-shadow: inset 0 -2px 0 var(--accent); }
+  .nav-badge { position: static; display: inline-grid; margin-left: 6px; }
+  .nav-spark { top: 14px; right: 2px; }
+  .top-search { display: flex; flex: 1; justify-content: flex-end; min-width: 0; }
+  .top-search input, .top-search input:focus { max-width: 280px; padding-top: 7px; padding-bottom: 7px; border-radius: 8px; }
+  .top-actions .btn { border-radius: 8px; }
+  .mobile-search { display: none; }
+}
+@media (min-width: 641px) and (max-width: 980px) {
+  .top-search { display: none; }
+  .top-gap { display: block; }
+  .mobile-search { display: inline-flex; }
+  .nav a, .nav a:hover, .nav a.active { padding: 0 8px; font-size: 14px; }
+}
+
+/* Alt bilgi: önce bağlantılar, küçük yazılar altta */
+.footer { flex-direction: column; align-items: center; gap: 8px; text-align: center; font-size: 12.5px; padding: 22px 16px; }
+.footer .muted { max-width: 760px; }
+.footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; font-size: 13.5px; }
+.footer-links a { color: var(--text); }
+.footer-links a:hover { color: var(--accent-2); }
+
+/* Sayfa başlığı: kocaman görsel yerine tek satır */
+.page-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 4px 0 14px; }
+.page-head h1, .search-hero h1 { font-size: 28px; margin: 0; }
+.search-hero h1 { margin-bottom: 12px; }
+.page-head-links { display: flex; gap: 8px; }
+.subnav + .section { margin-top: 18px; }
+.subnav a .count { color: var(--muted); font-size: 12px; font-weight: 500; margin-left: 2px; }
+.feed-col { max-width: 760px; }
+
+/* Bütün sekmeler aynı görünsün: Mesajlar/Forum ve Sıralamalar da altı çizili */
+.social-tabs, .forum > .social-tabs, .top-tabs { max-width: none; gap: 6px; padding: 0; margin: 0 0 16px; background: none; border-radius: 0; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+.social-tabs a { flex: none; padding: 10px 16px; border-radius: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+.social-tabs a:hover { color: var(--text); }
+.social-tabs a.active { background: none; box-shadow: none; border-color: var(--accent); }
+
+/* Keşfet: türler, sıralama ve yıl tek satırda */
+.search-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.search-tools .tabs { flex: 1; min-width: 0; margin-bottom: 0; }
+.search-tools select { max-width: 240px; }
+.search-tools .btn.on { border-color: var(--accent); color: var(--accent-2); }
+.search-hero .filters { margin-top: 10px; }
+
+/* Kapağın köşesinde hızlı ekleme */
+.card-wrap { position: relative; min-width: 0; }
+.card-wrap > .card { width: 100%; }
+.quick-add { position: absolute; right: 8px; top: 8px; z-index: 2; width: 32px; height: 32px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; font-size: 20px; font-weight: 600; line-height: 1; color: #fff; background: rgba(0, 0, 0, .72); cursor: pointer; }
+.quick-add:hover { background: var(--accent); color: #06130e; }
+.quick-add.on { width: 24px; height: 24px; border-radius: 6px; font-size: 13px; color: #06130e; background: var(--accent-2); cursor: default; }
+@media (hover: hover) {
+  .quick-add:not(.on) { opacity: 0; transition: opacity .12s; }
+  .card-wrap:hover .quick-add, .quick-add:focus-visible { opacity: 1; }
+}
+
+/* İçerik sayfası: ikincil işler yan yana */
+.gh-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.gh-pair .btn { padding-left: 6px; padding-right: 6px; }
+
+@media (max-width: 640px) {
+  .page-head h1, .search-hero h1 { font-size: 24px; }
+  .search-tools .tabs { flex-basis: 100%; }
+  .search-tools select { flex: 1; min-width: 0; max-width: none; }
+}
+
+/* Kütüphane: durum sekmeleri */
+.status-tabs { margin-bottom: 12px; }
+.status-tabs .chip { white-space: nowrap; }
+.status-tabs .chip .muted { font-size: 12px; margin-left: 2px; }
+.status-tabs .chip.active .muted { color: inherit; opacity: .75; }
+
+/* Kayıt formu: durum tek dokunuş, Kaydet hep görünür */
+.status-picker button { min-height: 36px; }
+.status-picker button.active { font-weight: 600; }
+@media (min-width: 641px) {
+  #form > .actions { position: sticky; bottom: 0; z-index: 3; margin: 0 -22px -22px; padding: 12px 22px; background: rgb(18, 23, 25); border-top: 1px solid var(--border); }
+}
+@media (min-width: 900px) { #form > .actions { margin: 0 -28px -24px; padding-left: 28px; padding-right: 28px; } }
+/* Pencereler düz renk: bulanıklık kalkınca arkadaki yazı okunuyordu */
+dialog { background: rgb(18, 23, 25); }
+
+/* Profil sekmeleri: üst kısım kısa */
+.profile.compact .profile-banner { height: 84px; }
+.profile.compact .subnav { margin-top: 12px; }
+.profile.compact .profile-head .avatar.lg { --s: 72px; }
+.profile.compact .profile-counts { display: none; }
+
+/* Telefonda kütüphane araçları tek satırda */
+@media (max-width: 640px) {
+  .lib-bar > select { flex: 1 1 0; min-width: 0; }
+  .lib-bar > .btn { flex: none; }
+  .profile.compact .profile-banner { height: 44px; }
+  .profile.compact .profile-actions:empty { display: none; }
+}

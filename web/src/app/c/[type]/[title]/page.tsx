@@ -137,8 +137,10 @@ export default function ContentPage() {
             {!me ? <Link className="btn primary wide" href="/login">+ Kütüphaneme ekle</Link>
               : mine ? <MyLogs logs={logs} item={item} />
               : <button className="btn primary wide" onClick={() => openForm(null, { item })}>+ Kütüphaneme ekle</button>}
-            <button className="btn wide" onClick={() => pickList(item)}>Listeye ekle</button>
-            <Link className="btn wide" href={forumHref(item)}>Forumda tartış</Link>
+            <div className="gh-pair">
+              <button className="btn" onClick={() => pickList(item)}>Listeye ekle</button>
+              <Link className="btn" href={forumHref(item)}>Tartış</Link>
+            </div>
             {isAdmin && <button className="btn wide ghost" onClick={() => setEditing(true)}>Sayfayı düzenle</button>}
             {isAdmin && type === "game" && <button className="btn wide primary" onClick={() => setLinking(true)}>IGDB ile eşleştir</button>}
           </div>
@@ -164,7 +166,7 @@ export default function ContentPage() {
           {info && extId && <span className="muted" style={{ fontSize: 12 }}>Bilgiler: {extId.startsWith("tmdb:") ? "TMDB" : "AniList"}</span>}
         </aside>
         <section>
-          <div className="section-head"><h2>Ancalog&apos;da kimler logladı</h2></div>
+          <div className="section-head"><h2>Loglayanlar</h2></div>
           <Feed list={logs} empty={<div className="empty">Henüz kimse loglamadı. İlk sen ol!</div>} />
           <ListsWith type={type} title={title} ext={extId} />
         </section>

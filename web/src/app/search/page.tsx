@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Entry, EntryType, Item, Profile, RawgGame } from "@/lib/types";
@@ -11,7 +11,6 @@ import { rawg, retry } from "@/lib/rawg";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
 import { Cover, UserRow } from "@/components/ui";
-import { Gta6Countdown } from "@/components/Gta6Countdown";
 
 type Sort = "logged" | "completed" | "active" | "rating" | "newest" | "oldest" | "title";
 const SORTS: [Sort, string][] = [
@@ -57,7 +56,8 @@ export default function SearchPage() {
   const params = useSearchParams();
   const router = useRouter();
   const path = usePathname();
-  const { scale } = useApp();
+  const { scale, mine, openForm } = useApp();
+  const logged = useMemo(() => new Set(mine.map(contentKey)), [mine]); // kütüphanende olanlarda + yerine tik görünür
 
   const [text, setText] = useState(params.get("q") || "");
   const [type, setType] = useState<EntryType | "all">((params.get("type") as EntryType) || "all");
@@ -69,7 +69,7 @@ export default function SearchPage() {
   const [external, setExternal] = useState<(Item & { sub?: string })[] | null>(null);
   const [failed, setFailed] = useState<EntryType[]>([]); // ulaşılamayan kaynaklar: "sonuç yok" sanılmasın
   const [again, setAgain] = useState(0);
-  const [showFilters, setShowFilters] = useState(!!(params.get("from") || params.get("to") || params.get("sort")));
+  const [showFilters, setShowFilters] = useState(!!(params.get("from") || params.get("to")));
   const seq = useRef(0);
   const written = useRef(params.get("q") || ""); // adrese en son bizim yazdığımız arama
 
@@ -109,29 +109,27 @@ export default function SearchPage() {
 
   return (
     <>
-      <Gta6Countdown />
       <section className="search-hero">
         <h1>Keşfet</h1>
-        <p className="muted search-sub">Her oyun, film, dizi, anime ve albüm burada. Adını yaz, aynı anda her yerde aransın; bir şeye tıkla, sayfasını gör, kütüphanene ekle.</p>
         <input className="input big" type="search" autoFocus value={text} placeholder="Ne arıyorsun? Ör. Zelda, Breaking Bad, Frieren…" onChange={(e) => setText(e.target.value)} />
-        <div className="tabs">
-          {([["all", "", "Tümü"], ...TYPE_KEYS.map((k) => [k, "", TYPES[k].label])] as [EntryType | "all", string, string][]).map(([k, icon, label]) => (
-            <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => setType(k)}>{icon} {label}</button>
-          ))}
+        <div className="search-tools">
+          <div className="tabs">
+            {([["all", "Tümü"], ...TYPE_KEYS.map((k) => [k, TYPES[k].label])] as [EntryType | "all", string][]).map(([k, label]) => (
+              <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => setType(k)}>{label}</button>
+            ))}
+          </div>
+          <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Sırala">
+            {SORTS.map(([k, l]) => <option key={k} value={k}>Sırala: {l}</option>)}
+          </select>
+          <button type="button" className={`btn ${showFilters || from || to ? "on" : ""}`} aria-expanded={showFilters} onClick={() => setShowFilters(!showFilters)}>Yıl seç</button>
         </div>
-        <button type="button" className={`link filters-toggle ${showFilters ? "on" : ""}`} aria-expanded={showFilters} onClick={() => setShowFilters(!showFilters)}>
-          {showFilters ? "▾" : "▸"} Filtreler{from || to || sort !== "logged" ? " (açık)" : ""}
-        </button>
         {showFilters && <div className="filters">
           <label className="inline">Çıkış yılı
             <input className="input year" inputMode="numeric" maxLength={4} placeholder="2006" value={from} onChange={(e) => setFrom(e.target.value.replace(/\D/g, ""))} />
             –
             <input className="input year" inputMode="numeric" maxLength={4} placeholder="2006" value={to} onChange={(e) => setTo(e.target.value.replace(/\D/g, ""))} />
           </label>
-          <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Sırala">
-            {SORTS.map(([k, l]) => <option key={k} value={k}>↕ {l}</option>)}
-          </select>
-          {(from || to || sort !== "logged" || type !== "all") && <button className="link" onClick={() => { setFrom(""); setTo(""); setSort("logged"); setType("all"); }}>Filtreleri temizle</button>}
+          {(from || to) && <button className="link" onClick={() => { setFrom(""); setTo(""); }}>Temizle</button>}
         </div>}
         {(!yearOk(from) || !yearOk(to)) && <p className="form-error">Yılı 4 haneli yaz (ör. 2006).</p>}
       </section>
@@ -145,20 +143,23 @@ export default function SearchPage() {
 
       {/* Arama yapılınca sitede kimse loglamadıysa boş kutu göstermeyelim: aşağıda her yerden sonuçlar var */}
       {!(local?.length === 0 && text.trim() && external?.length) && <section className="section">
-        <div className="section-head"><h2>Ancalog&apos;da loglananlar</h2><span className="muted">{local ? `${local.length} içerik` : ""}</span></div>
+        <div className="section-head"><h2>{text.trim() ? "Ancalog'da" : "Ancalog'da popüler"}</h2></div>
         {local === null ? <div className="loading">Aranıyor…</div>
           : local.length ? (
             <div className="grid">
               {local.map((a) => (
-                <Link key={contentKey(a)} className="card" href={contentHref(a)}>
-                  <div className={`poster ${TYPES[a.type].square ? "square" : ""}`}>
-                    <div className="ph">{TYPES[a.type].label}</div><Cover src={a.cover} />
-                    {type === "all" && <span className="kind">{TYPES[a.type].label}</span>}
-                    {a.avg ? <span className="rating">★ {avgText(a.avg, scale).split("/")[0]}</span> : null}
-                  </div>
-                  <div className="card-title">{a.title}</div>
-                  <div className="card-meta">{a.n} kişi · {a.done} {TYPES[a.type as keyof typeof TYPES]?.done || "bitirdi"}{a.active ? ` · ${a.active} devam` : ""}{a.year ? ` · ${a.year}` : ""}</div>
-                </Link>
+                <div className="card-wrap" key={contentKey(a)}>
+                  <Link className="card" href={contentHref(a)}>
+                    <div className={`poster ${TYPES[a.type].square ? "square" : ""}`}>
+                      <div className="ph">{TYPES[a.type].label}</div><Cover src={a.cover} />
+                      {type === "all" && <span className="kind">{TYPES[a.type].label}</span>}
+                      {a.avg ? <span className="rating">★ {avgText(a.avg, scale).split("/")[0]}</span> : null}
+                    </div>
+                    <div className="card-title">{a.title}</div>
+                    <div className="card-meta">{a.n} kişi{a.year ? ` · ${a.year}` : ""}</div>
+                  </Link>
+                  <QuickAdd has={logged.has(contentKey(a))} onAdd={() => openForm(null, { item: a })} />
+                </div>
               ))}
             </div>
           ) : <div className="empty">Bu filtrelere uyan loglanmış içerik yok.</div>}
@@ -186,11 +187,14 @@ export default function SearchPage() {
               </div>
               <div className="grid">
                 {list.map((x, i) => (
-                  <Link key={i} className="card" href={contentHref(x)}>
-                    <div className={`poster ${TYPES[x.type].square ? "square" : ""}`}><div className="ph">{TYPES[x.type].label}</div><Cover src={x.cover} /></div>
-                    <div className="card-title">{x.title}</div>
-                    <div className="card-meta">{[x.sub, x.year].filter(Boolean).join(" · ")}</div>
-                  </Link>
+                  <div className="card-wrap" key={i}>
+                    <Link className="card" href={contentHref(x)}>
+                      <div className={`poster ${TYPES[x.type].square ? "square" : ""}`}><div className="ph">{TYPES[x.type].label}</div><Cover src={x.cover} /></div>
+                      <div className="card-title">{x.title}</div>
+                      <div className="card-meta">{[x.sub, x.year].filter(Boolean).join(" · ")}</div>
+                    </Link>
+                    <QuickAdd has={logged.has(contentKey(x))} onAdd={() => openForm(null, { item: x })} />
+                  </div>
                 ))}
               </div>
             </section>
@@ -198,6 +202,12 @@ export default function SearchPage() {
         })}
     </>
   );
+}
+
+// Kapağın köşesinde: sayfasına girmeden tek dokunuşla kütüphaneye ekle
+function QuickAdd({ has, onAdd }: { has: boolean; onAdd: () => void }) {
+  if (has) return <span className="quick-add on" title="Kütüphanende var" aria-label="Kütüphanende var">✓</span>;
+  return <button type="button" className="quick-add" title="Kütüphaneme ekle" aria-label="Kütüphaneme ekle" onClick={onAdd}>+</button>;
 }
 
 async function findUsers(text: string): Promise<Profile[]> {

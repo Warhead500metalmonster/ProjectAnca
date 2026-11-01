@@ -5,6 +5,11 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-11-01T14:40:28+04:00",
+    title: "Site baştan aşağı sadeleşti",
+    body: "Her sayfanın üstünde arama kutusu ve menüde Kütüphanem var. Keşfet'te kapağın köşesindeki + ile sayfasına girmeden ekleyebilirsin. Kütüphanede Oynandı, Oynuyorum, Planlandı gibi durumlar artık hep görünür. Topluluk sekmelere ayrıldı, kayıt penceresinde durumu tek dokunuşla seçiyorsun.",
+  },
+  {
     date: "2026-11-01T13:59:00+04:00",
     title: "Site çok daha akıcı",
     body: "Kütüphanesi büyük olanlarda ana sayfanın donmasına yol açan sorun giderildi. Site açılışta bütün kütüphanenin inmesini beklemiyor, aynı kayıtlar iki kez indirilmiyor. Bağlantı takılırsa sonsuza kadar beklemek yerine haber veriyor. Bir linke tıklayınca üstte ince bir çubuk çıkıyor, böylece sayfanın açıldığını görüyorsun.",

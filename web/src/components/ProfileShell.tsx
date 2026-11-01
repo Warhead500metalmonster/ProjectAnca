@@ -92,6 +92,7 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
   const cnt = countsOf(profile);
   const counted = countedEntries(entries, cnt.types);
   const tab = path.split("/")[3] || "home"; // /u/ali/library → library
+  const compact = tab !== "home"; // Kütüphane, Listeler gibi sekmelerde üst kısım kısalır, aranan şey ilk ekranda görünür
   const song = profile.song_url || null; // profilde arkada çalan şarkı
   const match = me && !isMe ? compat(mine, entries).score : null;
   const year = String(new Date().getFullYear());
@@ -120,13 +121,13 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
       {/* Tema rengi eskiden profili bir kutuya alıyordu; artık sayfanın arka planını boyar, düzen herkeste aynı (yeni tasarım) */}
       {(bg || tint) && <div className={`profile-bg-shade ${glass ? "light" : ""}`} aria-hidden="true"
         style={tint ? { background: `linear-gradient(to bottom, rgba(8, 12, 13, ${bg ? ".2" : "0"}), ${tint} ${bg ? "45%" : "35%"})` } : undefined} />}
-      <div className={`profile ${accent ? "has-pa" : ""} ${tint ? "themed" : ""} ${glass ? "glass" : ""}`} style={vars}>
+      <div className={`profile ${accent ? "has-pa" : ""} ${tint ? "themed" : ""} ${glass ? "glass" : ""} ${compact ? "compact" : ""}`} style={vars}>
         {/* Kapak görseli kapalıysa (ya da şeffaf temada kapak yoksa) kapak alanı boş kalır, arkadaki resim görünür;
             arkada resim yoksa boş alan daralır, ad ve fotoğraf yukarı çıkar */}
         <div className={`profile-banner ${banner ? "img" : ""} ${!banner && (glass || !showBanner) ? `clear ${bg ? "" : "short"}` : ""}`} >
           {banner && <div className="pb-img" style={{ backgroundImage: cssUrl(banner), ...cropStyle(profile.home_layout?.bannerCrop) }} aria-hidden="true" />}
           {!banner && !glass && showBanner && <CoverMarquee covers={mixedCovers(entries, 24)} />}
-          {!banner && !glass && showBanner && isMe && <button className="pb-hide" onClick={hideStrip}>Bu şeridi gizle</button>}
+          {!compact && !banner && !glass && showBanner && isMe && <button className="pb-hide" onClick={hideStrip}>Bu şeridi gizle</button>}
         </div>
         <div className="profile-head">
           <Avatar p={profile} cls="lg" />
@@ -135,18 +136,17 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
             <div className="handle">@{profile.username}{profile.pronouns ? ` · ${profile.pronouns}` : ""}</div>
           </div>
           {/* Büyük sayaçlar: kaç şey loglamış, bu yıl kaç tane bitirmiş, sırada ne kadar var, takipçi */}
-          {/* Sahibi Ana sayfayı düzenle'den hangilerinin görüneceğini ve hangi türlerin sayılacağını seçer; yeni profillerde kapalı başlar */}
+          {/* Sahibi Bölümleri düzenle'den hangilerinin görüneceğini ve hangi türlerin sayılacağını seçer; yeni profillerde kapalı başlar */}
           {!locked && cnt.show && <div className="profile-counts">
             {cnt.items.includes("entries") && <span><b>{num(counted.filter((e) => e.status !== "planned").length)}</b>Kayıt</span>}
             {cnt.items.includes("year") && <span><b>{num(counted.filter((e) => e.status === "completed" && (e.date || "").startsWith(year)).length)}</b>Bu yıl bitti</span>}
             {cnt.items.includes("planned") && <span><b>{num(counted.filter((e) => e.status === "planned").length)}</b>Planlanan</span>}
             {cnt.items.includes("followers") && <button onClick={() => openUserList("followers")}><b>{num(followers)}</b>Takipçi</button>}
             {cnt.items.includes("following") && <button onClick={() => openUserList("following")}><b>{num(following)}</b>Takip</button>}
-            {isMe && <Link className="counts-edit" href="/settings#sayilar" title="Hangi sayıların görüneceğini ve neyin sayılacağını seç" aria-label="Sayıları düzenle">⚙</Link>}
           </div>}
           <div className="profile-actions">
             {isMe
-              ? <Link className="btn" href="/settings">Profili düzenle</Link> /* + Ekle üst çubukta (telefonda alttaki +) zaten var */
+              ? !compact && <Link className="btn" href="/settings">Profili düzenle</Link> /* + Ekle üst çubukta (telefonda alttaki +) zaten var */
               : <>
                 {match !== null && !locked && <Link className="match-pill" href={`/u/${profile.username}/compare`} title="Zevkleriniz ne kadar uyuşuyor">Uyum %{match}</Link>}
                 {/* Arkadaşlar birbirine; site sahibi herkese, herkes de site sahibine yazabilir */}
@@ -165,8 +165,8 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
               </>}
           </div>
         </div>
-        <BadgeChips id={profile.id} max={3} more={`/u/${profile.username}/badges`} />
-        {profile.bio && !locked && <p className="profile-bio">{profile.bio}</p>}
+        {!compact && <BadgeChips id={profile.id} max={3} more={`/u/${profile.username}/badges`} />}
+        {!compact && profile.bio && !locked && <p className="profile-bio">{profile.bio}</p>}
         {/* Sadece sahibine, tek satırda: profilini başkaları nasıl görüyor (gizliyse türlerden bahsetmeye gerek yok) */}
         {isMe && (privacy !== "public" || hidden.length > 0) && (
           <p className="muted small profile-note" style={{ margin: "6px 0 0" }}>
@@ -188,6 +188,7 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
           </div>
         ) : (
           <>
+          {!compact && <>
           <div className="profile-meta">
             {profile.location && <span>{profile.location}</span>}
             {/* Kurucunun profilinde katılma tarihi yerine sadece kaçıncı üye olduğu yazar */}
@@ -195,11 +196,12 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
               : <span>{fmtDate(profile.created_at.slice(0, 10))} tarihinde katıldı{memberLine && <> · {memberLine}</>}</span>}
           </div>
           <Socials socials={profile.socials} />
+          </>}
           <nav className="subnav">
-            <Link href={base} className={tab === "home" ? "active" : ""}>Ana sayfa</Link>
-            <Link href={`${base}/library`} className={tab === "library" ? "active" : ""}>Kütüphane</Link>
+            <Link href={base} className={tab === "home" ? "active" : ""}>Profil</Link>
+            <Link href={`${base}/library`} className={tab === "library" ? "active" : ""}>Kütüphane <span className="count">{num(entries.filter((e) => e.status !== "planned").length)}</span></Link>
             <Link href={`${base}/reviews`} className={tab === "reviews" ? "active" : ""}>İncelemeler</Link>
-            <Link href={`${base}/likes`} className={tab === "likes" ? "active" : ""}>Beğendikleri</Link>
+            <Link href={`${base}/likes`} className={tab === "likes" ? "active" : ""}>Beğeniler</Link>
             <Link href={`${base}/lists`} className={tab === "lists" ? "active" : ""}>Listeler</Link>
             <Link href={`${base}/stats`} className={tab === "stats" ? "active" : ""}>İstatistikler</Link>
             <Link href={`${base}/badges`} className={tab === "badges" ? "active" : ""}>Rozetler</Link>
