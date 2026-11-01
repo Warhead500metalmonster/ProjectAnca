@@ -13,6 +13,7 @@ import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { MyLogs } from "@/components/MyLogs";
 import { Feed, RatingBars } from "@/components/ui";
+import { GameLinker } from "@/components/GameLinker";
 import { Lightbox } from "@/components/Lightbox";
 import { PageEditor } from "@/components/PageEditor";
 import { ListsWith } from "@/components/ListsWith";
@@ -68,6 +69,7 @@ export default function ContentPage() {
   const [more, setMore] = useState(false);
   const [zoom, setZoom] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [linking, setLinking] = useState(false);
   const editKey = contentKey({ type, title, rawg_id: null });
 
   const { data, error } = useLoad(async () => {
@@ -138,6 +140,7 @@ export default function ContentPage() {
             <button className="btn wide" onClick={() => pickList(item)}>Listeye ekle</button>
             <Link className="btn wide" href={forumHref(item)}>Forumda tartış</Link>
             {isAdmin && <button className="btn wide ghost" onClick={() => setEditing(true)}>Sayfayı düzenle</button>}
+            {isAdmin && type === "game" && <button className="btn wide primary" onClick={() => setLinking(true)}>IGDB ile eşleştir</button>}
           </div>
           <div className="gh-main">
             <div className="crumbs"><Link href={`/search?type=${type}`}>{t.plural}</Link> / {title}</div>
@@ -166,6 +169,7 @@ export default function ContentPage() {
           <ListsWith type={type} title={title} ext={extId} />
         </section>
       </div>
+      {linking && <GameLinker rawgId={null} title={title} onClose={() => setLinking(false)} />}
       {zoom && cover && <Lightbox images={[cover]} start={0} onClose={() => setZoom(false)} />}
       {editing && <PageEditor editKey={editKey} edit={edit} source={source} creatorLabel={t.creator} onClose={() => setEditing(false)} />}
     </>

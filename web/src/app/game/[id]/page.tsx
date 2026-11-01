@@ -14,6 +14,7 @@ import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { MyLogs } from "@/components/MyLogs";
 import { Feed, RatingBars } from "@/components/ui";
+import { GameLinker } from "@/components/GameLinker";
 import { Lightbox } from "@/components/Lightbox";
 import { PageEditor } from "@/components/PageEditor";
 import { ListsWith } from "@/components/ListsWith";
@@ -34,6 +35,7 @@ export default function GamePage() {
   const [more, setMore] = useState(false);
   const [shown, setShown] = useState<number | null>(null); // büyük gösterilen görsel
   const [editing, setEditing] = useState(false);
+  const [linking, setLinking] = useState(false);
 
   const { data, error } = useLoad(async () => {
     const [g, logs, shots, edit] = await Promise.all([
@@ -104,6 +106,7 @@ export default function GamePage() {
             {item.title && <button className="btn wide" onClick={() => pickList(item)}>Listeye ekle</button>}
             {item.title && <Link className="btn wide" href={forumHref(item)}>Forumda tartış</Link>}
             {isAdmin && <button className="btn wide ghost" onClick={() => setEditing(true)}>Sayfayı düzenle</button>}
+            {isAdmin && Number(id) > 0 && <button className={`btn wide ${g ? "ghost" : "primary"}`} onClick={() => setLinking(true)}>IGDB ile eşleştir</button>}
           </div>
           <div className="gh-main">
             <div className="crumbs"><Link href="/search?type=game">Oyunlar</Link> / {name}</div>
@@ -150,6 +153,7 @@ export default function GamePage() {
           <ListsWith rawgId={Number(id) || undefined} />
         </div>
       </div>
+      {linking && <GameLinker rawgId={Number(id)} title={name} onClose={() => setLinking(false)} />}
       {shown !== null && <Lightbox images={images} start={shown} onClose={() => setShown(null)} />}
       {editing && <PageEditor editKey={`g:${id}`} edit={edit} source={source} creatorLabel="Geliştirici" onClose={() => setEditing(false)} />}
     </>

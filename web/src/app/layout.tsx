@@ -32,6 +32,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head><script dangerouslySetInnerHTML={{ __html: themeBootScript }} /></head>
       <body>
         <AppProvider>
+          <link rel="preconnect" href="https://images.igdb.com" />
+          <link rel="preconnect" href="https://rsdhrnjycttihsduhasl.supabase.co" />
           <Suspense fallback={null}><NavProgress /></Suspense>
           <Suspense fallback={null}><Topbar /></Suspense>
           <Announcement />

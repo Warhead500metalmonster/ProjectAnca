@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Entry, Item, Profile, RawgGame } from "@/lib/types";
@@ -12,10 +13,7 @@ import { eventBadgeKey } from "@/lib/events";
 import { dueToday, upcoming } from "@/lib/upcoming";
 import { notify, notifyOn, setupApp } from "@/lib/notify";
 import { countOf, q, sb, supabaseConfigured } from "@/lib/supabase";
-import { EntryForm } from "./EntryForm";
-import { EntryView } from "./EntryView";
-import { ReportDialog, type ReportTarget } from "./ReportDialog";
-import { ListPicker } from "./ListPicker";
+import type { ReportTarget } from "./ReportDialog";
 
 interface FormOpts { game?: RawgGame | null; type?: Entry["type"]; item?: Item | null; replay?: boolean }
 
@@ -48,6 +46,14 @@ interface Ctx {
   toggleBlock: (p: { id: string; username: string }) => Promise<void>;
   report: (t: ReportTarget) => void; // raporlama penceresini açar
 }
+
+// Pencereler ihtiyaç olunca yüklenir: site açılırken telefon bu kodları boşuna işlemesin
+const loadEntryForm = () => import("./EntryForm").then((m) => m.EntryForm);
+const loadEntryView = () => import("./EntryView").then((m) => m.EntryView);
+const EntryForm = dynamic(loadEntryForm, { ssr: false });
+const EntryView = dynamic(loadEntryView, { ssr: false });
+const ListPicker = dynamic(() => import("./ListPicker").then((m) => m.ListPicker), { ssr: false });
+const ReportDialog = dynamic(() => import("./ReportDialog").then((m) => m.ReportDialog), { ssr: false });
 
 const AppCtx = createContext<Ctx | null>(null);
 export const useApp = () => {
@@ -124,11 +130,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [unread]);
 
   const inboxSeen = useRef<{ unread: number; latest: string } | null>(null);
+  const inboxFullAt = useRef(0);
   const checkInbox = useCallback(async () => {
     const id = userId.current;
     if (!id) return;
     const db = sb();
     try {
+      // Sık yoklamada sadece okunmamış mesaj sayısına bakılır; beğeni, yorum, takip dakikada bir yeter
+      if (Date.now() - inboxFullAt.current < 55000) {
+        const count = await countOf(db.from("messages").select("id", { count: "exact", head: true }).eq("receiver_id", id).is("read_at", null));
+        if (userId.current !== id) return;
+        const was = inboxSeen.current;
+        if (was && document.visibilityState === "hidden" && count > was.unread) notify("Yeni mesajın var", "Ancalog'da sana yazan biri var.", "/chat");
+        if (was) was.unread = count;
+        setUnread(count);
+        return;
+      }
+      inboxFullAt.current = Date.now();
       const [count, like, comment, follow, plans] = await Promise.all([
         countOf(db.from("messages").select("id", { count: "exact", head: true }).eq("receiver_id", id).is("read_at", null)),
         q<{ created_at: string }[]>(db.from("likes").select("created_at, entries!inner(user_id)").eq("entries.user_id", id).neq("user_id", id).order("created_at", { ascending: false }).limit(1)),
@@ -156,6 +174,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     async function loadMe(id: string | null) {
       userId.current = id;
+      inboxFullAt.current = 0;
       setMe(null);
       setFollowing(new Set());
       setFollowers(new Set());
@@ -213,11 +232,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Yeni mesaj sayısı çabuk görünsün: sık yokla, sekmeye geri dönünce hemen bak
     // Bildirimleri açtıysa sekme arkadayken de dakikada bir bakılır
     let tick = 0;
-    const timer = setInterval(() => { tick++; if (document.visibilityState === "visible" || (notifyOn() && tick % 6 === 0)) checkInbox(); }, 10000);
+    const timer = setInterval(() => { tick++; if (document.visibilityState === "visible" || (notifyOn() && tick % 6 === 0)) checkInbox(); }, 15000);
     const onShow = () => { if (document.visibilityState === "visible") checkInbox(); };
     document.addEventListener("visibilitychange", onShow);
     return () => { sub.subscription.unsubscribe(); clearInterval(timer); document.removeEventListener("visibilitychange", onShow); };
   }, [router, refresh, checkInbox, loadBadges, toast]);
+
+  // Telefon boşa çıkınca en sık açılan pencereler hazırlansın, ilk tıklamada beklenmesin
+  useEffect(() => {
+    const prepare = () => { loadEntryForm().catch(() => {}); loadEntryView().catch(() => {}); };
+    if ("requestIdleCallback" in window) { const t = requestIdleCallback(prepare, { timeout: 8000 }); return () => cancelIdleCallback(t); }
+    const t = setTimeout(prepare, 4000);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => { plansRef.current = { following: [...following], mine }; }, [following, mine]);
 

@@ -2501,3 +2501,33 @@ button.ev-post-img { display: block; padding: 0; border: 0; background: none; cu
 .nav-progress::before { content: ""; position: absolute; inset: 0; width: 40%; background: var(--accent); animation: nav-slide 1s ease-in-out infinite; }
 @keyframes nav-slide { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
 @media (prefers-reduced-motion: reduce) { .nav-progress::before { animation-duration: 3s; } }
+
+/* ---------- Akıcılık: sürekli yeniden boyanan şeyler yerine işlemciyi yormayan yollar ---------- */
+/* Sabit arka plan: background-attachment kaydırırken bütün sayfayı yeniden boyatıyordu; ayrı katman yormaz */
+body { background: var(--bg); background-attachment: scroll; }
+body::before { content: ""; position: fixed; inset: 0; z-index: -2; pointer-events: none;
+  background:
+    radial-gradient(900px 520px at 12% -8%, rgb(var(--accent-rgb) / .14), transparent 60%),
+    radial-gradient(700px 480px at 95% 0%, rgba(63, 167, 201, .08), transparent 60%); }
+/* Etkinlik çerçevesi: renk geçişi her karede yeniden çizilmek yerine hazır katman döner */
+.ev-feature { background: #1a1b22; animation: none; overflow: hidden; }
+.ev-feature::before { content: ""; position: absolute; z-index: -2; top: 50%; left: 50%; width: max(200%, 1400px); aspect-ratio: 1; translate: -50% -50%;
+  background: conic-gradient(#f5c542, var(--accent), #6c8cff, #e0457b, #f5c542); animation: ev-rotate 6s linear infinite; will-change: transform; }
+@keyframes ev-rotate { to { transform: rotate(360deg); } }
+/* Ekrandan çıkan kapak şeridi durur */
+.marquee.away .mq-row { animation-play-state: paused; }
+/* Saniyede bir değişen sayacın altında bulanıklık hesaplanmasın */
+.gta6 * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+/* Telefon ve tablet: bulanıklık yok, süs animasyonları durur, her cihazda akıcı kalsın */
+@media (hover: none), (max-width: 820px) {
+  *, *::before, *::after, dialog::backdrop { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  .lightbox { background: rgba(0, 0, 0, .94); }
+  .ev-cta, .nav-spark, .icon-link .dot.spark, .site-stats-grid .live i { animation: none !important; }
+  [class*="dev"] { animation-name: none; }
+}
+@media (prefers-reduced-motion: reduce) { .ev-feature::before { animation: none; } }
+
+/* Yönetici: IGDB ile eşleştirme listesi */
+.link-results { position: static; max-height: 50vh; overflow-y: auto; box-shadow: none; margin-top: 10px; }
+.link-results img, .link-results .noimg { width: 44px; height: 62px; }
+.link-results .name small { display: block; color: var(--muted); font-size: 12px; }

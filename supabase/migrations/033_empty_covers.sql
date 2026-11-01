@@ -1,4 +1,4 @@
--- 033: Kapağı boş kalan oyun loglarına IGDB kapağı. Sadece boş kapak dolar; dolu kapağa, puana, tarihe ya da incelemeye dokunulmaz. "Son güncelleme" de değişmez.
+-- 033: Kapağı boş kalan oyun loglarına IGDB kapağı ve yöneticinin sayfadan eşleştirme aracı. Sadece boş kapak dolar; dolu kapağa, puana, tarihe ya da incelemeye dokunulmaz. "Son güncelleme" de değişmez.
 -- Supabase → SQL Editor → New query → hepsini yapıştır → Run. Tekrar çalıştırmak zararsızdır.
 
 begin;
@@ -198,6 +198,37 @@ alter table public.entries enable trigger entries_badges;
 alter table public.entries enable trigger entries_favorites;
 
 commit;
+
+-- Yönetici sayfadan eşleştirir: oyun IGDB'ye bağlanır, otomatik ya da boş kapaklar güncellenir; başka siteden elle konan kapak kalır
+create or replace function public.link_game(p_rawg int, p_title text, p_igdb int, p_cover text) returns int
+language plpgsql security definer set search_path = '' as $$
+declare
+  target int;
+  auto constant text := '(images\.igdb\.com|media\.rawg\.io|howlongtobeat\.com|image\.api\.playstation\.com|store-images\.s-microsoft\.com|cdn\.cloudflare\.steamstatic\.com)';
+begin
+  if not public.is_admin() then raise exception 'Bunun için yönetici olmalısın.'; end if;
+  if p_igdb is null or p_igdb <= 0 then raise exception 'Geçersiz oyun.'; end if;
+  if p_cover is not null and p_cover !~ '^https://images\.igdb\.com/' then raise exception 'Geçersiz kapak.'; end if;
+  if p_rawg is not null and p_rawg > 0 then
+    target := p_rawg;
+    insert into public.game_map (rawg_id, igdb_id, n, how)
+      values (p_rawg, p_igdb, (select count(*) from public.entries where rawg_id = p_rawg), 'manual')
+      on conflict (rawg_id) do update set igdb_id = excluded.igdb_id, how = 'manual';
+    update public.entries set cover = coalesce(p_cover, cover)
+      where rawg_id = p_rawg and type = 'game' and (cover is null or cover ~ auto);
+  else
+    -- Numarası olmayan, sadece adıyla duran loglar: oyuna bağlanır ki aynı sayfada toplansın
+    select m.rawg_id into target from public.game_map m where m.igdb_id = p_igdb order by m.n desc limit 1;
+    target := coalesce(target, -p_igdb);
+    update public.entries set rawg_id = target,
+        cover = case when cover is null or cover ~ auto then coalesce(p_cover, cover) else cover end
+      where type = 'game' and rawg_id is null and lower(btrim(title)) = lower(btrim(p_title));
+  end if;
+  return target;
+end;
+$$;
+revoke all on function public.link_game(int, text, int, text) from public;
+grant execute on function public.link_game(int, text, int, text) to authenticated;
 
 notify pgrst, 'reload schema';
 

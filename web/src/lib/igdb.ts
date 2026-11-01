@@ -54,7 +54,7 @@ async function ask<T>(endpoint: string, body: string, tries = 4): Promise<{ rows
 // Veritabanındaki eşleştirme tablosu. Okunamazsa hata verir: yanlış numarayla yeni kayıt açılıp loglar bölünmesin
 async function mapRows(filter: string) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/game_map?select=rawg_id,igdb_id&order=n.desc&${filter}`, {
-    headers: { apikey: SUPABASE_KEY, authorization: `Bearer ${SUPABASE_KEY}` }, next: { revalidate: 300 },
+    headers: { apikey: SUPABASE_KEY, authorization: `Bearer ${SUPABASE_KEY}` }, next: { revalidate: 60 }, // yönetici eşleştirince kısa sürede görünsün
   });
   if (!r.ok) throw new Error(`game_map ${r.status}`);
   return (await r.json()) as { rawg_id: number; igdb_id: number }[];
