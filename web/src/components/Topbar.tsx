@@ -49,8 +49,6 @@ export function Topbar() {
         <Link href="/" className={active("home")}>
           <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg><span>Ana Sayfa</span>
         </Link>
-        {/* Bilgisayarda Kütüphanem hep elinin altında (telefonda Profilim'in içinde) */}
-        {me && <Link href={`${mine}/library`} className={`nav-lib ${active("library")}`}><span>Kütüphanem</span></Link>}
         {/* Keşfet: sitedeki ve dışarıdaki her oyunu, filmi, diziyi, animeyi, albümü tek kutudan ara (telefonda üstteki büyüteç) */}
         <Link href="/search" className={`nav-lib ${active("search")}`}>
           <svg viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 5.96 12.05l4.74 4.75-1.4 1.4-4.75-4.74A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z" /></svg><span>Keşfet</span>
@@ -67,6 +65,8 @@ export function Topbar() {
             <svg viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z" /></svg>
           </button>
         )}
+        {/* Bilgisayarda Kütüphanem hep elinin altında (telefonda Profilim'in içinde) */}
+        {me && <Link href={`${mine}/library`} className={`nav-lib ${active("library")}`}><span>Kütüphanem</span></Link>}
         <Link href="/chat" className={active("chat")}>
           <svg viewBox="0 0 24 24"><path d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm3 6v2h2V9zm4 0v2h2V9zm4 0v2h2V9z" /></svg>
           <span>Mesajlar</span>{ready && unread > 0 && <b className="nav-badge">{unread > 9 ? "9+" : unread}</b>}

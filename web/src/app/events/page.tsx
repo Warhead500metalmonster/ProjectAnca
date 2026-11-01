@@ -42,7 +42,7 @@ export default function EventsPage() {
       <section className="ev-list-head">
         <div>
           <h1>Etkinlikler</h1>
-          <p className="muted">Aynı oyunu, filmi, diziyi hep birlikte oynuyor, izliyoruz. Bir etkinlik seç, sürümünü belirle, katıl. Acele yok, herkes kendi hızında.</p>
+          <p className="muted">Aynı oyunu, filmi, diziyi hep birlikte oynuyor, izliyoruz. Acele yok, herkes kendi hızında.</p>
           <ol className="ev-steps-inline">
             <li><b>1</b> Etkinliğe gir</li>
             <li><b>2</b> Sürümünü seçip katıl</li>
@@ -70,7 +70,7 @@ export default function EventsPage() {
             ) : <div className="empty">Şu an süren ya da yaklaşan etkinlik yok. Yenisi gelince burada olacak; aşağıdan geçmişlere bakabilirsin.</div>}
             {past.length > 0 && (
               <section className="section">
-                <div className="section-head"><h2>Geçmiş etkinlikler</h2><span className="muted small">Arşiv: sonuçlar, katılanlar ve sohbet saklanır</span></div>
+                <div className="section-head"><h2>Geçmiş etkinlikler</h2></div>
                 <div className="ev-cards">{past.map((e) => <EventCard key={e.id} ev={e} stats={data.counts[e.id]} />)}</div>
               </section>
             )}

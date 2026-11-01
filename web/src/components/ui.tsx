@@ -385,3 +385,9 @@ function Spoiler({ text }: { text: string }) {
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(true); } }}>{text}</span>
   );
 }
+
+// Kapağın köşesinde: sayfasına girmeden tek dokunuşla kütüphaneye ekle
+export function QuickAdd({ has, onAdd }: { has: boolean; onAdd: () => void }) {
+  if (has) return <span className="quick-add on" title="Kütüphanende var" aria-label="Kütüphanende var">✓</span>;
+  return <button type="button" className="quick-add" title="Kütüphaneme ekle" aria-label="Kütüphaneme ekle" onClick={onAdd}>+</button>;
+}

@@ -10,7 +10,7 @@ import { anilist, fetchAll, searchMusic, tmdb, tmdbImage, SEARCH_CREDITS } from 
 import { rawg, retry } from "@/lib/rawg";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
-import { Cover, UserRow } from "@/components/ui";
+import { Cover, QuickAdd, UserRow } from "@/components/ui";
 
 type Sort = "logged" | "completed" | "active" | "rating" | "newest" | "oldest" | "title";
 const SORTS: [Sort, string][] = [
@@ -202,12 +202,6 @@ export default function SearchPage() {
         })}
     </>
   );
-}
-
-// Kapağın köşesinde: sayfasına girmeden tek dokunuşla kütüphaneye ekle
-function QuickAdd({ has, onAdd }: { has: boolean; onAdd: () => void }) {
-  if (has) return <span className="quick-add on" title="Kütüphanende var" aria-label="Kütüphanende var">✓</span>;
-  return <button type="button" className="quick-add" title="Kütüphaneme ekle" aria-label="Kütüphaneme ekle" onClick={onAdd}>+</button>;
 }
 
 async function findUsers(text: string): Promise<Profile[]> {

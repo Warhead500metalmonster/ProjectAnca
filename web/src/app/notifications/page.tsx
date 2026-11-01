@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Entry, Profile } from "@/lib/types";
 import { PROFILE_COLS } from "@/lib/constants";
@@ -15,9 +15,16 @@ import { Avatar, Name } from "@/components/ui";
 interface Note { kind: "like" | "comment" | "follow" | "plan"; at: string; who?: Partial<Profile> | null; entry?: { id: string; title: string }; body?: string; done?: boolean }
 interface Row { created_at: string; profiles: Partial<Profile> | null; entries: { id: string; title: string }; body?: string }
 
+const KINDS: [Note["kind"], string][] = [["like", "Beğeniler"], ["comment", "Yorumlar"], ["follow", "Takipçiler"], ["plan", "Planladıkların"]];
+const groupOf = (at: string) => {
+  const days = (Date.now() - new Date(at).getTime()) / 864e5;
+  return days < 1 ? "Bugün" : days < 7 ? "Bu hafta" : "Daha eski";
+};
+
 // Kayıtlarıma gelen beğeniler, yorumlar ve yeni takipçiler
 export default function Notifications() {
   const { me, ready, version, notifAt, following, mine } = useApp();
+  const [kind, setKind] = useState<Note["kind"] | "">("");
 
   const { data, error } = useLoad(async () => {
     const db = sb();
@@ -51,21 +58,37 @@ export default function Notifications() {
   if (error) return <div className="empty">Bir şeyler ters gitti: {error}</div>;
   if (!data) return <div className="loading">Yükleniyor…</div>;
 
+  const list = kind ? data.filter((n) => n.kind === kind) : data;
+  // Satırın tamamı tıklanır: kayda ya da takip edenin profiline gider
+  const hrefOf = (n: Note) => n.kind === "follow" ? `/u/${n.who?.username}`
+    : `/u/${n.kind === "plan" ? n.who?.username : me.username}?entry=${n.entry!.id}`;
+
   return (
     <section className="notes">
       <h1>Bildirimler</h1>
-      {data.length ? data.map((n, i) => (
-        <div key={i} className="note-row">
-          <Link href={`/u/${n.who?.username}`}><Avatar p={n.who} /></Link>
-          <div className="grow">
-            <Link href={`/u/${n.who?.username}`}><b><Name p={n.who} /></b></Link>{" "}
-            {n.kind === "like" && <>kaydını beğendi: <Link className="grad" href={`/u/${me.username}?entry=${n.entry!.id}`}>{n.entry!.title}</Link> ♥</>}
-            {n.kind === "comment" && <>yorum yaptı: <Link className="grad" href={`/u/${me.username}?entry=${n.entry!.id}`}>{n.entry!.title}</Link>
-              <p className="note-body">“{n.body}”</p></>}
-            {n.kind === "follow" && <>seni takip etmeye başladı </>}
-            {n.kind === "plan" && <>{n.done ? "bitirdi" : "başladı"}, sen de planlamıştın: <Link className="grad" href={`/u/${n.who?.username}?entry=${n.entry!.id}`}>{n.entry!.title}</Link></>}
-            <div className="muted small">{timeAgo(n.at)}</div>
-          </div>
+      {data.length > 0 && (
+        <div className="chips">
+          <button className={`chip ${!kind ? "active" : ""}`} onClick={() => setKind("")}>Hepsi</button>
+          {KINDS.filter(([k]) => data.some((n) => n.kind === k)).map(([k, label]) => (
+            <button key={k} className={`chip ${kind === k ? "active" : ""}`} onClick={() => setKind(k)}>{label}</button>
+          ))}
+        </div>
+      )}
+      {list.length ? list.map((n, i) => (
+        <div key={i} className="note-wrap">
+          {(i === 0 || groupOf(list[i - 1].at) !== groupOf(n.at)) && <h2 className="note-group">{groupOf(n.at)}</h2>}
+          <Link className="note-row" href={hrefOf(n)}>
+            <Avatar p={n.who} />
+            <div className="grow">
+              <b><Name p={n.who} /></b>{" "}
+              {n.kind === "like" && <>kaydını beğendi: <span className="grad">{n.entry!.title}</span> ♥</>}
+              {n.kind === "comment" && <>yorum yaptı: <span className="grad">{n.entry!.title}</span>
+                <p className="note-body">“{n.body}”</p></>}
+              {n.kind === "follow" && <>seni takip etmeye başladı </>}
+              {n.kind === "plan" && <>{n.done ? "bitirdi" : "başladı"}, sen de planlamıştın: <span className="grad">{n.entry!.title}</span></>}
+              <div className="muted small">{timeAgo(n.at)}</div>
+            </div>
+          </Link>
         </div>
       )) : <div className="empty">Henüz bildirim yok. Biri kaydını beğenince, yorum yapınca ya da seni takip edince burada görürsün.</div>}
     </section>

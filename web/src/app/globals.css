@@ -2637,3 +2637,30 @@ dialog { background: rgb(18, 23, 25); }
   .profile.compact .profile-banner { height: 44px; }
   .profile.compact .profile-actions:empty { display: none; }
 }
+
+/* Bildirimler: bugün, bu hafta, daha eski; satırın tamamı tıklanır */
+.note-wrap { display: flex; flex-direction: column; gap: 10px; }
+.note-group { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 10px 0 0; }
+a.note-row { color: inherit; transition: border-color .12s; }
+a.note-row:hover { border-color: var(--accent); }
+.notes h1 { font-size: 28px; margin-bottom: 0; }
+
+/* Forum: arama ve yeni konu tek satırda */
+.forum-head { align-items: center; flex-wrap: nowrap; margin-bottom: 10px; }
+.forum-head .input { flex: 1; min-width: 0; }
+.forum-head .btn { flex: none; }
+.forum-cats { margin-bottom: 14px; }
+@media (max-width: 640px) { .forum-head .btn { width: auto; } }
+
+/* Etkinlikler: başlık kısa */
+.ev-list-head { padding-top: 6px; }
+.ev-list-head h1 { font-size: 28px; }
+
+/* İstatistikler: görünüm seçici */
+.stats-views { margin-right: auto; }
+.stats-views button { padding: 6px 14px; font-size: 14px; }
+.stats-page .records, .stats-page .chart-grid { margin-top: 14px; }
+
+/* Kayıt penceresi: asıl işler üstte */
+.view-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+@media (max-width: 640px) { .view-actions .btn { flex: 1 1 auto; } }

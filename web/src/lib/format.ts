@@ -56,7 +56,8 @@ export const fmtHoursShort = (sec: number) => `${Math.round(sec / 3600).toLocale
 // Başlama ve bitirme tarihi varsa kaç günde bitirildiği (aynı gün = 1 gün)
 export function daysTaken(e: Pick<Entry, "status" | "started_on" | "date">) {
   if (e.status !== "completed" || !e.started_on || !e.date) return null;
-  return Math.round((new Date(e.date + "T00:00").getTime() - new Date(e.started_on + "T00:00").getTime()) / 86400000) + 1;
+  const days = Math.round((new Date(e.date + "T00:00").getTime() - new Date(e.started_on + "T00:00").getTime()) / 86400000) + 1;
+  return days > 0 ? days : null; // bitiş başlangıçtan önce yazılmışsa süre hesaplanamaz
 }
 
 // ---------- Puan: 0-10 tutulur, izleyenin seçtiği ölçekte (5 ya da 10) gösterilir ----------

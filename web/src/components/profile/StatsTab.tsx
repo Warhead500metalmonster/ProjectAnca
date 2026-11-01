@@ -26,6 +26,7 @@ export function StatsTab() {
   const [type, setType] = useState<EntryType | "all">("all");
   const [year, setYear] = useState("");       // çıkış yılı
   const [finish, setFinish] = useState("");   // bitirme yılı
+  const [view, setView] = useState<"ozet" | "grafik" | "rekor">("ozet"); // hepsi alt alta olunca sayfa bitmiyordu
 
   const scoped = entries.filter((e) => (type === "all" || e.type === type));
   const years = [...new Set(scoped.map((e) => e.year).filter(Boolean))].sort((a, b) => b! - a!) as number[];
@@ -76,13 +77,18 @@ export function StatsTab() {
 
   return (
     <section className="section stats-page">
-      <Goals profile={profile} entries={entries} isMe={isMe} />
+      {view === "ozet" && <Goals profile={profile} entries={entries} isMe={isMe} />}
       <div className="tabs">
         {([["all", "", "Tümü"], ...TYPE_KEYS.map((k) => [k, "", TYPES[k].label])] as [EntryType | "all", string, string][]).map(([k, icon, label]) => (
           <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => { setType(k); setYear(""); setFinish(""); }}>{icon} {label}</button>
         ))}
       </div>
       <div className="filters">
+        <div className="mini-tabs stats-views">
+          <button className={view === "ozet" ? "active" : ""} onClick={() => setView("ozet")}>Özet</button>
+          <button className={view === "grafik" ? "active" : ""} onClick={() => setView("grafik")}>Grafikler</button>
+          <button className={view === "rekor" ? "active" : ""} onClick={() => setView("rekor")}>Rekorlar</button>
+        </div>
         <select value={year} onChange={(e) => setYear(e.target.value)} aria-label="Çıkış yılı">
           <option value="">Çıkış yılı: hepsi</option>
           {years.map((y) => <option key={y} value={y}>{y} çıkışlı içerikler</option>)}
@@ -103,6 +109,7 @@ export function StatsTab() {
 
       {list.length > 0 && (
         <>
+          {view === "ozet" && <>
           <div className="stats">
             {([
               [list.length, "Toplam kayıt"],
@@ -131,8 +138,9 @@ export function StatsTab() {
               })}
             </div>
           </div>
+          </>}
 
-          <div className="chart-grid">
+          {view === "grafik" && <div className="chart-grid">
             {timeline.length > 0 && <Columns title={finish ? `${finish} yılında aylara göre bitirilenler` : "Yıllara göre bitirilenler"} data={timeline} />}
             {rated.length > 0 && <Columns title={`Puan dağılımı (${scale} üzerinden)`} data={bins} />}
             {type === "all" && <Bars title="Türler" data={TYPE_KEYS.map((k) => [TYPES[k].label, list.filter((e) => e.type === k).length] as [string, number]).filter(([, n]) => n).sort((a, b) => b[1] - a[1])} />}
@@ -140,10 +148,9 @@ export function StatsTab() {
             {(type === "all" || type === "game") && <Bars title="Mağazalar" data={countBy(list, (e) => e.store).slice(0, 8)} />}
             <Bars title="En çok kimden" data={countBy(list, (e) => e.creator?.split(",")[0].trim()).slice(0, 8)} />
             <Bars title="Çıkış dönemine göre" data={decades} />
-          </div>
+          </div>}
 
-          <div className="section-head" style={{ marginTop: 28 }}><h2>Rekorlar</h2></div>
-          <div className="records">
+          {view === "rekor" && <div className="records">
             {([
               ["En yüksek puan", best, best && scoreText(Number(best.rating), scale)],
               ["En düşük puan", worst !== best ? worst : undefined, worst && scoreText(Number(worst.rating), scale)],
@@ -165,7 +172,7 @@ export function StatsTab() {
                 <div><span className="muted">{label}</span><b>{e!.title}</b><span>{val}</span></div>
               </button>
             ))}
-          </div>
+          </div>}
         </>
       )}
 

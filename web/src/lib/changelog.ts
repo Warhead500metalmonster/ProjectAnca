@@ -5,6 +5,11 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-11-01T14:47:07+04:00",
+    title: "Kalan sayfalar da sadeleşti",
+    body: "Bir kaydı açınca Düzenle artık en üstte, yorumların altında kaybolmuyor. İstatistikler Özet, Grafikler ve Rekorlar diye üçe ayrıldı. Bildirimlerde satırın tamamına tıklayabilir, türe göre süzebilirsin. Forumda arama ve Yeni konu aç yan yana.",
+  },
+  {
     date: "2026-11-01T14:40:28+04:00",
     title: "Site baştan aşağı sadeleşti",
     body: "Her sayfanın üstünde arama kutusu ve menüde Kütüphanem var. Keşfet'te kapağın köşesindeki + ile sayfasına girmeden ekleyebilirsin. Kütüphanede Oynandı, Oynuyorum, Planlandı gibi durumlar artık hep görünür. Topluluk sekmelere ayrıldı, kayıt penceresinde durumu tek dokunuşla seçiyorsun.",

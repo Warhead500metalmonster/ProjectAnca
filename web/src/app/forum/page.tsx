@@ -48,10 +48,7 @@ function Forum() {
     <div className="forum">
       <SocialTabs />
       <div className="forum-head">
-        <div>
-          <h1>Forum</h1>
-          <p className="muted">Oyunları, filmleri, dizileri konuş. Spoiler vereceksen yazıyı ||böyle|| iki çizgi arasına al.</p>
-        </div>
+        <input className="input" type="search" placeholder="Konu ara…" aria-label="Konu ara" value={text} onChange={(e) => setText(e.target.value)} />
         {me ? <button className="btn primary" onClick={() => setWriting(!writing)}>{writing ? "Vazgeç" : "Yeni konu aç"}</button>
           : <Link className="btn primary" href="/login">Konu açmak için giriş yap</Link>}
       </div>
@@ -68,12 +65,9 @@ function Forum() {
         <NewThread item={item} onDone={(id) => { setWriting(false); toast("Konu açıldı"); router.push(`/forum/${id}`); }} />
       )}
 
-      <div className="toolbar">
-        <div className="chips">
-          <button className={`chip ${cat === "" ? "active" : ""}`} onClick={() => setCat("")}>Hepsi</button>
-          {Object.entries(FORUM_CATS).map(([k, v]) => <button key={k} className={`chip ${cat === k ? "active" : ""}`} onClick={() => setCat(k)}>{v}</button>)}
-        </div>
-        <div className="right"><input className="input" type="search" placeholder="Konu ara…" value={text} onChange={(e) => setText(e.target.value)} /></div>
+      <div className="chips forum-cats">
+        <button className={`chip ${cat === "" ? "active" : ""}`} onClick={() => setCat("")}>Hepsi</button>
+        {Object.entries(FORUM_CATS).map(([k, v]) => <button key={k} className={`chip ${cat === k ? "active" : ""}`} onClick={() => setCat(k)}>{v}</button>)}
       </div>
 
       {error ? <div className="empty">Forum yüklenemedi: {error}</div> : !data ? <div className="loading">Yükleniyor…</div> : data.length ? (
@@ -127,7 +121,7 @@ function NewThread({ item, onDone }: { item: Item | null; onDone: (id: string) =
       <select value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Bölüm">
         {Object.entries(FORUM_CATS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
       </select>
-      <textarea className="input" rows={6} maxLength={8000} placeholder="Ne konuşmak istiyorsun?" value={body} onChange={(e) => setBody(e.target.value)} />
+      <textarea className="input" rows={6} maxLength={8000} placeholder="Ne konuşmak istiyorsun? Spoiler vereceksen ||böyle|| iki çizgi arasına al." value={body} onChange={(e) => setBody(e.target.value)} />
       <div className="row-end"><button className="btn primary" disabled={busy}>{busy ? "Açılıyor…" : "Konuyu aç"}</button></div>
     </form>
   );

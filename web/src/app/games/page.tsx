@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { RawgGame, RawgRef } from "@/lib/types";
@@ -8,7 +8,8 @@ import { smallImage } from "@/lib/format";
 import { rawg } from "@/lib/rawg";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
-import { Cover } from "@/components/ui";
+import { useApp } from "@/components/AppProvider";
+import { Cover, QuickAdd } from "@/components/ui";
 
 // Oyun sayfasında türe, platforma, geliştiriciye, yayıncıya ya da mağazaya tıklanınca gelinen liste
 const KINDS: [string, string][] = [["genres", "Tür"], ["platforms", "Platform"], ["developers", "Geliştirici"], ["publishers", "Yayıncı"], ["stores", "Mağaza"]];
@@ -19,6 +20,7 @@ export default function GamesPage() {
   const params = useSearchParams();
   const router = useRouter();
   const path = usePathname();
+  const { mine, openForm } = useApp();
   const [pages, setPages] = useState(1);
   const filter = KINDS.find(([k]) => params.get(k));
   const label = params.get("label") || "";
@@ -51,6 +53,7 @@ export default function GamesPage() {
     router.replace(`${path}?${next}`, { scroll: false });
   }
 
+  const myGames = useMemo(() => new Set(mine.map((e) => e.rawg_id)), [mine]);
   const heading = filter ? `${label || params.get(filter[0])}` : "Tüm oyunlar";
 
   return (
@@ -61,7 +64,7 @@ export default function GamesPage() {
         {filter && <p className="muted" style={{ margin: 0 }}>{filter[1]}: {heading}{data ? ` · ${data.total.toLocaleString("tr")} oyun` : ""}</p>}
         <div className="filters">
           <select value={ordering} onChange={(e) => set({ ordering: e.target.value === "-added" ? null : e.target.value })} aria-label="Sırala">
-            {SORTS.map(([k, l]) => <option key={k} value={k}>↕ {l}</option>)}
+            {SORTS.map(([k, l]) => <option key={k} value={k}>Sırala: {l}</option>)}
           </select>
           {filter && <button className="link" onClick={() => set({ [filter[0]]: null, label: null })}>✕ {filter[1]} filtresini kaldır</button>}
         </div>
@@ -81,14 +84,17 @@ export default function GamesPage() {
             <>
               <div className="grid">
                 {data.list.map((g) => (
-                  <Link key={g.id} className="card" href={`/game/${g.id}`}>
-                    <div className="poster">
-                      <div className="ph"></div><Cover src={g.background_image ? smallImage(g.background_image) : null} />
-                      {data.counts.get(g.id) ? <span className="rating">{data.counts.get(g.id)}</span> : g.metacritic ? <span className="rating">★ {g.metacritic}</span> : null}
-                    </div>
-                    <div className="card-title">{g.name}</div>
-                    <div className="card-meta">{[g.released?.slice(0, 4), g.genres?.slice(0, 2).map((x) => x.name).join(", ")].filter(Boolean).join(" · ")}</div>
-                  </Link>
+                  <div className="card-wrap" key={g.id}>
+                    <Link className="card" href={`/game/${g.id}`}>
+                      <div className="poster">
+                        <div className="ph"></div><Cover src={g.background_image ? smallImage(g.background_image) : null} />
+                        {data.counts.get(g.id) ? <span className="rating">{data.counts.get(g.id)} kişi</span> : g.metacritic ? <span className="rating">★ {g.metacritic}</span> : null}
+                      </div>
+                      <div className="card-title">{g.name}</div>
+                      <div className="card-meta">{[g.released?.slice(0, 4), g.genres?.slice(0, 2).map((x) => x.name).join(", ")].filter(Boolean).join(" · ")}</div>
+                    </Link>
+                    <QuickAdd has={myGames.has(g.id)} onAdd={() => openForm(null, { game: g })} />
+                  </div>
                 ))}
               </div>
               {data.list.length < data.total && pages < 8 && (

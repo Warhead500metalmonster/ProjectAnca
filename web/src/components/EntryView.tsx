@@ -139,6 +139,12 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
             <div className="view-user"><Avatar p={p} cls="sm" /> <Link href={`/u/${p.username}`} onClick={close}><Name p={p} /></Link> · {timeAgo(e.updated_at)}</div>
           )}
 
+          <div className="view-actions">
+            {isMine && <button type="button" className="btn primary" onClick={() => onEdit(e)}>Düzenle</button>}
+            <Link className="btn" href={contentHref(e)} onClick={close}>{e.type === "game" ? "Oyun sayfası" : "İçerik sayfası"}</Link>
+            <button type="button" className="btn" onClick={() => { close(); pickList(itemOf(e)); }}>Listeye ekle</button>
+          </div>
+
           {my && (
             <div className="compare">
               <div><span>{p.display_name || p.username}</span>{e.rating ? <Rating r={e.rating} /> : <i className="muted">puan yok</i>}</div>
@@ -204,16 +210,10 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
             ) : <p className="muted" style={{ margin: 0 }}><Link href="/login" onClick={close} className="grad">Giriş yap</Link>, yorum yaz.</p>}
           </div>
 
-          <div className="actions">
-            <Link className="btn" href={contentHref(e)} onClick={close}>{e.type === "game" ? "Oyun sayfası" : "İçerik sayfası"} →</Link>
-            <button type="button" className="btn" onClick={() => { close(); pickList(itemOf(e)); }}>Listeye ekle</button>
-            <span className="spacer" />
-            {isMine && <button type="button" className="btn primary" onClick={() => onEdit(e)}>Düzenle</button>}
-            {me && !isMine && (
-              <button type="button" className="report-link" onClick={() => { close(); report({ kind: "entry", id: e.id, user: e.user_id,
-                excerpt: [e.notes, e.progress, e.drop_note].filter(Boolean).join(" / ") || null, label: `@${p.username} kullanıcısının "${e.title}" kaydı ve incelemesi` }); }}>Raporla</button>
-            )}
-          </div>
+          {me && !isMine && (
+            <div><button type="button" className="report-link" onClick={() => { close(); report({ kind: "entry", id: e.id, user: e.user_id,
+              excerpt: [e.notes, e.progress, e.drop_note].filter(Boolean).join(" / ") || null, label: `@${p.username} kullanıcısının "${e.title}" kaydı ve incelemesi` }); }}>Raporla</button></div>
+          )}
           {isAdmin && !isMine && (
             <div className="admin-mod">
               <span className="muted small">Yönetici:</span>
