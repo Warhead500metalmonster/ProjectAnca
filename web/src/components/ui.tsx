@@ -209,16 +209,19 @@ export function EntryCard({ e, kind = false, edit = false, wall = false }: { e: 
       <div className={`poster ${t.square ? "square" : ""}`}>
         <div className="ph">{t.label}</div>
         <Cover src={e.cover} />
-        {kind && <span className="kind">{t.label}</span>}
         {e.favorite && <span className="fav" title="Favori">♥</span>}
-        {e.status !== "owned" && <span className={`st badge ${e.status}`}>{statusLabel(e.status, e.type)}</span>}
-        {e.rating ? <span className="rating">★ {scoreShort(e.rating, scale)}</span> : null}
-        {e.replay && <span className="replay-pill">Replay</span>}
-        {episodic && !edit && e.episode ? <span className="ep-pill">{e.episode}{e.episodes_total ? `/${e.episodes_total}` : ""}. bölüm</span> : null}
+        {wall && e.rating ? <span className="rating">★ {scoreShort(e.rating, scale)}</span> : null}
         {wall && <div className="hover"><b>{e.title}</b>{meta && <span>{meta}</span>}</div>}
       </div>
       {!wall && <div className="card-title">{e.title}</div>}
-      {!wall && meta && <div className="card-meta">{meta}</div>}
+      {!wall && <div className="card-meta">{[kind && t.label, e.year].filter(Boolean).join(" · ") || e.creator}</div>}
+      {/* Kapağın üstü temiz kalsın: durum ve puan altta tek satırda */}
+      {!wall && (
+        <div className="card-info">
+          {e.status !== "owned" && <span className={`card-status ${e.status}`}>{episodic && e.episode ? `${e.episode}${e.episodes_total ? `/${e.episodes_total}` : ""}. bölüm` : statusLabel(e.status, e.type)}{e.replay ? " ↻" : ""}</span>}
+          {e.rating ? <span className="card-score">★ {scoreShort(e.rating, scale)}</span> : null}
+        </div>
+      )}
     </button>
   );
   // Kendi devam eden dizinde kapağın köşesinde "+1 bölüm" (düğme içinde düğme olmasın diye yanına konur)
@@ -248,6 +251,34 @@ export function entryTags(e: Entry, { store = false, time = true } = {}) {
     time && playSec(e) && !(e.status === "active" && e.progress_sec) ? fmtDur(playSec(e)) : "", // devam edende süre zaten ▶ ile yazıyor
     days ? `${days} günde` : "",
   ].filter(Boolean) as string[];
+}
+
+// İnceleme kartı: büyük kapak, puan ve yazı; akış satırı gibi değil, okunacak bir şey gibi görünür
+export function ReviewCard({ e, who = false }: { e: Entry; who?: boolean }) {
+  const { openView } = useApp();
+  const p = e.profiles || {};
+  const t = TYPES[e.type];
+  const likes = likeCount(e), comments = commentCount(e);
+  return (
+    <article className="review-card">
+      <button type="button" className={`review-cover ${t.square ? "square" : ""}`} onClick={() => openView(e)} aria-label={e.title}><span>{t.label}</span><Cover src={e.cover} /></button>
+      <div className="review-body">
+        <button type="button" className="review-title" onClick={() => openView(e)}>{e.title}{e.year ? <small> {e.year}</small> : null}</button>
+        <div className="review-meta">
+          {who && p.username && <Link className="review-who" href={`/u/${p.username}`}><Avatar p={p} cls="sm" /><Name p={p} /></Link>}
+          <Rating r={e.rating} />
+          <span>{statusLabel(e.status, e.type)}</span>
+          <span>{timeAgo(e.updated_at)}</span>
+        </div>
+        <div className="review-text"><RichText text={e.notes || ""} /></div>
+        <div className="review-foot">
+          <button type="button" className="link" onClick={() => openView(e)}>Devamını oku</button>
+          {likes > 0 && <span>♥ {likes}</span>}
+          {comments > 0 && <span>{comments} yorum</span>}
+        </div>
+      </div>
+    </article>
+  );
 }
 
 // Akışta incelemenin ilk satırları görünür; tamamını, beğeni ve yorumları kayda tıklayan sahibinin profilinde açar.
@@ -375,6 +406,39 @@ export function Timeline({ list: all, step = 15, empty }: { list: Entry[]; step?
         );
       })}
       {rows.length > shown && <button className="feed-more" onClick={() => setShown((n) => n + step * 2)}>Daha fazla göster ({rows.length - shown})</button>}
+    </div>
+  );
+}
+
+// İçerik sayfasında kimler logladı: oyun zaten belli, öne çıkan kişi, puanı ve yazdığı. İnceleme yazanlar üstte.
+export function PeopleLogs({ list: all, empty, step = 12 }: { list: Entry[]; empty?: React.ReactNode; step?: number }) {
+  const { blocked } = useApp();
+  const [shown, setShown] = useState(step);
+  const list = all.filter((e) => !blocked.has(e.user_id)).sort((a, b) => Number(!!b.notes?.trim()) - Number(!!a.notes?.trim()) || b.updated_at.localeCompare(a.updated_at));
+  if (!list.length) return <>{empty ?? <div className="empty">Henüz kimse loglamadı.</div>}</>;
+  return (
+    <div className="people-logs">
+      {list.slice(0, shown).map((e) => {
+        const p = e.profiles || {}, profile = `/u/${p.username}`;
+        const extra = entryTags(e).slice(0, 3).join(" · ");
+        return (
+          <div className="plog" key={e.id}>
+            <Link href={profile}><Avatar p={p} /></Link>
+            <div className="plog-main">
+              <div className="plog-head">
+                <Link href={profile}><b><Name p={p} /></b></Link>
+                {e.status !== "owned" && <span className={`card-status ${e.status}`}>{statusLabel(e.status, e.type)}</span>}
+                {e.favorite && <span className="plog-fav" title="Favori">♥</span>}
+                <span className="plog-time">{timeAgo(e.updated_at)}</span>
+              </div>
+              {e.rating ? <Rating r={e.rating} /> : null}
+              {extra && <div className="plog-extra">{extra}</div>}
+              {e.notes?.trim() && <Link className="plog-note" href={`${profile}?entry=${e.id}`}><RichText text={e.notes} /></Link>}
+            </div>
+          </div>
+        );
+      })}
+      {list.length > shown && <button className="feed-more" onClick={() => setShown((n) => n + step * 2)}>Daha fazla göster ({list.length - shown})</button>}
     </div>
   );
 }

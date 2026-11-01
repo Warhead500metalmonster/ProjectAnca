@@ -142,11 +142,10 @@ function ListView({ list, base }: { list: List; base: Entry[] }) {
                   <Link href={contentHref(it)} className="card-link">
                     <div className={`poster ${t.square ? "square" : ""} ${e ? "" : "dim"}`}>
                       <div className="ph">{t.label}</div><Cover src={it.cover} />
-                      <span className="rank">#{i + 1}</span>
-                      <span className={`st badge ${e?.status || ""}`}>{e ? statusLabel(e.status, e.type) : "Loglanmadı"}</span>
                     </div>
-                    <div className="card-title">{it.title}</div>
+                    <div className="card-title"><span className="li-rank">{i + 1}.</span> {it.title}</div>
                     <div className="card-meta">{[t.label, it.year].filter(Boolean).join(" · ")}</div>
+                    <div className="card-info"><span className={`card-status ${e?.status || ""}`}>{e ? statusLabel(e.status, e.type) : "Loglanmadı"}</span></div>
                   </Link>
                   {noteFor?.id === it.id ? (
                     <div className="li-note-edit">

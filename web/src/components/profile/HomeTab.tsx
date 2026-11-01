@@ -11,7 +11,7 @@ import { q, sb } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { useProfile } from "@/components/ProfileShell";
-import { Cover, EntryCard, FeedItem, Rating, RatingBars, RichText, Stats } from "@/components/ui";
+import { Cover, EntryCard, FeedItem, Rating, RatingBars, ReviewCard, RichText, Stats } from "@/components/ui";
 import { ListCard } from "@/components/ListCard";
 import { FavoritesSection } from "./LibraryTab";
 import { ProfileEvents } from "./ProfileEvents";
@@ -119,7 +119,7 @@ function HomeSection({ b }: { b: HomeBlock }) {
       return list.length ? (
         <section className="section">
           <div className="section-head"><h2>{title}</h2><Link className="link" href={`${base}/reviews`}>Tümü</Link></div>
-          <div className="feed">{list.map((e) => <FeedItem key={e.id} e={e} />)}</div>
+          <div className="review-grid">{list.map((e) => <ReviewCard key={e.id} e={e} />)}</div>
         </section>
       ) : null;
     }
@@ -252,8 +252,8 @@ export function ReviewsTab() {
     <section className="section">
       <div className="section-head"><h2>İncelemeler</h2><span className="muted">{list.length}</span></div>
       {list.length ? (
-        <div className="feed">
-          {list.slice(0, shown).map((e) => <FeedItem key={e.id} e={e} />)}
+        <div className="review-grid">
+          {list.slice(0, shown).map((e) => <ReviewCard key={e.id} e={e} />)}
           {list.length > shown && <button className="feed-more" onClick={() => setShown(shown + 20)}>Daha fazla göster ({list.length - shown})</button>}
         </div>
       ) : <div className="empty">{isMe ? "Henüz inceleme yazmadın. Bir kaydı açıp düzenle, İnceleme kutusuna yaz." : "Henüz inceleme yazmamış."}</div>}

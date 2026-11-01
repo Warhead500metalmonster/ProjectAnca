@@ -13,7 +13,7 @@ import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { MyLogs } from "@/components/MyLogs";
-import { Feed, RatingBars } from "@/components/ui";
+import { RatingBars, PeopleLogs } from "@/components/ui";
 import { GameLinker } from "@/components/GameLinker";
 import { GameSeries } from "@/components/GameSeries";
 import { Lightbox } from "@/components/Lightbox";
@@ -152,7 +152,7 @@ export default function GamePage() {
           <GameSeries id={Number(id)} />
           <section className="section">
             <div className="section-head"><h2>Loglayanlar</h2></div>
-            <Feed list={logs} empty={<div className="empty">Henüz kimse loglamadı. İlk sen ol!</div>} />
+            <PeopleLogs list={logs} empty={<div className="empty">Henüz kimse loglamadı. İlk sen ol!</div>} />
           </section>
           <ListsWith rawgId={Number(id) || undefined} />
         </div>

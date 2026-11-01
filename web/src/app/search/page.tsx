@@ -157,11 +157,13 @@ export default function SearchPage() {
                   <Link className="card" href={contentHref(a)}>
                     <div className={`poster ${TYPES[a.type].square ? "square" : ""}`}>
                       <div className="ph">{TYPES[a.type].label}</div><Cover src={a.cover} />
-                      {type === "all" && <span className="kind">{TYPES[a.type].label}</span>}
-                      {a.avg ? <span className="rating">★ {avgText(a.avg, scale).split("/")[0]}</span> : null}
                     </div>
                     <div className="card-title">{a.title}</div>
-                    <div className="card-meta">{a.n} kişi{a.year ? ` · ${a.year}` : ""}</div>
+                    <div className="card-meta">{[type === "all" && TYPES[a.type].label, a.year].filter(Boolean).join(" · ")}</div>
+                    <div className="card-info">
+                      <span className="card-status">{a.n} kişi</span>
+                      {a.avg ? <span className="card-score">★ {avgText(a.avg, scale).split("/")[0]}</span> : null}
+                    </div>
                   </Link>
                   <QuickAdd has={logged.has(contentKey(a))} onAdd={() => openForm(null, { item: a })} />
                 </div>

@@ -11,7 +11,6 @@ import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { Avatar, Cover, Timeline, UserRow } from "@/components/ui";
-import { ImportPromo } from "@/components/ImportPromo";
 import { Announcements } from "@/components/Announcements";
 
 interface Slim { rawg_id: number | null; title: string; cover: string | null; rating: number }
@@ -163,7 +162,6 @@ export default function Community() {
         </section>
       )}
       {tab === "duyurular" && <Announcements />}
-      {!me && <ImportPromo signedIn={false} compact />}
     </>
   );
 }

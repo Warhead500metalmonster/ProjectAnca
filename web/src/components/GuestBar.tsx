@@ -25,10 +25,9 @@ export function GuestBar() {
   return (
     <div className="guest-bar" role="region" aria-label="Kütüphaneni getir">
       <p>
-        <b>Sıfırdan başlama.</b> Steam, PlayStation, Xbox, HowLongToBeat, Backloggd, Letterboxd, MyAnimeList, Spotify… Yıllardır biriktirdiğin
-        <b> bütün kütüphaneni birkaç dakikada</b> buraya getir.
+        <b>Sıfırdan başlama.</b> Steam, PlayStation, Letterboxd, MyAnimeList… Bütün kütüphaneni birkaç dakikada getir.
       </p>
-      <Link className="btn primary" href="/signup">Ücretsiz katıl, getir</Link>
+      <Link className="btn primary" href="/signup">Ücretsiz katıl</Link>
       <button className="icon-btn" aria-label="Kapat" onClick={close}>✕</button>
     </div>
   );

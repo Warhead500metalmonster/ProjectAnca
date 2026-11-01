@@ -5,6 +5,11 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-11-01T21:57:19+04:00",
+    title: "Kapaklar nefes aldı",
+    body: "Kapakların üstündeki etiketler kalktı, durum ve puan kapağın altına indi. İncelemeler kendi büyük kartına kavuştu, listeler kapak destesi gibi görünüyor, oyun sayfasındaki puan grafiği düzeldi, sayfalar yüklenirken düz yazı yerine hareketli alan görünüyor.",
+  },
+  {
     date: "2026-11-01T18:33:00+04:00",
     title: "Seri takibi",
     body: "Oyun sayfalarında artık o oyunun serisi de görünüyor. Serinin kaçını bitirdiğini ve sıradaki oyunu tek bakışta görürsün. Remaster ya da remake oynadıysan ana oyunu bitirmiş sayılırsın. Senin bir şey girmene gerek yok, kütüphanenden kendiliğinden hesaplanır.",

@@ -12,7 +12,7 @@ import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { MyLogs } from "@/components/MyLogs";
-import { Feed, RatingBars } from "@/components/ui";
+import { RatingBars, PeopleLogs } from "@/components/ui";
 import { GameLinker } from "@/components/GameLinker";
 import { Lightbox } from "@/components/Lightbox";
 import { PageEditor } from "@/components/PageEditor";
@@ -167,7 +167,7 @@ export default function ContentPage() {
         </aside>
         <section>
           <div className="section-head"><h2>Loglayanlar</h2></div>
-          <Feed list={logs} empty={<div className="empty">Henüz kimse loglamadı. İlk sen ol!</div>} />
+          <PeopleLogs list={logs} empty={<div className="empty">Henüz kimse loglamadı. İlk sen ol!</div>} />
           <ListsWith type={type} title={title} ext={extId} />
         </section>
       </div>

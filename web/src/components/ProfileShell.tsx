@@ -212,8 +212,8 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
                   <div className="profile-meta">
                     {profile.location && <span>{profile.location}</span>}
                     {/* Kurucunun profilinde katılma tarihi yerine sadece kaçıncı üye olduğu yazar */}
-                    {founder ? memberLine
-                      : <span>{fmtDate(profile.created_at.slice(0, 10))} tarihinde katıldı{memberLine && <> · {memberLine}</>}</span>}
+                    {!founder && <span>{fmtDate(profile.created_at.slice(0, 10))} tarihinde katıldı</span>}
+                    {memberLine}
                   </div>
                   <Socials socials={profile.socials} />
                 </section>
