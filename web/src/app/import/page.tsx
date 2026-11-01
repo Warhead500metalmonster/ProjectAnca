@@ -19,8 +19,9 @@ import { ImportPromo } from "@/components/ImportPromo";
 
 // Başka sitelerden kütüphane aktarma: Steam, PlayStation, Xbox, Epic / Switch / HowLongToBeat listeleri, Backloggd, Letterboxd, Serializd, MyAnimeList, AniList, Simkl, Spotify ve Last.fm
 export default function ImportPage() {
-  const { me, ready } = useApp();
-  if (!ready) return <div className="loading">Yükleniyor…</div>;
+  const { me, ready, mineLoaded } = useApp();
+  // Kütüphane inmeden "zaten var" denetimi yapılamaz, yoksa aynı kayıtlar iki kez eklenir
+  if (!ready || (me && !mineLoaded)) return <div className="loading">Yükleniyor…</div>;
   // Giriş yapmamışa boş uyarı yerine neler getirebileceğini göster (sitenin en büyük özelliği)
   if (!me) return (
     <>

@@ -166,7 +166,7 @@ function Countdown({ to }: { to: string }) {
 
 // Sürüm kartları: seçince katılırsın (katıldıysan sürümün değişir)
 function Versions({ ev, members, my, onChange }: { ev: AncEvent; members: EventMember[]; my?: EventMember; onChange: () => void }) {
-  const { me, mine, toast } = useApp();
+  const { me, mine, mineLoaded, toast } = useApp();
   const router = useRouter();
   const [toLib, setToLib] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -184,7 +184,7 @@ function Versions({ ev, members, my, onChange }: { ev: AncEvent; members: EventM
       } else {
         await q(sb().from("event_members").insert({ event_id: ev.id, user_id: me.id, choice: o.id || null, status: state === "live" ? "playing" : "joined" }));
         let lib = "";
-        if (toLib && (o.rawg_id || o.ext_id || o.title) && !libraryEntry(mine, o)) {
+        if (toLib && mineLoaded && (o.rawg_id || o.ext_id || o.title) && !libraryEntry(mine, o)) {
           await addToLibrary(me.id, ev, o).then(() => { lib = state === "live" ? ` Kütüphanene ${verbs(o.kind || ev.kind).me} olarak eklendi.` : " Kütüphanene Planlandı olarak eklendi."; }).catch(() => {});
         }
         toast(`Katıldın, hoş geldin!${lib}`);

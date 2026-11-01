@@ -5,6 +5,7 @@ import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "@/components/AppProvider";
 import { Topbar } from "@/components/Topbar";
+import { NavProgress } from "@/components/NavProgress";
 import { Announcement } from "@/components/Announcement";
 import { WarningBanner } from "@/components/WarningBanner";
 import { GuestBar } from "@/components/GuestBar";
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head><script dangerouslySetInnerHTML={{ __html: themeBootScript }} /></head>
       <body>
         <AppProvider>
+          <Suspense fallback={null}><NavProgress /></Suspense>
           <Suspense fallback={null}><Topbar /></Suspense>
           <Announcement />
           <WarningBanner />

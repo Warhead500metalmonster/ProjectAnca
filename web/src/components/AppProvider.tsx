@@ -26,6 +26,7 @@ interface Ctx {
   followers: Set<string>;   // beni takip edenler; karşılıklıysa arkadaşız, mesajlaşabiliriz
   isFriend: (id: string) => boolean;
   mine: Entry[];            // kendi kayıtlarım: başkalarının puanlarıyla karşılaştırmak için
+  mineLoaded: boolean;      // kütüphane arka planda iner; site onu beklemeden açılır
   myEntry: (x: Item) => Entry | undefined;
   badges: Map<string, string[]>;
   loadBadges: () => void;
@@ -64,6 +65,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [reporting, setReporting] = useState<ReportTarget | null>(null);
   const [followers, setFollowers] = useState<Set<string>>(new Set());
   const [mine, setMine] = useState<Entry[]>([]);
+  const [mineLoaded, setMineLoaded] = useState(false);
   const [badges, setBadges] = useState<Map<string, string[]>>(new Map());
   const [unread, setUnread] = useState(0);
   const [notifAt, setNotifAt] = useState("");
@@ -159,13 +161,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setFollowers(new Set());
       setBlocked(new Set());
       setMine([]);
+      setMineLoaded(false);
       setUnread(0);
       if (!id) return;
-      const [profile, f, fr, entries, bl] = await Promise.all([
+      const [profile, f, fr, bl] = await Promise.all([
         q<Profile | null>(client.from("profiles").select("*").eq("id", id).maybeSingle()),
         q<{ following_id: string }[]>(client.from("follows").select("following_id").eq("follower_id", id)),
         q<{ follower_id: string }[]>(client.from("follows").select("follower_id").eq("following_id", id)),
-        fetchEntries(id),
         // veritabanı henüz güncellenmediyse (020) engel listesi boş kalır
         q<{ blocked_id: string }[]>(client.from("blocks").select("blocked_id").eq("blocker_id", id)).catch(() => []),
       ]);
@@ -173,9 +175,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setMe(profile);
       setFollowing(new Set(f.map((r) => r.following_id)));
       setFollowers(new Set(fr.map((r) => r.follower_id)));
-      setMine(entries);
       setBlocked(new Set(bl.map((r) => r.blocked_id)));
       checkInbox();
+      // Büyük kütüphane siteyi bekletmesin: giriş bilgileri gelince site açılır, kayıtlar arkadan iner (bir kez yeniden denenir)
+      fetchEntries(id).catch(() => fetchEntries(id)).then((entries) => {
+        if (userId.current === id) setMine(entries);
+      }).catch(() => {
+        if (userId.current === id) toast("Kütüphanen şu an yüklenemedi. Sayfayı yenileyip tekrar dener misin?");
+      }).finally(() => { if (userId.current === id) setMineLoaded(true); });
     }
 
     loadBadges();
@@ -210,7 +217,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const onShow = () => { if (document.visibilityState === "visible") checkInbox(); };
     document.addEventListener("visibilitychange", onShow);
     return () => { sub.subscription.unsubscribe(); clearInterval(timer); document.removeEventListener("visibilitychange", onShow); };
-  }, [router, refresh, checkInbox, loadBadges]);
+  }, [router, refresh, checkInbox, loadBadges, toast]);
 
   useEffect(() => { plansRef.current = { following: [...following], mine }; }, [following, mine]);
 
@@ -357,7 +364,7 @@ Seni takip edemez, sana yazamaz, kayıtlarına yorum yapamaz. Aranızdaki takipl
   const myBadges = (me && badges.get(me.id)) || [];
   const value: Ctx = {
     me, setMe, following, followers, isFriend: (id) => following.has(id) && followers.has(id),
-    mine, myEntry, badges, loadBadges, isOwner: myBadges.includes("owner"), isAdmin: myBadges.some((b) => b === "owner" || b === "admin"), scale: me?.rating_scale === 10 ? 10 : 5, unread, notifAt,
+    mine, mineLoaded, myEntry, badges, loadBadges, isOwner: myBadges.includes("owner"), isAdmin: myBadges.some((b) => b === "owner" || b === "admin"), scale: me?.rating_scale === 10 ? 10 : 5, unread, notifAt,
     ready, version, refresh, checkInbox, toast, toggleFollow, openForm, openView: setViewing, pickList, blocked, toggleBlock, report,
   };
 

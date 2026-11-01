@@ -30,9 +30,15 @@ const storage = {
   removeItem: (k: string) => { try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch { /* yok say */ } },
 };
 
+// Takılan bir istek sayfayı sonsuza kadar "Yükleniyor"da bırakmasın: 20 saniyede cevap gelmezse hata olur, kullanıcıya söylenir
+const timedFetch: typeof fetch = (input, init) => {
+  const limit = AbortSignal.timeout(20000);
+  return fetch(input, { ...init, signal: init?.signal ? AbortSignal.any([init.signal, limit]) : limit });
+};
+
 export function sb(): SupabaseClient {
   // Tüm sayfalar tarayıcıda çalışır; oturum eski siteyle aynı anahtarda durur, kimse tekrar giriş yapmak zorunda kalmaz
-  client ??= createClient(URL, KEY, { auth: { storage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+  client ??= createClient(URL, KEY, { auth: { storage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }, global: { fetch: timedFetch } });
   return client;
 }
 
@@ -40,6 +46,7 @@ export function sb(): SupabaseClient {
 // Veritabanının teknik hata yazıları kullanıcıya gösterilmesin; bizim yazdığımız Türkçe hatalar olduğu gibi geçer
 export const NO_PERMISSION = "Bunu yapmaya iznin yok gibi görünüyor.";
 function friendly(message: string): string {
+  if (/timeout|timed out|aborted/i.test(message)) return "Bağlantı çok yavaş, cevap gelmedi. Tekrar dener misin?";
   if (/failed to fetch|networkerror|load failed|network request failed/i.test(message)) return "İnternet bağlantısı kopmuş gibi görünüyor. Bağlantını kontrol edip tekrar dener misin?";
   if (/jwt|refresh token|not authenticated/i.test(message)) return "Oturumun süresi dolmuş. Çıkış yapıp tekrar giriş yaparsan düzelir.";
   if (/row-level security|permission denied/i.test(message)) return NO_PERMISSION;

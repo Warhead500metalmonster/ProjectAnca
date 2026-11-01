@@ -21,9 +21,17 @@ export async function fetchAll<T>(page: (from: number, to: number) => PromiseLik
   return all;
 }
 
-export const fetchEntries = (userId: string) =>
-  fetchAll<Entry>((from, to) => sb().from("entries").select("*, likes(count), comments(count)").eq("user_id", userId)
-    .order("updated_at", { ascending: false }).order("id").range(from, to));
+// Aynı kütüphane aynı anda birden çok yerden istenirse tek sefer indirilir
+const entriesLoading = new Map<string, Promise<Entry[]>>();
+export function fetchEntries(userId: string) {
+  let p = entriesLoading.get(userId);
+  if (!p) {
+    p = fetchAll<Entry>((from, to) => sb().from("entries").select("*, likes(count), comments(count)").eq("user_id", userId)
+      .order("updated_at", { ascending: false }).order("id").range(from, to)).finally(() => entriesLoading.delete(userId));
+    entriesLoading.set(userId, p);
+  }
+  return p;
+}
 
 // ---------- Müzik: Apple Music (iTunes) araması; anahtar istemez ----------
 

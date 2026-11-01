@@ -23,7 +23,17 @@ function oneLogEach(list: Entry[]) {
 }
 
 // İki kütüphaneyi karşılaştırır: ortak içerikler ve puan uyumu üzerinden 0-100 arası bir "uyum" puanı
+// Aynı iki kütüphane için bir kez hesaplanır (binlerce kayıtta her ekran yenilenişinde yeniden sayılmasın)
+const computed = new WeakMap<Entry[], WeakMap<Entry[], ReturnType<typeof compute>>>();
 export function compat(allMine: Entry[], allTheirs: Entry[]) {
+  let inner = computed.get(allMine);
+  if (!inner) computed.set(allMine, inner = new WeakMap());
+  let result = inner.get(allTheirs);
+  if (!result) inner.set(allTheirs, result = compute(allMine, allTheirs));
+  return result;
+}
+
+function compute(allMine: Entry[], allTheirs: Entry[]) {
   const mine = oneLogEach(allMine), theirs = oneLogEach(allTheirs);
   const map = new Map(mine.map((e) => [contentKey(e), e]));
   const common: Pair[] = [];

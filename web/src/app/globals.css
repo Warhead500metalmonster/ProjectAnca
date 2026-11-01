@@ -2495,3 +2495,9 @@ button.ev-post-img { display: block; padding: 0; border: 0; background: none; cu
 @keyframes lb-pop { from { opacity: 0; transform: scale(.9); } }
 @keyframes lb-pop-out { to { opacity: 0; transform: scale(.95); } }
 @media (prefers-reduced-motion: reduce) { .lightbox, .lightbox img, .lightbox.closing, .lightbox.closing img { animation-duration: .01s; } }
+
+/* Sayfa açılırken üstte ince çubuk: tıklamanın alındığı görünsün */
+.nav-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 200; overflow: hidden; pointer-events: none; background: rgb(var(--accent-rgb) / .2); }
+.nav-progress::before { content: ""; position: absolute; inset: 0; width: 40%; background: var(--accent); animation: nav-slide 1s ease-in-out infinite; }
+@keyframes nav-slide { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+@media (prefers-reduced-motion: reduce) { .nav-progress::before { animation-duration: 3s; } }

@@ -1,12 +1,12 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { Entry } from "@/lib/types";
 import { LOCAL_KEY, STATUSES, TYPES } from "@/lib/constants";
 import { mixedCovers, safeUrl } from "@/lib/format";
-import { fetchEntries, fetchFeed } from "@/lib/data";
+import { fetchFeed } from "@/lib/data";
 import { rawg } from "@/lib/rawg";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
@@ -111,21 +111,23 @@ function Landing({ version }: { version: number }) {
   );
 }
 
+const STRIP = 24; // şeritte en fazla bu kadar kart: binlerce kayıt tek seferde çizilirse sayfa donuyordu; hepsi Kütüphane'de
+
 function Dashboard({ version, followingIds }: { version: number; followingIds: string[] }) {
-  const { me, toast, refresh } = useApp();
+  const { me, toast, refresh, mine: myEntries, mineLoaded } = useApp();
   const user = me!;
   const [localCount, setLocalCount] = useState(() => localEntries().length);
   const [importing, setImporting] = useState(false);
   const [tab, setTab] = useState<"friends" | "all" | null>(null); // null: arkadaş akışı doluysa o, değilse herkes
 
   const { data, error } = useLoad(async () => {
-    const [mine, friends, community] = await Promise.all([
-      fetchEntries(user.id),
+    const [friends, community] = await Promise.all([
       followingIds.length ? fetchFeed({ users: followingIds, limit: 40 }) : Promise.resolve([] as Entry[]),
       fetchFeed({ limit: 40 }),
     ]);
-    return { mine: mine.map((e) => ({ ...e, profiles: user })), friends, community };
+    return { friends, community };
   }, [version, followingIds.join(",")]);
+  const mine = useMemo(() => myEntries.map((e) => ({ ...e, profiles: user })), [myEntries, user]);
 
   async function importLocal() {
     setImporting(true);
@@ -166,8 +168,8 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
   }
 
   if (error) return <div className="empty">Bir şeyler ters gitti: {error}</div>;
-  if (!data) return <div className="loading">Yükleniyor…</div>;
-  const { mine, friends, community } = data;
+  if (!data || !mineLoaded) return <div className="loading">Yükleniyor…</div>;
+  const { friends, community } = data;
   const view = tab ?? (friends.length ? "friends" : "all");
   const active = mine.filter((e) => e.status === "active");
   const backlog = mine.filter((e) => e.status === "planned").sort((a, b) => a.created_at.localeCompare(b.created_at)); // en eski bekleyen önce
@@ -206,13 +208,13 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
       {active.length > 0 && (
         <section className="section">
           <div className="section-head"><h2>Devam ettiklerin</h2><Link href={`/u/${user.username}/library`}>Kütüphanem →</Link></div>
-          <div className="strip">{active.map((e) => <EntryCard key={e.id} e={e} kind edit />)}</div>
+          <div className="strip">{active.slice(0, STRIP).map((e) => <EntryCard key={e.id} e={e} kind edit />)}</div>
         </section>
       )}
       {backlog.length > 0 && (
         <section className="section">
           <div className="section-head"><h2>Backlog&apos;un <span className="muted small">· {backlog.length} bekleyen</span></h2><Link href={`/u/${user.username}/library`}>Kütüphanem →</Link></div>
-          <div className="strip">{backlog.map((e) => <EntryCard key={e.id} e={e} kind edit />)}</div>
+          <div className="strip">{backlog.slice(0, STRIP).map((e) => <EntryCard key={e.id} e={e} kind edit />)}</div>
         </section>
       )}
       <UpcomingStrip userId={user.id} mine={mine} />

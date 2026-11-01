@@ -67,14 +67,20 @@ export const avgText = (r: number, scale: number) => scale === 10 ? `${num(r, 1)
 export const scoreShort = (r: number, scale: number) => scale === 10 ? num(r) : num(r / 2, 2);
 
 // Kayan kapak şeritleri için: her türden sırayla, karışık (gün içinde sıra sabit, her gün değişir)
-export function mixedCovers(list: { type: string; cover?: string | null }[], max = 48) {
-  const rank = (s: string) => { let h = 7; for (const c of s + today()) h = (h * 31 + c.charCodeAt(0)) | 0; return h; };
-  const groups = new Map<string, string[]>();
+// Şeritte kapak küçük görünür ve sürekli kayar: en büyük boylar tarayıcıyı boşuna yorar, net görünen boy kullanılır
+const stripSize = (u: string) => u.replace("/t_cover_big_2x/", "/t_cover_big/").replace("/t/p/w780/", "/t/p/w342/").replace("/i/u/770x0/", "/i/u/300x300/");
+export function mixedCovers(list: { type: string; cover?: string | null }[], max = 36) {
+  const day = today();
+  const rank = (s: string) => { let h = 7; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; for (let i = 0; i < day.length; i++) h = (h * 31 + day.charCodeAt(i)) | 0; return h; };
+  const groups = new Map<string, Set<string>>();
   for (const e of list) {
     const url = safeUrl(e.cover);
-    if (url) groups.set(e.type, [...(groups.get(e.type) || []), url]);
+    if (!url) continue;
+    let g = groups.get(e.type);
+    if (!g) groups.set(e.type, g = new Set());
+    g.add(stripSize(url));
   }
-  const lines = [...groups.values()].map((g) => [...new Set(g)].sort((a, b) => rank(a) - rank(b)));
+  const lines = [...groups.values()].map((g) => [...g].map((u) => [rank(u), u] as const).sort((a, b) => a[0] - b[0]).map((x) => x[1]));
   const out: string[] = [];
   for (let i = 0; out.length < max && lines.some((g) => i < g.length); i++) for (const g of lines) if (i < g.length && out.length < max) out.push(g[i]);
   return out;
