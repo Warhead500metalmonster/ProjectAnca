@@ -170,8 +170,11 @@ function Versions({ ev, members, my, onChange }: { ev: AncEvent; members: EventM
   const router = useRouter();
   const [toLib, setToLib] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [all, setAll] = useState(false);
   const state = eventState(ev);
   const options: EventOption[] = ev.options.length ? ev.options : [{ id: "", label: "Katıl" }];
+  // Sürüm çoksa ilk açılışta sayfa uzamasın: ilk sekizi ve birinin seçtikleri görünür, gerisi tek tıkla açılır
+  const shown = all ? options : options.filter((o, i) => i < 8 || members.some((m) => (m.choice || "") === o.id));
 
   async function pick(o: EventOption) {
     if (!me) { toast("Katılmak için önce giriş yap."); return router.push("/login"); }
@@ -203,12 +206,12 @@ function Versions({ ev, members, my, onChange }: { ev: AncEvent; members: EventM
       <div className="section-head"><h2>{my ? (ev.options.length > 1 ? "Sürümünü değiştir" : "Etkinlik") : ev.options.length > 1 ? "Sürümünü seç, katıl" : "Katıl"}</h2>
         {ev.options.length > 1 && <span className="muted small">Hangisini istersen; sonra değiştirebilirsin</span>}</div>
       <div className={`ev-options n${Math.min(options.length, 4)}`}>
-        {options.map((o) => {
+        {shown.map((o) => {
           const who = members.filter((m) => (m.choice || "") === o.id);
           const mineHere = my && (my.choice || "") === o.id;
           return (
             <button key={o.id || "one"} className={`ev-opt ${mineHere ? "on" : ""}`} disabled={busy} onClick={() => pick(o)}>
-              <div className="ev-opt-art">{safeUrl(o.cover) ? <img src={safeUrl(o.cover)} alt="" /> : <span className="ev-opt-ph">{o.label}</span>}</div>
+              <div className="ev-opt-art">{safeUrl(o.cover) ? <img src={safeUrl(o.cover)} alt="" loading="lazy" decoding="async" /> : <span className="ev-opt-ph">{o.label}</span>}</div>
               <div className="ev-opt-body">
                 <b>{o.label}</b>
                 {o.sub && <span className="muted small">{o.sub}</span>}
@@ -223,6 +226,7 @@ function Versions({ ev, members, my, onChange }: { ev: AncEvent; members: EventM
           );
         })}
       </div>
+      {shown.length < options.length && <div className="load-more"><button className="btn" onClick={() => setAll(true)}>Bütün sürümleri göster ({options.length})</button></div>}
       {me && !my && <label className="check ev-tolib"><input type="checkbox" checked={toLib} onChange={(e) => setToLib(e.target.checked)} /> Seçtiğim sürümü kütüphaneme de ekle</label>}
     </section>
   );
@@ -491,7 +495,7 @@ function Results({ ev, members, my }: { ev: AncEvent; members: EventMember[]; my
       {my && <p className="muted">Sen: {my.status === "done" ? `bitirdin, ${myRank}. sıradasın. Helal olsun!` : "bu etkinliği yarıda bıraktın; bir dahakine!"}</p>}
       {byVersion.length > 1 && (
         <div className="ev-res-versions">
-          {byVersion.map(({ o, n, d }) => (
+          {byVersion.filter((v) => v.n > 0 || byVersion.length <= 8).map(({ o, n, d }) => (
             <div key={o.id} className="ev-res-row">
               <span>{o.label}</span>
               <div className="ev-res-bar"><i style={{ width: `${members.length ? (n / members.length) * 100 : 0}%` }} /></div>

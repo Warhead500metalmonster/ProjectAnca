@@ -34,6 +34,10 @@ export const kindOf = (ev: Pick<AncEvent, "kind" | "options">, choice?: string |
 export const statusText = (s: MemberStatus, kind?: EntryType | null, mine = false) =>
   s === "playing" ? (mine ? verbs(kind).me : verbs(kind).they) : s === "done" ? (mine ? "Bitirdim" : "Bitirdi") : mine ? "Katıldım" : "Katıldı";
 
+// Sürüm adları tek satırda: çoksa ilk üçü ve kalanın sayısı
+export const optionsLine = (options: { label: string }[]) =>
+  options.length > 4 ? `${options.slice(0, 3).map((o) => o.label).join(" · ")} ve ${options.length - 3} sürüm daha` : options.map((o) => o.label).join(" · ");
+
 // Henüz başlamadı / sürüyor / bitti
 export function eventState(ev: Pick<AncEvent, "starts_on" | "ends_on">): "upcoming" | "live" | "ended" {
   const t = today();

@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { type AncEvent, type EventStats, dateLine, eventState, fetchEvents, memberStats } from "@/lib/events";
+import { type AncEvent, type EventStats, dateLine, eventState, fetchEvents, memberStats, optionsLine } from "@/lib/events";
 import { cssUrl, safeUrl, today, wideImage } from "@/lib/format";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "./AppProvider";
@@ -88,7 +88,7 @@ export function EventFeature({ ev, stats }: { ev: AncEvent; stats?: EventStats }
         <div className="ev-feature-text">
           <div className="ev-kicker"><span>✦ Ancalog etkinliği</span><span className={`ev-state ${state}`}>{stateName[state]}</span></div>
           <h2>{ev.title}</h2>
-          {ev.options.length > 1 && <p className="ev-feature-opts">{ev.options.map((o) => o.label).join(" · ")}: hangisini istersen</p>}
+          {ev.options.length > 1 && <p className="ev-feature-opts">{optionsLine(ev.options)}: hangisini istersen</p>}
           {ev.badge_name && <span className="ev-feature-badge">Bitirene özel rozet: <b>{ev.badge_icon || "✦"} {ev.badge_name}</b></span>}
           {state === "upcoming" ? (
             <div className="ev-count small"><div><b>{d}</b><span>gün</span></div><div><b>{h}</b><span>saat</span></div><div><b>{m}</b><span>dakika</span></div></div>

@@ -269,7 +269,7 @@ export async function eventCard(id: string): Promise<Card | null> {
   return {
     kicker: "Etkinlik", title: ev.title,
     sub: started ? "Şu an sürüyor, sen de katıl" : `Başlangıç: ${fmt(ev.starts_on)}`,
-    line: [n ? `${n} kişi katıldı` : "İlk katılan sen ol", ev.options.length > 1 ? ev.options.map((o) => o.label).join(" · ") : ""].filter(Boolean).join(" · "),
+    line: [n ? `${n} kişi katıldı` : "İlk katılan sen ol", ev.options.length > 1 ? (ev.options.length > 4 ? `${ev.options.slice(0, 3).map((o) => o.label).join(" · ")} ve ${ev.options.length - 3} sürüm daha` : ev.options.map((o) => o.label).join(" · ")) : ""].filter(Boolean).join(" · "),
     backdrop: ev.cover || ev.options[0]?.cover, covers: ev.options.map((o) => o.cover),
     description: clip(ev.description, 160) || `${ev.title}: Ancalog etkinliği. Katıl, sürümünü seç, birlikte oynayalım.`,
   };
