@@ -129,7 +129,7 @@ export default function Community() {
       )}
       {tab === "akis" && (
         <section className="section feed-col">
-          <Feed list={feed} />
+          <Feed list={feed} step={12} />
         </section>
       )}
       {tab === "uyeler" && (

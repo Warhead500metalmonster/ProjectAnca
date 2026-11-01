@@ -2572,7 +2572,20 @@ body::before { content: ""; position: fixed; inset: 0; z-index: -2; pointer-even
 .page-head-links { display: flex; gap: 8px; }
 .subnav + .section { margin-top: 18px; }
 .subnav a .count { color: var(--muted); font-size: 12px; font-weight: 500; margin-left: 2px; }
-.feed-col { max-width: 760px; }
+.feed-col { max-width: none; }
+/* Topluluk akışı: bilgisayarda sayfayı doldurur, kapaklar ve yazılar büyük */
+@media (min-width: 641px) {
+  .feed-col .feed-item { gap: 16px; padding: 18px; }
+  .feed-col .feed-item .avatar { --s: 52px; width: 52px; height: 52px; }
+  .feed-col .feed-item .thumb { width: 84px; height: 120px; border-radius: 10px; font-size: 14px; color: var(--muted); }
+  .feed-col .feed-item .line { font-size: 17px; line-height: 1.35; }
+  .feed-col .feed-item .sub { font-size: 14px; margin-top: 6px; }
+  .feed-col .grp-cover, .feed-col .grp-more { width: 100px; }
+}
+@media (min-width: 1000px) {
+  .feed-col .feed { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .feed-col .feed-more { grid-column: 1 / -1; }
+}
 
 /* Bütün sekmeler aynı görünsün: Mesajlar/Forum ve Sıralamalar da altı çizili */
 .social-tabs, .forum > .social-tabs, .top-tabs { max-width: none; gap: 6px; padding: 0; margin: 0 0 16px; background: none; border-radius: 0; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
