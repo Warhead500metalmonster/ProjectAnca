@@ -7,7 +7,7 @@ export const CHANGELOG: ChangelogItem[] = [
   {
     date: "2026-11-01T16:32:25+04:00",
     title: "Sayfalar tek düzene geçti",
-    body: "Profillerde şu an ne oynadığı ve puan dağılımı görünüyor. Kütüphane, Keşfet, İstatistikler ve Forum'da bütün araçlar tek kutuda toplandı. Sekmeler ve süzgeçler her yerde aynı görünüyor. Ayarlar'da bölümler artık solda duruyor. Forum, Bildirimler, Takvim ve İçe aktar sayfanın tamamını kullanıyor.",
+    body: "Ana sayfada özetin, hedefin ve rozetlerin artık sağda hep görünüyor; akışta kimin en son ne yaptığı tek bakışta belli. Profillerde şu an ne oynadığı ve puan dağılımı görünüyor. Kütüphane, Keşfet, İstatistikler ve Forum'da bütün araçlar tek kutuda toplandı. Sekmeler ve süzgeçler her yerde aynı görünüyor. Ayarlar'da bölümler artık solda duruyor. Forum, Bildirimler, Takvim ve İçe aktar sayfanın tamamını kullanıyor.",
   },
   {
     date: "2026-11-01T16:17:04+04:00",

@@ -2855,3 +2855,13 @@ a.note-row:hover { border-color: var(--accent); }
 .profile-main > .home-edit-bar:last-child { margin: 22px 0 0; }
 .profile-counts a:hover b { color: var(--accent-2); }
 @media (max-width: 999px) { .side-extra { display: none; } }
+
+/* Ana sayfa: yan panel */
+.home-layout .tl-main > .section:first-child { margin-top: 0; }
+.home-side .side-card { border-radius: var(--radius); }
+.home-side .stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+.home-side .stat { padding: 10px 12px; }
+.home-side .stat b { font-size: 20px; }
+.home-side .goals, .home-side .next-badges { margin: 0; }
+@media (min-width: 1000px) { .home-side { max-height: calc(100vh - 92px); overflow-y: auto; scrollbar-width: thin; } }
+@media (max-width: 999px) { .tl-side.home-side { display: flex; } }
