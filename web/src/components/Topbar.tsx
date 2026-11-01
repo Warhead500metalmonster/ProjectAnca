@@ -34,7 +34,6 @@ export function Topbar() {
   const mine = me ? `/u/${me.username}` : "/login";
   const active = (key: string) => ({
     home: path === "/",
-    library: path === `${mine}/library`,
     search: path.startsWith("/search"),
     community: path.startsWith("/community"),
     events: path.startsWith("/events"),
@@ -65,8 +64,6 @@ export function Topbar() {
             <svg viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z" /></svg>
           </button>
         )}
-        {/* Bilgisayarda Kütüphanem hep elinin altında (telefonda Profilim'in içinde) */}
-        {me && <Link href={`${mine}/library`} className={`nav-lib ${active("library")}`}><span>Kütüphanem</span></Link>}
         <Link href="/chat" className={active("chat")}>
           <svg viewBox="0 0 24 24"><path d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm3 6v2h2V9zm4 0v2h2V9zm4 0v2h2V9z" /></svg>
           <span>Mesajlar</span>{ready && unread > 0 && <b className="nav-badge">{unread > 9 ? "9+" : unread}</b>}
