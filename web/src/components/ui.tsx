@@ -341,11 +341,11 @@ const dayOf = (at: string) => {
   return t >= start.getTime() ? "Bugün" : t >= start.getTime() - 864e5 ? "Dün" : t >= start.getTime() - 6 * 864e5 ? "Bu hafta" : "Daha eski";
 };
 
-export function Timeline({ list: all, step = 15, empty }: { list: Entry[]; step?: number; empty?: React.ReactNode }) {
+export function Timeline({ list: all, step = 15 }: { list: Entry[]; step?: number }) {
   const { blocked } = useApp();
   const [shown, setShown] = useState(step);
   const list = blocked.size ? all.filter((e) => !blocked.has(e.user_id)) : all;
-  if (!list.length) return <>{empty ?? <div className="empty">Henüz hareket yok.</div>}</>;
+  if (!list.length) return <div className="empty">Henüz hareket yok.</div>;
   const rows = groupFeed(list);
   const visible = rows.slice(0, shown);
   return (

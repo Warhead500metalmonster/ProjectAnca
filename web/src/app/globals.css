@@ -2664,8 +2664,8 @@ a.note-row:hover { border-color: var(--accent); }
 @media (max-width: 640px) { .view-actions .btn { flex: 1 1 auto; } }
 
 /* ---------- Yeni görünüm (ana sayfa hariç): geniş sayfa, büyük başlık ve kapak, düz paneller ---------- */
-@media (min-width: 641px) { :root { --wide: 1480px; } }
-:root {
+@media (min-width: 641px) { :root:not(:has(.hero2)) { --wide: 1480px; } }
+:root:not(:has(.hero2)) {
   --panel: #12171a;
   --border: #242b30;
 
@@ -2781,7 +2781,7 @@ a.note-row:hover { border-color: var(--accent); }
 @media (max-width: 999px) { .tl-side { display: none; } }
 
 /* ---------- Toplu düzen (ana sayfa hariç): tek genişlik, tek kontrol stili, araçlar tek kutuda ---------- */
-:root {
+:root:not(:has(.hero2)) {
   .section { margin-top: 26px; }
   .subnav + .section { margin-top: 16px; }
   .forum, .notes, .calendar-page { max-width: none; }
@@ -2832,11 +2832,10 @@ a.note-row:hover { border-color: var(--accent); }
   }
 }
 
-/* Profil ve ana sayfa: şeritte kapaklar sütuna tam sığar, kesilmez */
+/* Profil: şeritte kapaklar sütuna tam sığar, kesilmez */
 @media (min-width: 641px) {
-  :root .profile-main .strip, :root .tl-main .strip, :root .favs .strip { grid-auto-columns: calc((100% - 4 * 14px) / 5); gap: 14px; }
+  :root .profile-main .strip, :root .favs .strip { grid-auto-columns: calc((100% - 4 * 14px) / 5); gap: 14px; }
 }
-.tl-main > .section:first-child { margin-top: 0; }
 
 /* Profil yan paneli: şu an, puanlar */
 .side-now { display: flex; flex-direction: column; gap: 4px; }
@@ -2856,33 +2855,3 @@ a.note-row:hover { border-color: var(--accent); }
 .profile-main > .home-edit-bar:last-child { margin: 22px 0 0; }
 .profile-counts a:hover b { color: var(--accent-2); }
 @media (max-width: 999px) { .side-extra { display: none; } }
-
-/* Ana sayfa */
-/* Karşılama: tek satır, kenarları içerikle hizalı */
-.hero2.compact { width: auto; min-height: 0; margin: 0 0 14px; place-items: stretch; border: 1px solid var(--border); border-radius: 12px; -webkit-mask-image: none; mask-image: none; }
-.hero2.compact .hero2-text { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 20px; align-items: center; max-width: none; padding: 18px 20px; text-align: left; }
-.hero2.compact h1 { grid-column: 1; font-size: 28px; line-height: 1.15; }
-.hero2.compact p { grid-column: 1; margin: 2px 0 0; max-width: none; font-size: 15px; }
-.hero2.compact .hero-actions { grid-column: 2; grid-row: 1 / span 2; flex-wrap: nowrap; }
-.hero2.compact .btn.big { padding: 9px 16px; font-size: 14.5px; }
-@media (max-width: 640px) {
-  .hero2.compact, .hero2.compact .hero2-text { margin-top: 0; }
-  .hero2.compact .hero2-text { grid-template-columns: minmax(0, 1fr); padding: 14px; }
-  .hero2.compact h1 { font-size: 23px; }
-  .hero2.compact .hero-actions { grid-column: 1; grid-row: auto; margin-top: 10px; }
-  .hero2.compact .btn.big { flex: 1; }
-}
-.home-side .stats { grid-template-columns: 1fr 1fr; gap: 8px; }
-.home-side .stat { padding: 10px 12px; }
-.home-side .stat b { font-size: 20px; }
-.home-side .goals, .home-side .next-badges { margin: 0; }
-@media (min-width: 1000px) { .home-side { max-height: calc(100vh - 92px); overflow-y: auto; scrollbar-width: thin; } }
-@media (max-width: 999px) { .tl-side.home-side { display: flex; } }
-
-/* GTA sayacı: ince şerit */
-.gta6 { margin-bottom: 14px; border-radius: 12px; }
-.gta6-in { min-height: 112px; padding: 14px 20px; align-items: center; }
-.gta6-title b { font-size: clamp(28px, 3vw, 38px); }
-.gta6-clock > div { min-width: 60px; padding: 6px 6px 5px; }
-.gta6-clock b { font-size: 24px; }
-@media (max-width: 640px) { .gta6-in { min-height: 150px; padding: 12px; align-items: stretch; } .gta6 { margin-bottom: 12px; } }
