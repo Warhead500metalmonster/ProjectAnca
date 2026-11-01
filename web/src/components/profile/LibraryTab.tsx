@@ -66,9 +66,16 @@ export function LibraryTab() {
   }
   const toggle = <T,>(set: Set<T>, x: T) => { const n = new Set(set); if (n.has(x)) n.delete(x); else n.add(x); return n; };
 
-  const visible = showPlanned || statuses.has("planned") ? entries : entries.filter((e) => e.status !== "planned");
-  const scoped = type === "all" ? visible : visible.filter((e) => e.type === type);
-  const plannedHere = entries.filter((e) => e.status === "planned" && (type === "all" || e.type === type)).length;
+  // Binlerce logda her tuşta baştan süzüp sıralamak yazmayı yavaşlatıyordu: her hesap sadece kendi girdisi değişince yapılır
+  const hidePlanned = !showPlanned && !statuses.has("planned");
+  const visible = useMemo(() => hidePlanned ? entries.filter((e) => e.status !== "planned") : entries, [entries, hidePlanned]);
+  const scoped = useMemo(() => type === "all" ? visible : visible.filter((e) => e.type === type), [visible, type]);
+  const plannedHere = useMemo(() => entries.filter((e) => e.status === "planned" && (type === "all" || e.type === type)).length, [entries, type]);
+  const tabCounts = useMemo(() => {
+    const m = new Map<EntryType | "all", number>();
+    for (const e of entries) if (e.status !== "planned") { m.set(e.type, (m.get(e.type) || 0) + 1); m.set("all", (m.get("all") || 0) + 1); }
+    return m;
+  }, [entries]);
   const years = useMemo(() => uniqSorted(scoped.map((e) => e.year)), [scoped]);
   const finishYears = useMemo(() => uniqSorted(scoped.filter((e) => e.status === "completed").map((e) => e.date?.slice(0, 4))), [scoped]);
   const platforms = useMemo(() => uniqSorted(scoped.map((e) => e.platform), false), [scoped]);
@@ -81,7 +88,9 @@ export function LibraryTab() {
 
   const needle = text.trim().toLocaleLowerCase("tr");
   const sorter = SORTS.find(([k]) => k === sort)![2];
-  const list = scoped.filter((e) =>
+  const sorted = useMemo(() => [...scoped].sort(sorter), [scoped, sorter]);
+  const haystack = useMemo(() => new Map(entries.map((e) => [e.id, `${e.title} ${e.creator || ""} ${e.notes || ""} ${e.progress || ""} ${(e.tags || []).join(" ")}`.toLocaleLowerCase("tr")])), [entries]);
+  const list = useMemo(() => sorted.filter((e) =>
     (!statuses.size || statuses.has(e.status)) &&
     (!year || String(e.year) === year) &&
     (!finishYear || (e.status === "completed" && e.date?.startsWith(finishYear))) &&
@@ -92,8 +101,8 @@ export function LibraryTab() {
     (!flags.has("review") || e.notes) &&
     (!flags.has("emu") || e.emulated) &&
     (!flags.has("dlc") || e.dlc) &&
-    (!needle || `${e.title} ${e.creator || ""} ${e.notes || ""} ${e.progress || ""} ${(e.tags || []).join(" ")}`.toLocaleLowerCase("tr").includes(needle)),
-  ).sort(sorter);
+    (!needle || haystack.get(e.id)!.includes(needle)),
+  ), [sorted, haystack, statuses, year, finishYear, platform, tag, minRating, flags, needle]);
   const filterCount = statuses.size + [year, finishYear, platform, minRating, tag].filter(Boolean).length + flags.size;
   const statusType = type === "all" ? null : type;
   // Sayfa sayfa göster; filtre ya da sıralama değişince baştan başla
@@ -115,7 +124,7 @@ export function LibraryTab() {
             .filter(([k]) => k === "all" || entries.some((e) => e.type === k))
             .map(([k, icon, label]) => (
               <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => { setType(k); setYear(""); setFinishYear(""); setPlatform(""); }}>
-                {icon} {label}<span className="count">{entries.filter((e) => e.status !== "planned" && (k === "all" || e.type === k)).length}</span>
+                {icon} {label}<span className="count">{tabCounts.get(k) || 0}</span>
               </button>
             ))}
         </div>

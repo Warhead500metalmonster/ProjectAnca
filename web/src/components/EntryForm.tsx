@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { Entry, EntryType, FormGame, Item, RawgGame } from "@/lib/types";
 import { STATUSES, STORES, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
@@ -66,8 +66,15 @@ export function EntryForm({ entry, game, type: initialType, item, replay: asRepl
   const did = isGame ? "oynadım" : type === "music" ? "dinledim" : "izledim";
   // Bu içeriğin başka bir logu var mı? Varsa yenisi ayrı bir sefer: Replay
   const nowKey = contentKey({ type, title: isGame ? picked?.title || "" : title.trim(), rawg_id: isGame ? picked?.rawg_id ?? null : null });
-  const hasOther = mine.some((e) => e.id !== entry?.id && contentKey(e) === nowKey);
-  const myTags = [...new Set(mine.flatMap((e) => e.tags || []))].filter((x) => !tags.includes(x)).sort((a, b) => a.localeCompare(b, "tr"));
+  // Kütüphane bir kez taranır: binlerce logda her tuşta baştan taramak yazmayı yavaşlatıyordu
+  const logCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const e of mine) { const k = contentKey(e); m.set(k, (m.get(k) || 0) + 1); }
+    return m;
+  }, [mine]);
+  const allTags = useMemo(() => [...new Set(mine.flatMap((e) => e.tags || []))].sort((a, b) => a.localeCompare(b, "tr")), [mine]);
+  const hasOther = (logCounts.get(nowKey) || 0) - (entry && contentKey(entry) === nowKey && mine.some((e) => e.id === entry.id) ? 1 : 0) > 0;
+  const myTags = allTags.filter((x) => !tags.includes(x));
 
   // Etiket: yazıp Enter'a ya da virgüle bas; küçük harfe çevrilir, aynısı iki kez eklenmez
   const cleanTag = (raw: string) => raw.replace(/[#,]/g, " ").replace(/\s+/g, " ").trim().toLocaleLowerCase("tr").slice(0, 30);

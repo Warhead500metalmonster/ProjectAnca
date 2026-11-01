@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Entry, Item, Profile, RawgGame } from "@/lib/types";
 import { BADGES } from "@/lib/constants";
@@ -388,12 +388,15 @@ Seni takip edemez, sana yazamaz, kayıtlarına yorum yapamaz. Aranızdaki takipl
     return mine.find((e) => contentKey(e) === k && !e.replay) ?? mine.find((e) => contentKey(e) === k);
   }, [mine]);
 
-  const myBadges = (me && badges.get(me.id)) || [];
-  const value: Ctx = {
+  // Bildirim yazısı ya da pencere açılıp kapanınca bütün site baştan çizilmesin: değer sadece içindekiler değişince yenilenir
+  const value = useMemo<Ctx>(() => {
+    const myBadges = (me && badges.get(me.id)) || [];
+    return {
     me, setMe, following, followers, isFriend: (id) => following.has(id) && followers.has(id),
     mine, mineLoaded, myEntry, badges, loadBadges, isOwner: myBadges.includes("owner"), isAdmin: myBadges.some((b) => b === "owner" || b === "admin"), scale: me?.rating_scale === 10 ? 10 : 5, unread, notifAt,
     ready, version, refresh, checkInbox, toast, toggleFollow, openForm, openView: setViewing, pickList, blocked, toggleBlock, report,
-  };
+    };
+  }, [me, following, followers, mine, mineLoaded, myEntry, badges, loadBadges, unread, notifAt, ready, version, refresh, checkInbox, toast, toggleFollow, openForm, pickList, blocked, toggleBlock, report]);
 
   return (
     <AppCtx.Provider value={value}>
