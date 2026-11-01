@@ -15,6 +15,7 @@ import { useApp } from "@/components/AppProvider";
 import { MyLogs } from "@/components/MyLogs";
 import { Feed, RatingBars } from "@/components/ui";
 import { GameLinker } from "@/components/GameLinker";
+import { GameSeries } from "@/components/GameSeries";
 import { Lightbox } from "@/components/Lightbox";
 import { PageEditor } from "@/components/PageEditor";
 import { ListsWith } from "@/components/ListsWith";
@@ -148,6 +149,7 @@ export default function GamePage() {
               ))}
             </div>
           )}
+          <GameSeries id={Number(id)} />
           <section className="section">
             <div className="section-head"><h2>Loglayanlar</h2></div>
             <Feed list={logs} empty={<div className="empty">Henüz kimse loglamadı. İlk sen ol!</div>} />

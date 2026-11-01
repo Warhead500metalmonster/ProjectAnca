@@ -142,6 +142,42 @@ async function igdbIdOf(id: number) {
   return (await mapRows(`rawg_id=eq.${id}&limit=1`))[0]?.igdb_id ?? null;
 }
 
+// Bir oyunun serisi: ana oyunlar çıkış sırasıyla. Remaster, remake, genişletilmiş sürüm ana oyunun yerine geçer (ids),
+// iptal edilen, söylenti olan, kapanan oyunlar ve kimsenin oynamadığı yan oyunlar (serinin en bilinen oyununun %2'sinin altı) sayılmaz.
+interface SeriesRow { id: number; name: string; game_type?: number; game_status?: number; first_release_date?: number; total_rating_count?: number; parent_game?: number; cover?: Img }
+async function series(igdbId: number) {
+  const { rows: [me] } = await ask<{ collections?: { name: string; games?: number[] }[] }>("games", `fields collections.name,collections.games; where id = ${igdbId}; limit 1;`);
+  const set = me?.collections?.find((c) => (c.games?.length || 0) > 1);
+  if (!set) return { name: "", results: [] };
+  const { rows } = await ask<SeriesRow>("games", `fields name,game_type,game_status,first_release_date,total_rating_count,parent_game,cover.image_id; where id = (${set.games!.slice(0, 200).join(",")}) & version_parent = null & game_type = (0,8,9,10); sort first_release_date asc; limit 200;`);
+  const byId = new Map(rows.map((g) => [g.id, g]));
+  const rootOf = (g: SeriesRow): SeriesRow => { const up = g.game_type && g.parent_game ? byId.get(g.parent_game) : null; return up ? rootOf(up) : g; };
+  const top = Math.max(0, ...rows.map((g) => g.total_rating_count || 0));
+  const now = Date.now() / 1000;
+  const mains = rows.filter((g) => {
+    if (g.game_type || [5, 6, 7, 8].includes(g.game_status ?? -1) || !g.first_release_date) return false;
+    return g.first_release_date > now || (g.total_rating_count || 0) >= top * 0.02;
+  });
+  if (mains.length < 2) return { name: "", results: [] };
+  const family = new Map<number, number[]>(mains.map((g) => [g.id, [g.id]]));
+  for (const g of rows) if (g.game_type) family.get(rootOf(g).id)?.push(g.id);
+  // n'e göre sıralı: oyunun bağlantısı en çok logu olan kayda gider; kişinin logu hangi numaradaysa bulunsun diye hepsi gönderilir
+  const links = await mapRows(`igdb_id=in.(${[...family.values()].flat().join(",")})`);
+  return {
+    name: set.name,
+    results: mains.map((g) => {
+      const members = family.get(g.id)!;
+      const siteIds = links.filter((m) => members.includes(m.igdb_id)).map((m) => m.rawg_id);
+      return {
+        id: links.find((m) => m.igdb_id === g.id)?.rawg_id ?? -g.id,
+        name: g.name, year: new Date(g.first_release_date! * 1000).getUTCFullYear(),
+        cover: image(g.cover?.image_id, "t_cover_big"), upcoming: g.first_release_date! > now,
+        ids: [...new Set([...siteIds, ...members.map((x) => -x)])],
+      };
+    }),
+  };
+}
+
 export async function igdbProxy(path: string, params: URLSearchParams): Promise<Response> {
   if (path === "genres") {
     const { rows } = await ask<Ref>("genres", "fields name,slug; sort name asc; limit 40;");
@@ -152,6 +188,7 @@ export async function igdbProxy(path: string, params: URLSearchParams): Promise<
   const id = Number(rawId);
   const igdbId = await igdbIdOf(id);
   if (!igdbId) return sub ? Response.json({ results: [] }) : Response.json({ error: "not found" }, { status: 404 });
+  if (sub === "series") return Response.json(await series(igdbId));
   if (sub === "screenshots") {
     const { rows } = await ask<{ screenshots?: Img[] }>("games", `fields screenshots.image_id; where id = ${igdbId}; limit 1;`);
     return Response.json({ results: (rows[0]?.screenshots || []).slice(0, 10).map((s) => ({ image: image(s.image_id, "t_screenshot_huge") })) });

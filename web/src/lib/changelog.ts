@@ -5,6 +5,11 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-11-01T18:33:00+04:00",
+    title: "Seri takibi",
+    body: "Oyun sayfalarında artık o oyunun serisi de görünüyor. Serinin kaçını bitirdiğini ve sıradaki oyunu tek bakışta görürsün. Remaster ya da remake oynadıysan ana oyunu bitirmiş sayılırsın. Senin bir şey girmene gerek yok, kütüphanenden kendiliğinden hesaplanır.",
+  },
+  {
     date: "2026-11-01T17:18:52+04:00",
     title: "Beş yeni özellik",
     body: "Kütüphanede Seç'e basıp birçok kaydı tek seferde düzenleyebilir ya da silebilirsin. Günlük görünümünde ay ay ne bitirdiğini görürsün. Keşfet'te sana en uyumlu kişilerin sevdiklerinden öneriler var. Profilini ve kayıtlarını görsel olarak paylaşabilirsin. Yıl özetinin yanına ay özeti de geldi.",

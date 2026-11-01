@@ -2912,3 +2912,7 @@ a.note-row:hover { border-color: var(--accent); }
 .month-recap b { font-family: var(--head); font-size: 20px; }
 .month-recap .link { font-size: 13px; color: var(--accent-2); margin-top: 4px; }
 @media (max-width: 640px) { .lib-bar > select { flex: 1 1 100%; } .lib-bar > .seg { margin-left: auto; } }
+
+/* Seri takibi: oyun sayfasındaki seri şeridi */
+.series-next { margin: -8px 0 12px; }
+.card-link[aria-current="page"] .poster { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
