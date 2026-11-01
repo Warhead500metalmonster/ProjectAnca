@@ -1,3 +1,4 @@
+import { scoreOf } from "./compat";
 import type { CatalogItem, Entry, EntryType, Item, PageEdit, RawgGame } from "./types";
 import { ENTRY_COLS, TYPES } from "./constants";
 import { NON_LATIN, contentKey, likeEsc, norm, smallImage } from "./format";
@@ -313,6 +314,40 @@ export async function friendPicks(following: string[], mine: Entry[]): Promise<F
   }
   return [...groups.values()].sort((a, b) => b.by.length - a.by.length
     || Math.max(...b.by.map((x) => x.rating || 0)) - Math.max(...a.by.map((x) => x.rating || 0))).slice(0, 18);
+}
+
+// Keşfet önerileri: sana en uyumlu kişilerin çok sevdiği (8+), sende olmayan şeyler. Sayılar sunucuda, profildeki Uyum ile aynı hesapla.
+export async function tastePicks(me: string, mine: Entry[], blocked: Set<string>): Promise<FriendPick[]> {
+  if (mine.length < 3) return [];
+  const rows = await q<{ user_id: string; common: number; rated: number; diff_sum: number; total: number }[]>(sb().rpc("compat_stats", { p_user: me }));
+  const totals = new Map<string, { common: number; rated: number; diff: number; total: number }>();
+  for (const r of rows) {
+    const t = totals.get(r.user_id) || { common: 0, rated: 0, diff: 0, total: 0 };
+    t.common += r.common; t.rated += r.rated; t.diff += Number(r.diff_sum); t.total += r.total;
+    totals.set(r.user_id, t);
+  }
+  const score = new Map([...totals].filter(([id, t]) => t.common >= 3 && !blocked.has(id))
+    .map(([id, t]) => [id, scoreOf(t.common, t.rated, t.diff, mine.length, t.total) ?? 0] as const)
+    .filter(([, s]) => s >= 50).sort((a, b) => b[1] - a[1]).slice(0, 25));
+  if (!score.size) return [];
+  const ids = [...score.keys()];
+  // Sahibinin gizlediği türler öneriye de girmez
+  const hidden = new Map((await q<{ id: string; hidden_types: string[] | null }[]>(sb().from("profiles").select("id, hidden_types").in("id", ids))).map((p) => [p.id, p.hidden_types || []]));
+  const good = await q<Entry[]>(sb().from("entries").select(ENTRY_COLS).in("user_id", ids).gte("rating", 8).order("updated_at", { ascending: false }).limit(600));
+  const have = new Set(mine.map(contentKey));
+  const haveExt = new Set(mine.map((e) => e.ext_id).filter(Boolean));
+  const groups = new Map<string, FriendPick & { w: number }>();
+  for (const e of good) {
+    const k = contentKey(e);
+    if (have.has(k) || (e.ext_id && haveExt.has(e.ext_id)) || hidden.get(e.user_id)?.includes(e.type)) continue;
+    const g = groups.get(k) || { e, by: [], w: 0 };
+    if (g.by.some((x) => x.user_id === e.user_id)) continue;
+    g.by.push(e);
+    g.w += (score.get(e.user_id)! / 100) * Number(e.rating); // uyumlu kişinin yüksek puanı daha ağır basar
+    if (!g.e.cover && e.cover) g.e = e;
+    groups.set(k, g);
+  }
+  return [...groups.values()].sort((a, b) => b.w - a.w).slice(0, 18);
 }
 
 // İçe aktarmada albüm / şarkı kapağı bul: önce Deezer, olmazsa Apple Music

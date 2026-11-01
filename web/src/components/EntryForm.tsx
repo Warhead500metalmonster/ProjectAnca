@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { Entry, EntryType, FormGame, Item, RawgGame } from "@/lib/types";
 import { STATUSES, STORES, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
-import { contentKey, fmtDate, itemOf, safeUrl, scoreText, today } from "@/lib/format";
+import { contentKey, fmtDate, itemOf, safeUrl, scoreText, today, cleanTag } from "@/lib/format";
 import { gameFromRawg, rawg } from "@/lib/rawg";
 import { type Found, addCatalog, findContent, isLink, searchCredit, tmdbCreator, tmdbDetail } from "@/lib/data";
 import { q, sb } from "@/lib/supabase";
@@ -77,7 +77,6 @@ export function EntryForm({ entry, game, type: initialType, item, replay: asRepl
   const myTags = allTags.filter((x) => !tags.includes(x));
 
   // Etiket: yazıp Enter'a ya da virgüle bas; küçük harfe çevrilir, aynısı iki kez eklenmez
-  const cleanTag = (raw: string) => raw.replace(/[#,]/g, " ").replace(/\s+/g, " ").trim().toLocaleLowerCase("tr").slice(0, 30);
   function addTag(raw: string) {
     const v = cleanTag(raw);
     if (v && !tags.includes(v) && tags.length < 20) setTags([...tags, v]);

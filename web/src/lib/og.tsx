@@ -218,18 +218,40 @@ export async function listCard(id: string): Promise<Card | null> {
   };
 }
 
-export async function wrapCard(username: string, year = String(new Date().getFullYear()), token?: string): Promise<Card | null> {
+const nextMonth = (m: string) => { const y = Number(m.slice(0, 4)), n = Number(m.slice(5)); return n === 12 ? `${y + 1}-01-01` : `${y}-${String(n + 1).padStart(2, "0")}-01`; };
+const AYLAR = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+
+// Tek kayıt ya da inceleme kartı. Spoiler kısımları karta girmez; gizli kayıt yalnızca sahibinin oturumuyla okunur.
+export async function entryCard(id: string, token?: string): Promise<Card | null> {
+  if (!/^[0-9a-z-]{1,64}$/i.test(id)) return null;
+  const rows = await rest<{ type: string; title: string; year: number | null; cover: string | null; rating: number | null; notes: string | null; profiles: OgProfile | null }[]>(
+    `entries?id=eq.${id}&select=type,title,year,cover,rating,notes,profiles!entries_user_id_fkey(username,display_name,avatar_url,accent,hidden_types)&limit=1`, token);
+  const e = rows?.[0];
+  if (!e?.profiles || (e.profiles.hidden_types || []).includes(e.type)) return null;
+  const note = (e.notes || "").replace(/\|\|[\s\S]*?\|\|/g, "[spoiler]").replace(/\s+/g, " ").trim();
+  const stars = e.rating ? `★ ${(Number(e.rating) / 2).toLocaleString("tr")} / 5` : "";
+  const who = `@${e.profiles.username}`;
+  return {
+    kicker: note ? "İnceleme" : LABEL[e.type]?.[0] || "Kayıt", title: e.title, sub: [stars, e.year].filter(Boolean).join(" · ") || who,
+    line: note ? `“${note}”` : `${e.profiles.display_name || e.profiles.username} Ancalog'da logladı`,
+    accent: e.profiles.accent, covers: [big(e.cover)], backdrop: big(e.cover),
+    description: `${who}: ${e.title}`,
+  };
+}
+
+// Yıl özeti; month verilirse (2026-10) o ayın özeti
+export async function wrapCard(username: string, year = String(new Date().getFullYear()), token?: string, month?: string): Promise<Card | null> {
   const p = await profileOf(username);
   if (!p) return null;
   const name = p.display_name || p.username;
   const hide = (p.hidden_types || []).filter((t) => t in LABEL);
   const done = await rest<{ type: string; cover: string | null; rating: number | null }[]>(
-    `entries?user_id=eq.${p.id}&status=eq.completed&date=gte.${year}-01-01&date=lt.${Number(year) + 1}-01-01&select=type,cover,rating&order=rating.desc.nullslast&limit=1000`, token);
+    `entries?user_id=eq.${p.id}&status=eq.completed&date=gte.${month ? `${month}-01` : `${year}-01-01`}&date=lt.${month ? nextMonth(month) : `${Number(year) + 1}-01-01`}&select=type,cover,rating&order=rating.desc.nullslast&limit=1000`, token);
   const list = (done || []).filter((e) => !hide.includes(e.type));
   const by = Object.keys(LABEL).map((t) => [t, list.filter((e) => e.type === t).length] as const).filter(([, c]) => c);
   const line = list.length ? by.map(([t, c]) => `${c} ${LABEL[t][0].toLocaleLowerCase("tr")}`).join(" · ") : "Yılın özeti";
   return {
-    kicker: `${year} özeti`, title: name, sub: `@${p.username}`, line: list.length ? `${list.length} şey bitirdi · ${line}` : line,
+    kicker: month ? `${AYLAR[Number(month.slice(5)) - 1]} ${month.slice(0, 4)} özeti` : `${year} özeti`, title: name, sub: `@${p.username}`, line: list.length ? `${list.length} şey bitirdi · ${line}` : line,
     avatar: p.avatar_url, accent: p.accent, covers: list.filter((e) => e.cover).map((e) => big(e.cover)),
     description: `${name} ${year} yılında ${list.length} şey bitirdi: ${line}. Ancalog yıl özeti.`,
   };

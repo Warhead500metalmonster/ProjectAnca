@@ -11,6 +11,7 @@ import { rawg, retry } from "@/lib/rawg";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
 import { Cover, QuickAdd, UserRow } from "@/components/ui";
+import { ForYou } from "@/components/ForYou";
 
 type Sort = "logged" | "completed" | "active" | "rating" | "newest" | "oldest" | "title";
 const SORTS: [Sort, string][] = [
@@ -135,6 +136,8 @@ export default function SearchPage() {
         </div>
         {(!yearOk(from) || !yearOk(to)) && <p className="form-error">Yılı 4 haneli yaz (ör. 2006).</p>}
       </section>
+
+      {!text.trim() && !from && !to && <ForYou type={type} />}
 
       {users.length > 0 && (
         <section className="section">

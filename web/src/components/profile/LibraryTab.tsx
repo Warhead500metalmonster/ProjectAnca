@@ -1,19 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { Entry, EntryType, Status } from "@/lib/types";
 import { STATUSES, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
-import { daysTaken, fmtDate, fmtDur, num, playSec } from "@/lib/format";
+import { MONTHS_TR, daysTaken, fmtDate, fmtDur, num, playSec } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
+import { BulkBar } from "@/components/profile/BulkBar";
 import { FavPicker } from "@/components/FavPicker";
 import { useProfile } from "@/components/ProfileShell";
 import { Cover, EntryCard, Rating, commentCount, entryTags, likeCount } from "@/components/ui";
 
 type Sort = "updated" | "rating" | "rating_asc" | "title" | "year" | "year_asc" | "finished" | "time" | "fastest";
-type View = "grid" | "list";
+type View = "grid" | "list" | "diary";
 
 const SORTS: [Sort, string, (a: Entry, b: Entry) => number][] = [
   ["updated", "Son güncellenen", (a, b) => b.updated_at.localeCompare(a.updated_at)],
@@ -61,7 +62,11 @@ export function LibraryTab() {
   const [view, setView] = useState<View>("grid");
   const [showFilters, setShowFilters] = useState(false);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- tarayıcı deposundan / ağdan gelen veri
-  useEffect(() => { try { if (localStorage.getItem("ancalog.view") === "list") setView("list"); } catch { /* tercih */ } }, []);
+  useEffect(() => { try { const v = localStorage.getItem("ancalog.view"); if (v === "list" || v === "diary") setView(v); } catch { /* tercih */ } }, []);
+  // Toplu düzenleme: seçilen kayıtlar filtre değişse de seçili kalır
+  const [selecting, setSelecting] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const closeSelect = () => { setSelecting(false); setSelected(new Set()); };
 
   function pickView(v: View) {
     setView(v);
@@ -119,6 +124,16 @@ export function LibraryTab() {
   const [paging, setPaging] = useState({ key: pageKey, n: PAGE });
   const shown = paging.key === pageKey ? paging.n : PAGE;
   const more = () => setPaging({ key: pageKey, n: shown + PAGE });
+  // Günlük: sadece bitirme tarihi olanlar, en yeni en üstte
+  const dated = useMemo(() => list.filter((e) => e.status === "completed" && e.date).sort((a, b) => b.date!.localeCompare(a.date!)), [list]);
+  const paged = view === "diary" ? dated : list;
+  // Seçim modunda kartın üstüne dokunmak kaydı açmak yerine seçer
+  const selectable = (e: Entry, child: React.ReactNode, cls = "") => !selecting ? child : (
+    <div key={e.id} className={`sel-wrap ${cls} ${selected.has(e.id) ? "on" : ""}`}>
+      {child}
+      <button type="button" className="sel-over" aria-pressed={selected.has(e.id)} aria-label={`${e.title} seç`} onClick={() => setSelected(toggle(selected, e.id))}><span>✓</span></button>
+    </div>
+  );
 
 
   function clear() {
@@ -151,12 +166,16 @@ export function LibraryTab() {
           <button className={`btn ${showFilters || filterCount ? "on" : ""}`} onClick={() => setShowFilters(!showFilters)}>
             Filtrele{filterCount ? ` (${filterCount})` : ""}
           </button>
-          <select aria-label="Sırala" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
-            {SORTS.map(([k, label]) => <option key={k} value={k}>Sırala: {label}</option>)}
-          </select>
+          {view !== "diary" && (
+            <select aria-label="Sırala" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
+              {SORTS.map(([k, label]) => <option key={k} value={k}>Sırala: {label}</option>)}
+            </select>
+          )}
+          {isMe && list.length > 0 && <button type="button" className={`btn ${selecting ? "on" : ""}`} onClick={() => (selecting ? closeSelect() : setSelecting(true))}>Seç</button>}
           <div className="seg">
             <button type="button" className={view === "grid" ? "active" : ""} title="Kapaklar" aria-label="Kapaklar" onClick={() => pickView("grid")}>▦</button>
             <button type="button" className={view === "list" ? "active" : ""} title="Liste" aria-label="Liste" onClick={() => pickView("list")}>☰</button>
+            <button type="button" className={view === "diary" ? "active" : ""} title="Ne zaman ne bitirdim?" onClick={() => pickView("diary")}>Günlük</button>
           </div>
         </div>
         </div>
@@ -208,9 +227,11 @@ export function LibraryTab() {
         )}
         {(filterCount > 0 || statuses.size > 0 || needle) && <p className="muted count-note">{list.length} sonuç</p>}
         {list.length ? (
-          view === "list"
-            ? <div className="rows">{list.slice(0, shown).map((e) => <Row key={e.id} e={e} isMe={isMe} />)}</div>
-            : <div className="grid">{list.slice(0, shown).map((e) => <EntryCard key={e.id} e={e} kind={type === "all"} />)}</div>
+          view === "diary"
+            ? <Diary list={dated.slice(0, shown)} username={profile.username} wrap={selectable} empty={list.length} />
+            : view === "list"
+            ? <div className="rows">{list.slice(0, shown).map((e) => <Fragment key={e.id}>{selectable(e, <Row e={e} isMe={isMe} />)}</Fragment>)}</div>
+            : <div className="grid">{list.slice(0, shown).map((e) => <Fragment key={e.id}>{selectable(e, <EntryCard e={e} kind={type === "all"} />)}</Fragment>)}</div>
         ) : (
           <div className="empty">
             {entries.length ? (
@@ -224,13 +245,49 @@ export function LibraryTab() {
               : "Burada henüz kayıt yok."}
           </div>
         )}
-        {shown < list.length && (
+        {shown < paged.length && (
           <div className="load-more">
-            <button className="btn" onClick={more}>Daha fazla göster ({Math.min(PAGE, list.length - shown)} / {list.length - shown} kaldı)</button>
+            <button className="btn" onClick={more}>Daha fazla göster ({Math.min(PAGE, paged.length - shown)} / {paged.length - shown} kaldı)</button>
           </div>
+        )}
+        {selecting && (
+          <BulkBar entries={entries} ids={selected} type={statusType} total={paged.length} onAll={() => setSelected(new Set(paged.map((e) => e.id)))}
+            onDone={closeSelect} onClose={closeSelect} />
         )}
       </section>
     </>
+  );
+}
+
+// Günlük: ay ay ne zaman ne bitirildi (Letterboxd'daki gibi)
+function Diary({ list, username, wrap, empty }: { list: Entry[]; username: string; wrap: (e: Entry, child: React.ReactNode, cls?: string) => React.ReactNode; empty: number }) {
+  const { openView } = useApp();
+  if (!list.length) return <div className="empty">{empty} kayıt var ama bitirme tarihi girilmiş olan yok. Bir kaydı düzenleyip bitirme tarihini yazınca burada görünür.</div>;
+  return (
+    <div className="diary">
+      {list.map((e, i) => {
+        const ym = e.date!.slice(0, 7);
+        const t = TYPES[e.type];
+        return (
+          <Fragment key={e.id}>
+            {(i === 0 || list[i - 1].date!.slice(0, 7) !== ym) && (
+              <div className="diary-month">
+                <h3>{MONTHS_TR[Number(ym.slice(5)) - 1]} {ym.slice(0, 4)}</h3>
+                <Link className="link" href={`/wrap/${username}?m=${ym}`}>Ay özeti →</Link>
+              </div>
+            )}
+            {wrap(e, (
+              <button type="button" className="diary-row" onClick={() => openView(e)}>
+                <span className="diary-day">{Number(e.date!.slice(8))}</span>
+                <span className={`diary-cover ${t.square ? "square" : ""}`}><span>{t.label}</span><Cover src={e.cover} /></span>
+                <span className="diary-title"><b>{e.favorite ? "♥ " : ""}{e.title}</b><small>{[t.label, e.year].filter(Boolean).join(" · ")}</small></span>
+                {e.rating ? <Rating r={e.rating} /> : null}
+              </button>
+            ))}
+          </Fragment>
+        );
+      })}
+    </div>
   );
 }
 

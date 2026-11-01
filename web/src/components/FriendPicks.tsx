@@ -4,19 +4,28 @@ import Link from "next/link";
 import type { Entry } from "@/lib/types";
 import { TYPES } from "@/lib/constants";
 import { contentHref, itemOf, scoreShort } from "@/lib/format";
-import { friendPicks } from "@/lib/data";
+import { friendPicks, type FriendPick } from "@/lib/data";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "./AppProvider";
 import { Avatar, Cover, displayName } from "./ui";
 
 // Ana sayfada: arkadaşlarının çok sevdiği (9+), senin henüz kütüphanende olmayan şeyler
 export function FriendPicks({ following, mine }: { following: string[]; mine: Entry[] }) {
-  const { openForm, scale, version } = useApp();
+  const { version } = useApp();
   const { data } = useLoad(() => friendPicks(following, mine).catch(() => []), [following.join(","), mine.length, version], following.length > 0);
   if (!data?.length) return null;
   return (
     <section className="section">
       <div className="section-head"><h2>Arkadaşların öneriyor <span className="muted small">· çok sevdikleri, sende olmayanlar</span></h2></div>
+      <PickStrip data={data} />
+    </section>
+  );
+}
+
+// Önerilen içerik şeridi: kapak, ekle düğmesi, kimlerin sevdiği
+export function PickStrip({ data }: { data: FriendPick[] }) {
+  const { openForm, scale } = useApp();
+  return (
       <div className="strip">
         {data.map(({ e, by }) => {
           const t = TYPES[e.type];
@@ -41,6 +50,5 @@ export function FriendPicks({ following, mine }: { following: string[]; mine: En
           );
         })}
       </div>
-    </section>
   );
 }

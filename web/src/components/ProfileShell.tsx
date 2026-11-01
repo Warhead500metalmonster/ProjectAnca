@@ -12,6 +12,7 @@ import { bannerOn, countedEntries, countsOf } from "@/lib/profileLayout";
 import { countOf, q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
+import { shareImage } from "@/lib/shareImage";
 import { Avatar, BadgeChips, Cover, FollowButton, Name, RatingBars, Socials, UserRow } from "@/components/ui";
 import { ProfileSong } from "@/components/ProfileSong";
 import { CoverMarquee } from "@/components/CoverMarquee";
@@ -147,6 +148,7 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
             {cnt.items.includes("following") && <button onClick={() => openUserList("following")}><b>{num(following)}</b>Takip</button>}
           </div>}
           <div className="profile-actions">
+            {!compact && !locked && <button className="btn" onClick={() => shareImage(`${base}/image`, `ancalog-${profile.username}.png`, `${profile.display_name || profile.username} · Ancalog`, toast)}>Görsel paylaş</button>}
             {isMe
               ? !compact && <Link className="btn" href="/settings">Profili düzenle</Link> /* + Ekle üst çubukta (telefonda alttaki +) zaten var */
               : <>

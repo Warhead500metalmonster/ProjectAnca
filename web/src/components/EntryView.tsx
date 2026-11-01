@@ -1,5 +1,6 @@
 "use client";
 
+import { shareImage } from "@/lib/shareImage";
 import { ChatBody, DraftPhotos, PhotoAdd, ReplyQuote, ReplyingTo, withPhoto, type ReplyTarget } from "@/components/ChatBody";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -143,6 +144,7 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
             {isMine && <button type="button" className="btn primary" onClick={() => onEdit(e)}>Düzenle</button>}
             <Link className="btn" href={contentHref(e)} onClick={close}>{e.type === "game" ? "Oyun sayfası" : "İçerik sayfası"}</Link>
             <button type="button" className="btn" onClick={() => { close(); pickList(itemOf(e)); }}>Listeye ekle</button>
+            <button type="button" className="btn" onClick={() => shareImage(`/card/entry/${e.id}`, `ancalog-${e.id}.png`, e.title, toast)}>Görsel paylaş</button>
           </div>
 
           {my && (

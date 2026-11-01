@@ -54,6 +54,9 @@ export const playSec = (e: Pick<Entry, "playtime_sec" | "hours">) =>
 export const fmtHoursShort = (sec: number) => `${Math.round(sec / 3600).toLocaleString("tr")} sa`;
 
 // Başlama ve bitirme tarihi varsa kaç günde bitirildiği (aynı gün = 1 gün)
+export const cleanTag = (raw: string) => raw.replace(/[#,]/g, " ").replace(/\s+/g, " ").trim().toLocaleLowerCase("tr").slice(0, 30);
+export const MONTHS_TR = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+
 export function daysTaken(e: Pick<Entry, "status" | "started_on" | "date">) {
   if (e.status !== "completed" || !e.started_on || !e.date) return null;
   const days = Math.round((new Date(e.date + "T00:00").getTime() - new Date(e.started_on + "T00:00").getTime()) / 86400000) + 1;

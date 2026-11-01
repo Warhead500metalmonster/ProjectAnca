@@ -5,6 +5,11 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-11-01T17:18:52+04:00",
+    title: "Beş yeni özellik",
+    body: "Kütüphanede Seç'e basıp birçok kaydı tek seferde düzenleyebilir ya da silebilirsin. Günlük görünümünde ay ay ne bitirdiğini görürsün. Keşfet'te sana en uyumlu kişilerin sevdiklerinden öneriler var. Profilini ve kayıtlarını görsel olarak paylaşabilirsin. Yıl özetinin yanına ay özeti de geldi.",
+  },
+  {
     date: "2026-11-01T16:32:25+04:00",
     title: "Sayfalar tek düzene geçti",
     body: "Ana sayfada özetin, hedefin ve rozetlerin artık sağda hep görünüyor; akışta kimin en son ne yaptığı tek bakışta belli. Profillerde şu an ne oynadığı ve puan dağılımı görünüyor. Kütüphane, Keşfet, İstatistikler ve Forum'da bütün araçlar tek kutuda toplandı. Sekmeler ve süzgeçler her yerde aynı görünüyor. Ayarlar'da bölümler artık solda duruyor. Forum, Bildirimler, Takvim ve İçe aktar sayfanın tamamını kullanıyor.",

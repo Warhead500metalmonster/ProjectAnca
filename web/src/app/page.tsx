@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { Entry } from "@/lib/types";
 import { LOCAL_KEY, STATUSES, TYPES } from "@/lib/constants";
-import { mixedCovers, safeUrl } from "@/lib/format";
+import { mixedCovers, safeUrl, MONTHS_TR } from "@/lib/format";
 import { fetchFeed } from "@/lib/data";
 import { rawg } from "@/lib/rawg";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
@@ -248,6 +248,7 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
         </div>
         <aside className="tl-side home-side">
           {mine.length > 0 && <section className="side-card"><h3>Özetim</h3><div className="stats"><Stats list={mine} /></div></section>}
+          <MonthRecap username={user.username} mine={mine} />
           <Goals profile={user} entries={mine} isMe />
           <NextBadges userId={user.id} username={user.username} entries={mine} />
         </aside>
@@ -255,6 +256,23 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
       <SiteStats />
       <HomeInfo signedIn />
     </>
+  );
+}
+
+// Ay özeti: ayın ilk haftasında geçen ay, sonra içinde bulunulan ay; o ay bitmiş bir şey yoksa görünmez
+function MonthRecap({ username, mine }: { username: string; mine: Entry[] }) {
+  const now = new Date();
+  const back = now.getDate() <= 7 ? 1 : 0;
+  const d = new Date(now.getFullYear(), now.getMonth() - back, 1);
+  const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const done = mine.filter((e) => e.status === "completed" && e.date?.startsWith(ym));
+  if (!done.length) return null;
+  return (
+    <Link className="side-card month-recap" href={`/wrap/${username}?m=${ym}`}>
+      <span className="muted small">{MONTHS_TR[d.getMonth()]} özetin</span>
+      <b>{done.length} şey bitirdin</b>
+      <span className="link">Özeti gör →</span>
+    </Link>
   );
 }
 
