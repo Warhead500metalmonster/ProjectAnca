@@ -2572,21 +2572,6 @@ body::before { content: ""; position: fixed; inset: 0; z-index: -2; pointer-even
 .page-head-links { display: flex; gap: 8px; }
 .subnav + .section { margin-top: 18px; }
 .subnav a .count { color: var(--muted); font-size: 12px; font-weight: 500; margin-left: 2px; }
-.feed-col { max-width: none; }
-/* Topluluk akışı: bilgisayarda sayfayı doldurur, kapaklar ve yazılar büyük */
-@media (min-width: 641px) {
-  .feed-col .feed-item { gap: 16px; padding: 18px; }
-  .feed-col .feed-item .avatar { --s: 52px; width: 52px; height: 52px; }
-  .feed-col .feed-item .thumb { width: 84px; height: 120px; border-radius: 10px; font-size: 14px; color: var(--muted); }
-  .feed-col .feed-item .line { font-size: 17px; line-height: 1.35; }
-  .feed-col .feed-item .sub { font-size: 14px; margin-top: 6px; }
-  .feed-col .grp-cover, .feed-col .grp-more { width: 100px; }
-}
-@media (min-width: 1000px) {
-  .feed-col .feed { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-  .feed-col .feed-more { grid-column: 1 / -1; }
-}
-
 /* Bütün sekmeler aynı görünsün: Mesajlar/Forum ve Sıralamalar da altı çizili */
 .social-tabs, .forum > .social-tabs, .top-tabs { max-width: none; gap: 6px; padding: 0; margin: 0 0 16px; background: none; border-radius: 0; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
 .social-tabs a { flex: none; padding: 10px 16px; border-radius: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
@@ -2677,3 +2662,123 @@ a.note-row:hover { border-color: var(--accent); }
 /* Kayıt penceresi: asıl işler üstte */
 .view-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
 @media (max-width: 640px) { .view-actions .btn { flex: 1 1 auto; } }
+
+/* ---------- Yeni görünüm (ana sayfa hariç): geniş sayfa, büyük başlık ve kapak, düz paneller ---------- */
+@media (min-width: 641px) { :root:not(:has(.hero2)) { --wide: 1480px; } }
+:root:not(:has(.hero2)) {
+  --panel: #12171a;
+  --border: #242b30;
+
+  .btn, .chip, .tab, .input, select, .mini-tabs button { border-radius: 9px; }
+  .input.big { border-radius: 12px; }
+  .bdg { border-radius: 8px; }
+
+  .section-head { border-bottom: 0; padding-bottom: 0; align-items: baseline; }
+  .section-head h2 { font-size: 21px; font-weight: 700; text-transform: none; letter-spacing: -.01em; color: var(--text); }
+  .card-title { font-size: 14.5px; }
+  .card-meta { font-size: 12.5px; }
+  .poster { border-radius: 8px; }
+  .chart-card, .stat, .feed-item, .note-row, .thread-row, .side-card { border-radius: 12px; }
+
+  @media (min-width: 641px) {
+    .grid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 22px; }
+    .strip { grid-auto-columns: 180px; }
+    .page-head h1, .search-hero h1, .notes h1, .ev-list-head h1 { font-size: 34px; }
+  }
+  @media (max-width: 640px) {
+    .section-head h2 { font-size: 18px; }
+  }
+}
+
+/* Profil: üst kısım */
+.profile-side .profile-bio, .profile-side .profile-meta, .profile-side .socials, .profile-side .badge-row { margin: 0; padding: 0; }
+.profile-side .profile-bio { max-width: none; text-align: left; }
+.profile-side .profile-meta { flex-direction: column; gap: 4px; justify-content: flex-start; }
+.profile-side .socials, .profile-side .badge-row { justify-content: flex-start; }
+.profile-body { display: grid; gap: 28px; margin-top: 8px; }
+.profile-main { min-width: 0; }
+.profile-side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.side-card { display: flex; flex-direction: column; gap: 10px; padding: 16px; background: var(--panel); border: 1px solid var(--border); }
+.side-card h3 { margin: 0; font-size: 15px; font-weight: 700; }
+.side-badges:not(:has(.badge-row)) { display: none; }
+.side-lib { gap: 2px; }
+.side-lib h3 { margin-bottom: 6px; }
+.side-lib a { display: flex; justify-content: space-between; gap: 10px; padding: 7px 8px; margin: 0 -8px; border-radius: 8px; color: var(--muted); }
+.side-lib a b { color: var(--text); font-weight: 600; }
+.side-lib a:hover { background: rgba(255, 255, 255, .05); color: var(--text); }
+.profile.glass .side-card { background: rgba(10, 13, 14, .62); }
+
+@media (min-width: 641px) {
+  .profile-head { padding: 0; align-items: flex-end; gap: 22px; }
+  .profile-head .avatar.lg { --s: 136px; width: 136px; height: 136px; font-size: 52px; }
+  .profile-info h1 { font-size: 44px; font-weight: 700; }
+  .profile-counts { order: 5; flex-basis: 100%; align-self: stretch; justify-content: flex-start; padding: 0; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; }
+  .profile-counts > * { flex: 1 1 0; padding: 12px 10px; }
+  .profile-counts b { font-size: 26px; }
+  .profile.glass .profile-counts { background: rgba(10, 13, 14, .62); }
+  .profile-note { margin-left: 0; margin-right: 0; }
+  .subnav { position: sticky; top: 58px; z-index: 6; margin-top: 16px; background: rgb(11, 15, 16); }
+  .subnav a { font-size: 15px; }
+  .profile.compact .profile-banner { height: 96px; }
+  .profile.compact .profile-head { margin-top: -44px; }
+  .profile.compact .profile-head .avatar.lg { --s: 84px; width: 84px; height: 84px; font-size: 34px; }
+  .profile.compact .profile-info h1 { font-size: 30px; }
+}
+@media (min-width: 1000px) {
+  .profile-body { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; }
+  .profile-side { position: sticky; top: 118px; max-height: calc(100vh - 134px); overflow-y: auto; scrollbar-width: thin; }
+}
+@media (max-width: 999px) {
+  .profile-side { order: -1; }
+  .side-lib { display: none; }
+}
+@media (max-width: 640px) {
+  .profile-body { gap: 14px; }
+  .side-card { padding: 12px 14px; }
+}
+
+/* Topluluk zaman çizelgesi */
+.tl { display: flex; flex-direction: column; }
+.tl-day { font-size: 15px; font-weight: 700; color: var(--muted); margin: 22px 0 6px; }
+.tl-day:first-child { margin-top: 0; }
+.tl-row { display: grid; grid-template-columns: 112px auto minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.tl-row .avatar { --s: 48px; }
+.tl-time { color: var(--muted); font-size: 13.5px; }
+.tl-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.tl-who { color: var(--muted); font-size: 15px; }
+.tl-who b { color: var(--text); font-weight: 600; }
+.tl-what { font-size: 18px; font-weight: 600; line-height: 1.3; }
+.tl-what a:hover { color: var(--accent-2); }
+.tl-covers { display: flex; gap: 6px; }
+.tl-cover { position: relative; display: grid; place-items: center; width: 60px; height: 86px; border-radius: 6px; overflow: hidden; background: var(--panel-2); color: var(--muted); font-size: 11px; }
+.tl-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.tl .feed-more { margin-top: 14px; }
+@media (max-width: 640px) {
+  .tl-row { grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; padding: 12px 0; }
+  .tl-row .avatar { --s: 40px; }
+  .tl-time { grid-column: 2; grid-row: 2; font-size: 12.5px; margin-top: -6px; }
+  .tl-text { grid-column: 2; grid-row: 1; }
+  .tl-covers { grid-column: 3; grid-row: 1 / span 2; }
+  .tl-row > a { grid-column: 1; grid-row: 1 / span 2; }
+  .tl-what { font-size: 15.5px; }
+  .tl-who { font-size: 13.5px; }
+  .tl-cover { width: 44px; height: 62px; }
+  .tl-cover:nth-child(n+2) { display: none; }
+}
+
+/* Topluluk: solda çizelge, sağda yan panel */
+.tl-layout { display: grid; gap: 32px; }
+.tl-main { min-width: 0; }
+.tl-side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.tl-side h3 { display: flex; justify-content: space-between; align-items: baseline; }
+.tl-side h3 .link { font-size: 13px; font-weight: 500; color: var(--accent-2); }
+.tl-side-covers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tl-side-people { display: flex; flex-direction: column; gap: 2px; }
+.tl-side-people a { display: flex; align-items: center; gap: 10px; padding: 6px 8px; margin: 0 -8px; border-radius: 8px; font-weight: 500; }
+.tl-side-people a span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-side-people a:hover { background: rgba(255, 255, 255, .05); }
+@media (min-width: 1000px) {
+  .tl-layout { grid-template-columns: minmax(0, 1fr) 340px; align-items: start; }
+  .tl-side { position: sticky; top: 76px; }
+}
+@media (max-width: 999px) { .tl-side { display: none; } }

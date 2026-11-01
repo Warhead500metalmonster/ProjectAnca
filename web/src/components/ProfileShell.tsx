@@ -6,7 +6,7 @@ import { useParams, usePathname } from "next/navigation";
 import type { Entry, Profile } from "@/lib/types";
 import { fmtDate, cssUrl, mixedCovers, num, safeUrl } from "@/lib/format";
 import { fetchEntries } from "@/lib/data";
-import { PROFILE_THEMES, TYPES } from "@/lib/constants";
+import { PROFILE_THEMES, TYPES, TYPE_KEYS } from "@/lib/constants";
 import { compat } from "@/lib/compat";
 import { bannerOn, countedEntries, countsOf } from "@/lib/profileLayout";
 import { countOf, q, sb, supabaseConfigured } from "@/lib/supabase";
@@ -165,8 +165,7 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
               </>}
           </div>
         </div>
-        {!compact && <BadgeChips id={profile.id} max={3} more={`/u/${profile.username}/badges`} />}
-        {!compact && profile.bio && !locked && <p className="profile-bio">{profile.bio}</p>}
+        {locked && <BadgeChips id={profile.id} max={3} more={`/u/${profile.username}/badges`} />}
         {/* Sadece sahibine, tek satırda: profilini başkaları nasıl görüyor (gizliyse türlerden bahsetmeye gerek yok) */}
         {isMe && (privacy !== "public" || hidden.length > 0) && (
           <p className="muted small profile-note" style={{ margin: "6px 0 0" }}>
@@ -188,15 +187,6 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
           </div>
         ) : (
           <>
-          {!compact && <>
-          <div className="profile-meta">
-            {profile.location && <span>{profile.location}</span>}
-            {/* Kurucunun profilinde katılma tarihi yerine sadece kaçıncı üye olduğu yazar */}
-            {founder ? memberLine
-              : <span>{fmtDate(profile.created_at.slice(0, 10))} tarihinde katıldı{memberLine && <> · {memberLine}</>}</span>}
-          </div>
-          <Socials socials={profile.socials} />
-          </>}
           <nav className="subnav">
             <Link href={base} className={tab === "home" ? "active" : ""}>Profil</Link>
             <Link href={`${base}/library`} className={tab === "library" ? "active" : ""}>Kütüphane <span className="count">{num(entries.filter((e) => e.status !== "planned").length)}</span></Link>
@@ -207,7 +197,38 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
             <Link href={`${base}/badges`} className={tab === "badges" ? "active" : ""}>Rozetler</Link>
             {me && !isMe && <Link href={`${base}/compare`} className={tab === "compare" ? "active" : ""}>Uyum</Link>}
           </nav>
-          {children}
+          {compact ? children : (
+            <div className="profile-body">
+              <div className="profile-main">{children}</div>
+              {/* Yan panel: kim olduğu, rozetleri, bağlantıları ve kütüphanesine kısa yollar */}
+              <aside className="profile-side">
+                <section className="side-card">
+                  <h3>Hakkında</h3>
+                  {profile.bio && <p className="profile-bio">{profile.bio}</p>}
+                  <div className="profile-meta">
+                    {profile.location && <span>{profile.location}</span>}
+                    {/* Kurucunun profilinde katılma tarihi yerine sadece kaçıncı üye olduğu yazar */}
+                    {founder ? memberLine
+                      : <span>{fmtDate(profile.created_at.slice(0, 10))} tarihinde katıldı{memberLine && <> · {memberLine}</>}</span>}
+                  </div>
+                  <Socials socials={profile.socials} />
+                </section>
+                <section className="side-card side-badges">
+                  <h3>Rozetler</h3>
+                  <BadgeChips id={profile.id} max={6} more={`/u/${profile.username}/badges`} />
+                </section>
+                {entries.length > 0 && (
+                  <section className="side-card side-lib">
+                    <h3>Kütüphane</h3>
+                    {TYPE_KEYS.map((k) => {
+                      const n = entries.filter((e) => e.type === k && e.status !== "planned").length;
+                      return n ? <Link key={k} href={`${base}/library?type=${k}`}><span>{TYPES[k].plural}</span><b>{num(n)}</b></Link> : null;
+                    })}
+                  </section>
+                )}
+              </aside>
+            </div>
+          )}
           </>
         )}
       </div>

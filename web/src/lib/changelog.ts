@@ -5,6 +5,11 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-11-01T16:17:04+04:00",
+    title: "Profiller ve sayfalar yenilendi",
+    body: "Profilin artık iki bölümlü: solda vitrinin, sağda hakkında, rozetler ve kütüphanene kısa yollar var. Sayılar adının altında kendi çubuğunda duruyor. Ana sayfa dışındaki sayfalar geniş ekranı daha iyi kullanıyor, kapaklar ve başlıklar büyüdü.",
+  },
+  {
     date: "2026-11-01T14:47:07+04:00",
     title: "Kalan sayfalar da sadeleşti",
     body: "Bir kaydı açınca Düzenle artık en üstte, yorumların altında kaybolmuyor. İstatistikler Özet, Grafikler ve Rekorlar diye üçe ayrıldı. Bildirimlerde satırın tamamına tıklayabilir, türe göre süzebilirsin. Forumda arama ve Yeni konu aç yan yana.",

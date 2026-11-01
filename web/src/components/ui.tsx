@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import Link from "next/link";
 import type { AvatarCrop, Entry, Profile } from "@/lib/types";
 import { BADGES, SOCIALS, TYPES, activityVerb, statusLabel } from "@/lib/constants";
@@ -329,6 +329,51 @@ export function Feed({ list: all, empty, step = 8 }: { list: Entry[]; empty?: Re
   return (
     <div className="feed">
       {rows.slice(0, shown).map((g) => (g.length > 1 ? <FeedGroup key={g[0].id} list={g} /> : <FeedItem key={g[0].id} e={g[0]} />))}
+      {rows.length > shown && <button className="feed-more" onClick={() => setShown((n) => n + step * 2)}>Daha fazla göster ({rows.length - shown})</button>}
+    </div>
+  );
+}
+
+// Topluluk akışı: en yeni en üstte, tek sütun. Kim, ne yaptı, ne zaman; ilk bakışta okunur
+const dayOf = (at: string) => {
+  const start = new Date(); start.setHours(0, 0, 0, 0);
+  const t = new Date(at).getTime();
+  return t >= start.getTime() ? "Bugün" : t >= start.getTime() - 864e5 ? "Dün" : t >= start.getTime() - 6 * 864e5 ? "Bu hafta" : "Daha eski";
+};
+
+export function Timeline({ list: all, step = 15 }: { list: Entry[]; step?: number }) {
+  const { blocked } = useApp();
+  const [shown, setShown] = useState(step);
+  const list = blocked.size ? all.filter((e) => !blocked.has(e.user_id)) : all;
+  if (!list.length) return <div className="empty">Henüz hareket yok.</div>;
+  const rows = groupFeed(list);
+  const visible = rows.slice(0, shown);
+  return (
+    <div className="tl">
+      {visible.map((g, i) => {
+        const e = g[0], p = e.profiles || {}, profile = `/u/${p.username}`;
+        const day = dayOf(e.updated_at);
+        return (
+          <Fragment key={e.id}>
+            {(i === 0 || dayOf(visible[i - 1][0].updated_at) !== day) && <h2 className="tl-day">{day}</h2>}
+            <div className="tl-row">
+              <span className="tl-time">{timeAgo(e.updated_at)}</span>
+              <Link href={profile}><Avatar p={p} /></Link>
+              <div className="tl-text">
+                <div className="tl-who"><Link href={profile}><b><Name p={p} /></b></Link> {activityVerb(e)}</div>
+                <div className="tl-what">
+                  {g.slice(0, 3).map((x, j) => <Fragment key={x.id}>{j > 0 && ", "}<Link href={`${profile}?entry=${x.id}`}>{x.title}</Link></Fragment>)}
+                  {g.length > 3 && <span className="muted"> ve {g.length - 3} tane daha</span>}
+                </div>
+                {g.length === 1 && e.rating ? <Rating r={e.rating} /> : null}
+              </div>
+              <div className="tl-covers">
+                {g.slice(0, 3).map((x) => <Link key={x.id} className="tl-cover" href={`${profile}?entry=${x.id}`} title={x.title}><span>{TYPES[x.type].label}</span><Cover src={x.cover} /></Link>)}
+              </div>
+            </div>
+          </Fragment>
+        );
+      })}
       {rows.length > shown && <button className="feed-more" onClick={() => setShown((n) => n + step * 2)}>Daha fazla göster ({rows.length - shown})</button>}
     </div>
   );

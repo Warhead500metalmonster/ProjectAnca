@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { Entry, EntryType, Status } from "@/lib/types";
 import { STATUSES, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
 import { daysTaken, fmtDate, fmtDur, num, playSec } from "@/lib/format";
@@ -38,9 +39,11 @@ export function LibraryTab() {
 
   // Önce oyunlar açılır; oyunu yoksa ilk sahip olduğu tür, o da yoksa Tümü. Başka profile geçince yeniden seçilir.
   const firstType = TYPE_KEYS.find((k) => entries.some((e) => e.type === k)) ?? "all";
+  const urlType = useSearchParams().get("type") as EntryType | null; // profildeki yan panelden gelince o tür açılır
   const [pick, setPick] = useState<{ pid: string; t: EntryType | "all" } | null>(null);
   const picked = pick?.pid === profile.id ? pick.t : null;
-  const type = picked && (picked === "all" || entries.some((e) => e.type === picked)) ? picked : firstType;
+  const type = picked && (picked === "all" || entries.some((e) => e.type === picked)) ? picked
+    : urlType && entries.some((e) => e.type === urlType) ? urlType : firstType;
   const setType = (t: EntryType | "all") => setPick({ pid: profile.id, t });
   const [statuses, setStatuses] = useState<Set<Status>>(new Set());
   const [year, setYear] = useState("");

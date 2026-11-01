@@ -10,7 +10,7 @@ import { fetchAll, fetchFeed } from "@/lib/data";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
-import { Cover, Feed, UserRow } from "@/components/ui";
+import { Avatar, Cover, Timeline, UserRow } from "@/components/ui";
 import { ImportPromo } from "@/components/ImportPromo";
 import { Announcements } from "@/components/Announcements";
 
@@ -128,9 +128,30 @@ export default function Community() {
         </section>
       )}
       {tab === "akis" && (
-        <section className="section feed-col">
-          <Feed list={feed} step={12} />
-        </section>
+        <div className="section tl-layout">
+          <section className="tl-main"><Timeline list={feed} /></section>
+          {/* Yan panel: akış tek sıra okunur, ekranın kalanı boş kalmaz */}
+          <aside className="tl-side">
+            {games.length > 0 && (
+              <section className="side-card">
+                <h3>Popüler oyunlar <Link className="link" href="/community?tab=populer" replace scroll={false}>Tümü</Link></h3>
+                <div className="tl-side-covers">
+                  {games.slice(0, 6).map((g) => (
+                    <Link key={g.rawg_id} className="poster" href={`/game/${g.rawg_id}`} title={g.title}><div className="ph">Oyun</div><Cover src={g.cover} /></Link>
+                  ))}
+                </div>
+              </section>
+            )}
+            <section className="side-card">
+              <h3>Yeni üyeler <Link className="link" href="/community?tab=uyeler" replace scroll={false}>Tümü</Link></h3>
+              <div className="tl-side-people">
+                {members.slice(0, 5).map((p) => (
+                  <Link key={p.id} href={`/u/${p.username}`}><Avatar p={p} cls="sm" /><span>{p.display_name || p.username}</span></Link>
+                ))}
+              </div>
+            </section>
+          </aside>
+        </div>
       )}
       {tab === "uyeler" && (
         <section className="section">
