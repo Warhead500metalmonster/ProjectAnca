@@ -53,15 +53,18 @@ export function HomeTab() {
   const [editing, setEditing] = useState(false);
   const layout = profile.home_layout;
   const blocks = toBlocks(profile, layout?.sections);
+  const fresh = !layout?.sections && isNewProfile(profile);
+  const editBar = (
+    <div className="home-edit-bar">
+      {fresh && <span className="muted small">Profilin sade başladı. İstersen favorilerini, sayılarını, istatistiklerini vitrine koy:</span>}
+      <button className="btn" onClick={() => setEditing(true)}>Bölümleri düzenle</button>
+    </div>
+  );
 
   return (
     <>
-      {isMe && !editing && (
-        <div className="home-edit-bar">
-          {!layout?.sections && isNewProfile(profile) && <span className="muted small">Profilin sade başladı. İstersen favorilerini, sayılarını, istatistiklerini vitrine koy:</span>}
-          <button className="btn" onClick={() => setEditing(true)}>Bölümleri düzenle</button>
-        </div>
-      )}
+      {/* Yeni profilde üstte davet; sonrasında düğme vitrinin altında durur, boşluk açmaz */}
+      {isMe && !editing && fresh && editBar}
       {editing && <HomeEditor layout={layout} blocks={blocks} onClose={() => setEditing(false)} />}
       {layout?.text?.trim() && <section className="section home-text"><RichText text={layout.text} /></section>}
       {!entries.length && !layout?.text?.trim() && (
@@ -76,6 +79,7 @@ export function HomeTab() {
         </Fragment>
       ))}
       {!blocks.some((b) => b.k === "stats") && <ProfileEvents />}
+      {isMe && !editing && !fresh && editBar}
     </>
   );
 }

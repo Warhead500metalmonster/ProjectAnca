@@ -2664,8 +2664,8 @@ a.note-row:hover { border-color: var(--accent); }
 @media (max-width: 640px) { .view-actions .btn { flex: 1 1 auto; } }
 
 /* ---------- Yeni görünüm (ana sayfa hariç): geniş sayfa, büyük başlık ve kapak, düz paneller ---------- */
-@media (min-width: 641px) { :root:not(:has(.hero2)) { --wide: 1480px; } }
-:root:not(:has(.hero2)) {
+@media (min-width: 641px) { :root { --wide: 1480px; } }
+:root {
   --panel: #12171a;
   --border: #242b30;
 
@@ -2681,9 +2681,6 @@ a.note-row:hover { border-color: var(--accent); }
   .chart-card, .stat, .feed-item, .note-row, .thread-row, .side-card { border-radius: 12px; }
 
   @media (min-width: 641px) {
-    .grid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 22px; }
-    .strip { grid-auto-columns: 180px; }
-    .page-head h1, .search-hero h1, .notes h1, .ev-list-head h1 { font-size: 34px; }
   }
   @media (max-width: 640px) {
     .section-head h2 { font-size: 18px; }
@@ -2782,3 +2779,110 @@ a.note-row:hover { border-color: var(--accent); }
   .tl-side { position: sticky; top: 76px; }
 }
 @media (max-width: 999px) { .tl-side { display: none; } }
+
+/* ---------- Toplu düzen (ana sayfa hariç): tek genişlik, tek kontrol stili, araçlar tek kutuda ---------- */
+:root {
+  .section { margin-top: 26px; }
+  .subnav + .section { margin-top: 16px; }
+  .forum, .notes, .calendar-page { max-width: none; }
+  .import-page:has(.import-picks) { max-width: none; }
+  .legal { max-width: 860px; }
+  .post-body { max-width: 860px; }
+
+  /* Sekme, süzgeç, küçük seçici: hepsi aynı */
+  .tabs { gap: 6px; margin-bottom: 0; }
+  .tab, .chip, .mini-tabs button {
+    display: inline-flex; align-items: center; gap: 5px; min-height: 36px; padding: 0 12px; font-size: 14px; font-weight: 500; white-space: nowrap;
+    color: var(--muted); background: transparent; border: 1px solid var(--border); box-shadow: none;
+  }
+  .tab:hover, .chip:hover, .mini-tabs button:hover { color: var(--text); background: rgba(255, 255, 255, .04); }
+  .tab.active, .chip.active, .mini-tabs button.active { color: var(--text); font-weight: 600; border-color: var(--accent); background: rgb(var(--accent-rgb) / .15); }
+  .tab .count, .chip .muted { font-size: 12px; color: var(--muted); margin-left: 0; }
+
+  /* Araç kutusu */
+  .tool-panel { display: flex; flex-direction: column; gap: 10px; padding: 12px; margin-bottom: 18px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; }
+  .tool-panel .input, .tool-panel select, .tool-panel .btn, .tool-panel .seg { min-height: 36px; }
+  .tool-panel .input.big { min-height: 44px; margin: 0; font-size: 16px; padding: 9px 14px; }
+  .tool-panel .filters, .tool-panel .status-tabs, .tool-panel .lib-bar, .tool-panel .forum-head, .tool-panel .forum-cats { margin: 0; }
+  .lib-tools { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+  .lib-tools .tabs, .lib-tools .status-tabs { max-width: 100%; }
+  .lib-tools .lib-bar { flex-basis: 100%; min-width: 0; }
+  .search-hero { margin-bottom: 0; }
+
+  .notice { width: min(var(--wide, 1200px) - 56px, 100% - 56px); padding: 8px 10px 8px 14px; font-size: 14px; }
+  .guest-bar { width: min(var(--wide, 1200px) - 56px, 100% - 56px); max-width: none; padding: 8px 10px 8px 14px; font-size: 13.5px; }
+
+  @media (min-width: 641px) {
+    .gh { padding-top: 150px; }
+    .page-head h1, .search-hero h1, .notes h1, .ev-list-head h1, .list-head h1, .calendar-page h1 { font-size: 30px; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 18px; }
+    .strip { grid-auto-columns: 170px; }
+  }
+  @media (max-width: 640px) {
+    .tool-panel { padding: 10px; }
+    .notice, .guest-bar { width: calc(100% - 24px); }
+  }
+
+  /* Ayarlar: bölümler solda, içerik sağda */
+  @media (min-width: 900px) {
+    .auth.settings { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 16px 32px; max-width: 1120px; align-items: start; }
+    .auth.settings > .set-top { grid-column: 1 / -1; }
+    .auth.settings > .set-tabs { grid-column: 1; grid-template-columns: 1fr; margin: 0; top: 74px; }
+    .auth.settings > .set-pane, .auth.settings > .set-save { grid-column: 2; }
+  }
+}
+
+/* Profil ve ana sayfa: şeritte kapaklar sütuna tam sığar, kesilmez */
+@media (min-width: 641px) {
+  :root .profile-main .strip, :root .tl-main .strip, :root .favs .strip { grid-auto-columns: calc((100% - 4 * 14px) / 5); gap: 14px; }
+}
+.tl-main > .section:first-child { margin-top: 0; }
+
+/* Profil yan paneli: şu an, puanlar */
+.side-now { display: flex; flex-direction: column; gap: 4px; }
+.side-now button { display: flex; align-items: center; gap: 10px; width: calc(100% + 16px); margin: 0 -8px; padding: 6px 8px; border: 0; border-radius: 8px; background: none; color: inherit; text-align: left; cursor: pointer; }
+.side-now button:hover { background: rgba(255, 255, 255, .05); }
+.side-now-cover { position: relative; flex: none; width: 38px; height: 54px; border-radius: 5px; overflow: hidden; background: var(--panel-3); }
+.side-now-cover.square { height: 38px; }
+.side-now-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.side-now-text { display: flex; flex-direction: column; min-width: 0; }
+.side-now-text b { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.side-now-text small { color: var(--muted); font-size: 12.5px; }
+.side-card h3 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.side-avg { color: var(--star); font-size: 14px; }
+.side-card .rbars { margin-top: 0; }
+.profile-counts a { color: var(--muted); text-decoration: none; }
+.favs .section-head .mini-tabs { margin-right: auto; }
+.profile-main > .home-edit-bar:last-child { margin: 22px 0 0; }
+.profile-counts a:hover b { color: var(--accent-2); }
+@media (max-width: 999px) { .side-extra { display: none; } }
+
+/* Ana sayfa */
+/* Karşılama: tek satır, kenarları içerikle hizalı */
+.hero2.compact { width: auto; min-height: 0; margin: 0 0 14px; place-items: stretch; border: 1px solid var(--border); border-radius: 12px; -webkit-mask-image: none; mask-image: none; }
+.hero2.compact .hero2-text { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 20px; align-items: center; max-width: none; padding: 18px 20px; text-align: left; }
+.hero2.compact h1 { grid-column: 1; font-size: 28px; line-height: 1.15; }
+.hero2.compact p { grid-column: 1; margin: 2px 0 0; max-width: none; font-size: 15px; }
+.hero2.compact .hero-actions { grid-column: 2; grid-row: 1 / span 2; flex-wrap: nowrap; }
+.hero2.compact .btn.big { padding: 9px 16px; font-size: 14.5px; }
+@media (max-width: 640px) {
+  .hero2.compact, .hero2.compact .hero2-text { margin-top: 0; }
+  .hero2.compact .hero2-text { grid-template-columns: minmax(0, 1fr); padding: 14px; }
+  .hero2.compact h1 { font-size: 23px; }
+  .hero2.compact .hero-actions { grid-column: 1; grid-row: auto; margin-top: 10px; }
+  .hero2.compact .btn.big { flex: 1; }
+}
+.home-side .stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+.home-side .stat { padding: 10px 12px; }
+.home-side .stat b { font-size: 20px; }
+.home-side .goals, .home-side .next-badges { margin: 0; }
+@media (min-width: 1000px) { .home-side { max-height: calc(100vh - 92px); overflow-y: auto; scrollbar-width: thin; } }
+@media (max-width: 999px) { .tl-side.home-side { display: flex; } }
+
+/* GTA sayacı: ince şerit */
+.gta6 { margin-bottom: 14px; border-radius: 12px; }
+.gta6-in { min-height: 112px; padding: 14px 20px; align-items: center; }
+.gta6-title b { font-size: clamp(28px, 3vw, 38px); }
+.gta6-clock > div { min-width: 60px; padding: 6px 6px 5px; }
+.gta6-clock b { font-size: 24px; }
+@media (max-width: 640px) { .gta6-in { min-height: 150px; padding: 12px; align-items: stretch; } .gta6 { margin-bottom: 12px; } }

@@ -111,6 +111,7 @@ export default function SearchPage() {
     <>
       <section className="search-hero">
         <h1>Keşfet</h1>
+        <div className="tool-panel">
         <input className="input big" type="search" autoFocus value={text} placeholder="Ne arıyorsun? Ör. Zelda, Breaking Bad, Frieren…" onChange={(e) => setText(e.target.value)} />
         <div className="search-tools">
           <div className="tabs">
@@ -131,6 +132,7 @@ export default function SearchPage() {
           </label>
           {(from || to) && <button className="link" onClick={() => { setFrom(""); setTo(""); }}>Temizle</button>}
         </div>}
+        </div>
         {(!yearOk(from) || !yearOk(to)) && <p className="form-error">Yılı 4 haneli yaz (ör. 2006).</p>}
       </section>
 

@@ -78,6 +78,7 @@ export function StatsTab() {
   return (
     <section className="section stats-page">
       {view === "ozet" && <Goals profile={profile} entries={entries} isMe={isMe} />}
+      <div className="tool-panel">
       <div className="tabs">
         {([["all", "", "Tümü"], ...TYPE_KEYS.map((k) => [k, "", TYPES[k].label])] as [EntryType | "all", string, string][]).map(([k, icon, label]) => (
           <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => { setType(k); setYear(""); setFinish(""); }}>{icon} {label}</button>
@@ -98,6 +99,7 @@ export function StatsTab() {
           {finishYears.map((y) => <option key={y} value={y}>{y} yılında bitirdiklerim</option>)}
         </select>
         {(year || finish) && <button className="link" onClick={() => { setYear(""); setFinish(""); }}>Temizle</button>}
+      </div>
       </div>
 
       <div className="stats-hero">

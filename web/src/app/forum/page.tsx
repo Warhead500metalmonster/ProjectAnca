@@ -47,10 +47,17 @@ function Forum() {
   return (
     <div className="forum">
       <SocialTabs />
+      <div className="tool-panel">
       <div className="forum-head">
         <input className="input" type="search" placeholder="Konu ara…" aria-label="Konu ara" value={text} onChange={(e) => setText(e.target.value)} />
         {me ? <button className="btn primary" onClick={() => setWriting(!writing)}>{writing ? "Vazgeç" : "Yeni konu aç"}</button>
           : <Link className="btn primary" href="/login">Konu açmak için giriş yap</Link>}
+      </div>
+
+      <div className="chips forum-cats">
+        <button className={`chip ${cat === "" ? "active" : ""}`} onClick={() => setCat("")}>Hepsi</button>
+        {Object.entries(FORUM_CATS).map(([k, v]) => <button key={k} className={`chip ${cat === k ? "active" : ""}`} onClick={() => setCat(k)}>{v}</button>)}
+      </div>
       </div>
 
       {item && (
@@ -65,10 +72,6 @@ function Forum() {
         <NewThread item={item} onDone={(id) => { setWriting(false); toast("Konu açıldı"); router.push(`/forum/${id}`); }} />
       )}
 
-      <div className="chips forum-cats">
-        <button className={`chip ${cat === "" ? "active" : ""}`} onClick={() => setCat("")}>Hepsi</button>
-        {Object.entries(FORUM_CATS).map(([k, v]) => <button key={k} className={`chip ${cat === k ? "active" : ""}`} onClick={() => setCat(k)}>{v}</button>)}
-      </div>
 
       {error ? <div className="empty">Forum yüklenemedi: {error}</div> : !data ? <div className="loading">Yükleniyor…</div> : data.length ? (
         <div className="threads">

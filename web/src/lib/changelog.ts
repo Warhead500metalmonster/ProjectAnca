@@ -5,6 +5,11 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-11-01T16:32:25+04:00",
+    title: "Sayfalar tek düzene geçti",
+    body: "Ana sayfa da aynı düzene geçti: solda devam ettiklerin ve akış, sağda özetin ve hedefin. Profillerde şu an ne oynadığı ve puan dağılımı görünüyor. Kütüphane, Keşfet, İstatistikler ve Forum'da bütün araçlar tek kutuda toplandı. Sekmeler ve süzgeçler her yerde aynı görünüyor. Ayarlar'da bölümler artık solda duruyor. Forum, Bildirimler, Takvim ve İçe aktar sayfanın tamamını kullanıyor.",
+  },
+  {
     date: "2026-11-01T16:17:04+04:00",
     title: "Profiller ve sayfalar yenilendi",
     body: "Profilin artık iki bölümlü: solda vitrinin, sağda hakkında, rozetler ve kütüphanene kısa yollar var. Sayılar adının altında kendi çubuğunda duruyor. Ana sayfa dışındaki sayfalar geniş ekranı daha iyi kullanıyor, kapaklar ve başlıklar büyüdü.",

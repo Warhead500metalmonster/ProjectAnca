@@ -23,7 +23,7 @@ import { Announcements } from "@/components/Announcements";
 import { FriendPicks } from "@/components/FriendPicks";
 import { EventBanner } from "@/components/EventBanner";
 import { UpcomingStrip } from "@/components/UpcomingStrip";
-import { Avatar, EntryCard, Feed, Stars, Stats, displayName } from "@/components/ui";
+import { Avatar, EntryCard, Feed, Stars, Stats, Timeline, displayName } from "@/components/ui";
 
 interface LocalEntry { title?: string; type?: string; year?: string; creator?: string; status?: string; date?: string; rating?: string; cover?: string; notes?: string; updated?: number }
 
@@ -201,56 +201,57 @@ function Dashboard({ version, followingIds }: { version: number; followingIds: s
         </div>
       )}
       <Announcements onHome />
-      <EventBanner />
       <GettingStarted user={user} mine={mine} />
       {/* Büyük içe aktarma tanıtımı sadece hiç kaydı olmayana; diğerlerinde "Nasıl başlarım?" kartındaki ilk adım aynı işi görüyor */}
       {mine.length === 0 && <ImportPromo signedIn />}
-      {active.length > 0 && (
-        <section className="section">
-          <div className="section-head"><h2>Devam ettiklerin</h2><Link href={`/u/${user.username}/library`}>Kütüphanem →</Link></div>
-          <div className="strip">{active.slice(0, STRIP).map((e) => <EntryCard key={e.id} e={e} kind edit />)}</div>
-        </section>
-      )}
-      {backlog.length > 0 && (
-        <section className="section">
-          <div className="section-head"><h2>Backlog&apos;un <span className="muted small">· {backlog.length} bekleyen</span></h2><Link href={`/u/${user.username}/library`}>Kütüphanem →</Link></div>
-          <div className="strip">{backlog.slice(0, STRIP).map((e) => <EntryCard key={e.id} e={e} kind edit />)}</div>
-        </section>
-      )}
-      <UpcomingStrip userId={user.id} mine={mine} />
-      <FriendPicks following={followingIds} mine={mine} />
-      {/* Sade yüzey: sayılar, hedef ve rozetler isteyene bir dokunuş uzakta */}
-      <details className="section home-more">
-        <summary>İstatistiklerim, hedefim ve rozetlerim</summary>
-        <section className="section home-stats"><div className="stats"><Stats list={mine} /></div></section>
-        <section className="section home-goals">
+      {/* Solda günlük işler ve akış, sağda sayılar: profil ve Topluluk'la aynı düzen */}
+      <div className="section tl-layout">
+        <div className="tl-main">
+          {active.length > 0 && (
+            <section className="section">
+              <div className="section-head"><h2>Devam ettiklerin</h2><Link href={`/u/${user.username}/library`}>Kütüphanem</Link></div>
+              <div className="strip">{active.slice(0, STRIP).map((e) => <EntryCard key={e.id} e={e} kind edit />)}</div>
+            </section>
+          )}
+          <section className="section">
+            <div className="section-head">
+              <h2>Akış</h2>
+              <div className="mini-tabs">
+                <button className={view === "friends" ? "active" : ""} onClick={() => setTab("friends")}>Arkadaşlar</button>
+                <button className={view === "all" ? "active" : ""} onClick={() => setTab("all")}>Herkes</button>
+              </div>
+            </div>
+            {view === "friends" ? (
+              <Timeline list={friends} step={8} empty={
+                <div className="empty">
+                  {followingIds.length ? "Takip ettiklerin henüz bir şey loglamadı." : "Henüz kimseyi takip etmiyorsun."}<br />
+                  <Link className="btn" href="/community">Topluluğa göz at</Link>
+                </div>
+              } />
+            ) : <Timeline list={community} step={8} />}
+          </section>
+          <EventBanner />
+          {backlog.length > 0 && (
+            <section className="section">
+              <div className="section-head"><h2>Backlog&apos;un <span className="muted small">· {backlog.length} bekleyen</span></h2><Link href={`/u/${user.username}/library?status=planned`}>Tümü</Link></div>
+              <div className="strip">{backlog.slice(0, STRIP).map((e) => <EntryCard key={e.id} e={e} kind edit />)}</div>
+            </section>
+          )}
+          <UpcomingStrip userId={user.id} mine={mine} />
+          <FriendPicks following={followingIds} mine={mine} />
+          {mine.length > 0 && (
+            <section className="section">
+              <div className="section-head"><h2>Son loglarım</h2><Link href={`/u/${user.username}`}>Profilim</Link></div>
+              <div className="wall home-wall">{mine.slice(0, 12).map((e) => <EntryCard key={e.id} e={e} kind wall />)}</div>
+            </section>
+          )}
+        </div>
+        <aside className="tl-side home-side">
+          {mine.length > 0 && <section className="side-card"><h3>Özetim</h3><div className="stats"><Stats list={mine} /></div></section>}
           <Goals profile={user} entries={mine} isMe />
           <NextBadges userId={user.id} username={user.username} entries={mine} />
-        </section>
-      </details>
-      {mine.length > 0 && (
-        <section className="section">
-          <div className="section-head"><h2>Son loglarım</h2><Link href={`/u/${user.username}`}>Hepsi →</Link></div>
-          <div className="wall home-wall">{mine.slice(0, 12).map((e) => <EntryCard key={e.id} e={e} kind wall />)}</div>
-        </section>
-      )}
-      <section className="section feed-col">
-        <div className="section-head">
-          <h2>Akış</h2>
-          <div className="tabs" style={{ margin: 0 }}>
-            <button className={`tab ${view === "friends" ? "active" : ""}`} onClick={() => setTab("friends")}>Arkadaşlar</button>
-            <button className={`tab ${view === "all" ? "active" : ""}`} onClick={() => setTab("all")}>Herkes</button>
-          </div>
-        </div>
-        {view === "friends" ? (
-          <Feed list={friends} empty={
-            <div className="empty">
-              {followingIds.length ? "Takip ettiklerin henüz bir şey loglamadı." : "Henüz kimseyi takip etmiyorsun."}<br />
-              <Link className="btn" href="/community">Topluluğa göz at</Link>
-            </div>
-          } />
-        ) : <Feed list={community} />}
-      </section>
+        </aside>
+      </div>
       <SiteStats />
       <HomeInfo signedIn />
     </>

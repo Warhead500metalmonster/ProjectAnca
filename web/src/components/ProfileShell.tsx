@@ -4,15 +4,15 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import type { Entry, Profile } from "@/lib/types";
-import { fmtDate, cssUrl, mixedCovers, num, safeUrl } from "@/lib/format";
+import { avgText, fmtDate, cssUrl, mixedCovers, num, safeUrl } from "@/lib/format";
 import { fetchEntries } from "@/lib/data";
-import { PROFILE_THEMES, TYPES, TYPE_KEYS } from "@/lib/constants";
+import { PROFILE_THEMES, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
 import { compat } from "@/lib/compat";
 import { bannerOn, countedEntries, countsOf } from "@/lib/profileLayout";
 import { countOf, q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
-import { Avatar, BadgeChips, FollowButton, Name, Socials, UserRow } from "@/components/ui";
+import { Avatar, BadgeChips, Cover, FollowButton, Name, RatingBars, Socials, UserRow } from "@/components/ui";
 import { ProfileSong } from "@/components/ProfileSong";
 import { CoverMarquee } from "@/components/CoverMarquee";
 
@@ -51,7 +51,7 @@ export function ProfileShell({ children }: { children: React.ReactNode }) {
 }
 
 function Shell({ data: raw, children }: { data: ProfileData; children: React.ReactNode }) {
-  const { me, openView, isFriend, mine, isOwner, badges, blocked, toggleBlock, report, toast, refresh, setMe } = useApp();
+  const { me, openView, isFriend, mine, isOwner, badges, blocked, toggleBlock, report, toast, refresh, setMe, scale } = useApp();
   const path = usePathname();
   const isMe = me?.id === raw.profile.id;
   // Sahibinin gizlediği türler (ör. oyunlar) başkalarına profilin hiçbir yerinde görünmez; sahibi hepsini görür
@@ -92,6 +92,8 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
   const cnt = countsOf(profile);
   const counted = countedEntries(entries, cnt.types);
   const tab = path.split("/")[3] || "home"; // /u/ali/library → library
+  const current = tab === "home" ? entries.filter((e) => e.status === "active").sort((a, b) => b.updated_at.localeCompare(a.updated_at)).slice(0, 4) : [];
+  const ratings = tab === "home" ? entries.filter((e) => e.rating).map((e) => Number(e.rating)) : [];
   const compact = tab !== "home"; // Kütüphane, Listeler gibi sekmelerde üst kısım kısalır, aranan şey ilk ekranda görünür
   const song = profile.song_url || null; // profilde arkada çalan şarkı
   const match = me && !isMe ? compat(mine, entries).score : null;
@@ -138,9 +140,9 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
           {/* Büyük sayaçlar: kaç şey loglamış, bu yıl kaç tane bitirmiş, sırada ne kadar var, takipçi */}
           {/* Sahibi Bölümleri düzenle'den hangilerinin görüneceğini ve hangi türlerin sayılacağını seçer; yeni profillerde kapalı başlar */}
           {!locked && cnt.show && <div className="profile-counts">
-            {cnt.items.includes("entries") && <span><b>{num(counted.filter((e) => e.status !== "planned").length)}</b>Kayıt</span>}
+            {cnt.items.includes("entries") && <Link href={`${base}/library`}><b>{num(counted.filter((e) => e.status !== "planned").length)}</b>Kayıt</Link>}
             {cnt.items.includes("year") && <span><b>{num(counted.filter((e) => e.status === "completed" && (e.date || "").startsWith(year)).length)}</b>Bu yıl bitti</span>}
-            {cnt.items.includes("planned") && <span><b>{num(counted.filter((e) => e.status === "planned").length)}</b>Planlanan</span>}
+            {cnt.items.includes("planned") && <Link href={`${base}/library?status=planned`}><b>{num(counted.filter((e) => e.status === "planned").length)}</b>Planlanan</Link>}
             {cnt.items.includes("followers") && <button onClick={() => openUserList("followers")}><b>{num(followers)}</b>Takipçi</button>}
             {cnt.items.includes("following") && <button onClick={() => openUserList("following")}><b>{num(following)}</b>Takip</button>}
           </div>}
@@ -213,10 +215,29 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
                   </div>
                   <Socials socials={profile.socials} />
                 </section>
+                {current.length > 0 && (
+                  <section className="side-card side-extra">
+                    <h3>Şu an</h3>
+                    <div className="side-now">
+                      {current.map((e) => (
+                        <button key={e.id} onClick={() => openView(e)}>
+                          <span className={`side-now-cover ${TYPES[e.type].square ? "square" : ""}`}><Cover src={e.cover} /></span>
+                          <span className="side-now-text"><b>{e.title}</b><small>{statusLabel(e.status, e.type)}</small></span>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                )}
                 <section className="side-card side-badges">
                   <h3>Rozetler</h3>
                   <BadgeChips id={profile.id} max={6} more={`/u/${profile.username}/badges`} />
                 </section>
+                {ratings.length > 1 && (
+                  <section className="side-card side-extra">
+                    <h3>Puanları <span className="side-avg">★ {avgText(ratings.reduce((a, b) => a + b, 0) / ratings.length, scale)}</span></h3>
+                    <RatingBars ratings={ratings} />
+                  </section>
+                )}
                 {entries.length > 0 && (
                   <section className="side-card side-lib">
                     <h3>Kütüphane</h3>

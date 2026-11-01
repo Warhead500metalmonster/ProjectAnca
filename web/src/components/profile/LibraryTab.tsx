@@ -39,13 +39,15 @@ export function LibraryTab() {
 
   // Önce oyunlar açılır; oyunu yoksa ilk sahip olduğu tür, o da yoksa Tümü. Başka profile geçince yeniden seçilir.
   const firstType = TYPE_KEYS.find((k) => entries.some((e) => e.type === k)) ?? "all";
-  const urlType = useSearchParams().get("type") as EntryType | null; // profildeki yan panelden gelince o tür açılır
+  const params = useSearchParams();
+  const urlType = params.get("type") as EntryType | null; // profildeki yan panelden gelince o tür açılır
   const [pick, setPick] = useState<{ pid: string; t: EntryType | "all" } | null>(null);
   const picked = pick?.pid === profile.id ? pick.t : null;
   const type = picked && (picked === "all" || entries.some((e) => e.type === picked)) ? picked
     : urlType && entries.some((e) => e.type === urlType) ? urlType : firstType;
   const setType = (t: EntryType | "all") => setPick({ pid: profile.id, t });
-  const [statuses, setStatuses] = useState<Set<Status>>(new Set());
+  const urlStatus = params.get("status") as Status | null; // profildeki Planlanan sayısından gelince
+  const [statuses, setStatuses] = useState<Set<Status>>(new Set(urlStatus && STATUSES.includes(urlStatus) ? [urlStatus] : []));
   const [year, setYear] = useState("");
   const [finishYear, setFinishYear] = useState("");
   const [platform, setPlatform] = useState("");
@@ -126,6 +128,8 @@ export function LibraryTab() {
   return (
     <>
       <section className="section">
+        {/* Bütün araçlar tek kutuda: tür, durum, arama, filtre, sıralama */}
+        <div className="tool-panel lib-tools">
         <div className="tabs">
           {([...TYPE_KEYS.map((k) => [k, "", TYPES[k].label]), ["all", "", "Tümü"]] as [EntryType | "all", string, string][])
             .filter(([k]) => k === "all" || entries.some((e) => e.type === k))
@@ -154,6 +158,7 @@ export function LibraryTab() {
             <button type="button" className={view === "grid" ? "active" : ""} title="Kapaklar" aria-label="Kapaklar" onClick={() => pickView("grid")}>▦</button>
             <button type="button" className={view === "list" ? "active" : ""} title="Liste" aria-label="Liste" onClick={() => pickView("list")}>☰</button>
           </div>
+        </div>
         </div>
         {showFilters && (
           <div className="filter-panel">
