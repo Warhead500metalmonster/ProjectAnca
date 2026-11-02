@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { Entry } from "@/lib/types";
-import { BADGES } from "@/lib/constants";
+import { BADGES, ROLE_BADGES } from "@/lib/constants";
 import { useApp } from "@/components/AppProvider";
 import { useProfile } from "@/components/ProfileShell";
 
@@ -10,7 +10,7 @@ import { useProfile } from "@/components/ProfileShell";
 export function BadgesTab() {
   const { profile, entries, isMe } = useProfile();
   const { badges } = useApp();
-  const mine = (badges.get(profile.id) || []).filter((b) => BADGES[b]);
+  const mine = (badges.get(profile.id) || []).filter((b) => BADGES[b] && !ROLE_BADGES.includes(b)); // görev rozetleri ismin altında
   const locked = Object.keys(BADGES).filter((b) => !mine.includes(b) && BADGES[b].earn);
   const progressOf = (b: string) => {
     const { earn = 1, progress } = BADGES[b];

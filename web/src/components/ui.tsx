@@ -4,7 +4,7 @@
 import { Fragment, useState } from "react";
 import Link from "next/link";
 import type { AvatarCrop, Entry, Profile } from "@/lib/types";
-import { BADGES, SOCIALS, TYPES, activityVerb, statusLabel } from "@/lib/constants";
+import { BADGES, SOCIALS, TYPES, activityVerb, statusLabel, ROLE_BADGES } from "@/lib/constants";
 import { daysTaken, fmtDur, fmtHoursShort, num, playSec, safeUrl, scoreShort, scoreText, timeAgo, avgText, today } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "./AppProvider";
@@ -44,9 +44,22 @@ export function Name({ p }: { p: Who }) {
 }
 
 // entries verilirse kazanılmamış rozetlerde ilerleme gösterilir (ör. Eleştirmen 4/10)
+// İsmin altındaki görev rozetleri: Kurucu, Geliştirici, Yönetici. Site sahibi aynı zamanda yöneticidir.
+export function RoleBadges({ id }: { id: string }) {
+  const { badges } = useApp();
+  const has = badges.get(id) || [];
+  const roles = ROLE_BADGES.filter((b) => has.includes(b) || (b === "admin" && has.includes("owner")));
+  if (!roles.length) return null;
+  return (
+    <div className="role-badges">
+      {roles.map((b) => <span key={b} className={`bdg ${BADGES[b].tone}`} title={BADGES[b].desc}>{BADGES[b].icon} {BADGES[b].name}</span>)}
+    </div>
+  );
+}
+
 export function BadgeChips({ id, showLocked = false, entries, max, more }: { id: string; showLocked?: boolean; entries?: Entry[]; max?: number; more?: string }) {
   const { badges } = useApp();
-  const all = (badges.get(id) || []).filter((b) => BADGES[b]);
+  const all = (badges.get(id) || []).filter((b) => BADGES[b] && !ROLE_BADGES.includes(b));
   const mine = max ? all.slice(0, max) : all;
   const locked = Object.keys(BADGES).filter((b) => !mine.includes(b) && BADGES[b].earn);
   if (!mine.length && !showLocked) return null;

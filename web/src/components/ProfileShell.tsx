@@ -13,7 +13,7 @@ import { countOf, q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { shareImage } from "@/lib/shareImage";
-import { Avatar, BadgeChips, Cover, FollowButton, Name, RatingBars, Socials, UserRow } from "@/components/ui";
+import { Avatar, BadgeChips, Cover, FollowButton, Name, RatingBars, RoleBadges, Socials, UserRow } from "@/components/ui";
 import { ProfileSong } from "@/components/ProfileSong";
 import { CoverMarquee } from "@/components/CoverMarquee";
 
@@ -137,6 +137,7 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
           <div className="profile-info">
             <h1><Name p={profile} /></h1>
             <div className="handle">@{profile.username}{profile.pronouns ? ` · ${profile.pronouns}` : ""}</div>
+            <RoleBadges id={profile.id} />
           </div>
           {/* Büyük sayaçlar: kaç şey loglamış, bu yıl kaç tane bitirmiş, sırada ne kadar var, takipçi */}
           {/* Sahibi Bölümleri düzenle'den hangilerinin görüneceğini ve hangi türlerin sayılacağını seçer; yeni profillerde kapalı başlar */}

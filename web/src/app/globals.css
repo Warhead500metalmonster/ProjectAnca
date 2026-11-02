@@ -3033,3 +3033,8 @@ a.note-row:hover { border-color: var(--accent); }
   .lib-bar > select { order: 5; }
   .profile.compact .profile-banner { height: 64px; }
 }
+
+/* İsmin altındaki görev rozetleri */
+.role-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; text-shadow: none; }
+.role-badges .bdg { background-color: rgb(14, 19, 20); padding: 3px 10px; }
+@media (max-width: 640px) { .role-badges .bdg { font-size: 12px; padding: 2px 8px; } }

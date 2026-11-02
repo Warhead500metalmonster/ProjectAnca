@@ -68,6 +68,8 @@ const secOf = (x: Entry) => x.playtime_sec ?? (x.hours ? Number(x.hours) * 3600 
 const count = (f: (x: Entry) => unknown): Prog => (e) => e.filter(f).length;
 const hoursOf: Prog = (e) => Math.floor(e.reduce((s, x) => s + (x.playtime_sec ?? (x.hours ? Number(x.hours) * 3600 : 0)), 0) / 3600);
 // href: rozete tıklayınca gidilen yer (etkinlik rozetleri etkinliğe götürür; ?u= rozetin sahibini vurgular)
+// Görev rozetleri: kazanılmaz, sadece profilde ismin altında görünür
+export const ROLE_BADGES = ["owner", "dev", "admin"];
 export const BADGES: Record<string, { icon: string; name: string; desc: string; tone: string; earn?: number; progress?: Prog; href?: string }> = {
   owner: { icon: "♛", name: "Kurucu", desc: "Ancalog'u kuran kişi", tone: "gold" },
   dev: { icon: "⚒", name: "Geliştirici", desc: "Ancalog'u yapan ve geliştiren ekipten", tone: "dev" },
