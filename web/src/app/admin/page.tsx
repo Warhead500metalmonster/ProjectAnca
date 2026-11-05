@@ -3,18 +3,22 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { CatalogItem, EntryType, PageEdit, Profile } from "@/lib/types";
+import type { Found } from "@/lib/data";
 import { BADGES, PROFILE_COLS, TYPES, TYPE_KEYS } from "@/lib/constants";
 import { contentHref, likeEsc, safeUrl, timeAgo, today } from "@/lib/format";
 import { countOf, q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { ChatBody } from "@/components/ChatBody";
-import { Avatar, Name, UserRow } from "@/components/ui";
+import { Avatar, Cover, Name, UserRow } from "@/components/ui";
 import { NOTICE_TONES, type Notice, fetchNotice } from "@/components/Announcement";
 import { EventForm } from "@/components/EventForm";
 import { EventCard } from "@/components/EventBanner";
-import { eventState, fetchEvents, memberStats } from "@/lib/events";
+import { type EventMember, eventState, fetchEvents, finishOrder, memberStats } from "@/lib/events";
+import { GameLinker } from "@/components/GameLinker";
+import { LinkPicker } from "@/components/LinkPicker";
 
 const TABS = [["home", "Genel"], ["reports", "Raporlar"], ["members", "Üyeler"], ["content", "İçerikler"], ["comments", "Moderasyon"], ["events", "Etkinlikler"]] as const;
 type Tab = (typeof TABS)[number][0];
@@ -25,7 +29,8 @@ const grantable = () => Object.keys(BADGES).filter((b) => b !== "owner" && b !==
 // Yönetim paneli: sadece site sahibi ve yöneticiler girer (veritabanı da başkasına izin vermez)
 export default function AdminPage() {
   const { me, ready, isAdmin } = useApp();
-  const [tab, setTab] = useState<Tab>("home");
+  const asked = useSearchParams().get("tab"); // bildirimden gelince ilgili sekme açılır (?tab=content)
+  const [tab, setTab] = useState<Tab>(TABS.some(([k]) => k === asked) ? asked as Tab : "home");
   if (!supabaseConfigured()) return <div className="empty">Supabase ayarları eksik.</div>;
   if (!ready) return <div className="loading">Yükleniyor…</div>;
   if (!me || !isAdmin) return <div className="empty">Bu sayfa sadece yöneticiler için. </div>;
@@ -44,9 +49,9 @@ export default function AdminPage() {
       {tab === "home" && <><Overview /><NoticeEditor /></>}
       {tab === "reports" && <Reports />}
       {tab === "members" && <><Admins /><Members /><BlockedWords /></>}
-      {tab === "content" && <><Catalog /><Edits /></>}
+      {tab === "content" && <><UnlinkedGames /><UnlinkedTitles /><Catalog /><Edits /></>}
       {tab === "comments" && <><Reviews /><Comments /><ForumPosts /><PublicLists /></>}
-      {tab === "events" && <EventsAdmin />}
+      {tab === "events" && <><EventsAdmin /><FirstFinishers /></>}
     </>
   );
 }
@@ -103,7 +108,17 @@ function Catalog() {
   const [v, setV] = useState(0);
   const [editing, setEditing] = useState<CatalogItem | null>(null);
   const [merging, setMerging] = useState<CatalogItem | null>(null);
+  const [linking, setLinking] = useState<CatalogItem | null>(null);
   const reload = () => { setV((x) => x + 1); refresh(); };
+
+  // Elle eklenen içeriği kaynaktaki gerçek karşılığına bağla: loglayan herkesin kaydı oraya geçer, kopya kalkar
+  async function linkReal(c: CatalogItem, f: Found) {
+    if (!f.ext_id) throw new Error("Bu sonucun kaynak numarası yok, başka birini seç.");
+    const { error } = await sb().rpc("link_catalog", { p_id: c.id, p_ext: f.ext_id, p_title: f.title, p_creator: f.creator || c.creator, p_year: f.year || c.year, p_cover: safeUrl(f.cover) || null });
+    if (error) throw new Error(error.message);
+    toast(`“${c.title}” → ${f.title} bağlandı ✓ Loglayanların kayıtları da geçti`);
+    reload();
+  }
 
   const { data } = useLoad(async () => {
     let req = sb().from("catalog").select("*").eq("type", type).order("created_at", { ascending: false }).limit(100);
@@ -134,7 +149,7 @@ function Catalog() {
       <div className="section-head"><h2>Kullanıcıların eklediği içerikler</h2><span className="muted">{data ? `${data.rows.length} içerik` : ""}</span></div>
       <p className="muted" style={{ marginTop: 0, fontSize: 14 }}>
         Aramada çıkmayıp elle ya da linkle eklenen şarkılar, albümler… Her biri bir kez kaydedilir, başkası aynısını eklemek isteyince bu kayıt çıkar.
-        Burada adını düzeltirsen onu loglayan herkesin kaydı da düzelir.
+        Burada adını düzeltirsen onu loglayan herkesin kaydı da düzelir. <b>Gerçeğine bağla</b> ile kaynaktaki (TMDB, AniList, Deezer, Apple Music) asıl sayfasına bağlarsın.
       </p>
       <div className="tabs">
         {TYPE_KEYS.filter((k) => k !== "game").map((k) => (
@@ -163,6 +178,7 @@ function Catalog() {
                 <div className="acts">
                   {merging ? (merging.id !== c.id && <button className="btn primary" onClick={() => merge(c)}>Buna birleştir</button>) : (
                     <>
+                      <button className="btn primary" onClick={() => setLinking(c)} title="Kaynaktaki asıl sayfasına bağla">Gerçeğine bağla</button>
                       <button className="btn" onClick={() => setEditing(c)}>Düzenle</button>
                       <button className="btn" onClick={() => setMerging(c)} title="Aynı içeriğin kopyasıysa birleştir">Birleştir</button>
                       <button className="btn danger" onClick={() => remove(c)}>Sil</button>
@@ -173,6 +189,141 @@ function Catalog() {
             ))}
           </div>
         )}
+      {linking && <LinkPicker type={linking.type} title={linking.title} heading="Gerçek sayfasına bağla"
+        note={<><b>{linking.title}</b>{linking.creator ? ` · ${linking.creator}` : ""} kaynakta hangisi? Seçince bunu loglayan herkesin kaydı oraya bağlanır, katalogdaki kopya kalkar.</>}
+        onPick={(f) => linkReal(linking, f)} onClose={() => setLinking(null)} />}
+    </section>
+  );
+}
+
+// Bir sayfaya bağlı olmayan oyunlar (bütün sitede): eski numarası yeni kaynakta olmayan ya da hiç numarası olmayan.
+// Eşleştirince o oyunu loglayan herkesin kaydı sayfaya bağlanır.
+interface UnlinkedGame { rawg_id: number | null; title: string; year: number | null; cover: string | null; n: number; users: number; last_at: string }
+function UnlinkedGames() {
+  const { version } = useApp();
+  const [v, setV] = useState(0);
+  const [text, setText] = useState("");
+  const [linking, setLinking] = useState<UnlinkedGame | null>(null);
+  const { data, error } = useLoad(() => q<UnlinkedGame[]>(sb().rpc("unlinked_games")), [v, version]);
+  const list = (data || []).filter((g) => !text.trim() || g.title.toLocaleLowerCase("tr").includes(text.trim().toLocaleLowerCase("tr")));
+  return (
+    <section className="section">
+      <div className="section-head"><h2>Sayfasız oyunlar</h2><span className="muted">{data ? `${data.length} oyun` : ""}</span></div>
+      <p className="muted small" style={{ marginTop: 0 }}>
+        Bir oyun sayfasına bağlı olmayan oyun kayıtları: eski numarası yeni kaynakta (IGDB) karşılık bulmayanlar ve içe aktarmada eşleşmeyenler.
+        <b> Eşleştir</b>&apos;e basıp doğru oyunu seçince bu oyunu loglayan herkesin kaydı sayfaya bağlanır. Kişiler kendi kayıtlarını <Link href="/fix">Sayfasız kayıtlarım</Link>&apos;dan da bağlayabilir.
+        Yeni sayfasız oyun eklenince bildirim gelir.
+      </p>
+      {error ? <div className="muted">{/unlinked_games/.test(error) ? "Bu liste için veritabanı güncellemesi (035) gerekiyor." : error}</div>
+        : !data ? <div className="loading">Yükleniyor…</div>
+        : !data.length ? <div className="empty">Bütün oyunlar bir sayfaya bağlı. Harika!</div>
+        : (
+          <>
+            {data.length > 8 && <input className="input" type="search" placeholder="Ara…" value={text} onChange={(e) => setText(e.target.value)} style={{ width: "100%", margin: "0 0 12px" }} />}
+            <div className="admin-list fix-list">
+              {list.slice(0, 120).map((g) => (
+                <div key={`${g.rawg_id}|${g.title}`} className="admin-item">
+                  <span className="fix-cover"><Cover src={safeUrl(g.cover) || null} /></span>
+                  <div className="info">
+                    <b>{g.title}</b>
+                    <span>{[g.year, `${g.n} log`, `${g.users} kişi`].filter(Boolean).join(" · ")}</span>
+                    <small>{g.rawg_id ? `Eski numara ${g.rawg_id}: yeni kaynakta karşılığı yok` : "Numarası yok (adıyla eklenmiş)"} · {timeAgo(g.last_at)}</small>
+                  </div>
+                  <div className="acts"><button className="btn primary" onClick={() => setLinking(g)}>Eşleştir</button></div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      {linking && <GameLinker rawgId={linking.rawg_id} title={linking.title} stay onClose={() => { setLinking(null); setV((x) => x + 1); }} />}
+    </section>
+  );
+}
+
+// Kaynağı olmayan film, dizi, anime kayıtları (aynı adlılar birlikte): gerçek içeriğe bağla
+interface UnlinkedTitle { type: EntryType; title: string; year: number | null; cover: string | null; n: number }
+function UnlinkedTitles() {
+  const { toast, refresh, version } = useApp();
+  const [v, setV] = useState(0);
+  const [linking, setLinking] = useState<UnlinkedTitle | null>(null);
+  const { data, error } = useLoad(() => q<UnlinkedTitle[]>(sb().rpc("unlinked_titles")), [v, version]);
+  if (error || !data?.length) return null;
+  async function link(x: UnlinkedTitle, f: Found) {
+    if (!f.ext_id) throw new Error("Bu sonucun kaynak numarası yok, başka birini seç.");
+    const n = await q<number>(sb().rpc("link_titles", { p_type: x.type, p_title: x.title, p_ext: f.ext_id, p_new_title: f.title, p_creator: f.creator, p_year: f.year, p_cover: safeUrl(f.cover) || null }));
+    toast(`${n} kayıt ${f.title} sayfasına bağlandı ✓`);
+    setV((y) => y + 1);
+    refresh();
+  }
+  return (
+    <section className="section">
+      <div className="section-head"><h2>Kaynağı olmayan film, dizi, anime</h2><span className="muted">{data.length} içerik</span></div>
+      <p className="muted small" style={{ marginTop: 0 }}>Elle yazılmış ya da içe aktarmada eşleşmemiş kayıtlar. Bağlayınca aynı adla duran bütün kayıtlar gerçek sayfasına geçer.</p>
+      <div className="admin-list fix-list">
+        {data.slice(0, 100).map((x) => (
+          <div key={x.type + x.title} className="admin-item">
+            <span className={`fix-cover ${TYPES[x.type].square ? "square" : ""}`}><Cover src={safeUrl(x.cover) || null} /></span>
+            <div className="info"><b>{x.title}</b><span>{[TYPES[x.type].label, x.year, `${x.n} log`].filter(Boolean).join(" · ")}</span></div>
+            <div className="acts"><button className="btn primary" onClick={() => setLinking(x)}>Bağla</button></div>
+          </div>
+        ))}
+      </div>
+      {linking && <LinkPicker type={linking.type} title={linking.title} onPick={(f) => link(linking, f)} onClose={() => setLinking(null)}
+        note={<>Bu adla duran bütün <b>{TYPES[linking.type].label.toLocaleLowerCase("tr")}</b> kayıtları seçtiğin sayfaya bağlanır.</>} />}
+    </section>
+  );
+}
+
+// Etkinliklerde İlk bitiren rozeti: kimde olduğunu gör, haksız alınanı geri al (sıradakine geçer), başkasına ver
+function FirstFinishers() {
+  const { toast, refresh, loadBadges, version } = useApp();
+  const [v, setV] = useState(0);
+  const { data } = useLoad(async () => {
+    const events = await fetchEvents();
+    const ids = events.map((e) => e.id);
+    const members = ids.length ? await q<EventMember[]>(sb().from("event_members").select(`*, profiles(${PROFILE_COLS})`).in("event_id", ids).eq("status", "done").limit(3000)).catch(() => [] as EventMember[]) : [];
+    return events.map((ev) => ({ ev, members: members.filter((m) => m.event_id === ev.id) })).filter((x) => x.members.length);
+  }, [v, version]);
+  if (!data?.length) return null;
+  async function act(eventId: string, m: EventMember, mode: string) {
+    const who = m.profiles?.display_name || m.profiles?.username || "Bu kişi";
+    if (!confirm(mode === "give" ? `${who} bu etkinliğin İlk bitireni olsun mu?` : mode === "revoke"
+      ? `${who} ilk bitiren sayılmasın mı? Rozeti alınır; ondan sonra bitiren varsa ona geçer, yoksa ilk bitirdim diyen alır.` : `${who} yeniden sıralamaya girsin mi?`)) return;
+    const { error } = await sb().rpc("admin_event_first", { p_event: eventId, p_user: m.user_id, p_mode: mode });
+    if (error) return toast("Olmadı: " + error.message);
+    toast("Tamam ✓");
+    setV((x) => x + 1);
+    refresh();
+    loadBadges();
+  }
+  return (
+    <section className="section">
+      <div className="section-head"><h2>İlk bitiren rozetleri</h2></div>
+      <p className="muted small" style={{ marginTop: 0 }}>Haksız alınan rozeti <b>Sayma</b> ile geri al: rozet ondan sonra bitirene geçer, kimse yoksa ilk bitirdim diyen alır. Elle başkasına da verebilirsin.</p>
+      {data.map(({ ev, members }) => {
+        const { ranked, unranked, first } = finishOrder(ev, members);
+        return (
+          <div key={ev.id} className="first-admin">
+            <h3><Link href={`/events/${ev.id}`}>{ev.title}</Link> <span className="muted small">· İlk bitiren: {first ? <b>@{first.profiles?.username}</b> : "henüz yok (ilk bitirdim diyen alacak)"}</span></h3>
+            <div className="admin-list">
+              {[...ranked, ...unranked].slice(0, 12).map((m, i) => (
+                <div key={m.user_id} className="admin-item">
+                  <span className="ev-rank">{unranked.includes(m) ? "–" : `${i + 1}.`}</span>
+                  <div className="info">
+                    <b><Name p={m.profiles || {}} /></b>
+                    <small>@{m.profiles?.username} · {m.finished_at ? new Date(m.finished_at).toLocaleString("tr", { dateStyle: "medium", timeStyle: "short" }) : ""}{unranked.includes(m) ? " · sıralama dışı" : ""}</small>
+                  </div>
+                  <div className="acts">
+                    {first?.user_id === m.user_id ? <span className="tag">⚑ İlk bitiren</span> : !unranked.includes(m) && <button className="btn" onClick={() => act(ev.id, m, "give")}>İlk bitiren yap</button>}
+                    {unranked.includes(m) ? <button className="btn" onClick={() => act(ev.id, m, "restore")}>Sıralamaya al</button>
+                      : <button className="btn danger" onClick={() => act(ev.id, m, "revoke")}>Sayma</button>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </section>
   );
 }
@@ -686,7 +837,7 @@ interface Report {
   id: string; kind: string; target_id: string; target_user: string | null; reason: string; note: string | null; excerpt: string | null;
   status: "open" | "resolved" | "dismissed"; created_at: string; reporter: Profile | null; target: Profile | null;
 }
-const KIND_NAMES: Record<string, string> = { profile: "Profil", entry: "Kayıt / inceleme", comment: "Yorum", list: "Liste", forum_thread: "Forum konusu", forum_post: "Forum cevabı", message: "Mesaj", event_post: "Etkinlik mesajı" };
+const KIND_NAMES: Record<string, string> = { profile: "Profil", entry: "Kayıt / inceleme", comment: "Yorum", list: "Liste", forum_thread: "Forum konusu", forum_post: "Forum cevabı", message: "Mesaj", event_post: "Etkinlik mesajı", pcomment: "Profil yorumu" };
 
 const CONTEXT_LABEL: Record<string, string> = { message: "Sohbetin tamamını gör", event_post: "Etkinlik sohbetinin tamamını gör", forum_post: "Konunun tamamını gör", comment: "Bütün yorumları gör" };
 interface ContextLine { id: string; who: string; hit: boolean; body: string; at: string }
@@ -773,6 +924,7 @@ function Reports() {
     else if (r.kind === "forum_thread") ({ error } = await sb().from("forum_threads").delete().eq("id", r.target_id));
     else if (r.kind === "forum_post") ({ error } = await sb().from("forum_posts").delete().eq("id", r.target_id));
     else if (r.kind === "event_post") ({ error } = await sb().from("event_posts").delete().eq("id", r.target_id.split("/")[1]));
+    else if (r.kind === "pcomment") ({ error } = await sb().from("profile_comments").delete().eq("id", r.target_id));
     else if (r.kind === "profile" && r.target)
       ({ error } = await sb().rpc("admin_reset_profile", { p_username: r.target.username, p_parts: ["name", "bio", "avatar", "banner", "bg", "song", "home"] }));
     if (error) return toast("Olmadı: " + error.message);
@@ -812,7 +964,7 @@ function Reports() {
   const canAct = (t: Profile | null) => !!t && isAdmin && !(badges.get(t.id) || []).includes("owner");
   const href = (r: Report) => r.kind === "profile" || r.kind === "message" ? `/u/${r.target?.username}`
     : r.kind === "entry" ? `/u/${r.target?.username}?entry=${r.target_id}` : r.kind === "list" ? `/list/${r.target_id}`
-    : r.kind === "forum_thread" ? `/forum/${r.target_id}` : r.kind === "event_post" ? `/events/${r.target_id.split("/")[0]}` : null;
+    : r.kind === "forum_thread" ? `/forum/${r.target_id}` : r.kind === "pcomment" ? `/u/${r.target?.username}#yorumlar` : r.kind === "event_post" ? `/events/${r.target_id.split("/")[0]}` : null;
 
   return (
     <section className="section">

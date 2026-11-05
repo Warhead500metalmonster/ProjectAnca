@@ -3038,3 +3038,139 @@ a.note-row:hover { border-color: var(--accent); }
 .role-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; text-shadow: none; }
 .role-badges .bdg { background-color: rgb(14, 19, 20); padding: 3px 10px; }
 @media (max-width: 640px) { .role-badges .bdg { font-size: 12px; padding: 2px 8px; } }
+
+/* ---------- Büyük güncelleme (035) ---------- */
+/* Profildeki ⋯ menüsü sekme şeridinin altında kalıp ilk satırı görünmüyordu */
+.profile-head:has(.more-menu[open]) { z-index: 20; }
+.more-menu .menu { z-index: 50; background: var(--panel-2); }
+
+/* Profil sayaçları: kocaman kutu yerine adın altında küçük haplar */
+.profile-counts, .profile.glass .profile-counts {
+  order: 5; flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-start; align-self: auto;
+  padding: 0; background: none; border: 0; border-radius: 0; width: auto;
+}
+.profile-counts > *, .profile-counts > :first-child {
+  flex: none; min-width: 0; flex-direction: row; align-items: baseline; gap: 5px; padding: 5px 12px;
+  border: 1px solid var(--border); border-radius: 999px; background: rgba(12, 16, 17, .72);
+  font-size: 13px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--muted); white-space: nowrap;
+}
+.profile-counts b { font-family: var(--font-inter), system-ui, sans-serif; font-size: 14.5px; font-weight: 700; line-height: 1.3; letter-spacing: 0; }
+.profile .profile-head .profile-counts > * { padding: 5px 12px; }
+.profile .profile-head .profile-counts b { font-size: 14.5px; line-height: 1.3; }
+.profile-counts > a:hover, .profile-counts > button:hover { border-color: rgb(var(--accent-rgb) / .5); color: var(--text); }
+@media (max-width: 640px) {
+  .profile-counts { justify-content: center; }
+  .profile-counts > * { padding: 4px 10px; font-size: 12.5px; }
+  .profile-counts b { font-size: 13.5px; }
+}
+
+/* Keşfet: sağ üstte büyüteç ve açılır arama */
+.top-search, .icon-link.mobile-search { display: none !important; }
+.nav a.nav-lib { display: none; }
+@media (min-width: 641px) { .top-gap { display: block; flex: 1; } }
+.explore { position: relative; }
+.explore-btn { background: none; border: 0; color: var(--muted); cursor: pointer; border-radius: 10px; display: grid; place-items: center; width: 38px; height: 38px; }
+.explore-btn:hover, .explore-btn.active { color: var(--text); background: rgba(255, 255, 255, .07); }
+.explore-btn.active { color: var(--accent-2); }
+.explore-pop {
+  position: absolute; right: -6px; top: calc(100% + 8px); z-index: 70; width: min(380px, calc(100vw - 24px));
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 14px; padding: 10px; box-shadow: 0 16px 40px rgba(0, 0, 0, .55);
+  display: grid; gap: 8px;
+}
+.explore-pop input { width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit; font-size: 15px; }
+.explore-pop input:focus { outline: none; border-color: var(--accent); }
+.explore-go { display: grid; gap: 1px; padding: 9px 12px; border-radius: 10px; color: var(--text); text-decoration: none; }
+.explore-go:hover { background: rgba(255, 255, 255, .06); }
+.explore-go span { color: var(--muted); font-size: 12.5px; }
+@media (max-width: 640px) { .explore-pop { position: fixed; left: 12px; right: 12px; top: calc(var(--m-top, 56px) + 6px); width: auto; } }
+
+/* Tepkiler: ♡ Beğen, emoji hapları, seçici */
+.reacts { position: relative; display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; vertical-align: middle; }
+.reacts button { font: inherit; cursor: pointer; }
+.react-like, .react-chip, .react-add {
+  display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border-radius: 999px;
+  border: 1px solid transparent; background: none; color: var(--muted); font-size: 13px; line-height: 1;
+}
+.react-like:hover, .react-add:hover, .react-chip:hover { background: rgba(255, 255, 255, .06); color: var(--text); }
+.react-like.on { color: #fb7185; }
+.react-like b, .react-chip b { font-weight: 600; font-size: 12px; }
+.react-chip { border-color: var(--border); background: rgba(255, 255, 255, .03); }
+.react-chip.on { border-color: rgb(var(--accent-rgb) / .6); background: rgb(var(--accent-rgb) / .15); color: var(--text); }
+.react-word { font-size: 12.5px; }
+.react-add { padding: 0 6px; }
+.react-pick {
+  position: absolute; left: 0; bottom: calc(100% + 6px); z-index: 30; display: flex; gap: 2px; padding: 5px;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 999px; box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
+}
+.react-pick button { width: 32px; height: 32px; border: 0; border-radius: 50%; background: none; font-size: 18px; transition: transform .1s; }
+.react-pick button:hover { transform: scale(1.2); background: rgba(255, 255, 255, .08); }
+.react-pick button.on { background: rgb(var(--accent-rgb) / .2); }
+.bubble.me .reacts { justify-content: flex-end; }
+.bubble.me .react-pick { left: auto; right: 0; }
+.bubble-foot { flex-wrap: wrap; }
+.comment .reacts, .ev-post .reacts { margin-left: -6px; }
+.post-tools { align-items: center; flex-wrap: wrap; }
+.ev-post .post-tools { margin-top: 4px; gap: 10px; }
+.comment .post-tools { margin-top: 2px; gap: 8px; }
+
+/* Profil yorumları */
+.pcomments .section-head select { min-height: 32px; font-size: 13px; }
+.pc-compose { margin-bottom: 14px; }
+.pc-list { display: grid; gap: 10px; }
+.pcomments .comment > div { background: var(--panel); }
+
+/* Ekip sohbeti (Bize yaz) */
+.avatar.team-avatar, .team-avatar { --s: 36px; width: var(--s); height: var(--s); border-radius: 50%; flex: none; display: grid; place-items: center;
+  font-family: var(--head); font-weight: 800; color: #06130e; background: linear-gradient(135deg, var(--accent-2), var(--accent)); }
+.team-row { border: 1px solid rgb(var(--accent-rgb) / .35); margin-bottom: 8px; }
+.support-inbox-head { display: grid; gap: 8px; padding: 6px 6px 10px; }
+.bubble-who { font-size: 12px; color: var(--muted); margin: 0 4px 3px; }
+.support .chat-head .grow { min-width: 0; }
+
+/* Bildirimler: okunmamış */
+.note-row.fresh { border-color: rgb(var(--accent-rgb) / .55); background: rgb(var(--accent-rgb) / .07); }
+
+/* Sayfasız kayıtlar */
+.fix-list .admin-item { align-items: center; }
+.fix-cover { width: 46px; flex: none; aspect-ratio: 3 / 4; border-radius: 6px; overflow: hidden; background: var(--panel-3); position: relative; display: block; }
+.fix-cover.square { aspect-ratio: 1; }
+.fix-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fix-note { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 9px 12px; margin: 10px 0;
+  border: 1px solid rgb(251 191 36 / .35); background: rgb(251 191 36 / .08); border-radius: 10px; font-size: 14px; }
+.btn.small { min-height: 30px; padding: 4px 12px; font-size: 13px; }
+.notice-dialog { max-width: 520px; padding: 20px 22px; }
+.notice-dialog p { line-height: 1.55; }
+
+/* Dil ve içerik tercihleri */
+.prefs-panel .vis-pick { margin-bottom: 6px; }
+.prefs-grid { display: grid; gap: 8px; }
+.prefs-row { display: grid; grid-template-columns: 110px 1fr 1fr; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); }
+.prefs-row label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+.prefs-row select { width: 100%; }
+@media (max-width: 640px) { .prefs-row { grid-template-columns: 1fr 1fr; } .prefs-row b { grid-column: 1 / -1; } }
+.prefs-ask { max-width: 620px; }
+
+/* Etkinlik: İlk bitiren */
+.ev-pill.first { color: #f5c542; border-color: rgb(245 197 66 / .45); background: rgb(245 197 66 / .1); }
+.ev-pill.muted-pill { color: var(--muted); }
+.first-admin { margin-bottom: 18px; }
+.first-admin h3 { font-size: 16px; margin: 0 0 8px; }
+.first-admin .ev-rank { width: 28px; text-align: center; color: var(--muted); font-weight: 700; }
+
+/* İçerik sayfası: kaynak, açıklamanın nereden geldiği, şarkı listesi */
+.source-line { display: grid; gap: 2px; padding-top: 10px; margin-top: 4px; border-top: 1px solid var(--border); }
+.source-line > span { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+.source-line b { font-weight: 500; font-size: 13.5px; }
+.source-line a { color: var(--accent-2); }
+.desc-from { margin: 6px 0 0; }
+.desc-from a { color: var(--accent-2); }
+.tracks { margin-bottom: 26px; }
+.tracks ol { margin: 0; padding: 0; list-style: none; counter-reset: tr; columns: 2; column-gap: 24px; }
+.tracks li { counter-increment: tr; display: flex; gap: 10px; align-items: baseline; padding: 6px 4px; border-bottom: 1px solid rgba(255, 255, 255, .04); break-inside: avoid; }
+.tracks li::before { content: counter(tr); color: var(--muted); font-size: 12px; width: 18px; text-align: right; flex: none; }
+.tracks li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tracks li small { color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) { .tracks ol { columns: 1; } }
+
+/* Kayıt formu: sezon / bölüm bilgisi */
+.form-hint { margin: -6px 0 10px; }

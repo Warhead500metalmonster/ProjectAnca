@@ -48,10 +48,6 @@ export function Topbar() {
         <Link href="/" className={active("home")}>
           <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg><span>Ana Sayfa</span>
         </Link>
-        {/* Keşfet: sitedeki ve dışarıdaki her oyunu, filmi, diziyi, animeyi, albümü tek kutudan ara (telefonda üstteki büyüteç) */}
-        <Link href="/search" className={`nav-lib ${active("search")}`}>
-          <svg viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 5.96 12.05l4.74 4.75-1.4 1.4-4.75-4.74A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z" /></svg><span>Keşfet</span>
-        </Link>
         <Link href="/community" className={active("community")}>
           <svg viewBox="0 0 24 24"><path d="M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4zm8 0c-.3 0-.7 0-1.1.1 1.3.9 2.1 2.2 2.1 3.9v2h7v-2c0-2.7-5.3-4-8-4z" /></svg><span>Topluluk</span>
         </Link>
@@ -74,27 +70,13 @@ export function Topbar() {
         </Link>
       </nav>
       <span className="top-gap" />
-      {/* Steam ve Letterboxd'daki gibi: hangi sayfada olursan ol, yaz ve Enter'a bas */}
-      <form className="top-search" role="search" onSubmit={(e) => {
-        e.preventDefault();
-        const box = e.currentTarget.elements.namedItem("q") as HTMLInputElement;
-        const text = box.value.trim();
-        if (!text) return;
-        router.push(`/search?q=${encodeURIComponent(text)}`);
-        box.value = "";
-        box.blur();
-      }}>
-        <input name="q" type="search" placeholder="Oyun, film, dizi, kişi ara…" aria-label="Ara" autoComplete="off" />
-      </form>
       <div className="top-actions">
         {/* Telefonda alt menü dolu: Etkinlikler üstte, yıldız simgesiyle */}
         <Link className={`icon-link mobile-events ${active("events")}`} href="/events" aria-label="Etkinlikler" title="Etkinlikler">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2.5l2.6 6.1 6.6.6-5 4.4 1.5 6.5L12 16.7l-5.7 3.4 1.5-6.5-5-4.4 6.6-.6z" /></svg>
           {freshEvents ? <span className="dot spark" /> : null}
         </Link>
-        <Link className="icon-link mobile-search" href="/search" aria-label="Keşfet: ara" title="Keşfet">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-        </Link>
+        <Explore active={!!active("search")} onSearch={(text) => router.push(`/search?q=${encodeURIComponent(text)}`)} />
         {me ? (
           <>
             <Link className="icon-link" href="/notifications" title="Bildirimler" aria-label="Bildirimler">
@@ -112,6 +94,45 @@ export function Topbar() {
         )}
       </div>
     </header>
+  );
+}
+
+// Keşfet: sağ üstte büyüteç. Basınca küçük arama kutusu açılır (yaz, Enter); "Keşfet'i aç" ile türlere göz atılır
+function Explore({ active, onSearch }: { active: boolean; onSearch: (text: string) => void }) {
+  const path = usePathname();
+  const [openAt, setOpenAt] = useState<string | null>(null);
+  const open = openAt === path;
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent | KeyboardEvent) => { if (e instanceof KeyboardEvent ? e.key === "Escape" : !box.current?.contains(e.target as Node)) setOpenAt(null); };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", close);
+    return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", close); };
+  }, [open]);
+  return (
+    <div className="explore" ref={box}>
+      <button type="button" className={`icon-link explore-btn ${active || open ? "active" : ""}`} aria-label="Keşfet: ara" title="Keşfet" aria-expanded={open}
+        onClick={() => setOpenAt(open ? null : path)}>
+        <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+      </button>
+      {open && (
+        <div className="explore-pop" role="dialog" aria-label="Keşfet">
+          <form role="search" onSubmit={(e) => {
+            e.preventDefault();
+            const text = (e.currentTarget.elements.namedItem("q") as HTMLInputElement).value.trim();
+            if (!text) return;
+            setOpenAt(null);
+            onSearch(text);
+          }}>
+            <input name="q" type="search" autoFocus placeholder="Oyun, film, dizi, anime, albüm, kişi…" aria-label="Ara" autoComplete="off" />
+          </form>
+          <Link href="/search" className="explore-go" onClick={() => setOpenAt(null)}>
+            <b>Keşfet&apos;i aç</b><span>Popüler, yeni çıkanlar, sana uygun öneriler</span>
+          </Link>
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -7,6 +7,7 @@ import type { AvatarCrop, Entry, Profile } from "@/lib/types";
 import { BADGES, SOCIALS, TYPES, activityVerb, statusLabel, ROLE_BADGES } from "@/lib/constants";
 import { daysTaken, fmtDur, fmtHoursShort, num, playSec, safeUrl, scoreShort, scoreText, timeAgo, avgText, today } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
+import { useLocalized } from "@/lib/localize";
 import { useApp } from "./AppProvider";
 
 type Who = Partial<Pick<Profile, "id" | "username" | "display_name" | "avatar_url">> | null | undefined;
@@ -213,20 +214,21 @@ function EpBump({ e }: { e: Entry }) {
 }
 
 export function EntryCard({ e, kind = false, edit = false, wall = false }: { e: Entry; kind?: boolean; edit?: boolean; wall?: boolean }) {
-  const { openForm, openView, scale } = useApp();
+  const { openForm, openView, scale, prefs } = useApp();
   const t = TYPES[e.type];
+  const loc = useLocalized(prefs, e); // Ayarlar'da seçilen dildeki ad ve kapak
   const meta = [e.creator, e.year].filter(Boolean).join(" · ");
   const episodic = (e.type === "show" || e.type === "anime") && e.status === "active";
   const card = (
     <button className="card" onClick={() => (edit ? openForm(e) : openView(e))}>
       <div className={`poster ${t.square ? "square" : ""}`}>
         <div className="ph">{t.label}</div>
-        <Cover src={e.cover} />
+        <Cover src={loc.cover} />
         {e.favorite && <span className="fav" title="Favori">♥</span>}
         {wall && e.rating ? <span className="rating">★ {scoreShort(e.rating, scale)}</span> : null}
-        {wall && <div className="hover"><b>{e.title}</b>{meta && <span>{meta}</span>}</div>}
+        {wall && <div className="hover"><b>{loc.title}</b>{meta && <span>{meta}</span>}</div>}
       </div>
-      {!wall && <div className="card-title">{e.title}</div>}
+      {!wall && <div className="card-title">{loc.title}</div>}
       {!wall && <div className="card-meta">{[kind && t.label, e.year].filter(Boolean).join(" · ") || e.creator}</div>}
       {/* Kapağın üstü temiz kalsın: durum ve puan altta tek satırda */}
       {!wall && (

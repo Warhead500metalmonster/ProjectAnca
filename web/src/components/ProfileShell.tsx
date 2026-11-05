@@ -43,7 +43,7 @@ export function ProfileShell({ children }: { children: React.ReactNode }) {
       countOf(db.from("profiles").select("id", { count: "exact", head: true }).lte("created_at", profile.created_at)).catch(() => 0),
     ]);
     return { profile, entries: entries.map((e) => ({ ...e, profiles: profile })), followers, following, memberNo };
-  }, [name, version], supabaseConfigured());
+  }, [name, version], supabaseConfigured(), `profile:${name}`); // geri gelince profil beklemeden eski haliyle açılır
 
   if (error) return <div className="empty">Bir şeyler ters gitti: {error}</div>;
   if (data === undefined) return <div className="loading">Yükleniyor…</div>;

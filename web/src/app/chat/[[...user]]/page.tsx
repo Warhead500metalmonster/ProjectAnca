@@ -9,6 +9,7 @@ import { q, sb, NO_PERMISSION } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
 import { Avatar, Name } from "@/components/ui";
 import { SocialTabs } from "@/components/SocialTabs";
+import { Reactions } from "@/components/Reactions";
 import { ChatBody, DraftPhotos, PhotoAdd, ReplyQuote, ReplyingTo, excerptOf, withPhoto, type ReplyTarget } from "@/components/ChatBody";
 
 // Karşılıklı takipleşen arkadaşlar mesajlaşabilir; site sahibine ise herkes yazabilir (soru, sorun, şikayet için)
@@ -16,7 +17,7 @@ import { ChatBody, DraftPhotos, PhotoAdd, ReplyQuote, ReplyingTo, excerptOf, wit
 export default function ChatPage() {
   const params = useParams<{ user?: string[] }>();
   const username = params.user?.[0] ? decodeURIComponent(params.user[0]).toLowerCase() : "";
-  const { me, ready, following, followers, checkInbox, toast, badges, isOwner, blocked, toggleBlock, report } = useApp();
+  const { me, ready, following, followers, checkInbox, toast, badges, isOwner, isAdmin, blocked, toggleBlock, report } = useApp();
   const [friends, setFriends] = useState<Profile[] | null>(null);
   const [msgs, setMsgs] = useState<Message[]>([]);
   const [text, setText] = useState("");
@@ -107,6 +108,11 @@ export default function ChatPage() {
     <div className={`chat ${username ? "has-convo" : ""}`}>
       <aside className="chat-list">
         <SocialTabs />
+        {/* Bize yaz: bütün ekibin ortak cevap verdiği sohbet */}
+        <Link href="/support" className="chat-friend team-row">
+          <span className="avatar team-avatar" aria-hidden="true">A</span>
+          <div className="grow"><b>Ancalog ekibi</b><span>{isAdmin ? "Ekip gelen kutusu: üyelerin yazdıkları" : "Soru, sorun, şikayet ya da öneri için yaz"}</span></div>
+        </Link>
         {friends === null ? <div className="loading">Yükleniyor…</div> : sorted.length ? sorted.map((f) => {
           const m = last(f.id), n = unreadFrom(f.id);
           return (
@@ -149,6 +155,7 @@ export default function ChatPage() {
                     <div className="bubble-foot">
                       {showTime && <small>{timeAgo(m.created_at)}{mine && m.read_at ? " · görüldü" : ""}</small>}
                       <button type="button" className="link reply-btn" onClick={() => { setReply({ id: m.id, name: mine ? "Kendi mesajın" : friend.display_name || friend.username, body: m.body }); document.getElementById("chat-input")?.focus(); }}>Yanıtla</button>
+                      <Reactions kind="message" id={m.id} />
                     </div>
                   </div>
                 );

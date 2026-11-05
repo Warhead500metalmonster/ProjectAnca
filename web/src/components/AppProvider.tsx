@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Entry, Item, Profile, RawgGame } from "@/lib/types";
+import type { Entry, Item, Prefs, Profile, RawgGame } from "@/lib/types";
 import { BADGES } from "@/lib/constants";
 import { contentKey, today } from "@/lib/format";
 import { fetchEntries, fixForeignTitles, friendsOnMyPlans } from "@/lib/data";
@@ -45,6 +45,8 @@ interface Ctx {
   blocked: Set<string>;     // engellediğim kişiler: hareketleri ve yorumları bana görünmez
   toggleBlock: (p: { id: string; username: string }) => Promise<void>;
   report: (t: ReportTarget) => void; // raporlama penceresini açar
+  prefs: Prefs;             // görünüm tercihleri (dil, kapak, dizi-anime birlikte); giriş yapmayanda tarayıcıda durur
+  savePrefs: (p: Partial<Prefs>) => Promise<void>;
 }
 
 // Pencereler ihtiyaç olunca yüklenir: site açılırken telefon bu kodları boşuna işlemesin
@@ -81,6 +83,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [form, setForm] = useState<{ entry: Entry | null; opts: FormOpts; n: number } | null>(null);
   const [viewing, setViewing] = useState<Entry | null>(null);
   const [picking, setPicking] = useState<Item | null>(null);
+  const [guestPrefs, setGuestPrefs] = useState<Prefs>({});
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- tarayıcı deposundan
+  useEffect(() => { try { setGuestPrefs(JSON.parse(localStorage.getItem("ancalog.prefs") || "{}")); } catch { /* yok say */ } }, []);
   const userId = useRef<string | null>(null);
   const plansRef = useRef<{ following: string[]; mine: Entry[] }>({ following: [], mine: [] }); // akıllı bildirim için
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -147,24 +152,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       inboxFullAt.current = Date.now();
-      const [count, like, comment, follow, plans] = await Promise.all([
+      const [count, like, comment, follow, plans, own] = await Promise.all([
         countOf(db.from("messages").select("id", { count: "exact", head: true }).eq("receiver_id", id).is("read_at", null)),
         q<{ created_at: string }[]>(db.from("likes").select("created_at, entries!inner(user_id)").eq("entries.user_id", id).neq("user_id", id).order("created_at", { ascending: false }).limit(1)),
         q<{ created_at: string }[]>(db.from("comments").select("created_at, entries!inner(user_id)").eq("entries.user_id", id).neq("user_id", id).order("created_at", { ascending: false }).limit(1)),
         q<{ created_at: string }[]>(db.from("follows").select("created_at").eq("following_id", id).order("created_at", { ascending: false }).limit(1)),
         friendsOnMyPlans(plansRef.current.following, plansRef.current.mine).catch(() => [] as Entry[]),
+        // Tepki, profil yorumu, ekip sohbeti gibi veritabanının yazdığı okunmamış bildirimler (tablo yoksa boş)
+        q<{ created_at: string }[]>(db.from("notifications").select("created_at").eq("user_id", id).is("read_at", null).order("created_at", { ascending: false }).limit(1)).catch(() => []),
       ]);
       if (userId.current !== id) return;
       // Sekme arkadayken yeni mesaj ya da bildirim gelirse (izin verdiyse) cihaz bildirimi
-      const latest = [like[0]?.created_at, comment[0]?.created_at, follow[0]?.created_at].map((x) => x || "").sort().pop() || "";
+      const latest = [like[0]?.created_at, comment[0]?.created_at, follow[0]?.created_at, own[0]?.created_at].map((x) => x || "").sort().pop() || "";
       const seen = inboxSeen.current;
       if (seen && document.visibilityState === "hidden") {
         if (count > seen.unread) notify("Yeni mesajın var", "Ancalog'da sana yazan biri var.", "/chat");
-        else if (latest > seen.latest) notify("Yeni bildirimin var", "Kayıtlarına beğeni, yorum ya da yeni bir takipçi geldi.", "/notifications");
+        else if (latest > seen.latest) notify("Yeni bildirimin var", "Beğeni, tepki, yorum, ekip cevabı ya da yeni bir takipçi geldi.", "/notifications");
       }
       inboxSeen.current = { unread: count, latest: latest > (seen?.latest || "") ? latest : seen?.latest || "" };
       setUnread(count);
-      setNotifAt([like[0]?.created_at, comment[0]?.created_at, follow[0]?.created_at, plans[0]?.updated_at].map((x) => x || "").sort().pop() || "");
+      setNotifAt([like[0]?.created_at, comment[0]?.created_at, follow[0]?.created_at, plans[0]?.updated_at, own[0]?.created_at].map((x) => x || "").sort().pop() || "");
     } catch { /* bir sonraki denemede */ }
   }, []);
 
@@ -388,15 +395,30 @@ Seni takip edemez, sana yazamaz, kayıtlarına yorum yapamaz. Aranızdaki takipl
     return mine.find((e) => contentKey(e) === k && !e.replay) ?? mine.find((e) => contentKey(e) === k);
   }, [mine]);
 
+  // Tercihler: üyede profilde (her cihazda aynı), misafirde tarayıcıda
+  const prefs = useMemo<Prefs>(() => (me ? me.prefs || {} : guestPrefs), [me, guestPrefs]);
+  const savePrefs = useCallback(async (p: Partial<Prefs>) => {
+    if (!me) {
+      const next = { ...guestPrefs, ...p };
+      setGuestPrefs(next);
+      try { localStorage.setItem("ancalog.prefs", JSON.stringify(next)); } catch { /* yok say */ }
+      return;
+    }
+    const next = { ...(me.prefs || {}), ...p };
+    setMe({ ...me, prefs: next });
+    const { error } = await sb().from("profiles").update({ prefs: next }).eq("id", me.id);
+    if (error) throw new Error(error.message);
+  }, [me, guestPrefs]);
+
   // Bildirim yazısı ya da pencere açılıp kapanınca bütün site baştan çizilmesin: değer sadece içindekiler değişince yenilenir
   const value = useMemo<Ctx>(() => {
     const myBadges = (me && badges.get(me.id)) || [];
     return {
     me, setMe, following, followers, isFriend: (id) => following.has(id) && followers.has(id),
     mine, mineLoaded, myEntry, badges, loadBadges, isOwner: myBadges.includes("owner"), isAdmin: myBadges.some((b) => b === "owner" || b === "admin"), scale: me?.rating_scale === 10 ? 10 : 5, unread, notifAt,
-    ready, version, refresh, checkInbox, toast, toggleFollow, openForm, openView: setViewing, pickList, blocked, toggleBlock, report,
+    ready, version, refresh, checkInbox, toast, toggleFollow, openForm, openView: setViewing, pickList, blocked, toggleBlock, report, prefs, savePrefs,
     };
-  }, [me, following, followers, mine, mineLoaded, myEntry, badges, loadBadges, unread, notifAt, ready, version, refresh, checkInbox, toast, toggleFollow, openForm, pickList, blocked, toggleBlock, report]);
+  }, [me, following, followers, mine, mineLoaded, myEntry, badges, loadBadges, unread, notifAt, ready, version, refresh, checkInbox, toast, toggleFollow, openForm, pickList, blocked, toggleBlock, report, prefs, savePrefs]);
 
   return (
     <AppCtx.Provider value={value}>

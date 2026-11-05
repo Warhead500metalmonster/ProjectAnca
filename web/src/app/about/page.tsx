@@ -97,12 +97,12 @@ export default function AboutPage() {
         <li><b>Susturma:</b> bir süre (ağır durumlarda süresiz) yorum, forum yazısı ve mesaj yazamazsın. Kütüphanen yerinde durur, loglamaya devam edebilirsin.</li>
         <li><b>Hesap kapatma:</b> sadece ağır ya da tekrarlanan durumlarda.</li>
       </ul>
-      <p className="muted">Bir kararın haksız olduğunu düşünüyorsan <Link className="grad" href="/chat/arno4436">bana yaz</Link>, mutlaka bakarım. Susturulmuş olsan da bana yazabilirsin.
+      <p className="muted">Bir kararın haksız olduğunu düşünüyorsan <Link className="grad" href="/support">ekibe yaz</Link>, mutlaka bakarız. Susturulmuş olsan da ekibe yazabilirsin.
         Hukuki ayrıntılar <Link className="grad" href="/terms">Kullanım Koşulları</Link>&apos;nda.</p>
 
       <h2>Bana ulaş</h2>
       <ul>
-        <li>Site içinden: <Link className="grad" href="/chat/arno4436">bana mesaj at</Link>. Takipleşmemize gerek yok; soru, sorun, şikayet ya da öneri, ne olursa yaz.</li>
+        <li>Site içinden: <Link className="grad" href="/support">ekibe yaz</Link>. Takipleşmemize gerek yok; soru, sorun, şikayet ya da öneri, ne olursa yaz. Bütün ekip görür, ilk müsait olan cevap verir.</li>
         <li>Discord: <b>arno4436</b></li>
         <li>itch.io: <a className="grad" href="https://arno4436.itch.io/" target="_blank" rel="noopener">arno4436.itch.io</a></li>
         <li>Kaynak kod: <a className="grad" href="https://github.com/Warhead500metalmonster/ProjectAnca" target="_blank" rel="noopener">GitHub</a></li>

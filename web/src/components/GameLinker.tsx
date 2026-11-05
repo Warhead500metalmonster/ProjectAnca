@@ -9,7 +9,8 @@ import { useApp } from "./AppProvider";
 
 // Yönetici: kapağı ya da bilgisi gelmeyen bir oyunu IGDB'deki karşılığına bağlar. Ad yazılınca aranır, seçince o oyunun bütün loglarına gelir.
 // Kişilerin başka sitelerden elle koyduğu kapaklara dokunulmaz (veritabanı öyle yapar).
-export function GameLinker({ rawgId, title, onClose }: { rawgId: number | null; title: string; onClose: () => void }) {
+// stay: eşleştirince oyun sayfasına gitme (yönetim listesinde kalınır)
+export function GameLinker({ rawgId, title, stay = false, onClose }: { rawgId: number | null; title: string; stay?: boolean; onClose: () => void }) {
   const { toast, refresh } = useApp();
   const router = useRouter();
   const ref = useRef<HTMLDialogElement>(null);
@@ -45,7 +46,7 @@ export function GameLinker({ rawgId, title, onClose }: { rawgId: number | null; 
       toast(`${f.title} bağlandı, loglar güncellendi ✓`);
       refresh();
       ref.current?.close();
-      if (target && target !== rawgId) router.push(`/game/${target}`);
+      if (!stay && target && target !== rawgId) router.push(`/game/${target}`);
     } catch (err) {
       setError((err as Error).message);
       setBusy(false);

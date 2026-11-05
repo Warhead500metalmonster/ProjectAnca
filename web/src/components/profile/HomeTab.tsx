@@ -1,5 +1,6 @@
 "use client";
 
+import { ProfileComments } from "./ProfileComments";
 import { Fragment, useState } from "react";
 import Link from "next/link";
 import type { Entry, EntryType, HomeBlock, HomeLayout, List, Profile } from "@/lib/types";
@@ -80,6 +81,7 @@ export function HomeTab() {
       ))}
       {!blocks.some((b) => b.k === "stats") && <ProfileEvents />}
       {isMe && !editing && !fresh && editBar}
+      <ProfileComments />
     </>
   );
 }

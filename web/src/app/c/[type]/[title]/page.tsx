@@ -6,7 +6,8 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import type { Entry, EntryType, Item, PageEdit } from "@/lib/types";
 import { ENTRY_COLS, TYPES } from "@/lib/constants";
-import { NON_LATIN, avgText, contentKey, cssUrl, fmtDur, forumHref, likeEsc, num, oneRatingEach, playSec, safeUrl, scoreText, wideImage } from "@/lib/format";
+import { NON_LATIN, avgText, contentKey, cssUrl, fmtDate, fmtDur, forumHref, likeEsc, num, oneRatingEach, playSec, safeUrl, scoreText, wideImage } from "@/lib/format";
+import { needsLocal, useLocalized } from "@/lib/localize";
 import { aniDetail, fetchPageEdit, tmdbCreator, tmdbDetail, tmdbImage } from "@/lib/data";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
@@ -19,12 +20,33 @@ import { PageEditor } from "@/components/PageEditor";
 import { ListsWith } from "@/components/ListsWith";
 
 interface Info { title?: string; year?: number | null; creator?: string | null; cover?: string | null; backdrop?: string | null;
-  overview?: string; genres?: string[]; facts: [string, string][]; score?: [string, string] }
+  overview?: string; genres?: string[]; facts: [string, string][]; score?: [string, string];
+  overviewNote?: string; tracks?: { title: string; sec: number }[]; link?: string | null; source?: string; descFrom?: { name: string; url: string } | null }
 
-// Dış kaynaktan (TMDB / AniList) içerik bilgisi
-async function loadInfo(extId: string): Promise<Info | null> {
+// Müzik: albüm bilgisi Deezer / Apple Music'ten, açıklaması Vikipedi'den (ya da Last.fm)
+async function loadMusic(title: string, artist: string | null, extId: string | null, lang: string): Promise<Info | null> {
+  const r = await fetch(`/api/musicinfo?${new URLSearchParams({ title, artist: artist || "", lang, ...(extId && { ext: extId }) })}`).catch(() => null);
+  if (!r?.ok) return null;
+  const d: { title?: string; artist?: string; cover?: string | null; released?: string | null; label?: string | null; genres?: string[];
+    tracks?: { title: string; sec: number }[]; link?: string | null; source?: string; description?: string | null; descFrom?: { name: string; url: string } | null } = await r.json();
+  const total = (d.tracks || []).reduce((s, t) => s + t.sec, 0);
+  return {
+    // Adıyla bulunan albümün kapağı yanlış olabilir: kapak sadece kaynağı belli olanda gelir, yoksa kayıtlardaki kalır
+    creator: d.artist || null, year: parseInt(d.released || "") || null, cover: extId ? d.cover || null : null, overview: d.description || "", genres: d.genres || [],
+    facts: ([
+      ["Sanatçı", d.artist || ""],
+      ["Çıkış", d.released && /^\d{4}-\d\d-\d\d$/.test(d.released) ? fmtDate(d.released) : d.released || ""],
+      ["Şarkılar", d.tracks?.length ? `${d.tracks.length} şarkı${total ? ` · ${fmtDur(total)}` : ""}` : ""],
+      ["Plak şirketi", d.label || ""],
+    ] as [string, string][]).filter(([, v]) => v),
+    tracks: d.tracks, link: d.link, source: d.source, descFrom: d.descFrom,
+  };
+}
+
+// Dış kaynaktan (TMDB / AniList) içerik bilgisi; lang: açıklamaların dili (Ayarlar → Dil ve içerik)
+async function loadInfo(extId: string, lang?: "tr" | "en"): Promise<Info | null> {
   if (extId.startsWith("tmdb:")) {
-    const d = await tmdbDetail(extId);
+    const d = await tmdbDetail(extId, lang);
     const runtime = d.runtime || d.episode_run_time?.[0];
     return {
       title: d.title || d.name, year: parseInt(d.release_date || d.first_air_date || "") || null, creator: tmdbCreator(d),
@@ -39,6 +61,7 @@ async function loadInfo(extId: string): Promise<Info | null> {
         ["Kanal", (d.networks || []).map((n) => n.name).join(", ")],
       ] as [string, string][]).filter(([, v]) => v),
       score: d.vote_average ? [num(d.vote_average), "TMDB"] : undefined,
+      overviewNote: d.overview_lang === "en" ? "Türkçe özeti yok, İngilizcesi gösteriliyor." : undefined,
     };
   }
   if (extId.startsWith("anilist:")) {
@@ -60,12 +83,38 @@ async function loadInfo(extId: string): Promise<Info | null> {
   return null;
 }
 
+// Bu sayfanın bilgileri nereden geliyor: kaynağın adı ve kendi sayfasına link
+function SourceLine({ ext, info, mine }: { ext: string | null; info: Info | null; mine: boolean }) {
+  const [kind, a, b] = (ext || "").split(":");
+  const link = (name: string, url: string) => <a href={url} target="_blank" rel="noopener">{name}</a>;
+  const src = kind === "tmdb" ? link("TMDB", `https://www.themoviedb.org/${a}/${b}`)
+    : kind === "anilist" ? link("AniList", `https://anilist.co/anime/${a}`)
+    : (kind === "deezer" || kind === "itunes") && info?.link ? link(info.source || "Kaynak", info.link)
+    : kind === "deezer" ? link("Deezer", `https://www.deezer.com/${a}/${b}`)
+    : kind === "yt" ? link("YouTube", `https://www.youtube.com/watch?v=${a}`)
+    : kind === "ytpl" ? link("YouTube", `https://www.youtube.com/playlist?list=${a}`)
+    : kind === "spotify" ? link("Spotify", `https://open.spotify.com/${a}/${b}`)
+    : !ext && info?.link ? link(info.source || "Kaynak", info.link)
+    : null;
+  return (
+    <div className="source-line">
+      <span>Kaynak</span>
+      <b>
+        {src ? <>Bilgiler: {src}</> : kind === "cat" ? "Ancalog üyelerinin eklediği ortak katalog" : "Bir kaynağa bağlı değil; bilgiler kayıtlardan"}
+        {info?.descFrom && <> · Açıklama: {link(info.descFrom.name, info.descFrom.url)}</>}
+      </b>
+      {!ext && mine && <Link className="small" href="/fix">Gerçek sayfasına bağla →</Link>}
+    </div>
+  );
+}
+
 export default function ContentPage() {
   const params = useParams<{ type: string; title: string }>();
   const search = useSearchParams();
   const type = params.type as EntryType;
   const title = decodeURIComponent(params.title);
-  const { me, version, openForm, pickList, scale, isAdmin, following } = useApp();
+  const { me, version, openForm, pickList, scale, isAdmin, following, prefs } = useApp();
+  const [tracksOpen, setTracksOpen] = useState(false);
   const [more, setMore] = useState(false);
   const [zoom, setZoom] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -82,9 +131,12 @@ export default function ContentPage() {
     ]);
     const logs = [...new Map([...byTitle, ...byExt].map((l) => [l.id, l])).values()].sort((a, b) => b.updated_at.localeCompare(a.updated_at));
     const extId = ext || logs.find((l) => l.ext_id)?.ext_id || null;
-    const info = extId ? await loadInfo(extId).catch(() => null) : null;
+    const info = type === "music" ? await loadMusic(title, logs.find((l) => l.creator)?.creator || null, extId, prefs.lang || "tr").catch(() => null)
+      : extId ? await loadInfo(extId, prefs.lang).catch(() => null) : null;
     return { logs, info, extId, edit };
-  }, [type, title, version, search.get("ext")], supabaseConfigured() && type in TYPES);
+  }, [type, title, version, search.get("ext"), prefs.lang], supabaseConfigured() && type in TYPES);
+  // Ayarlar'da seçilen dildeki ad ve kapak
+  const loc = useLocalized(prefs, { type, title, cover: null, ext_id: data?.extId ?? null });
 
   if (!(type in TYPES)) return <div className="empty">Böyle bir tür yok.</div>;
   if (error) return <div className="empty">Bir şeyler ters gitti: {error}</div>;
@@ -98,8 +150,9 @@ export default function ContentPage() {
     cover: safeUrl(info?.cover) || safeUrl(ref?.cover) || undefined, backdrop: safeUrl(info?.backdrop) || undefined,
     description: (info?.overview || "").trim(), genres: info?.genres,
   };
-  const name = edit.title || (NON_LATIN.test(title) && info?.title && !NON_LATIN.test(info.title) ? info.title : title); // okunmayan alfabede kayıtlıysa İngilizce adı
-  const cover = safeUrl(edit.cover) || source.cover;
+  const localOn = needsLocal(prefs, type, extId);
+  const name = edit.title || (localOn && loc.title !== title ? loc.title : NON_LATIN.test(title) && info?.title && !NON_LATIN.test(info.title) ? info.title : title); // okunmayan alfabede kayıtlıysa İngilizce adı
+  const cover = safeUrl(edit.cover) || (localOn && safeUrl(loc.cover)) || source.cover;
   const backdrop = safeUrl(edit.backdrop) || source.backdrop || wideImage(cover);
   const year = edit.year || source.year;
   const creator = edit.creator || source.creator;
@@ -150,6 +203,9 @@ export default function ContentPage() {
             {creator && <div className="gh-dev">{creator}</div>}
             {desc && <p className={`gh-desc ${more ? "" : "clamp"}`}>{desc}</p>}
             {desc.length > 300 && !more && <button className="link" onClick={() => setMore(true)}>Devamını oku</button>}
+            {desc && !edit.description && (info?.overviewNote || info?.descFrom) && (
+              <p className="muted small desc-from">{info.overviewNote}{info.descFrom && <> Açıklama: <a href={info.descFrom.url} target="_blank" rel="noopener">{info.descFrom.name}</a></>}</p>
+            )}
             {genres?.length ? <div className="genres">{genres.map((x) => <span key={x}>{x}</span>)}</div> : null}
           </div>
           <div className="gh-score">
@@ -163,9 +219,18 @@ export default function ContentPage() {
       <div className="game-body">
         <aside className="facts">
           {facts.map(([k, v]) => <div key={k}><span>{k}</span><b>{v}</b></div>)}
-          {info && extId && <span className="muted" style={{ fontSize: 12 }}>Bilgiler: {extId.startsWith("tmdb:") ? "TMDB" : "AniList"}</span>}
+          <SourceLine ext={extId} info={info} mine={!!mine} />
         </aside>
         <section>
+          {info?.tracks && info.tracks.length > 1 && (
+            <div className="tracks">
+              <div className="section-head"><h2>Şarkılar</h2>{info.link && <a className="muted small" href={info.link} target="_blank" rel="noopener">{info.source}&apos;da dinle →</a>}</div>
+              <ol>
+                {info.tracks.slice(0, tracksOpen ? 200 : 12).map((t, i) => <li key={i}><span>{t.title}</span>{t.sec ? <small>{Math.floor(t.sec / 60)}:{String(t.sec % 60).padStart(2, "0")}</small> : null}</li>)}
+              </ol>
+              {info.tracks.length > 12 && !tracksOpen && <button className="link" onClick={() => setTracksOpen(true)}>Bütün şarkılar ({info.tracks.length})</button>}
+            </div>
+          )}
           <div className="section-head"><h2>Loglayanlar</h2></div>
           <PeopleLogs list={logs} empty={<div className="empty">Henüz kimse loglamadı. İlk sen ol!</div>} />
           <ListsWith type={type} title={title} ext={extId} />

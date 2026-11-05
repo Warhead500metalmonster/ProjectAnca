@@ -57,11 +57,14 @@ export default function SearchPage() {
   const params = useSearchParams();
   const router = useRouter();
   const path = usePathname();
-  const { scale, mine, openForm } = useApp();
+  const { scale, mine, openForm, prefs } = useApp();
+  const merge = !!prefs.merge; // Dizi ve anime tek sekmede (Ayarlar → Dil ve içerik)
   const logged = useMemo(() => new Set(mine.map(contentKey)), [mine]); // kütüphanende olanlarda + yerine tik görünür
 
   const [text, setText] = useState(params.get("q") || "");
-  const [type, setType] = useState<EntryType | "all">((params.get("type") as EntryType) || "all");
+  const [rawType, setType] = useState<EntryType | "all">((params.get("type") as EntryType) || "all");
+  const type = merge && rawType === "anime" ? "show" : rawType;
+  const kinds: EntryType[] = type === "all" ? TYPE_KEYS : merge && type === "show" ? ["show", "anime"] : [type];
   const [from, setFrom] = useState(params.get("from") || "");
   const [to, setTo] = useState(params.get("to") || "");
   const [sort, setSort] = useState<Sort>((params.get("sort") as Sort) || "logged");
@@ -89,7 +92,13 @@ export default function SearchPage() {
       setLocal(null);
       setExternal(null);
       setFailed([]);
-      const [u, l, x] = await Promise.all([findUsers(text), findLocal(text, type, from, to, sort), findExternal(text, type, from, to, sort)]);
+      const both = merge && type === "show"; // dizi ve anime birlikte aranır
+      const [u, l, x] = await Promise.all([
+        findUsers(text),
+        both ? Promise.all([findLocal(text, "show", from, to, sort), findLocal(text, "anime", from, to, sort)]).then(([a, b]) => [...a, ...b]) : findLocal(text, type, from, to, sort),
+        both ? Promise.all([findExternal(text, "show", from, to, sort), findExternal(text, "anime", from, to, sort)]).then(([a, b]) => ({ items: [...a.items, ...b.items], failed: [...a.failed, ...b.failed] }))
+          : findExternal(text, type, from, to, sort),
+      ]);
       if (s !== seq.current) return;
       // Aranan ada en yakınlar önce: tam eşleşen, sonra adı öyle başlayan
       const needle = text.trim().toLocaleLowerCase("tr");
@@ -103,7 +112,7 @@ export default function SearchPage() {
     }, 300);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, type, from, to, sort, again]);
+  }, [text, type, from, to, sort, again, merge]);
 
   const yearOk = (v: string) => !v || /^\d{4}$/.test(v);
   const credit = type !== "all" ? SEARCH_CREDITS[type] : SEARCH_CREDITS.game;
@@ -116,7 +125,7 @@ export default function SearchPage() {
         <input className="input big" type="search" autoFocus value={text} placeholder="Ne arıyorsun? Ör. Zelda, Breaking Bad, Frieren…" onChange={(e) => setText(e.target.value)} />
         <div className="search-tools">
           <div className="tabs">
-            {([["all", "Tümü"], ...TYPE_KEYS.map((k) => [k, TYPES[k].label])] as [EntryType | "all", string][]).map(([k, label]) => (
+            {([["all", "Tümü"], ...TYPE_KEYS.filter((k) => !(merge && k === "anime")).map((k) => [k, merge && k === "show" ? "Dizi / Anime" : TYPES[k].label])] as [EntryType | "all", string][]).map(([k, label]) => (
               <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => setType(k)}>{label}</button>
             ))}
           </div>
@@ -159,7 +168,7 @@ export default function SearchPage() {
                       <div className="ph">{TYPES[a.type].label}</div><Cover src={a.cover} />
                     </div>
                     <div className="card-title">{a.title}</div>
-                    <div className="card-meta">{[type === "all" && TYPES[a.type].label, a.year].filter(Boolean).join(" · ")}</div>
+                    <div className="card-meta">{[kinds.length > 1 && TYPES[a.type].label, a.year].filter(Boolean).join(" · ")}</div>
                     <div className="card-info">
                       <span className="card-status">{a.n} kişi</span>
                       {a.avg ? <span className="card-score">★ {avgText(a.avg, scale).split("/")[0]}</span> : null}
@@ -179,10 +188,10 @@ export default function SearchPage() {
         </div>
       )}
       {external === null ? <section className="section"><div className="loading">Her yerde aranıyor…</div></section>
-        : (type === "all" ? TYPE_KEYS : [type]).map((k) => {
+        : kinds.map((k) => {
           const list = external.filter((x) => x.type === k);
           if (!list.length) return null;
-          const [src, url] = type === "all" ? SEARCH_CREDITS[k] : credit;
+          const [src, url] = kinds.length > 1 ? SEARCH_CREDITS[k] : credit;
           return (
             <section className="section" key={k}>
               <div className="section-head">

@@ -7,7 +7,7 @@ const QA: [string, React.ReactNode][] = [
   ["Başka siteden kütüphanemi taşıyabilir miyim?", <>Evet. <Link className="grad" href="/import">Kütüphaneni getir</Link> sayfasından Steam, PlayStation, Xbox, Epic, Switch, HowLongToBeat, Backloggd, Playnite, Letterboxd, Serializd, MyAnimeList, AniList, Spotify ve Last.fm&apos;den getirebilirsin. Zaten olanlar tekrar eklenmez.</>],
   ["Kayıtlarımı kimler görür?", <>Sen ne dersen o. <Link className="grad" href="/settings#gizlilik">Ayarlar → Gizlilik</Link>&apos;ten profilini herkese, sadece arkadaşlarına ya da sadece kendine açabilir, istediğin türü (mesela müzikleri) gizleyebilirsin.</>],
   ["Verilerimi indirebilir miyim, hesabımı silebilir miyim?", <>Her zaman, soru sorulmadan. <Link className="grad" href="/settings#hesap">Ayarlar → Hesap</Link>&apos;tan Excel / CSV, JSON ya da Letterboxd biçiminde indirirsin. Aynı yerden kayıtlarını silip sıfırdan başlayabilir ya da hesabını tamamen silebilirsin.</>],
-  ["Bir sorun buldum ya da bir fikrim var, kime yazayım?", <><Link className="grad" href="/chat/arno4436">Site sahibine yaz</Link>; takipleşmeniz gerekmez. Sitedeki pek çok özellik kullanıcıların isteğiyle eklendi, seninki de eklenebilir.</>],
+  ["Bir sorun buldum ya da bir fikrim var, kime yazayım?", <><Link className="grad" href="/support">Ekibe yaz</Link>; takipleşmen gerekmez, bütün ekip görür. Sitedeki pek çok özellik kullanıcıların isteğiyle eklendi, seninki de eklenebilir.</>],
   ["Durumlar ne demek?", <><b>Oynandı / İzlendi / Dinlendi</b>: oynadın, izledin ya da dinledin. <b>Oynuyorum / İzliyorum</b>: şu an devam ediyorsun. <b>Planlandı</b>: ileride yapacakların (backlog). <b>Ara verdim</b>: yarım bıraktın ama döneceksin. <b>Bıraktım</b>: devam etmeyeceksin.</>],
   ["Bir kaydı nasıl değiştiririm ya da silerim?", <>Kaydın kapağına bas, açılan pencerede <b>Düzenle</b>&apos;ye bas. Silme düğmesi de oradadır.</>],
   ["Keşfet nedir?", <>Her oyunu, filmi, diziyi, animeyi ve albümü tek kutudan aradığın yer. <Link className="grad" href="/search">Keşfet</Link>&apos;te adını yaz, sonuçlar türlerine göre gelsin; birine tıkla, sayfasını gör, kütüphanene ekle.</>],
@@ -51,7 +51,7 @@ export function HomeInfo({ signedIn }: { signedIn: boolean }) {
         </ul>
         <div className="home-about-actions">
           <Link className="btn" href="/about">Hikâyemiz</Link>
-          {signedIn ? <Link className="btn ghost" href="/chat/arno4436">Bize yaz</Link> : <Link className="btn primary" href="/signup">Ücretsiz katıl</Link>}
+          {signedIn ? <Link className="btn ghost" href="/support">Bize yaz</Link> : <Link className="btn primary" href="/signup">Ücretsiz katıl</Link>}
         </div>
       </div>
       <div className="home-faq">

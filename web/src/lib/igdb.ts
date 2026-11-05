@@ -111,6 +111,12 @@ function filters(p: URLSearchParams) {
 }
 
 async function list(p: URLSearchParams) {
+  // Adresiyle (slug) toplu eşleştirme: Backloggd'dan içe aktarmada oyunlar birebir bulunur
+  const slugs = (p.get("slugs") || "").split(",").map((s) => s.trim().toLowerCase()).filter((s) => /^[a-z0-9-]{1,120}$/.test(s)).slice(0, 100);
+  if (slugs.length) {
+    const { rows } = await ask<IgdbGame>("games", `fields ${CARD}; where slug = (${slugs.map((s) => `"${s}"`).join(",")}); limit 100;`);
+    return { count: rows.length, results: await withIds(rows) };
+  }
   const size = Math.min(Number(p.get("page_size")) || 20, 50);
   const page = Math.max(Number(p.get("page")) || 1, 1);
   const text = p.get("search")?.trim().replace(/["\\]/g, "");

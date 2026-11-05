@@ -11,6 +11,7 @@ import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { SocialTabs } from "@/components/SocialTabs";
+import { Reactions } from "@/components/Reactions";
 import { Avatar, Name } from "@/components/ui";
 import { ChatBody, DraftPhotos, PhotoAdd, ReplyQuote, ReplyingTo, withPhoto, type ReplyTarget } from "@/components/ChatBody";
 
@@ -88,6 +89,7 @@ export default function ThreadPage() {
           </Link>
         )}
         <div className="post-body"><ChatBody text={t.body} /></div>
+        <div className="post-tools"><Reactions kind="forum_thread" id={t.id} /></div>
         {mineOrAdmin(t.user_id) && (
           <div className="post-tools">
             {isAdmin && <button className="link" onClick={() => run(q(sb().from("forum_threads").update({ pinned: !t.pinned }).eq("id", id)), t.pinned ? "Sabitleme kalktı" : "Konu sabitlendi")}>{t.pinned ? "Sabitlemeyi kaldır" : "Sabitle"}</button>}
@@ -121,9 +123,10 @@ export default function ThreadPage() {
           </header>
           {p.reply_to && (() => { const pp = posts.find((x) => x.id === p.reply_to); return <ReplyQuote parent={pp && { id: pp.id, user_id: pp.user_id, body: pp.body }} name={pp?.profiles?.display_name || pp?.profiles?.username} />; })()}
           <div className="post-body"><ChatBody text={p.body} /></div>
-          {me && !t.locked && (
-            <div className="post-tools"><button className="link reply-btn" onClick={() => { setReplyTo({ id: p.id, name: p.profiles?.display_name || p.profiles?.username || "Bu kişi", body: p.body }); document.getElementById("forum-reply")?.focus(); }}>Yanıtla</button></div>
-          )}
+          <div className="post-tools">
+            {me && !t.locked && <button className="link reply-btn" onClick={() => { setReplyTo({ id: p.id, name: p.profiles?.display_name || p.profiles?.username || "Bu kişi", body: p.body }); document.getElementById("forum-reply")?.focus(); }}>Yanıtla</button>}
+            <Reactions kind="forum_post" id={p.id} />
+          </div>
         </article>
       ))}
 

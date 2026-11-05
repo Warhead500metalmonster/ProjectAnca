@@ -12,8 +12,9 @@ import { q, sb } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { psBookmarklet } from "@/lib/psBookmarklet";
-import { BL_MARK, backloggdBookmarklet } from "@/lib/backloggdBookmarklet";
+import { BL_MARK, BL_MARK2, backloggdBookmarklet } from "@/lib/backloggdBookmarklet";
 import { SZ_MARK, serializdBookmarklet } from "@/lib/serializdBookmarklet";
+import { type SimklItem, fromSimklCsv, fromSimklJson, jsonFromZip, resolveSimkl } from "@/lib/simkl";
 import { type SteamGame, setSteamLink, steamLink, steamRow } from "@/lib/steamSync";
 import { ImportPromo } from "@/components/ImportPromo";
 
@@ -37,32 +38,31 @@ const IMPORT_PICKS: { key: string; name: string; how: string; gets: string }[] =
   { key: "steam", name: "Steam", how: "Profil linkini yapıştır", gets: "Oyunların ve oynama sürelerin" },
   { key: "ps", name: "PlayStation", how: "Tarayıcı düğmesiyle", gets: "Satın aldığın ve oynadığın oyunlar" },
   { key: "xbox", name: "Xbox", how: "Gamertag'ini yaz", gets: "Oyunların ve başarımların" },
-  { key: "backloggd", name: "Backloggd", how: "Tarayıcı düğmesiyle", gets: "Durumların ve puanların" },
+  { key: "backloggd", name: "Backloggd", how: "Tarayıcı düğmesiyle", gets: "Durumların, puanların, incelemelerin" },
   { key: "hltb", name: "HowLongToBeat", how: "Dosyanı seç", gets: "Süreler, puanlar, notlar, tarihler" },
   { key: "letterboxd", name: "Letterboxd", how: "Dosyanı seç", gets: "Filmler, puanlar, incelemeler" },
   { key: "serializd", name: "Serializd", how: "Tarayıcı düğmesiyle", gets: "Dizilerin ve puanların" },
   { key: "mal", name: "MyAnimeList", how: "Dosyanı seç", gets: "Animelerin, puanların, bölümlerin" },
   { key: "anilist", name: "AniList", how: "Kullanıcı adını yaz", gets: "Animelerin, puanların, bölümlerin" },
+  { key: "simkl", name: "Simkl", how: "Yedek dosyası ya da kodla", gets: "Dizilerin, filmlerin, animelerin" },
   { key: "music", name: "Spotify ve Last.fm", how: "Kullanıcı adı ya da dosya", gets: "Albümlerin ve sanatçıların" },
   { key: "epic", name: "Epic Games", how: "Listeyi kopyala, yapıştır", gets: "Oyunların" },
   { key: "switch", name: "Nintendo Switch", how: "Listeyi kopyala, yapıştır", gets: "Oyunların" },
   { key: "playnite", name: "Playnite ya da başka CSV", how: "Dosyanı seç", gets: "Durum, puan, süre: ne varsa" },
 ];
-// Simkl ancak sunucuda anahtarı (SIMKL_ID) varsa listede görünür
-const SIMKL_PICK = { key: "simkl", name: "Simkl", how: "Koduyla bağlan", gets: "Dizilerin, filmlerin, animelerin" };
+
 
 function Importer() {
   // Seçilen kaynak adreste durur (/import?from=backloggd): menüden İçe aktar'a basınca adres /import olur, sayfa hep baştan açılır
   const router = useRouter();
   const from = useSearchParams().get("from");
-  const pick = from === "simkl" || IMPORT_PICKS.some((p) => p.key === from) ? from : null;
-  const { data: simklOn } = useLoad(() => fetch("/api/simkl").then((x) => x.json()).then((j) => j.error !== "no-key").catch(() => false), []);
-  const picks = simklOn ? [...IMPORT_PICKS, SIMKL_PICK] : IMPORT_PICKS;
+  const pick = IMPORT_PICKS.some((p) => p.key === from) ? from : null;
+  const picks = IMPORT_PICKS;
   function choose(k: string | null) {
     router.replace(k ? `/import?from=${k}` : "/import", { scroll: false });
     window.scrollTo({ top: 0 });
   }
-  const chosen = [...IMPORT_PICKS, SIMKL_PICK].find((p) => p.key === pick);
+  const chosen = IMPORT_PICKS.find((p) => p.key === pick);
 
   return (
     <div className="import-page">
@@ -808,10 +808,12 @@ const SOURCES: Record<string, { name: string; platform: string; store: string; h
       <li>Şu düğmeyi fareyle tutup tarayıcının yer imleri çubuğuna sürükle (çubuk görünmüyorsa Ctrl+Shift+B):
         <BookmarkButton make={backloggdBookmarklet} name="Ancalog'a ekle Backloggd" /></li>
       <li><a className="grad" href="https://backloggd.com/" target="_blank" rel="noreferrer">Backloggd</a>&apos;da kendi profilini aç ve bu yer imine bas.
-        Bütün oyunlarını (Played, Playing, Backlog, Wishlist) puanlarıyla kendisi toplar; sonunda kaç oyun bulduğunu yazar.</li>
+        Bütün oyunlarını puanları, durumları, beğenileri ve incelemeleriyle kendisi toplar; sonunda kaç oyun bulduğunu yazar. Kütüphane büyükse birkaç dakika sürebilir, sekmeyi kapatma.</li>
       <li>Çıkan kutudaki <b>Kopyala</b>&apos;ya bas, buraya dön ve aşağıdaki kutuya yapıştır (Ctrl+V).</li>
     </ol>
-    Played olanlar <b>Oynandı</b>, Playing <b>Oynuyorum</b>, Backlog ve Wishlist <b>Planlandı</b> olarak gelir.</> },
+    Completed, Mastered ve Played <b>Oynandı</b>; Shelved <b>Ara verdim</b>; Abandoned <b>Bıraktım</b>; Playing <b>Oynuyorum</b>; Backlog ve Wishlist <b>Planlandı</b> olarak gelir.
+    İncelemelerin, beğendiklerin ve istek listen etiketiyle gelir; oyunlar Backloggd&apos;daki sayfasıyla birebir eşleşir. Daha önce eski düğmeyle getirdiysen düğmeyi yeniden sürükle:
+    zaten olan oyunların sadece eksik bilgileri (inceleme, puan, durum) tamamlanır.</> },
   epic: { name: "Epic Games", platform: "PC", store: "Epic Games Store", help: <>
     <a className="grad" href="https://www.epicgames.com/account/transactions" target="_blank" rel="noreferrer">Epic satın alma geçmişini</a> ya da
     Epic Launcher&apos;daki <b>Kütüphane</b>&apos;yi aç, sayfanın tamamını seçip (Ctrl+A) kopyala ve yapıştır.</> },
@@ -838,6 +840,9 @@ const GAME_PLATFORMS = ["PlayStation 5", "PlayStation 4", "Xbox Series X|S", "Xb
 // cat: dosyadaki, bizde karşılığı olmayan kategori (ör. HLTB'de Replay ya da kendi açtığın sekme); kullanıcı eşler
 interface ListGame {
   title: string; status: Status | null; cat?: string | null; rating: number; sec: number | null; date: string | null; started: string | null; platform: string; store: string;
+  slug?: string;      // Backloggd'daki adresi (IGDB'deki adla aynı): oyun birebir eşleşir
+  tags?: string[];    // ör. Backloggd'da beğendiği, istek listesi, mastered
+  cover?: string;
   notes: string;      // inceleme (HLTB Review Notes)
   memo?: string;      // kısa not (HLTB General Notes)
   dropNote?: string;  // bırakma notu (HLTB Retired Notes)
@@ -1030,11 +1035,27 @@ function ListImport({ initial }: { initial: string }) {
     if (!e.progress?.trim() && g.memo) p.progress = g.memo;
     if (!e.drop_note?.trim() && g.dropNote) p.drop_note = g.dropNote;
     if (!e.emulated && g.emulated) p.emulated = true;
+    if (g.tags?.length && g.tags.some((x) => !(e.tags || []).includes(x))) p.tags = [...new Set([...(e.tags || []), ...g.tags])].slice(0, 20);
+    if (!e.rawg_id && g.slug && hitFor(g)) Object.assign(p, { rawg_id: hitFor(g)!.id, ...(!e.cover && hitFor(g)!.background_image && { cover: hitFor(g)!.background_image }) }); // sayfasız kayıt bağlanır
     if (!e.platform && (g.platform || platform)) p.platform = (g.platform || platform).slice(0, 60);
     // Dosyada durum yazıyorsa: Kategorisiz ya da Planlandı olanı güncelle
     const fs = fileStatus(g);
     if (fs && fs !== "skip" && fs !== e.status && (e.status === "owned" || (e.status === "planned" && fs !== "planned"))) p.status = fs;
+    // Eski Backloggd düğmesi Shelved / Abandoned oyunları da "Oynandı" getiriyordu: tarihsiz olanlar düzelir
+    if (src === "backloggd" && (fs === "paused" || fs === "dropped") && e.status === "completed" && !e.date) p.status = fs;
     return Object.keys(p).length ? p : null;
+  }
+
+  // Backloggd adresleri IGDB'dekiyle aynı: aramaya gerek kalmadan birebir eşleşir (100'er 100'er sorulur)
+  const slugHits = useRef(new Map<string, RawgGame>());
+  const hitFor = (g: ListGame) => (g.slug ? slugHits.current.get(g.slug) : undefined);
+  async function resolveSlugs(list: ListGame[]) {
+    const want = [...new Set(list.map((g) => g.slug).filter((x): x is string => !!x && !slugHits.current.has(x)))];
+    for (let i = 0; i < want.length; i += 100) {
+      setStep({ done: i, total: want.length });
+      const got = await rawg<{ results?: (RawgGame & { slug?: string })[] }>("games", { slugs: want.slice(i, i + 100).join(",") }).catch(() => ({ results: [] }));
+      for (const r of got.results || []) if (r.slug) slugHits.current.set(r.slug, r);
+    }
   }
 
   async function run() {
@@ -1042,14 +1063,15 @@ function ListImport({ initial }: { initial: string }) {
     setBusy(true);
     setStep({ done: 0, total: unique.length });
     try {
+      await resolveSlugs(unique);
       const byRawg = new Map(myGames.filter((e) => e.rawg_id).map((e) => [e.rawg_id!, e]));
       const used = new Set<number>(); // bu aktarımda aynı oyuna iki kez eşleşmesin
       const updates: { id: string; patch: Row }[] = [];
       let same = 0;
       const rows = (await pool(unique, async (g): Promise<Row | null> => {
-        let old = byKey.get(looseKey(g.title));
-        let hit: RawgGame | null = null;
-        if (!old) {
+        let hit: RawgGame | null = hitFor(g) || null;
+        let old = (hit && byRawg.get(hit.id)) || byKey.get(looseKey(g.title));
+        if (!old && !hit) {
           const found = (await rawg<{ results?: RawgGame[] }>("games", { search: g.title, search_precise: "true", page_size: 5 }).catch(() => ({ results: [] }))).results || [];
           hit = similarHit(found, g.title);
           if (hit) old = byRawg.get(hit.id);
@@ -1065,9 +1087,10 @@ function ListImport({ initial }: { initial: string }) {
         const st = fs && fs !== "skip" ? fs : status;
         return {
           type: "game", title: (hit?.name || g.title).slice(0, 200), rawg_id: hit?.id ?? null, year: parseInt(hit?.released || "") || null,
-          cover: hit?.background_image ? smallImage(hit.background_image) : null, status: st, rating: g.rating,
+          cover: hit?.background_image ? smallImage(hit.background_image) : g.cover || null, status: st, rating: g.rating,
           playtime_sec: g.sec, hours: g.sec ? Math.round(g.sec / 360) / 10 : null, date: g.date,
           started_on: g.started, notes: g.notes || null, progress: g.memo || null, emulated: !!g.emulated,
+          ...(g.tags?.length && { tags: g.tags }),
           ...(g.dropNote && { drop_note: g.dropNote }),
           platform: (g.platform || platform || "").slice(0, 60) || null, store: (g.store || s.store || "").slice(0, 60) || null,
           ...(src === "ps" && !hit && { ext_id: `psn:${looseKey(g.title)}`.slice(0, 60) }),
@@ -1453,7 +1476,25 @@ function CopyLink({ make, name, lead, children }: { make: () => string; name: st
 // Backloggd yer iminin topladığı liste: ANCALOG_BACKLOGGD:[["Oyun", "played", 8], ...]
 // logged: dört sekmenin hiçbirinde olmayan ama loglanmış oyun
 const BL_STATUS: Record<string, Status> = { played: "completed", playing: "active", backlog: "planned", wishlist: "planned", logged: "completed" };
+// Played'in alt durumları: Completed / Mastered / Played bitti sayılır, Shelved ara verildi, Abandoned bırakıldı, Retired (bitmeyen oyunu bıraktı) bitti
+const BL_SUB: Record<string, Status> = { completed: "completed", mastered: "completed", played: "completed", retired: "completed", shelved: "paused", abandoned: "dropped" };
 function blParse(text: string): ListGame[] {
+  // Yeni düğme: ANCALOG_BACKLOGGD2:[["Oyun", "slug", "played", "completed", 8, 1, "inceleme", "kapak"], ...]
+  const j = text.indexOf(BL_MARK2);
+  if (j >= 0) {
+    try {
+      const rows = JSON.parse(text.slice(j + BL_MARK2.length).trim()) as [string, string, string, string, number, number, string, string][];
+      return rows.filter((x) => Array.isArray(x) && typeof x[0] === "string" && x[0].trim()).map(([title, slug, tab, sub, rating, liked, review, cover]) => ({
+        title: title.trim().slice(0, 200), slug: /^[a-z0-9-]+$/.test(slug || "") ? slug : undefined,
+        status: (tab === "played" && BL_SUB[(sub || "").toLowerCase()]) || BL_STATUS[tab] || null,
+        rating: Math.max(0, Math.min(10, Math.round(Number(rating) || 0))), sec: null, date: null, started: null, platform: "", store: "",
+        notes: (review || "").slice(0, 5000), cover: /^https:\/\/images\.igdb\.com\//.test(cover || "") ? cover : undefined,
+        tags: [liked ? "backloggd'da beğendim" : "", tab === "wishlist" ? "istek listesi" : "", (sub || "").toLowerCase() === "mastered" ? "mastered" : ""].filter(Boolean),
+      }));
+    } catch {
+      return [];
+    }
+  }
   const i = text.indexOf(BL_MARK);
   if (i < 0) return [];
   try {
@@ -1515,9 +1556,7 @@ function cleanPaste(text: string) {
     });
 }
 
-// ---------- Simkl: dizi, film ve anime (kodla bağlan) ----------
-
-interface SimklItem { type: "show" | "movie" | "anime"; title: string; year: number | null; status: Status; rating: number; date: string | null; cover: string | null; ext_id: string | null; progress: string | null }
+// ---------- Simkl: dizi, film ve anime (yedek dosyası ya da kodla bağlan) ----------
 
 function Simkl() {
   const { me, mine, toast, refresh } = useApp();
@@ -1525,10 +1564,21 @@ function Simkl() {
   const [items, setItems] = useState<SimklItem[] | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [step, setStep] = useState<{ done: number; total: number } | null>(null);
+  const [step, setStep] = useState<{ done: number; total: number; label: string } | null>(null);
+  const [keep, setKeep] = useState<Set<SimklItem["type"]>>(new Set(["show", "movie", "anime"]));
+  const { data: canConnect } = useLoad(() => fetch("/api/simkl").then((x) => x.json()).then((j) => j.error !== "no-key").catch(() => false), []);
   const have = new Set(mine.map((e) => `${e.type}|${norm(e.title)}`));
   const haveExt = new Set(mine.map((e) => e.ext_id).filter(Boolean));
   const isNew = (x: SimklItem) => !have.has(`${x.type}|${norm(x.title)}`) && !(x.ext_id && haveExt.has(x.ext_id));
+
+  // Gelen listeyi hazırla: eksik numaraları bağla (IMDb → TMDB, MyAnimeList → AniList), sonra göster
+  async function prepare(list: SimklItem[]) {
+    if (!list.length) { setError("Bu dosyada dizi, film ya da anime bulunamadı. Simkl'dan indirdiğin yedeği (.zip ya da .csv) seçtiğinden emin ol."); return; }
+    setStep({ done: 0, total: list.length, label: "Sayfalarına bağlanıyor…" });
+    await resolveSimkl(list, (done, total) => setStep({ done, total, label: "Sayfalarına bağlanıyor…" }));
+    setStep(null);
+    setItems(list);
+  }
 
   // Kod alındıktan sonra birkaç saniyede bir "onaylandı mı?" diye sor (en fazla 15 dakika)
   useEffect(() => {
@@ -1538,7 +1588,7 @@ function Simkl() {
       if (stop || tries++ > 180) return;
       const d = await fetch(`/api/simkl?code=${code.code}`).then((r) => r.json()).catch(() => ({ pending: true }));
       if (stop) return;
-      if (d.items) { setItems(d.items); setCode(null); return; }
+      if (d.raw) { setCode(null); await prepare(fromSimklJson(d.raw)); return; }
       if (d.error) { setError("Simkl'dan veri alınamadı, biraz sonra tekrar dene."); setCode(null); return; }
       setTimeout(tick, 5000);
     };
@@ -1552,7 +1602,7 @@ function Simkl() {
     try {
       const r = await fetch("/api/simkl?start=1");
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) return setError(d.error === "no-key" ? "Simkl bağlantısı henüz kurulmadı. Site sahibine haber ver." : "Simkl'a ulaşılamadı, biraz sonra tekrar dene.");
+      if (!r.ok) return setError(d.error === "no-key" ? "Kodla bağlanma şu an kapalı; yedek dosyasıyla getirebilirsin." : "Simkl'a ulaşılamadı, biraz sonra tekrar dene.");
       setCode({ code: d.code, url: d.url });
       window.open(d.url, "_blank", "noopener");
     } finally {
@@ -1560,17 +1610,45 @@ function Simkl() {
     }
   }
 
-  const fresh = (items || []).filter(isNew);
+  // Simkl yedeği: .zip (içinde JSON / CSV), .json ya da .csv
+  async function onFile(file: File | undefined) {
+    if (!file) return;
+    setError("");
+    setBusy(true);
+    try {
+      let list: SimklItem[] = [];
+      if (/\.zip$/i.test(file.name)) {
+        for (const part of await jsonFromZip(file)) {
+          const csv = (part as { __csv?: string }).__csv;
+          list.push(...(csv ? fromSimklCsv(parseCsv(csv)) : fromSimklJson(part)));
+        }
+      } else if (/\.json$/i.test(file.name)) list = fromSimklJson(JSON.parse(await file.text()));
+      else list = fromSimklCsv(parseCsv(await file.text()));
+      // Aynı içerik iki dosyada da varsa bir kez
+      const seen = new Set<string>();
+      list = list.filter((x) => { const k = x.ext_id || `${x.type}|${norm(x.title)}|${x.year}`; if (seen.has(k)) return false; seen.add(k); return true; });
+      await prepare(list);
+    } catch (err) {
+      setError("Dosya okunamadı: " + (err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const chosen = (items || []).filter((x) => keep.has(x.type));
+  const fresh = chosen.filter(isNew);
   const count = (t: SimklItem["type"]) => (items || []).filter((x) => x.type === t).length;
+  const linked = fresh.filter((x) => x.ext_id).length;
 
   async function run() {
     if (!me || !fresh.length) return;
     setBusy(true);
-    setStep({ done: 0, total: fresh.length });
+    setStep({ done: 0, total: fresh.length, label: "Ekleniyor…" });
     try {
       const rows: Row[] = fresh.map((x) => ({
         type: x.type, title: x.title.slice(0, 200), year: x.year, creator: null, cover: x.cover, rawg_id: null, ext_id: x.ext_id,
-        status: x.status, rating: x.rating, date: x.date, progress: x.progress,
+        status: x.status, rating: x.rating, date: x.date,
+        ...(x.episode && { episode: x.episode }), ...(x.episodes_total && { episodes_total: x.episodes_total }),
         updated_at: new Date(x.date ? x.date + "T12:00" : Date.now()).toISOString(),
       }));
       const failed = await insertAll(rows, me.id);
@@ -1589,23 +1667,32 @@ function Simkl() {
     <section className="section import-card">
       <div className="section-head"><h2>Simkl</h2></div>
       <p className="muted small" style={{ marginTop: 0 }}>
-        Simkl&apos;daki dizilerin, filmlerin ve animelerin durumları, puanların ve izleme tarihleriyle gelir. Şifreni girmezsin:
-        bir kod alırsın, Simkl sitesinde onaylarsın, o kadar.
+        Dizilerin, filmlerin ve animelerin durumları (izliyorum, bitirdim, bıraktım, planladım), puanların, son izleme tarihlerin ve kaçıncı bölümde olduğun gelir.
+        Her biri doğru sayfasına bağlanır (TMDB, AniList); şifreni hiçbir yere girmezsin.
       </p>
       {items ? (
         <>
           <div className="import-bar">
             <span><b>{count("show")}</b> dizi, <b>{count("movie")}</b> film, <b>{count("anime")}</b> anime bulundu
-              {items.length - fresh.length ? ` · ${items.length - fresh.length} tanesi zaten kütüphanende` : ""}</span>
+              {chosen.length - fresh.length ? ` · ${chosen.length - fresh.length} tanesi zaten kütüphanende` : ""}</span>
           </div>
+          <div className="chips" style={{ margin: "8px 0" }}>
+            {(["show", "movie", "anime"] as const).filter((t) => count(t)).map((t) => (
+              <label key={t} className={`chip ${keep.has(t) ? "active" : ""}`}>
+                <input type="checkbox" hidden checked={keep.has(t)} onChange={() => setKeep((k) => { const n = new Set(k); if (n.has(t)) n.delete(t); else n.add(t); return n; })} />
+                {keep.has(t) ? "✓ " : ""}{TYPES[t].plural}
+              </label>
+            ))}
+          </div>
+          {fresh.length > linked && <p className="muted small">{fresh.length - linked} kayıt bir sayfaya bağlanamadı; adıyla eklenir, sonra <Link href="/fix">Sayfasız kayıtlarım</Link>&apos;dan bir dokunuşla bağlarsın.</p>}
           <div className="import-list">
-            {fresh.slice(0, 300).map((x) => (
-              <label key={`${x.type}|${x.title}`}><span className="name">{x.title}{x.year ? ` (${x.year})` : ""}</span>
-                <small>{TYPES[x.type].label} · {statusLabel(x.status, x.type)}{x.rating ? ` · ${x.rating}/10` : ""}</small></label>
+            {fresh.slice(0, 300).map((x, i) => (
+              <label key={`${x.type}|${x.title}|${i}`}><span className="name">{x.title}{x.year ? ` (${x.year})` : ""}</span>
+                <small>{TYPES[x.type].label} · {statusLabel(x.status, x.type)}{x.rating ? ` · ${x.rating}/10` : ""}{x.episode ? ` · ${x.episode}${x.episodes_total ? `/${x.episodes_total}` : ""}. bölüm` : ""}{x.ext_id ? "" : " · sayfasız"}</small></label>
             ))}
             {fresh.length > 300 && <label className="off"><span className="name muted">…ve {fresh.length - 300} kayıt daha (hepsi aktarılır)</span></label>}
           </div>
-          {step && <Progress done={step.done} total={step.total} label="Ekleniyor…" />}
+          {step && <Progress done={step.done} total={step.total} label={step.label} />}
           <div className="actions">
             <button className="btn" disabled={busy} onClick={() => setItems(null)}>Vazgeç</button>
             <button className="btn primary" disabled={busy || !fresh.length} onClick={run}>{busy ? "Ekleniyor…" : `${fresh.length} kaydı ekle`}</button>
@@ -1620,8 +1707,28 @@ function Simkl() {
           <button className="link" onClick={() => setCode(null)}>Vazgeç</button>
         </div>
       ) : (
-        <button className="btn primary" disabled={busy} onClick={start}>{busy ? "Bağlanılıyor…" : "Simkl'a bağlan"}</button>
+        <div className="simkl-ways">
+          <div className="simkl-way">
+            <b>1. Yedek dosyasıyla</b>
+            <ol className="muted small">
+              <li><a className="grad" href="https://simkl.com/apps/backup/" target="_blank" rel="noreferrer">Simkl → Apps → Backup</a> sayfasını aç (giriş yapmış ol).</li>
+              <li>Yedeği indir (.zip; Pro hesapta .csv de olur).</li>
+              <li>İndirdiğin dosyayı buradan seç; zip&apos;i açmana gerek yok.</li>
+            </ol>
+            <label className="btn primary file-btn">{busy ? "Okunuyor…" : "Dosyayı seç"}
+              <input type="file" accept=".zip,.json,.csv" hidden disabled={busy} onChange={(e) => onFile(e.target.files?.[0])} />
+            </label>
+          </div>
+          {canConnect && (
+            <div className="simkl-way">
+              <b>2. Kodla bağlan</b>
+              <p className="muted small">Bir kod alırsın, Simkl sitesinde onaylarsın; listen kendiliğinden gelir.</p>
+              <button className="btn" disabled={busy} onClick={start}>{busy ? "Bağlanılıyor…" : "Simkl'a bağlan"}</button>
+            </div>
+          )}
+        </div>
       )}
+      {step && !items && <Progress done={step.done} total={step.total} label={step.label} />}
       {error && <p className="form-error">{error}</p>}
     </section>
   );

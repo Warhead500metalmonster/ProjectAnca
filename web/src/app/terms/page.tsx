@@ -216,7 +216,7 @@ export default function Terms() {
       <details className="help-q"><summary>Kurallar değişirse nereden öğrenirim?</summary>
         <p>Önemli değişiklikler <Link href="/community?tab=duyurular">Topluluk → Duyurular</Link>&apos;da ve sitenin üstündeki duyuru alanında yazılır. Bu sayfanın en üstünde son güncelleme tarihi var.</p></details>
       <details className="help-q"><summary>Sorumun cevabı burada yok.</summary>
-        <p><Link href="/chat/arno4436">Kurucuya yaz</Link>; takipleşmenize gerek yok. Cevabı sık sorulan bir şeyse buraya da eklenir.</p></details>
+        <p><Link href="/support">Ekibe yaz</Link>; takipleşmenize gerek yok. Cevabı sık sorulan bir şeyse buraya da eklenir.</p></details>
 
       <p className="muted"><Link href="/privacy">Gizlilik ve KVKK Aydınlatma Metni →</Link></p>
     </article>

@@ -36,7 +36,7 @@ export function fetchEntries(userId: string) {
 
 // ---------- Müzik: Apple Music (iTunes) araması; anahtar istemez ----------
 
-interface ItunesHit { collectionName?: string; trackName?: string; artistName: string; releaseDate?: string; artworkUrl100?: string }
+interface ItunesHit { collectionId?: number; trackId?: number; collectionName?: string; trackName?: string; artistName: string; releaseDate?: string; artworkUrl100?: string }
 
 // iTunes kapakları 100px gelir; adresteki boyutu değiştirince büyüğü verir
 export const bigArtwork = (url: string) => url.replace(/\/\d+x\d+bb\./, "/600x600bb.");
@@ -51,7 +51,7 @@ async function itunes(text: string, entity: string, limit: number): Promise<Itun
 // custom: aramadan değil elle / linkle girilen içerik; kaydedilince ortak kataloğa yazılır
 export interface Found extends Item { sub?: string; thumb?: string | null; raw?: RawgGame; custom?: boolean }
 
-interface DeezerHit { title: string; artist: { name: string }; cover_medium?: string; cover_xl?: string; album?: { title: string; cover_medium?: string; cover_xl?: string } }
+interface DeezerHit { id?: number; title: string; artist: { name: string }; cover_medium?: string; cover_xl?: string; album?: { title: string; cover_medium?: string; cover_xl?: string } }
 
 async function deezer(kind: "album" | "track", text: string, limit: number): Promise<DeezerHit[]> {
   const r = await fetch(`/api/deezer?${new URLSearchParams({ kind, q: text, limit: String(limit) })}`);
@@ -66,13 +66,16 @@ export async function searchMusic(text: string): Promise<Found[]> {
     itunes(text, "album", 4).catch(none), itunes(text, "song", 3).catch(none),
     deezer("album", text, 4).catch(none), deezer("track", text, 4).catch(none),
   ]);
+  // Kaynağın kendi numarası da gelir: içerik sayfasında nereden geldiği ve açıklaması bulunsun
   const map = (h: ItunesHit, title: string, kind: string): Found => ({
     type: "music", title, creator: h.artistName, year: parseInt(h.releaseDate || "") || null,
     cover: h.artworkUrl100 ? bigArtwork(h.artworkUrl100) : null, rawg_id: null,
+    ext_id: (kind === "Şarkı" ? h.trackId : h.collectionId) ? `itunes:${kind === "Şarkı" ? h.trackId : h.collectionId}` : null,
     sub: `${kind} · ${h.artistName}`, thumb: h.artworkUrl100 || null,
   });
   const dz = (h: DeezerHit, kind: string, cover?: string, thumb?: string): Found => ({
     type: "music", title: h.title, creator: h.artist.name, year: null, cover: cover || null, rawg_id: null,
+    ext_id: h.id ? `deezer:${kind === "Şarkı" ? "track" : "album"}:${h.id}` : null,
     sub: `${kind} · ${h.artist.name}`, thumb: thumb || null,
   });
   const all = [
@@ -164,17 +167,18 @@ export async function searchTmdb(type: "movie" | "show", text: string): Promise<
 }
 
 export interface TmdbDetail {
-  id: number; title?: string; name?: string; overview?: string; tagline?: string; runtime?: number; episode_run_time?: number[];
+  id: number; title?: string; name?: string; overview?: string; overview_lang?: string; tagline?: string; runtime?: number; episode_run_time?: number[];
   release_date?: string; first_air_date?: string; poster_path?: string | null; backdrop_path?: string | null; original_title?: string; original_name?: string;
   vote_average?: number; number_of_seasons?: number; number_of_episodes?: number;
+  seasons?: { season_number: number; episode_count: number; name?: string; air_date?: string | null }[];
   next_episode_to_air?: { air_date?: string; season_number: number; episode_number: number } | null; // dizinin bir sonraki bölümü
   genres?: { name: string }[]; created_by?: { name: string }[]; networks?: { name: string }[];
   credits?: { crew?: { job: string; name: string }[]; cast?: { name: string; character?: string }[] };
 }
 
-export const tmdbDetail = (extId: string) => {
+export const tmdbDetail = (extId: string, lang?: "tr" | "en") => {
   const [, kind, id] = extId.split(":");
-  return tmdb<TmdbDetail>(`${kind}/${id}`, { append_to_response: "credits" });
+  return tmdb<TmdbDetail>(`${kind}/${id}`, { append_to_response: "credits", ...(lang === "en" && { lang: "en" }) });
 };
 export const tmdbCreator = (d: TmdbDetail) =>
   (d.credits?.crew || []).filter((c) => c.job === "Director").map((c) => c.name).slice(0, 2).join(", ")
@@ -184,7 +188,7 @@ export const tmdbCreator = (d: TmdbDetail) =>
 // ---------- Anime: AniList (anahtar istemez) ----------
 
 interface AniMedia {
-  id: number; title: { romaji?: string; english?: string }; startDate?: { year?: number };
+  id: number; title: { romaji?: string; english?: string; native?: string }; startDate?: { year?: number };
   coverImage?: { large?: string; medium?: string }; studios?: { nodes: { name: string }[] }; episodes?: number;
 }
 
@@ -200,14 +204,14 @@ export async function anilist<T>(query: string, variables: Record<string, unknow
 export async function searchAnime(text: string): Promise<Found[]> {
   const data = await anilist<{ Page: { media: AniMedia[] } }>(
     `query ($s: String) { Page(perPage: 7) { media(search: $s, type: ANIME, sort: SEARCH_MATCH) {
-      id title { romaji english } startDate { year } coverImage { large medium } studios(isMain: true) { nodes { name } } episodes } } }`,
+      id title { romaji english native } startDate { year } coverImage { large medium } studios(isMain: true) { nodes { name } } episodes } } }`,
     { s: text });
   return data.Page.media.map((m) => {
     const title = m.title.english || m.title.romaji || "";
     return {
       type: "anime", title, year: m.startDate?.year || null, creator: m.studios?.nodes[0]?.name || null,
       cover: m.coverImage?.large || null, rawg_id: null, ext_id: `anilist:${m.id}`,
-      sub: [m.title.romaji !== title ? m.title.romaji : "", m.episodes ? `${m.episodes} bölüm` : ""].filter(Boolean).join(" · ") || undefined,
+      sub: [m.title.romaji !== title ? m.title.romaji : "", m.title.native, m.episodes ? `${m.episodes} bölüm` : ""].filter(Boolean).join(" · ") || undefined,
       thumb: m.coverImage?.medium || null,
     };
   });
@@ -275,6 +279,26 @@ export async function findContent(type: EntryType, text: string): Promise<Found[
   const seen = new Set(ours.map((f) => `${norm(f.title)}|${norm(f.creator)}`));
   return [...ours, ...theirs.filter((f) => !seen.has(`${norm(f.title)}|${norm(f.creator)}`))].slice(0, 12);
 }
+// Dizi ve anime birlikte (Ayarlar'da seçen için): TMDB ve AniList aynı anda aranır; Japonca, İngilizce, Türkçe adla bulunur.
+// Seçilen sonucun türü kaynağından gelir (AniList → anime, TMDB → dizi), veritabanında türler ayrı kalır.
+export async function findShowOrAnime(text: string): Promise<Found[]> {
+  const [shows, animes] = await Promise.all([findContent("show", text).catch(() => [] as Found[]), findContent("anime", text).catch(() => [] as Found[])]);
+  const out: Found[] = [];
+  for (let i = 0; out.length < 14 && (i < shows.length || i < animes.length); i++) {
+    if (animes[i]) out.push({ ...animes[i], sub: ["Anime", animes[i].sub].filter(Boolean).join(" · ") });
+    if (shows[i]) out.push({ ...shows[i], sub: ["Dizi", shows[i].sub].filter(Boolean).join(" · ") });
+  }
+  return out;
+}
+
+// Sadece dış kaynakta ara (ortak katalog hariç): elle eklenen içeriği gerçek karşılığına bağlarken
+export async function searchSource(type: EntryType, text: string): Promise<Found[]> {
+  if (type === "game") return searchGames(text, 12);
+  if (type === "music") return searchMusic(text);
+  if (type === "anime") return searchAnime(text);
+  return searchTmdb(type, text);
+}
+
 export const SEARCH_CREDITS: Record<EntryType, [string, string]> = {
   game: ["IGDB", "https://www.igdb.com"],
   music: ["Apple Music · Deezer", "https://www.deezer.com"],

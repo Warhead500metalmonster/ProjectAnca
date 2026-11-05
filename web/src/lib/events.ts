@@ -14,6 +14,7 @@ export interface AncEvent {
   id: string; title: string; description: string | null; cover: string | null; kind: EntryType;
   options: EventOption[]; starts_on: string; ends_on: string | null; created_at: string;
   badge_name?: string | null; badge_icon?: string | null; // bitirenlere verilen, bu etkinliğe özel rozet
+  first_user?: string | null; // İlk bitiren rozetini alan (yönetim değiştirebilir); null: henüz yok, ilk bitiren alır
 }
 // Etkinliğe özel rozetin anahtarı (user_badges.badge): ev_ + etkinlik kimliğinin ilk 8 harfi
 export const eventBadgeKey = (id: string) => `ev_${id.slice(0, 8)}`;
@@ -21,6 +22,17 @@ export type MemberStatus = "joined" | "playing" | "done";
 export interface EventMember {
   event_id: string; user_id: string; choice: string | null; status: MemberStatus; note: string | null;
   joined_at: string; updated_at: string; finished_at: string | null; profiles?: ProfileLite | null;
+  no_first?: boolean; // yönetim kararıyla ilk bitiren sayılmaz
+}
+
+// Bitirenlerin sırası: İlk bitiren (rozetin sahibi) en üstte, sonra bitirme zamanına göre; yönetimin saymadıkları sonda ve sırasız.
+// Veritabanı güncellenmediyse (first_user yok) eskisi gibi en erken bitiren ilk sayılır.
+export function finishOrder(ev: Pick<AncEvent, "first_user">, members: EventMember[]) {
+  const done = members.filter((m) => m.status === "done").sort((a, b) => (a.finished_at || "").localeCompare(b.finished_at || ""));
+  if (ev.first_user === undefined) return { ranked: done, unranked: [] as EventMember[], first: done[0] || null };
+  const first = done.find((m) => m.user_id === ev.first_user) || null;
+  const ranked = [...(first ? [first] : []), ...done.filter((m) => m !== first && !m.no_first)];
+  return { ranked, unranked: done.filter((m) => m !== first && m.no_first), first };
 }
 
 // Türe göre fiiller: oyunda "oynuyorum", film/dizi/animede "izliyorum", müzikte "dinliyorum"

@@ -9,6 +9,7 @@ import { PROFILE_COLS, TYPES, statusLabel } from "@/lib/constants";
 import { contentHref, cssUrl, daysTaken, fmtDate, fmtDur, itemOf, num, playSec, safeUrl, scoreText, timeAgo, wideImage } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
 import { Avatar, Name, Rating, RichText, epText } from "./ui";
+import { Reactions } from "./Reactions";
 import { useApp } from "./AppProvider";
 
 // Bir kaydın ayrıntılarını, beğeni ve yorumlarını gösteren pencere
@@ -196,6 +197,7 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
                   {c.reply_to && (() => { const pc = comments.find((x) => x.id === c.reply_to); return <ReplyQuote parent={pc && { id: pc.id, user_id: pc.user_id, body: pc.body }} name={pc?.profiles?.display_name || pc?.profiles?.username} />; })()}
                   <ChatBody text={c.body} />
                   {me && <button type="button" className="link reply-btn" onClick={() => { setReplyTo({ id: c.id, name: c.profiles?.display_name || c.profiles?.username || "Bu kişi", body: c.body }); document.getElementById("comment-input")?.focus(); }}>Yanıtla</button>}
+                  <Reactions kind="comment" id={c.id} />
                 </div>
               </div>
             ))}

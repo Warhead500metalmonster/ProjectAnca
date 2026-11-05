@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { type AncEvent, type EventMember, type EventOption, type MemberStatus, addToLibrary, dateLine, eventBadgeKey, eventState, fetchEvent, kindOf, libraryEntry, statusText, verbs } from "@/lib/events";
+import { type AncEvent, type EventMember, type EventOption, type MemberStatus, addToLibrary, dateLine, eventBadgeKey, eventState, fetchEvent, finishOrder, kindOf, libraryEntry, statusText, verbs } from "@/lib/events";
 import { BADGES, PROFILE_COLS, TYPES } from "@/lib/constants";
 import { cssUrl, safeUrl, timeAgo, today, wideImage } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
@@ -14,6 +14,7 @@ import { useApp } from "@/components/AppProvider";
 import { ChatBody, DraftPhotos, PhotoAdd, ReplyQuote, ReplyingTo, withPhoto, type ReplyTarget } from "@/components/ChatBody";
 import { Avatar, Name, RichText } from "@/components/ui";
 import { EventForm } from "@/components/EventForm";
+import { Reactions } from "@/components/Reactions";
 import { friendsLine } from "@/components/EventBanner";
 
 const STATUSES: MemberStatus[] = ["joined", "playing", "done"];
@@ -249,8 +250,9 @@ function MyPanel({ ev, my, members, onChange }: { ev: AncEvent; my: EventMember;
       // Kütüphanedeki kaydı da güncel tut
       if (entry && s === "done" && entry.status !== "completed") await sb().from("entries").update({ status: "completed", date: today(), updated_at: now }).eq("id", entry.id);
       if (entry && s === "playing" && entry.status === "planned") await sb().from("entries").update({ status: "active", started_on: entry.started_on || today(), updated_at: now }).eq("id", entry.id);
-      const rank = members.filter((m) => m.status === "done").length + 1;
-      toast(s === "done" ? `Tebrikler! Bitiren ${rank}. kişisin.${entry && entry.status !== "completed" ? " Kütüphanende de Bitti yapıldı." : ""}` : s === "playing" ? verbs(kindOf(ev, my.choice)).cheer : "Tamam");
+      const rank = finishOrder(ev, members).ranked.length + 1;
+      const firstNow = ev.first_user === null || (ev.first_user === undefined && rank === 1); // ilk bitiren henüz yoksa rozet bu kişiye gider
+      toast(s === "done" ? `Tebrikler! ${firstNow ? "İlk bitiren sensin, İlk bitiren rozeti senin." : `Bitiren ${rank}. kişisin.`}${entry && entry.status !== "completed" ? " Kütüphanende de Bitti yapıldı." : ""}` : s === "playing" ? verbs(kindOf(ev, my.choice)).cheer : "Tamam");
       onChange();
     } catch (err) {
       toast("Olmadı: " + (err as Error).message);
@@ -300,7 +302,21 @@ function MyPanel({ ev, my, members, onChange }: { ev: AncEvent; my: EventMember;
 
 // Katılımcılar: bitirenler sırasıyla üstte, sonra oynayanlar, sonra katılanlar
 function People({ ev, members }: { ev: AncEvent; members: EventMember[] }) {
-  const { isAdmin, toast, refresh } = useApp();
+  const { isAdmin, toast, refresh, loadBadges } = useApp();
+  // Yönetici: İlk bitiren rozetini başkasına verir ya da birini ilk bitiren saymaz (rozet sıradakine geçer)
+  async function setFirst(m: EventMember, mode: string) {
+    if (!mode) return;
+    const who = m.profiles?.display_name || m.profiles?.username || "Bu kişi";
+    const text = mode === "give" ? `${who} bu etkinliğin İlk bitireni olsun mu? Rozet ona geçer, öncekinden alınır.`
+      : mode === "revoke" ? `${who} ilk bitiren sayılmasın mı? Rozeti alınır; ondan sonra bitiren varsa ona geçer, yoksa ilk bitirdim diyen alır.`
+      : `${who} yeniden sıralamaya girsin mi? (Rozet kendiliğinden geri gelmez; istersen sonra İlk bitiren yap.)`;
+    if (!confirm(text)) return;
+    const { error } = await sb().rpc("admin_event_first", { p_event: ev.id, p_user: m.user_id, p_mode: mode });
+    if (error) return toast("Olmadı: " + error.message);
+    toast(mode === "give" ? `${who} artık İlk bitiren` : mode === "revoke" ? "Rozet geri alındı, sıradakine geçti" : "Tamam");
+    refresh();
+    loadBadges();
+  }
   // Yönetici birini etkinlikten çıkarabilir (bitmiş etkinlikte de); kazandığı rozetler yerinde kalır, istenirse Yönetim'den alınır
   async function remove(m: EventMember) {
     const who = m.profiles?.display_name || m.profiles?.username || "Bu kişi";
@@ -314,22 +330,33 @@ function People({ ev, members }: { ev: AncEvent; members: EventMember[] }) {
     }
   }
   if (!members.length) return null;
-  const done = members.filter((m) => m.status === "done").sort((a, b) => (a.finished_at || "").localeCompare(b.finished_at || ""));
+  const { ranked, unranked, first } = finishOrder(ev, members);
+  const done = [...ranked, ...unranked];
   const rest = members.filter((m) => m.status !== "done").sort((a, b) => (a.status === "playing" ? -1 : 0) - (b.status === "playing" ? -1 : 0) || b.updated_at.localeCompare(a.updated_at));
   const pct = Math.round((done.length / members.length) * 100);
   const label = (m: EventMember) => ev.options.find((o) => o.id === m.choice)?.label;
   const row = (m: EventMember, rank?: number) => (
     <div key={m.user_id} className={`ev-person ${m.status}`}>
-      {rank ? <span className="ev-rank">{rank}.</span> : null}
+      {rank ? <span className="ev-rank">{rank}.</span> : m.status === "done" ? <span className="ev-rank">–</span> : null}
       <Link href={`/u/${m.profiles?.username}`} className="ev-person-who"><Avatar p={m.profiles} /><Name p={m.profiles} /></Link>
       <div className="ev-person-mid">
         <div className="ev-person-tags">
           <span className={`ev-pill ${m.status}`}>{statusText(m.status, kindOf(ev, m.choice))}</span>
+          {first?.user_id === m.user_id && <span className="ev-pill first">{BADGES.event_first.icon} İlk bitiren</span>}
+          {m.status === "done" && unranked.includes(m) && <span className="ev-pill muted-pill" title="Yönetim kararıyla ilk bitiren sıralamasına girmedi">Sıralama dışı</span>}
           {label(m) && <span className="ev-pill ver">{label(m)}</span>}
         </div>
         {m.note && <p className="ev-person-note">“{m.note}”</p>}
       </div>
       <span className="muted small ev-person-time">{timeAgo(m.status === "done" && m.finished_at ? m.finished_at : m.updated_at)}</span>
+      {isAdmin && m.status === "done" && (
+        <select className="btn small ghost ev-kick" value="" aria-label="İlk bitiren ayarı" onChange={(e) => setFirst(m, e.target.value)}>
+          <option value="" disabled>İlk bitiren…</option>
+          {first?.user_id !== m.user_id && <option value="give">İlk bitiren yap</option>}
+          {!unranked.includes(m) && <option value="revoke">İlk bitiren sayma (rozeti al)</option>}
+          {unranked.includes(m) && <option value="restore">Sıralamaya geri al</option>}
+        </select>
+      )}
       {isAdmin && <button type="button" className="btn small ghost ev-kick" onClick={() => remove(m)} title="Bu kişiyi etkinlikten çıkar">Çıkar</button>}
     </div>
   );
@@ -337,7 +364,7 @@ function People({ ev, members }: { ev: AncEvent; members: EventMember[] }) {
     <section className="section">
       <div className="section-head"><h2>Katılanlar</h2><span className="muted small">{members.length} kişi</span></div>
       <div className="ev-bar"><i style={{ width: `${pct}%` }} /><span>{done.length} / {members.length} kişi bitirdi</span></div>
-      {done.length > 0 && <div className="ev-people"><h3>Bitirenler</h3>{done.map((m, i) => row(m, i + 1))}</div>}
+      {done.length > 0 && <div className="ev-people"><h3>Bitirenler</h3>{ranked.map((m, i) => row(m, i + 1))}{unranked.map((m) => row(m))}</div>}
       {rest.length > 0 && <div className="ev-people">{done.length > 0 && <h3>Yoldakiler</h3>}{rest.map((m) => row(m))}</div>}
     </section>
   );
@@ -424,7 +451,10 @@ function EventChat({ ev, joined, closed }: { ev: AncEvent; joined: boolean; clos
                         <ChatBody text={x.body} image={x.image} />
                       </>
                     )}
-                  {me && !closed && <button className="link reply-btn" onClick={() => { setReplyTo({ id: x.id, name: x.profiles?.display_name || x.profiles?.username || "Bu kişi", body: x.spoiler ? "Spoiler" : x.body, image: x.image }); document.getElementById("event-input")?.focus(); }}>Yanıtla</button>}
+                  <div className="post-tools">
+                    {me && !closed && <button className="link reply-btn" onClick={() => { setReplyTo({ id: x.id, name: x.profiles?.display_name || x.profiles?.username || "Bu kişi", body: x.spoiler ? "Spoiler" : x.body, image: x.image }); document.getElementById("event-input")?.focus(); }}>Yanıtla</button>}
+                    <Reactions kind="event_post" id={x.id} />
+                  </div>
                 </div>
               </div>
             );
@@ -471,12 +501,12 @@ function HowTo({ kind }: { kind: AncEvent["kind"] | null }) {
 
 // Arşiv: biten etkinliğin sonuçları
 function Results({ ev, members, my }: { ev: AncEvent; members: EventMember[]; my?: EventMember }) {
-  const done = members.filter((m) => m.status === "done").sort((a, b) => (a.finished_at || "").localeCompare(b.finished_at || ""));
-  const first = done[0];
+  const { ranked, unranked, first } = finishOrder(ev, members);
+  const done = [...ranked, ...unranked];
   const byVersion = ev.options.map((o) => ({ o, n: members.filter((m) => m.choice === o.id).length, d: members.filter((m) => m.choice === o.id && m.status === "done").length }));
   const top = [...byVersion].sort((a, b) => b.n - a.n)[0];
   const rate = members.length ? Math.round((done.length / members.length) * 100) : 0;
-  const myRank = my ? done.findIndex((m) => m.user_id === my.user_id) + 1 : 0;
+  const myRank = my ? ranked.findIndex((m) => m.user_id === my.user_id) + 1 : 0;
   return (
     <section className="section ev-results">
       <div className="section-head"><h2>Sonuçlar</h2></div>
@@ -492,7 +522,7 @@ function Results({ ev, members, my }: { ev: AncEvent; members: EventMember[]; my
           <span>İlk bitiren: <Link href={`/u/${first.profiles?.username}`}><b><Name p={first.profiles} /></b></Link></span>
         </div>
       )}
-      {my && <p className="muted">Sen: {my.status === "done" ? `bitirdin, ${myRank}. sıradasın. Helal olsun!` : "bu etkinliği yarıda bıraktın; bir dahakine!"}</p>}
+      {my && <p className="muted">Sen: {my.status === "done" ? (myRank ? `bitirdin, ${myRank}. sıradasın. Helal olsun!` : "bitirdin. Helal olsun!") : "bu etkinliği yarıda bıraktın; bir dahakine!"}</p>}
       {byVersion.length > 1 && (
         <div className="ev-res-versions">
           {byVersion.filter((v) => v.n > 0 || byVersion.length <= 8).map(({ o, n, d }) => (
@@ -512,10 +542,11 @@ function Results({ ev, members, my }: { ev: AncEvent; members: EventMember[]; my
 function Spotlight({ ev, m, members, self }: { ev: AncEvent; m: EventMember; members: EventMember[]; self: boolean }) {
   const { badges } = useApp();
   const opt = ev.options.find((o) => o.id === m.choice);
-  const done = members.filter((x) => x.status === "done").sort((a, b) => (a.finished_at || "").localeCompare(b.finished_at || ""));
-  const rank = done.findIndex((x) => x.user_id === m.user_id) + 1;
+  const { ranked, first } = finishOrder(ev, members);
+  const rank = ranked.findIndex((x) => x.user_id === m.user_id) + 1;
+  const isFirst = first?.user_id === m.user_id;
   const has = badges.get(m.user_id) || [];
-  const earned = ["event_join", "event", ...(ev.badge_name ? [eventBadgeKey(ev.id)] : []), ...(rank === 1 ? ["event_first"] : [])]
+  const earned = ["event_join", "event", ...(ev.badge_name ? [eventBadgeKey(ev.id)] : []), ...(isFirst ? ["event_first"] : [])]
     .filter((b) => has.includes(b) && BADGES[b] && (b !== "event" || m.status === "done"));
   const fmt = (d: string) => new Date(d).toLocaleDateString("tr", { day: "numeric", month: "long", year: "numeric" });
   const name = m.profiles?.display_name || m.profiles?.username || "";
@@ -528,7 +559,7 @@ function Spotlight({ ev, m, members, self }: { ev: AncEvent; m: EventMember; mem
           <Link href={`/u/${m.profiles?.username}`}><Avatar p={m.profiles} cls="lg" /></Link>
           <div>
             <span className="ev-kicker"><span>{self ? "Senin sonucun" : `${name} bu etkinlikte`}</span></span>
-            <h2>{m.status === "done" ? (rank === 1 ? "İlk bitiren oldu!" : `${rank}. bitiren`) : statusText(m.status, kind)}</h2>
+            <h2>{m.status === "done" ? (isFirst ? "İlk bitiren oldu!" : rank ? `${rank}. bitiren` : "Bitirdi") : statusText(m.status, kind)}</h2>
             <p className="muted">
               {opt ? <>{opt.label}{opt.sub ? ` · ${opt.sub}` : ""}</> : "Sürüm seçmedi"}
               {m.status === "done" && m.finished_at ? ` · ${fmt(m.finished_at)} tarihinde bitirdi` : ` · ${fmt(m.joined_at)} tarihinde katıldı`}

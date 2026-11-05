@@ -134,9 +134,13 @@ export default function GamePage() {
       <div className="game-body">
         <aside className="facts">
           {facts.map(([k, v]) => <div key={k}><span>{k}</span><b>{v}</b></div>)}
-          <span className="muted" style={{ fontSize: 12 }}>
-            Oyun bilgileri: <a href={g?.slug ? `https://www.igdb.com/games/${g.slug}` : "https://www.igdb.com"} target="_blank" rel="noopener" style={{ color: "var(--accent-2)" }}>IGDB</a>
-          </span>
+          {/* Bu sayfanın bilgileri nereden geliyor */}
+          <div className="source-line">
+            <span>Kaynak</span>
+            {g ? <b>Bilgiler: <a href={g.slug ? `https://www.igdb.com/games/${g.slug}` : "https://www.igdb.com"} target="_blank" rel="noopener">IGDB</a></b>
+              : <b>Bu oyun yeni kaynakta (IGDB) bir sayfaya bağlı değil; bilgiler kayıtlardan.</b>}
+            {!g && mine && <Link className="small" href="/fix">Gerçek sayfasına bağla →</Link>}
+          </div>
         </aside>
         <div>
           {shots.length > 0 && (

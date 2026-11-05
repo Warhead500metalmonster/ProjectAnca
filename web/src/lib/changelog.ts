@@ -5,6 +5,16 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-11-05T14:25:00+04:00",
+    title: "Büyük güncelleme",
+    body: "Yazı yazılabilen her yerde (yorumlar, mesajlar, forum, etkinlik sohbeti) artık beğeni ve emoji tepkisi var. Profillere Steam'deki gibi yorum yazılabiliyor; sahibi isterse kapatır ya da sadece arkadaşlarına açar. Bize yaz artık bütün ekibin gördüğü ortak bir sohbet. Dizi ve animelerde gerçek sezon ve bölüm sayısı geliyor, 5 sezonluk dizi 15. sezon diye loglanamıyor. Ayarlar → Dil ve içerik'ten dizi ile animeyi birlikte ya da ayrı görebilir, film, dizi ve anime adlarını ve kapaklarını istediğin dilde seçebilirsin. İçerik sayfalarında bilgilerin nereden geldiği yazıyor, albümlerin açıklaması ve şarkı listesi geldi. Keşfet sağ üstteki büyüteçte. Bir içeriğe gidip geri gelince kütüphane kaldığın yerden açılıyor.",
+  },
+  {
+    date: "2026-11-05T14:20:00+04:00",
+    title: "Sayfasız kayıtlarını bağla",
+    body: "Oyun bilgilerimiz yeni kaynağa taşınınca bazı eski kayıtların sayfası eşleşmemişti. Artık bunları Sayfasız kayıtlarım'da görüp her birini bir dokunuşla gerçek sayfasına bağlayabilirsin; puanın ve notun değişmez. Simkl'dan içe aktarma yedek dosyasıyla da çalışıyor; Backloggd düğmesi artık durumları (Bitirdi, Rafa kaldırdı, Bıraktı), beğenileri ve incelemeleri de getiriyor ve oyunları birebir eşleştiriyor.",
+  },
+  {
     date: "2026-11-01T21:57:19+04:00",
     title: "Kapaklar nefes aldı",
     body: "Kapakların üstündeki etiketler kalktı, durum ve puan kapağın altına indi. İncelemeler kendi büyük kartına kavuştu, listeler kapak destesi gibi görünüyor, oyun sayfasındaki puan grafiği düzeldi, sayfalar yüklenirken düz yazı yerine hareketli alan görünüyor.",

@@ -10,6 +10,7 @@ import { fetchEntries } from "@/lib/data";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
 import { Avatar } from "@/components/ui";
+import { PrefsPanel } from "@/components/PrefsPanel";
 import { AvatarCropper } from "@/components/AvatarCropper";
 import { youtubeId } from "@/components/ProfileSong";
 import { DEFAULT_COLOR, applyTheme } from "@/lib/theme";
@@ -49,6 +50,7 @@ const SET_TABS = [
   ["profil", "Profil", "Ad, fotoğraf, bağlantılar"],
   ["gorunum", "Görünüm", "Tema, kapak, arka plan, şarkı"],
   ["gizlilik", "Gizlilik", "Kimler ne görsün"],
+  ["dil", "Dil ve içerik", "Adlar, kapaklar, dizi-anime"],
   ["hesap", "Hesap", "Puan, bildirim, verilerin"],
 ] as const;
 type SetTab = (typeof SET_TABS)[number][0];
@@ -355,6 +357,10 @@ function SettingsForm({ me }: { me: Profile }) {
       <label className="check"><input type="checkbox" checked={showEvents} onChange={(e) => setShowEvents(e.target.checked)} /> Katıldığım etkinlikler profilimde görünsün</label>
       </div>
 
+      <div className="set-pane" hidden={tab !== "dil"}>
+        <PrefsPanel />
+      </div>
+
       <div className="set-pane" hidden={tab !== "hesap"}>
       <h3 className="set-h">Puan ölçeği</h3>
       <div className="scale-pick">
@@ -374,7 +380,7 @@ function SettingsForm({ me }: { me: Profile }) {
         <div className="actions"><span className="spacer" /><button type="button" className="btn danger" onClick={() => sb().auth.signOut()}>Çıkış yap</button></div>
       </div>
 
-      <div className="set-save">
+      <div className="set-save" hidden={tab === "dil"}>
         {error ? <p className="form-error">{error}</p> : <span className="muted small">Değişiklikler kaydedince profiline yansır.</span>}
         <span className="spacer" />
         <Link className="btn ghost" href={`/u/${me.username}`} onClick={(e) => { if (dirty.current && !confirm("Değişikliklerin kaydedilmedi. Yine de çıkmak istiyor musun?")) e.preventDefault(); }}>Vazgeç</Link>

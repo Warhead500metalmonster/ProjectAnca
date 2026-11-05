@@ -25,6 +25,8 @@ export interface Profile {
   avatar_crop?: AvatarCrop | null; // profil fotoğrafının görünen kısmı
   hidden_types?: EntryType[] | null; // başkalarına profilde gösterilmeyen türler
   privacy?: "public" | "friends" | "private" | null; // profil gizliliği (Steam gibi)
+  comments_mode?: "all" | "friends" | "off" | null; // profil yorumlarını kimler yazabilir
+  prefs?: Prefs | null; // görünüm tercihleri: dil, kapak, dizi-anime birlikte
   created_at: string;
 }
 
@@ -45,6 +47,17 @@ export interface HomeLayout {
 
 // x, y: odak noktası (yüzde), z: yakınlaştırma (1 = hiç)
 export interface AvatarCrop { x: number; y: number; z: number }
+
+// Görünüm tercihleri (Ayarlar → Görünüm). titles/covers: tür başına ad ve kapak dili
+// tr: Türkçe, en: İngilizce, orig: orijinal (Japonca vb.), romaji: Japonca okunuşu Latin harfle
+export type TitleLang = "default" | "tr" | "en" | "orig" | "romaji";
+export interface Prefs {
+  merge?: boolean;                              // dizi ve anime tek sekmede
+  asked?: boolean;                              // ilk girişteki soru soruldu
+  lang?: "tr" | "en";                           // açıklamalar hangi dilde
+  titles?: Partial<Record<EntryType, TitleLang>>;
+  covers?: Partial<Record<EntryType, TitleLang>>;
+}
 
 export type ProfileLite = Pick<Profile, "id" | "username" | "display_name" | "avatar_url">;
 

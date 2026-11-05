@@ -7,7 +7,7 @@ import type { Entry, EntryType, FormGame, Item, RawgGame } from "@/lib/types";
 import { STATUSES, STORES, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
 import { contentKey, fmtDate, itemOf, safeUrl, scoreText, today, cleanTag } from "@/lib/format";
 import { gameFromRawg, rawg } from "@/lib/rawg";
-import { type Found, addCatalog, findContent, isLink, searchCredit, tmdbCreator, tmdbDetail } from "@/lib/data";
+import { type Found, addCatalog, aniDetail, findContent, findShowOrAnime, isLink, searchCredit, tmdbCreator, tmdbDetail } from "@/lib/data";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "./AppProvider";
 import { HmsInput } from "./ui";
@@ -59,10 +59,37 @@ export function EntryForm({ entry, game, type: initialType, item, replay: asRepl
   const [suggestNote, setSuggestNote] = useState("");
   const [searching, setSearching] = useState(false);
   const [more, setMore] = useState(() => !!(entry?.store || entry?.emulated || entry?.dlc || playtime || progressSec || started || note || tags.length));
+  // Dizi ve animede gerçek sezon / bölüm sayısı (TMDB, AniList): 5 sezonluk bir dizi 15. sezon diye loglanmasın
+  const [limits, setLimits] = useState<{ seasons?: Map<number, number>; episodes?: number } | null>(null);
+  const autoTotal = useRef(!entry?.episodes_total); // toplamı kişi elle yazmadıysa sezona göre kendiliğinden dolar
 
   const t = TYPES[type];
   const isGame = type === "game";
   const episodic = type === "show" || type === "anime";
+  const { prefs } = useApp();
+  const merged = !!prefs.merge && episodic; // dizi ve anime tek yerde aranır (Ayarlar → Görünüm)
+  const maxSeason = limits?.seasons?.size ? Math.max(...limits.seasons.keys()) : null;
+  const seasonEps = type === "show" ? limits?.seasons?.get(parseInt(season) || 1) ?? null : limits?.episodes ?? null;
+
+  useEffect(() => {
+    let stale = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- içerik değişince eski sınır kalkar
+    setLimits(null);
+    if (type === "show" && extId?.startsWith("tmdb:tv:")) {
+      tmdbDetail(extId).then((d) => {
+        if (stale) return;
+        const seasons = new Map((d.seasons || []).filter((s) => s.season_number > 0 && s.episode_count > 0).map((s) => [s.season_number, s.episode_count]));
+        setLimits({ seasons });
+      }).catch(() => {});
+    } else if (type === "anime" && extId?.startsWith("anilist:")) {
+      aniDetail(extId).then((m) => { if (!stale && m.episodes) setLimits({ episodes: m.episodes }); }).catch(() => {});
+    }
+    return () => { stale = true; };
+  }, [type, extId]);
+  // Sezon değişince (ya da bilgi gelince) toplam bölüm o sezonunkine göre dolar
+  useEffect(() => {
+    if (seasonEps && autoTotal.current) setEpTotal(String(seasonEps));
+  }, [seasonEps]);
   const did = isGame ? "oynadım" : type === "music" ? "dinledim" : "izledim";
   // Bu içeriğin başka bir logu var mı? Varsa yenisi ayrı bir sefer: Replay
   const nowKey = contentKey({ type, title: isGame ? picked?.title || "" : title.trim(), rawg_id: isGame ? picked?.rawg_id ?? null : null });
@@ -115,7 +142,7 @@ export function EntryForm({ entry, game, type: initialType, item, replay: asRepl
   async function search(text: string) {
     const seq = ++searchSeq.current;
     try {
-      const list = await findContent(type, text);
+      const list = merged ? await findShowOrAnime(text) : await findContent(type, text);
       if (seq !== searchSeq.current) return;
       setSearching(false);
       setSuggestions(list);
@@ -138,7 +165,8 @@ export function EntryForm({ entry, game, type: initialType, item, replay: asRepl
       loadGameOptions(f.raw.id); // arama sonucunda geliştirici yok, detaydan gelir
       return;
     }
-    // Diğer türlerde seçim sadece kutuları doldurur
+    // Diğer türlerde seçim sadece kutuları doldurur; dizi-anime birlikte aranınca tür seçilen sonuca göre değişir
+    if (f.type !== type) setType(f.type);
     setTitle(f.title);
     setCreator(f.creator || "");
     setYear(f.year ? String(f.year) : "");
@@ -182,6 +210,8 @@ export function EntryForm({ entry, game, type: initialType, item, replay: asRepl
     // Bitti işaretlenip tarih girilmediyse bugünü yaz (yıllık istatistik için)
     const finished = date || (status === "completed" ? today() : null);
     if (startedOn && finished && startedOn > finished) return setError("Başlama tarihi bitirme tarihinden sonra olamaz.");
+    if (type === "show" && maxSeason && (parseInt(season) || 0) > maxSeason) return setError(`Bu dizinin ${maxSeason} sezonu var; en fazla ${maxSeason}. sezonu loglayabilirsin.`);
+    if (episodic && seasonEps && (parseInt(episode) || 0) > seasonEps) return setError(`${type === "show" ? "Bu sezonda" : "Bu animede"} ${seasonEps} bölüm var; en fazla ${seasonEps}. bölümü yazabilirsin.`);
     if (hasOther && !replay && (!entry || contentKey(entry) !== nowKey)) {
       setReplay(true);
       return setError("Bu zaten kütüphanende var. Ayrı bir log olsun diye Replay'i işaretledim, onaylıyorsan Kaydet'e bir kez daha bas.");
@@ -287,8 +317,10 @@ export function EntryForm({ entry, game, type: initialType, item, replay: asRepl
         <div className="field">
           <label>Tür</label>
           <div className="type-picker">
-            {TYPE_KEYS.map((k) => (
-              <button type="button" key={k} className={type === k ? "active" : ""} onClick={() => changeType(k)}>{TYPES[k].label}</button>
+            {TYPE_KEYS.filter((k) => !(prefs.merge && k === "anime")).map((k) => (
+              <button type="button" key={k} className={type === k || (prefs.merge && k === "show" && type === "anime") ? "active" : ""} onClick={() => changeType(k)}>
+                {prefs.merge && k === "show" ? "Dizi / Anime" : TYPES[k].label}
+              </button>
             ))}
           </div>
         </div>
@@ -302,7 +334,7 @@ export function EntryForm({ entry, game, type: initialType, item, replay: asRepl
             </div>
           ) : (
             <input id="f-title" maxLength={200} autoComplete="off" autoFocus value={title}
-              placeholder={isGame ? "Oyunun adını yaz ve listeden seç…" : type === "music" ? "Albüm / şarkı ara ya da YouTube, Spotify linki yapıştır…" : `${t.label} ara, listeden seç ya da elle yaz…`}
+              placeholder={isGame ? "Oyunun adını yaz ve listeden seç…" : type === "music" ? "Albüm / şarkı ara ya da YouTube, Spotify linki yapıştır…" : merged ? "Dizi ya da anime ara (Türkçe, İngilizce ya da Japonca adıyla)…" : type === "anime" ? "Anime ara (İngilizce ya da Japonca adıyla)…" : `${t.label} ara, listeden seç ya da elle yaz…`}
               onChange={(e) => onTitleChange(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "ArrowDown") { e.preventDefault(); (e.currentTarget.parentElement?.querySelector(".suggest button") as HTMLElement | null)?.focus(); }
@@ -356,22 +388,31 @@ export function EntryForm({ entry, game, type: initialType, item, replay: asRepl
             {type === "show" && (
               <div className="field small">
                 <label htmlFor="f-season">Sezon</label>
-                <input id="f-season" type="number" min={0} max={1000} inputMode="numeric" value={season} onChange={(e) => setSeason(e.target.value)} />
+                <input id="f-season" type="number" min={1} max={maxSeason || 1000} inputMode="numeric" value={season} placeholder={maxSeason ? `1–${maxSeason}` : ""}
+                  onChange={(e) => setSeason(maxSeason && Number(e.target.value) > maxSeason ? String(maxSeason) : e.target.value)} />
               </div>
             )}
             <div className="field">
               <label htmlFor="f-ep">Bölüm</label>
               <div className="ep-input">
-                <input id="f-ep" type="number" min={0} max={100000} inputMode="numeric" value={episode} onChange={(e) => setEpisode(e.target.value)} />
-                <button type="button" className="btn" title="Bir sonraki bölüm" onClick={() => setEpisode(String((parseInt(episode) || 0) + 1))}>+1</button>
+                <input id="f-ep" type="number" min={0} max={seasonEps || 100000} inputMode="numeric" value={episode}
+                  onChange={(e) => setEpisode(seasonEps && Number(e.target.value) > seasonEps ? String(seasonEps) : e.target.value)} />
+                <button type="button" className="btn" title="Bir sonraki bölüm" disabled={!!seasonEps && (parseInt(episode) || 0) >= seasonEps}
+                  onClick={() => setEpisode(String(Math.min((parseInt(episode) || 0) + 1, seasonEps || Infinity)))}>+1</button>
               </div>
             </div>
             <div className="field small">
-              <label htmlFor="f-eptotal">Toplam</label>
-              <input id="f-eptotal" type="number" min={0} max={100000} inputMode="numeric" placeholder="?" value={epTotal} onChange={(e) => setEpTotal(e.target.value)} />
+              <label htmlFor="f-eptotal">{type === "show" ? "Sezonda" : "Toplam"}</label>
+              <input id="f-eptotal" type="number" min={0} max={100000} inputMode="numeric" placeholder="?" value={epTotal} onChange={(e) => { autoTotal.current = false; setEpTotal(e.target.value); }} />
             </div>
           </div>
         )}
+        {episodic && (maxSeason || seasonEps) ? (
+          <p className="muted small form-hint">
+            {type === "show" && maxSeason ? `Bu dizinin ${maxSeason} sezonu var${seasonEps ? `, ${parseInt(season) || 1}. sezonda ${seasonEps} bölüm` : ""}.` : `Bu animede ${seasonEps} bölüm var.`}
+            {" "}Bilgi: {type === "show" ? "TMDB" : "AniList"}
+          </p>
+        ) : null}
         {status === "dropped" && (
           <div className="field">
             <label htmlFor="f-drop">Bırakma notu <span className="muted">· neden bıraktın?</span></label>

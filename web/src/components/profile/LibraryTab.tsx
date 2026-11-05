@@ -1,12 +1,14 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { Entry, EntryType, Status } from "@/lib/types";
 import { STATUSES, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
 import { MONTHS_TR, daysTaken, fmtDate, fmtDur, num, playSec } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
+import { cameBack, useScrollMemory } from "@/lib/useLoad";
+import { onUnlinked, unlinkedCount } from "@/lib/unlinked";
 import { useApp } from "@/components/AppProvider";
 import { BulkBar } from "@/components/profile/BulkBar";
 import { FavPicker } from "@/components/FavPicker";
@@ -30,35 +32,47 @@ const SORTS: [Sort, string, (a: Entry, b: Entry) => number][] = [
 
 const PAGE = 24; // bir seferde gösterilen kayıt: devamı "Daha fazla göster" ile gelir, sayfa kasmasın
 
+// Bir içeriğe gidip geri gelince kütüphane aynı sekme, süzgeç, arama ve "daha fazla" ile açılsın (kaydırma yeri de korunur)
+interface Snap { t: EntryType | "all" | null; statuses: Status[]; year: string; finishYear: string; platform: string; minRating: string; tag: string; flags: string[]; sort: Sort | null; text: string; n: number }
+const snaps = new Map<string, Snap>();
+
 const uniqSorted = (list: (string | number | null | undefined)[], desc = true) =>
   [...new Set(list.filter((x) => x !== null && x !== undefined && x !== ""))].sort((a, b) =>
     (typeof a === "number" && typeof b === "number" ? a - b : String(a).localeCompare(String(b), "tr")) * (desc ? -1 : 1)) as (string | number)[];
 
 export function LibraryTab() {
-  const { profile, entries, isMe } = useProfile();
-  const { openForm, scale } = useApp();
+  const { profile, entries: allEntries, isMe } = useProfile();
+  const { openForm, scale, prefs, me } = useApp();
+  // Dizi ve anime birlikte seçildiyse animeler Dizi sekmesinde görünür (veritabanında türleri ayrı kalır)
+  const merge = !!prefs.merge;
+  const entries = allEntries;
+  const snapKey = `${profile.id}|${typeof location !== "undefined" ? location.search : ""}`;
+  const [back] = useState(() => (cameBack() ? snaps.get(snapKey) : undefined));
+  const fixCount = useSyncExternalStore(onUnlinked, () => unlinkedCount(me?.id), () => 0);
 
   // Önce oyunlar açılır; oyunu yoksa ilk sahip olduğu tür, o da yoksa Tümü. Başka profile geçince yeniden seçilir.
   const firstType = TYPE_KEYS.find((k) => entries.some((e) => e.type === k)) ?? "all";
   const params = useSearchParams();
   const urlType = params.get("type") as EntryType | null; // profildeki yan panelden gelince o tür açılır
-  const [pick, setPick] = useState<{ pid: string; t: EntryType | "all" } | null>(null);
+  const [pick, setPick] = useState<{ pid: string; t: EntryType | "all" } | null>(back?.t ? { pid: profile.id, t: back.t } : null);
   const picked = pick?.pid === profile.id ? pick.t : null;
-  const type = picked && (picked === "all" || entries.some((e) => e.type === picked)) ? picked
+  const rawType = picked && (picked === "all" || entries.some((e) => e.type === picked)) ? picked
     : urlType && entries.some((e) => e.type === urlType) ? urlType : firstType;
+  const type = merge && rawType === "anime" ? "show" : rawType;
+  const inTab = (e: Entry, t: EntryType | "all") => t === "all" || e.type === t || (merge && t === "show" && e.type === "anime");
   const setType = (t: EntryType | "all") => setPick({ pid: profile.id, t });
   const urlStatus = params.get("status") as Status | null; // profildeki Planlanan sayısından gelince
-  const [statuses, setStatuses] = useState<Set<Status>>(new Set(urlStatus && STATUSES.includes(urlStatus) ? [urlStatus] : []));
-  const [year, setYear] = useState("");
-  const [finishYear, setFinishYear] = useState("");
-  const [platform, setPlatform] = useState("");
-  const [minRating, setMinRating] = useState("");
-  const [tag, setTag] = useState(""); // kendi etiketlerinden biri
-  const [flags, setFlags] = useState<Set<"fav" | "review" | "emu" | "dlc">>(new Set());
+  const [statuses, setStatuses] = useState<Set<Status>>(new Set(back ? back.statuses : urlStatus && STATUSES.includes(urlStatus) ? [urlStatus] : []));
+  const [year, setYear] = useState(back?.year || "");
+  const [finishYear, setFinishYear] = useState(back?.finishYear || "");
+  const [platform, setPlatform] = useState(back?.platform || "");
+  const [minRating, setMinRating] = useState(back?.minRating || "");
+  const [tag, setTag] = useState(back?.tag || ""); // kendi etiketlerinden biri
+  const [flags, setFlags] = useState<Set<"fav" | "review" | "emu" | "dlc">>(new Set((back?.flags || []) as ("fav" | "review" | "emu" | "dlc")[]));
   // Oyunlar oynama süresine göre, diğer türler son güncellenene göre sıralı açılır; kişi değiştirirse onun seçimi geçerli
-  const [sortPick, setSort] = useState<Sort | null>(null);
+  const [sortPick, setSort] = useState<Sort | null>(back?.sort ?? null);
   const sort: Sort = sortPick ?? (type === "game" ? "time" : "updated");
-  const [text, setText] = useState("");
+  const [text, setText] = useState(back?.text || "");
   const [view, setView] = useState<View>("grid");
   const [showFilters, setShowFilters] = useState(false);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- tarayıcı deposundan / ağdan gelen veri
@@ -78,18 +92,24 @@ export function LibraryTab() {
   // Planlananlar (backlog, istek listesi) kalabalık etmesin diye Hepsi'nde yok; kendi sekmesinde görünür
   const hidePlanned = !statuses.has("planned");
   const visible = useMemo(() => hidePlanned ? entries.filter((e) => e.status !== "planned") : entries, [entries, hidePlanned]);
-  const scoped = useMemo(() => type === "all" ? visible : visible.filter((e) => e.type === type), [visible, type]);
-  const plannedHere = useMemo(() => entries.filter((e) => e.status === "planned" && (type === "all" || e.type === type)).length, [entries, type]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const scoped = useMemo(() => type === "all" ? visible : visible.filter((e) => inTab(e, type)), [visible, type, merge]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const plannedHere = useMemo(() => entries.filter((e) => e.status === "planned" && inTab(e, type)).length, [entries, type, merge]);
   const tabCounts = useMemo(() => {
     const m = new Map<EntryType | "all", number>();
-    for (const e of entries) if (e.status !== "planned") { m.set(e.type, (m.get(e.type) || 0) + 1); m.set("all", (m.get("all") || 0) + 1); }
+    for (const e of entries) if (e.status !== "planned") {
+      const k = merge && e.type === "anime" ? "show" : e.type;
+      m.set(k, (m.get(k) || 0) + 1); m.set("all", (m.get("all") || 0) + 1);
+    }
     return m;
-  }, [entries]);
+  }, [entries, merge]);
   const statusCounts = useMemo(() => {
     const m = new Map<Status, number>();
-    for (const e of entries) if (type === "all" || e.type === type) m.set(e.status, (m.get(e.status) || 0) + 1);
+    for (const e of entries) if (inTab(e, type)) m.set(e.status, (m.get(e.status) || 0) + 1);
     return m;
-  }, [entries, type]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entries, type, merge]);
   const years = useMemo(() => uniqSorted(scoped.map((e) => e.year)), [scoped]);
   const finishYears = useMemo(() => uniqSorted(scoped.filter((e) => e.status === "completed").map((e) => e.date?.slice(0, 4))), [scoped]);
   const platforms = useMemo(() => uniqSorted(scoped.map((e) => e.platform), false), [scoped]);
@@ -121,9 +141,14 @@ export function LibraryTab() {
   const statusType = type === "all" ? null : type;
   // Sayfa sayfa göster; filtre ya da sıralama değişince baştan başla
   const pageKey = [type, [...statuses].join(), year, finishYear, platform, minRating, tag, [...flags].join(), sort, needle, view].join("|");
-  const [paging, setPaging] = useState({ key: pageKey, n: PAGE });
+  const [paging, setPaging] = useState({ key: pageKey, n: back?.n || PAGE });
   const shown = paging.key === pageKey ? paging.n : PAGE;
   const more = () => setPaging({ key: pageKey, n: shown + PAGE });
+  // Durum her değişince saklanır; geri gelince buradan açılır
+  useEffect(() => {
+    snaps.set(snapKey, { t: pick?.pid === profile.id ? pick.t : null, statuses: [...statuses], year, finishYear, platform, minRating, tag, flags: [...flags], sort: sortPick, text, n: shown });
+  }, [snapKey, pick, profile.id, statuses, year, finishYear, platform, minRating, tag, flags, sortPick, text, shown]);
+  useScrollMemory(`lib|${snapKey}`, entries.length > 0);
   // Günlük: sadece bitirme tarihi olanlar, en yeni en üstte
   const dated = useMemo(() => list.filter((e) => e.status === "completed" && e.date).sort((a, b) => b.date!.localeCompare(a.date!)), [list]);
   const paged = view === "diary" ? dated : list;
@@ -146,8 +171,8 @@ export function LibraryTab() {
         {/* Bütün araçlar tek kutuda: tür, durum, arama, filtre, sıralama */}
         <div className="tool-panel lib-tools">
         <div className="tabs">
-          {([...TYPE_KEYS.map((k) => [k, "", TYPES[k].label]), ["all", "", "Tümü"]] as [EntryType | "all", string, string][])
-            .filter(([k]) => k === "all" || entries.some((e) => e.type === k))
+          {([...TYPE_KEYS.map((k) => [k, "", merge && k === "show" ? "Dizi / Anime" : TYPES[k].label]), ["all", "", "Tümü"]] as [EntryType | "all", string, string][])
+            .filter(([k]) => k === "all" || (!(merge && k === "anime") && entries.some((e) => inTab(e, k))))
             .map(([k, icon, label]) => (
               <button key={k} className={`tab ${type === k ? "active" : ""}`} onClick={() => { setType(k); setStatuses(new Set()); setYear(""); setFinishYear(""); setPlatform(""); }}>
                 {icon} {label}<span className="count">{tabCounts.get(k) || 0}</span>
@@ -224,6 +249,9 @@ export function LibraryTab() {
             )}
             {filterCount > 0 && <button className="link" onClick={clear}>Filtreleri temizle</button>}
           </div>
+        )}
+        {isMe && fixCount > 0 && (
+          <p className="fix-note"><span>Kütüphanende bir sayfaya bağlı olmayan <b>{fixCount}</b> kayıt var.</span> <Link className="btn small" href="/fix">Bağla</Link></p>
         )}
         {(filterCount > 0 || statuses.size > 0 || needle) && <p className="muted count-note">{list.length} sonuç</p>}
         {list.length ? (

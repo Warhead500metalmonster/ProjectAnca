@@ -11,7 +11,7 @@ export default function ErrorPage({ reset }: { reset: () => void }) {
       <div className="hero-actions">
         <button className="btn primary" onClick={reset}>Tekrar dene</button>
         <Link className="btn" href="/">Ana sayfaya dön</Link>
-        <Link className="btn ghost" href="/chat/arno4436">Bize yaz</Link>
+        <Link className="btn ghost" href="/support">Bize yaz</Link>
       </div>
     </div>
   );
