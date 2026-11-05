@@ -22,6 +22,12 @@ export default function AboutPage() {
         sade, emojisiz görünümü onun elinden çıktı.
       </p>
 
+      <h2>Vacir</h2>
+      <p>
+        <Link className="grad" href="/u/vacir">@vacir</Link> da Ancalog&apos;un geliştirici ekibinde. Siteyi her gün kullanıp aksayan yerleri bulan,
+        yeni özellikleri ilk deneyen ve geliştirilmesine katkı veren arkadaşımız.
+      </p>
+
       <p className="about-note">
         Ancalog tamamen kâr amacı gütmeyen bir hobi projesidir. Eğlence için, yapay zekâ desteğiyle geliştiriliyor;
         reklam almıyor, para kazanmıyor ve kimseye ücret ödetmiyor.

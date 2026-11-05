@@ -43,7 +43,7 @@ export function HomeInfo({ signedIn }: { signedIn: boolean }) {
       <div className="home-about">
         <h2>Biz kimiz?</h2>
         <p className="home-motto">Kullanıcı bizden üstündür.</p>
-        <p>Küçük bir ekibiz: <Link className="grad" href="/u/arno4436">Anıl</Link> ve arkadaşı <Link className="grad" href="/u/wulfa">Wulfa</Link>. Ancalog&apos;u hobi olarak, önce kendimiz kullanmak için yaptık.</p>
+        <p>Küçük bir ekibiz: <Link className="grad" href="/u/arno4436">Anıl</Link> ve arkadaşları <Link className="grad" href="/u/wulfa">Wulfa</Link> ile <Link className="grad" href="/u/vacir">Vacir</Link>. Ancalog&apos;u hobi olarak, önce kendimiz kullanmak için yaptık.</p>
         <ul>
           <li>Reklam yok, ücret yok, verilerin satılmıyor.</li>
           <li>Kayıtların senin: istediğin gün indirir, gidersin.</li>
