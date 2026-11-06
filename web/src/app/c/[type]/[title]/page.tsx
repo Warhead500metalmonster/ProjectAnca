@@ -8,12 +8,12 @@ import type { Entry, EntryType, Item, PageEdit } from "@/lib/types";
 import { ENTRY_COLS, TYPES } from "@/lib/constants";
 import { NON_LATIN, avgText, contentKey, cssUrl, fmtDate, fmtDur, forumHref, likeEsc, num, oneRatingEach, playSec, safeUrl, scoreText, wideImage } from "@/lib/format";
 import { needsLocal, useLocalized } from "@/lib/localize";
-import { aniDetail, fetchPageEdit, tmdbCreator, tmdbDetail, tmdbImage } from "@/lib/data";
+import { aniDetail, fetchPageEdit, malDetail, tmdbCreator, tmdbDetail, tmdbImage } from "@/lib/data";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { MyLogs } from "@/components/MyLogs";
-import { RatingBars, PeopleLogs } from "@/components/ui";
+import { CreatorLinks, RatingBars, PeopleLogs } from "@/components/ui";
 import { GameLinker } from "@/components/GameLinker";
 import { Lightbox } from "@/components/Lightbox";
 import { PageEditor } from "@/components/PageEditor";
@@ -64,6 +64,21 @@ async function loadInfo(extId: string, lang?: "tr" | "en"): Promise<Info | null>
       overviewNote: d.overview_lang === "en" ? "Türkçe özeti yok, İngilizcesi gösteriliyor." : undefined,
     };
   }
+  if (extId.startsWith("mal:")) {
+    const m = await malDetail(extId);
+    return {
+      title: m.title_english || m.title, year: m.year || m.aired?.prop?.from?.year || null, creator: m.studios?.[0]?.name || null,
+      cover: m.images?.jpg?.large_image_url || null, overview: (m.synopsis || "").replace(/\[Written by MAL Rewrite\]/g, "").trim(),
+      genres: (m.genres || []).map((g) => g.name),
+      facts: ([
+        ["Orijinal adı", [m.title_japanese, m.title !== (m.title_english || m.title) ? m.title : ""].filter(Boolean).join("\n")],
+        ["Stüdyo", (m.studios || []).map((s) => s.name).join(", ")],
+        ["Bölüm", m.episodes ? `${m.episodes} bölüm${m.duration ? ` · ${m.duration}` : ""}` : ""],
+        ["Format", m.type || ""],
+      ] as [string, string][]).filter(([, v]) => v),
+      score: m.score ? [num(m.score), "MyAnimeList"] : undefined,
+    };
+  }
   if (extId.startsWith("anilist:")) {
     const m = await aniDetail(extId);
     return {
@@ -89,6 +104,7 @@ function SourceLine({ ext, info, mine }: { ext: string | null; info: Info | null
   const link = (name: string, url: string) => <a href={url} target="_blank" rel="noopener">{name}</a>;
   const src = kind === "tmdb" ? link("TMDB", `https://www.themoviedb.org/${a}/${b}`)
     : kind === "anilist" ? link("AniList", `https://anilist.co/anime/${a}`)
+    : kind === "mal" ? link("MyAnimeList", `https://myanimelist.net/anime/${a}`)
     : (kind === "deezer" || kind === "itunes") && info?.link ? link(info.source || "Kaynak", info.link)
     : kind === "deezer" ? link("Deezer", `https://www.deezer.com/${a}/${b}`)
     : kind === "yt" ? link("YouTube", `https://www.youtube.com/watch?v=${a}`)
@@ -200,7 +216,7 @@ export default function ContentPage() {
           <div className="gh-main">
             <div className="crumbs"><Link href={`/search?type=${type}`}>{t.plural}</Link> / {title}</div>
             <h1>{name} {year ? <small>{year}</small> : null}</h1>
-            {creator && <div className="gh-dev">{creator}</div>}
+            {creator && <div className="gh-dev"><CreatorLinks type={type} text={creator} /></div>}
             {desc && <p className={`gh-desc ${more ? "" : "clamp"}`}>{desc}</p>}
             {desc.length > 300 && !more && <button className="link" onClick={() => setMore(true)}>Devamını oku</button>}
             {desc && !edit.description && (info?.overviewNote || info?.descFrom) && (
@@ -218,7 +234,7 @@ export default function ContentPage() {
       </section>
       <div className="game-body">
         <aside className="facts">
-          {facts.map(([k, v]) => <div key={k}><span>{k}</span><b>{v}</b></div>)}
+          {facts.map(([k, v]) => <div key={k}><span>{k}</span><b>{[t.creator, "Yönetmen / Yaratıcı", "Oyuncular", "Stüdyo", "Sanatçı"].includes(k) ? <CreatorLinks type={type} text={v} /> : v}</b></div>)}
           <SourceLine ext={extId} info={info} mine={!!mine} />
         </aside>
         <section>

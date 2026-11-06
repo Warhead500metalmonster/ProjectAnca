@@ -7,7 +7,7 @@ import { contentHref, itemOf, scoreShort } from "@/lib/format";
 import { friendPicks, type FriendPick } from "@/lib/data";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "./AppProvider";
-import { Avatar, Cover, displayName } from "./ui";
+import { Avatar, displayName, LCover, LTitle } from "./ui";
 
 // Ana sayfada: arkadaşlarının çok sevdiği (9+), senin henüz kütüphanende olmayan şeyler
 export function FriendPicks({ following, mine }: { following: string[]; mine: Entry[] }) {
@@ -35,13 +35,13 @@ export function PickStrip({ data }: { data: FriendPick[] }) {
               <div className={`poster ${t.square ? "square" : ""}`}>
                 <Link href={contentHref(e)} className="pick-link" aria-label={e.title}>
                   <div className="ph">{t.label}</div>
-                  <Cover src={e.cover} />
+                  <LCover x={e} />
                 </Link>
                 <span className="kind">{t.label}</span>
                 <button className="pick-add" title="Kütüphaneme ekle" aria-label="Kütüphaneme ekle"
                   onClick={(ev) => { ev.preventDefault(); openForm(null, { item: itemOf(e) }); }}>＋</button>
               </div>
-              <Link href={contentHref(e)} className="card-title">{e.title}</Link>
+              <Link href={contentHref(e)} className="card-title"><LTitle x={e} /></Link>
               <div className="pick-by">
                 <span className="pick-faces">{by.slice(0, 3).map((x) => <Avatar key={x.id} p={x.profiles} />)}</span>
                 <span>{by.length > 1 ? `${displayName(top.profiles)} +${by.length - 1}` : displayName(top.profiles)} · ★ {scoreShort(top.rating || 0, scale)}</span>

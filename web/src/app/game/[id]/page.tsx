@@ -13,7 +13,7 @@ import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { MyLogs } from "@/components/MyLogs";
-import { RatingBars, PeopleLogs } from "@/components/ui";
+import { RatingBars, PeopleLogs, creatorHref } from "@/components/ui";
 import { GameLinker } from "@/components/GameLinker";
 import { GameSeries } from "@/components/GameSeries";
 import { Lightbox } from "@/components/Lightbox";
@@ -114,7 +114,9 @@ export default function GamePage() {
           <div className="gh-main">
             <div className="crumbs"><Link href="/search?type=game">Oyunlar</Link> / {name}</div>
             <h1>{name} {year ? <small>{year}</small> : null}</h1>
-            {devs && <div className="gh-dev">{devs}</div>}
+            {devs && <div className="gh-dev">{!edit.creator && g?.developers?.length
+              ? g.developers.map((d, i) => <span key={d.id}>{i ? ", " : ""}<Link className="flink" href={creatorHref("game", d.name, d.id)}>{d.name}</Link></span>)
+              : devs}</div>}
             {desc && <p className={`gh-desc ${more ? "" : "clamp"}`}>{desc}</p>}
             {desc.length > 300 && !more && <button className="link" onClick={() => setMore(true)}>Devamını oku</button>}
             {g?.platforms?.length ? (

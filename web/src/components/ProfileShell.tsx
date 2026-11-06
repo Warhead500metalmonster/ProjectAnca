@@ -13,7 +13,7 @@ import { countOf, q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { shareImage } from "@/lib/shareImage";
-import { Avatar, BadgeChips, Cover, FollowButton, Name, RatingBars, RoleBadges, Socials, UserRow } from "@/components/ui";
+import { Avatar, BadgeChips, FollowButton, Name, RatingBars, RoleBadges, Socials, UserRow, LCover, LTitle } from "@/components/ui";
 import { ProfileSong } from "@/components/ProfileSong";
 import { CoverMarquee } from "@/components/CoverMarquee";
 
@@ -224,8 +224,8 @@ function Shell({ data: raw, children }: { data: ProfileData; children: React.Rea
                     <div className="side-now">
                       {current.map((e) => (
                         <button key={e.id} onClick={() => openView(e)}>
-                          <span className={`side-now-cover ${TYPES[e.type].square ? "square" : ""}`}><Cover src={e.cover} /></span>
-                          <span className="side-now-text"><b>{e.title}</b><small>{statusLabel(e.status, e.type)}</small></span>
+                          <span className={`side-now-cover ${TYPES[e.type].square ? "square" : ""}`}><LCover x={e} /></span>
+                          <span className="side-now-text"><b><LTitle x={e} /></b><small>{statusLabel(e.status, e.type)}</small></span>
                         </button>
                       ))}
                     </div>

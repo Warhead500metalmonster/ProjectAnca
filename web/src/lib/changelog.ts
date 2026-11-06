@@ -5,6 +5,11 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-11-06T11:28:00+04:00",
+    title: "Her dilde arama ve tıklanabilir yaratıcılar",
+    body: "Oyun, film, dizi ve animeleri artık Türkçe, Japonca ya da başka bir dildeki adıyla da bulabilirsin: Yüzüklerin Efendisi, Örümcek Adam, ゼルダの伝説 gibi. AniList'te olmayan animeler MyAnimeList'ten geliyor. Bir sanatçının, yönetmenin, oyuncunun, stüdyonun ya da geliştiricinin adına tıklayınca öbür işlerini görürsün. Profilde Tümü sekmesi oyunları, filmleri, dizileri ve animeleri ayrı raflarda gösteriyor. Ayarlar → Hesap'taki Yeniden tara düğmesi sayfasız kayıtlarını baştan tarayıp adı tutanları kendiliğinden bağlıyor. Seçtiğin dildeki adlar ve kapaklar artık her yerde görünüyor, ilk açılıştaki tercih penceresi de bir seçim yapınca kapanmıyor.",
+  },
+  {
     date: "2026-11-05T14:25:00+04:00",
     title: "Büyük güncelleme",
     body: "Yazı yazılabilen her yerde (yorumlar, mesajlar, forum, etkinlik sohbeti) artık beğeni ve emoji tepkisi var. Profillere Steam'deki gibi yorum yazılabiliyor; sahibi isterse kapatır ya da sadece arkadaşlarına açar. Bize yaz artık bütün ekibin gördüğü ortak bir sohbet. Dizi ve animelerde gerçek sezon ve bölüm sayısı geliyor, 5 sezonluk dizi 15. sezon diye loglanamıyor. Ayarlar → Dil ve içerik'ten dizi ile animeyi birlikte ya da ayrı görebilir, film, dizi ve anime adlarını ve kapaklarını istediğin dilde seçebilirsin. İçerik sayfalarında bilgilerin nereden geldiği yazıyor, albümlerin açıklaması ve şarkı listesi geldi. Keşfet sağ üstteki büyüteçte. Bir içeriğe gidip geri gelince kütüphane kaldığın yerden açılıyor.",

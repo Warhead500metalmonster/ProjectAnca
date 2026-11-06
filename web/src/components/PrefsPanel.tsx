@@ -13,7 +13,8 @@ const LANG_TYPES: EntryType[] = ["movie", "show", "anime"];
 export function PrefsPanel({ compact = false }: { compact?: boolean }) {
   const { prefs, savePrefs, toast } = useApp();
   async function save(p: Partial<Prefs>) {
-    try { await savePrefs({ ...p, asked: true }); toast("Kaydedildi ✓"); } catch (err) { toast("Kaydedilemedi: " + (err as Error).message); }
+    // İlk girişteki pencerede her seçim pencereyi kapatmasın: "soruldu" bilgisi Tamam'a basınca yazılır
+    try { await savePrefs(compact ? p : { ...p, asked: true }); if (!compact) toast("Kaydedildi ✓"); } catch (err) { toast("Kaydedilemedi: " + (err as Error).message); }
   }
   const setTitle = (t: EntryType, v: TitleLang) => save({ titles: { ...prefs.titles, [t]: v } });
   const setCover = (t: EntryType, v: TitleLang) => save({ covers: { ...prefs.covers, [t]: v } });
@@ -31,7 +32,7 @@ export function PrefsPanel({ compact = false }: { compact?: boolean }) {
           <span className="muted small">Tek &quot;Dizi / Anime&quot; sekmesi; eklerken ikisi birden aranır (Türkçe, İngilizce ya da Japonca adıyla)</span>
         </label>
       </div>
-      {!compact && (
+      {(
         <>
           <h3 className="set-h">Açıklamaların dili <span className="muted small">· içerik sayfalarındaki konu ve özet</span></h3>
           <div className="chips">
@@ -80,7 +81,7 @@ export function PrefsAsk() {
     return () => clearInterval(t);
   }, [me, prefs.asked]);
   useEffect(() => { if (open) ref.current?.showModal(); }, [open]);
-  if (!me || prefs.asked || !open) return null;
+  if (!me || !open) return null;
   const close = () => { savePrefs({ asked: true }).catch(() => {}); ref.current?.close(); };
   return (
     <dialog ref={ref} className="notice-dialog prefs-ask" onClose={() => { setOpen(false); savePrefs({ asked: true }).catch(() => {}); }}>

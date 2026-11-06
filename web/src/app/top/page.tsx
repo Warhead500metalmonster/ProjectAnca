@@ -9,7 +9,7 @@ import { avgText, contentHref } from "@/lib/format";
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
-import { Cover } from "@/components/ui";
+import { LCover } from "@/components/ui";
 import { Leaderboard } from "@/components/Leaderboard";
 import { BestMatches } from "@/components/BestMatches";
 
@@ -73,7 +73,7 @@ function ContentRanks() {
                 <li key={`${r.rawg_id}|${r.ext_id}|${r.title}`}>
                   <Link href={contentHref(r)}>
                     <span className="rank">{i + 1}</span>
-                    <span className={`poster ${TYPES[r.type].square ? "square" : ""}`}><span className="ph">{TYPES[r.type].label}</span><Cover src={r.cover} /></span>
+                    <span className={`poster ${TYPES[r.type].square ? "square" : ""}`}><span className="ph">{TYPES[r.type].label}</span><LCover x={r} /></span>
                     <span className="who"><b>{r.title}</b><small>{[r.creator, r.year].filter(Boolean).join(" · ")}</small></span>
                     <span className="score"><b>★ {avgText(Number(r.avg), scale)}</b><small>{r.votes} oy</small></span>
                   </Link>

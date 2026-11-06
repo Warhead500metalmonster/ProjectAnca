@@ -190,6 +190,15 @@ export async function igdbProxy(path: string, params: URLSearchParams): Promise<
     return Response.json({ results: rows.map(ref) });
   }
   if (path === "games") return Response.json(await list(params));
+  // Şirket adıyla arama (geliştirici sayfası): /api/rawg?path=companies&search=FromSoftware
+  if (path === "companies") {
+    const s = (params.get("search") || "").replace(/["\\]/g, "").trim().slice(0, 80);
+    if (!s) return Response.json({ results: [] });
+    const { rows } = await ask<{ id: number; name: string; developed?: number[] }>("companies", `fields name,developed; where name ~ *"${s}"*; limit 20;`);
+    const exact = rows.filter((c) => norm(c.name) === norm(s));
+    const sorted = [...(exact.length ? exact : rows)].sort((a, b) => (b.developed?.length || 0) - (a.developed?.length || 0));
+    return Response.json({ results: sorted.slice(0, 5).map((c) => ({ id: c.id, name: c.name, games: c.developed?.length || 0 })) });
+  }
   const [, rawId, sub] = path.split("/");
   const id = Number(rawId);
   const igdbId = await igdbIdOf(id);

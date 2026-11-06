@@ -11,6 +11,7 @@ import { q, sb } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
 import { Avatar } from "@/components/ui";
 import { PrefsPanel } from "@/components/PrefsPanel";
+import { RescanButton } from "@/components/Rescan";
 import { AvatarCropper } from "@/components/AvatarCropper";
 import { youtubeId } from "@/components/ProfileSong";
 import { DEFAULT_COLOR, applyTheme } from "@/lib/theme";
@@ -369,6 +370,12 @@ function SettingsForm({ me }: { me: Profile }) {
       </div>
       <p className="muted small">Herkesin puanı senin seçtiğin ölçekte görünür. Ör: biri 10&apos;luk ölçekte 7 verdiyse sen 5&apos;likte 3,5 yıldız görürsün; 5&apos;likte 2,75 verilen bir puanı 10&apos;lukta 5,5 görürsün.</p>
         <AppAndNotify />
+        <h3 className="set-h">Kayıtların ve sayfaları</h3>
+        <p className="muted small" style={{ margin: 0 }}>
+          Bir oyun ya da film sayfasına bağlı olmayan kayıtlarını yeniden tarar. Adı birebir tutanlar kendiliğinden bağlanır; emin olunamayanları
+          <Link className="grad" href="/fix"> Sayfasız kayıtlarım</Link>&apos;da bir dokunuşla seçersin. Önceden &quot;Böyle kalsın&quot; dediklerin de yeniden sorulur.
+        </p>
+        <RescanButton />
         <h3 className="set-h">Başka sitelerden</h3>
         <p className="muted small" style={{ margin: 0 }}>Letterboxd, Backloggd, Steam, MyAnimeList ve diğerlerinden kütüphaneni getir.</p>
         <div><Link className="btn" href="/import">Başka siteden içe aktar</Link></div>

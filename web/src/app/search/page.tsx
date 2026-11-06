@@ -6,11 +6,11 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Entry, EntryType, Item, Profile, RawgGame } from "@/lib/types";
 import { TYPES, TYPE_KEYS } from "@/lib/constants";
 import { avgText, contentHref, contentKey, likeEsc, smallImage } from "@/lib/format";
-import { anilist, fetchAll, searchMusic, tmdb, tmdbImage, SEARCH_CREDITS } from "@/lib/data";
+import { anilist, fetchAll, searchAnime, searchGames, searchMusic, searchTmdb, tmdb, tmdbImage, SEARCH_CREDITS } from "@/lib/data";
 import { rawg, retry } from "@/lib/rawg";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "@/components/AppProvider";
-import { Cover, QuickAdd, UserRow } from "@/components/ui";
+import { QuickAdd, UserRow, LCover, LTitle } from "@/components/ui";
 import { ForYou } from "@/components/ForYou";
 
 type Sort = "logged" | "completed" | "active" | "rating" | "newest" | "oldest" | "title";
@@ -165,9 +165,9 @@ export default function SearchPage() {
                 <div className="card-wrap" key={contentKey(a)}>
                   <Link className="card" href={contentHref(a)}>
                     <div className={`poster ${TYPES[a.type].square ? "square" : ""}`}>
-                      <div className="ph">{TYPES[a.type].label}</div><Cover src={a.cover} />
+                      <div className="ph">{TYPES[a.type].label}</div><LCover x={a} />
                     </div>
-                    <div className="card-title">{a.title}</div>
+                    <div className="card-title"><LTitle x={a} /></div>
                     <div className="card-meta">{[kinds.length > 1 && TYPES[a.type].label, a.year].filter(Boolean).join(" · ")}</div>
                     <div className="card-info">
                       <span className="card-status">{a.n} kişi</span>
@@ -205,8 +205,8 @@ export default function SearchPage() {
                 {list.map((x, i) => (
                   <div className="card-wrap" key={i}>
                     <Link className="card" href={contentHref(x)}>
-                      <div className={`poster ${TYPES[x.type].square ? "square" : ""}`}><div className="ph">{TYPES[x.type].label}</div><Cover src={x.cover} /></div>
-                      <div className="card-title">{x.title}</div>
+                      <div className={`poster ${TYPES[x.type].square ? "square" : ""}`}><div className="ph">{TYPES[x.type].label}</div><LCover x={x} /></div>
+                      <div className="card-title"><LTitle x={x} /></div>
                       <div className="card-meta">{[x.sub, x.year].filter(Boolean).join(" · ")}</div>
                     </Link>
                     <QuickAdd has={logged.has(contentKey(x))} onAdd={() => openForm(null, { item: x })} />
@@ -264,6 +264,11 @@ async function findKind(text: string, type: EntryType, from: string, to: string,
   const y1 = /^\d{4}$/.test(from) ? Number(from) : null, y2 = /^\d{4}$/.test(to) ? Number(to) : null;
   const lo = y1 ?? y2, hi = y2 ?? y1;
   const inRange = (y: number | null) => !lo || (y !== null && y >= lo && y <= hi!);
+  // Yazıyla aramada her dilde arama (Türkçe, Japonca... adla da bulunur) ve animede MyAnimeList yedeği
+  const plainSearch = t && !lo && sort === "logged";
+  if (plainSearch && type === "game") return searchGames(t, 18);
+  if (plainSearch && (type === "movie" || type === "show")) return searchTmdb(type, t);
+  if (plainSearch && type === "anime") return searchAnime(t);
   {
     if (type === "game") {
       // Yazı varken sıralamayı arama sonucuna bırak: "en çok eklenen"e zorlamak alakasız oyunları öne çıkarıyordu

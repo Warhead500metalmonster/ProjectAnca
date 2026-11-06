@@ -7,7 +7,7 @@ import type { Entry, EntryType, FormGame, Item, RawgGame } from "@/lib/types";
 import { STATUSES, STORES, TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
 import { contentKey, fmtDate, itemOf, safeUrl, scoreText, today, cleanTag } from "@/lib/format";
 import { gameFromRawg, rawg } from "@/lib/rawg";
-import { type Found, addCatalog, aniDetail, findContent, findShowOrAnime, isLink, searchCredit, tmdbCreator, tmdbDetail } from "@/lib/data";
+import { type Found, addCatalog, aniDetail, findContent, findShowOrAnime, isLink, malDetail, searchCredit, tmdbCreator, tmdbDetail } from "@/lib/data";
 import { q, sb } from "@/lib/supabase";
 import { useApp } from "./AppProvider";
 import { HmsInput } from "./ui";
@@ -83,6 +83,8 @@ export function EntryForm({ entry, game, type: initialType, item, replay: asRepl
       }).catch(() => {});
     } else if (type === "anime" && extId?.startsWith("anilist:")) {
       aniDetail(extId).then((m) => { if (!stale && m.episodes) setLimits({ episodes: m.episodes }); }).catch(() => {});
+    } else if (type === "anime" && extId?.startsWith("mal:")) {
+      malDetail(extId).then((m) => { if (!stale && m.episodes) setLimits({ episodes: m.episodes }); }).catch(() => {});
     }
     return () => { stale = true; };
   }, [type, extId]);
@@ -410,7 +412,7 @@ export function EntryForm({ entry, game, type: initialType, item, replay: asRepl
         {episodic && (maxSeason || seasonEps) ? (
           <p className="muted small form-hint">
             {type === "show" && maxSeason ? `Bu dizinin ${maxSeason} sezonu var${seasonEps ? `, ${parseInt(season) || 1}. sezonda ${seasonEps} bölüm` : ""}.` : `Bu animede ${seasonEps} bölüm var.`}
-            {" "}Bilgi: {type === "show" ? "TMDB" : "AniList"}
+            {" "}Bilgi: {type === "show" ? "TMDB" : extId?.startsWith("mal:") ? "MyAnimeList" : "AniList"}
           </p>
         ) : null}
         {status === "dropped" && (

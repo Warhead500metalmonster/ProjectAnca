@@ -3174,3 +3174,12 @@ a.note-row:hover { border-color: var(--accent); }
 
 /* Kayıt formu: sezon / bölüm bilgisi */
 .form-hint { margin: -6px 0 10px; }
+/* Yeniden tara, sanatçı / kişi sayfası, Tümü'de tür şeritleri */
+.rescan { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0; }
+.flink { color: inherit; text-decoration: none; border-bottom: 1px dotted rgba(255, 255, 255, .35); }
+.flink:hover { color: var(--accent-2); border-bottom-color: currentColor; }
+.creator-page .search-hero h1 { margin: 2px 0 6px; }
+.lib-groups { display: grid; gap: 26px; }
+.lib-group .section-head { margin-bottom: 10px; }
+.lib-group .section-head h3 { margin: 0; font-size: 18px; }
+.lib-group .section-head .count { color: var(--muted); font-size: 13px; font-weight: 500; margin-left: 4px; }

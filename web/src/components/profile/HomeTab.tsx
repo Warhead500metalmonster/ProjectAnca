@@ -12,7 +12,7 @@ import { q, sb } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
 import { useProfile } from "@/components/ProfileShell";
-import { Cover, EntryCard, FeedItem, Rating, RatingBars, ReviewCard, RichText, Stats } from "@/components/ui";
+import { EntryCard, FeedItem, Rating, RatingBars, ReviewCard, RichText, Stats, LCover } from "@/components/ui";
 import { ListCard } from "@/components/ListCard";
 import { FavoritesSection } from "./LibraryTab";
 import { ProfileEvents } from "./ProfileEvents";
@@ -144,7 +144,7 @@ function DatedCard({ e }: { e: Entry }) {
   const t = TYPES[e.type];
   return (
     <button className="card dated" onClick={() => openView(e)} title={e.title}>
-      <div className={`poster ${t.square ? "square" : ""}`}><div className="ph">{t.label}</div><Cover src={e.cover} /></div>
+      <div className={`poster ${t.square ? "square" : ""}`}><div className="ph">{t.label}</div><LCover x={e} /></div>
       <div className="dated-meta"><span>{fmtDate(e.date!).replace(/ \d{4}$/, (y) => (y.trim() === String(new Date().getFullYear()) ? "" : y))}</span>{e.rating ? <Rating r={e.rating} /> : null}</div>
     </button>
   );

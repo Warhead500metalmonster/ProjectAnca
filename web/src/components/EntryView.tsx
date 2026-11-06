@@ -6,9 +6,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { Comment, Entry } from "@/lib/types";
 import { PROFILE_COLS, TYPES, statusLabel } from "@/lib/constants";
-import { contentHref, cssUrl, daysTaken, fmtDate, fmtDur, itemOf, num, playSec, safeUrl, scoreText, timeAgo, wideImage } from "@/lib/format";
+import { contentHref, cssUrl, daysTaken, fmtDate, fmtDur, itemOf, num, playSec, scoreText, timeAgo, wideImage } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
-import { Avatar, Name, Rating, RichText, epText } from "./ui";
+import { Avatar, CreatorLinks, Name, Rating, RichText, epText, LTitle } from "./ui";
 import { Reactions } from "./Reactions";
 import { useApp } from "./AppProvider";
 
@@ -134,8 +134,8 @@ export function EntryView({ entry: e, onClose, onEdit }: { entry: Entry; onClose
               ? <button type="button" className={`fav-btn ${fav ? "on" : ""}`} onClick={toggleFav}>{fav ? "♥ Favori" : "♡ Favorilere ekle"}</button>
               : fav && <span className="badge fav">♥ Favori</span>}
           </div>
-          <h2><Link href={contentHref(e)} onClick={close}>{e.title}</Link></h2>
-          {(e.creator || e.year) && <div className="muted">{[e.creator, e.year].filter(Boolean).join(" · ")}</div>}
+          <h2><Link href={contentHref(e)} onClick={close}><LTitle x={e} /></Link></h2>
+          {(e.creator || e.year) && <div className="muted"><CreatorLinks type={e.type} text={e.creator} onGo={close} />{e.creator && e.year ? " · " : ""}{e.year}</div>}
           <Rating r={e.rating} big />
           {p.username && (
             <div className="view-user"><Avatar p={p} cls="sm" /> <Link href={`/u/${p.username}`} onClick={close}><Name p={p} /></Link> · {timeAgo(e.updated_at)}</div>

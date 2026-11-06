@@ -1,7 +1,7 @@
 import { igdbProxy } from "@/lib/igdb";
 
 // Oyun bilgileri IGDB'den gelir; tarayıcı anahtarları görmesin diye bu adrese sorar: /api/rawg?path=games&search=zelda
-const ALLOWED = /^(games(\/-?\d+(\/(screenshots|series))?)?|genres)$/;
+const ALLOWED = /^(games(\/-?\d+(\/(screenshots|series))?)?|genres|companies)$/;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

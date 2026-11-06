@@ -13,7 +13,7 @@ import { useApp } from "@/components/AppProvider";
 import { BulkBar } from "@/components/profile/BulkBar";
 import { FavPicker } from "@/components/FavPicker";
 import { useProfile } from "@/components/ProfileShell";
-import { Cover, EntryCard, Rating, commentCount, entryTags, likeCount } from "@/components/ui";
+import { EntryCard, Rating, commentCount, entryTags, likeCount, LCover, LTitle } from "@/components/ui";
 
 type Sort = "updated" | "rating" | "rating_asc" | "title" | "year" | "year_asc" | "finished" | "time" | "fastest";
 type View = "grid" | "list" | "diary";
@@ -152,6 +152,8 @@ export function LibraryTab() {
   // Günlük: sadece bitirme tarihi olanlar, en yeni en üstte
   const dated = useMemo(() => list.filter((e) => e.status === "completed" && e.date).sort((a, b) => b.date!.localeCompare(a.date!)), [list]);
   const paged = view === "diary" ? dated : list;
+  // Tümü'de süzgeç ve arama yokken her tür kendi şeridinde: eski tarihli içe aktarılmış animeler yüzlerce oyunun arkasında kaybolmasın
+  const grouped = type === "all" && view === "grid" && !filterCount && !statuses.size && !needle && !sortPick && !selecting;
   // Seçim modunda kartın üstüne dokunmak kaydı açmak yerine seçer
   const selectable = (e: Entry, child: React.ReactNode, cls = "") => !selecting ? child : (
     <div key={e.id} className={`sel-wrap ${cls} ${selected.has(e.id) ? "on" : ""}`}>
@@ -254,7 +256,23 @@ export function LibraryTab() {
           <p className="fix-note"><span>Kütüphanende bir sayfaya bağlı olmayan <b>{fixCount}</b> kayıt var.</span> <Link className="btn small" href="/fix">Bağla</Link></p>
         )}
         {(filterCount > 0 || statuses.size > 0 || needle) && <p className="muted count-note">{list.length} sonuç</p>}
-        {list.length ? (
+        {list.length && grouped ? (
+          <div className="lib-groups">
+            {TYPE_KEYS.filter((k) => !(merge && k === "anime")).map((k) => {
+              const items = list.filter((e) => inTab(e, k));
+              if (!items.length) return null;
+              return (
+                <div key={k} className="lib-group">
+                  <div className="section-head">
+                    <h3>{merge && k === "show" ? "Dizi / Anime" : TYPES[k].plural} <span className="count">{num(items.length)}</span></h3>
+                    {items.length > 12 && <button className="link" onClick={() => { setType(k); window.scrollTo({ top: 0 }); }}>Hepsini gör →</button>}
+                  </div>
+                  <div className="grid">{items.slice(0, 12).map((e) => <EntryCard key={e.id} e={e} />)}</div>
+                </div>
+              );
+            })}
+          </div>
+        ) : list.length ? (
           view === "diary"
             ? <Diary list={dated.slice(0, shown)} username={profile.username} wrap={selectable} empty={list.length} />
             : view === "list"
@@ -273,7 +291,7 @@ export function LibraryTab() {
               : "Burada henüz kayıt yok."}
           </div>
         )}
-        {shown < paged.length && (
+        {!grouped && shown < paged.length && (
           <div className="load-more">
             <button className="btn" onClick={more}>Daha fazla göster ({Math.min(PAGE, paged.length - shown)} / {paged.length - shown} kaldı)</button>
           </div>
@@ -307,8 +325,8 @@ function Diary({ list, username, wrap, empty }: { list: Entry[]; username: strin
             {wrap(e, (
               <button type="button" className="diary-row" onClick={() => openView(e)}>
                 <span className="diary-day">{Number(e.date!.slice(8))}</span>
-                <span className={`diary-cover ${t.square ? "square" : ""}`}><span>{t.label}</span><Cover src={e.cover} /></span>
-                <span className="diary-title"><b>{e.favorite ? "♥ " : ""}{e.title}</b><small>{[t.label, e.year].filter(Boolean).join(" · ")}</small></span>
+                <span className={`diary-cover ${t.square ? "square" : ""}`}><span>{t.label}</span><LCover x={e} /></span>
+                <span className="diary-title"><b>{e.favorite ? "♥ " : ""}<LTitle x={e} /></b><small>{[t.label, e.year].filter(Boolean).join(" · ")}</small></span>
                 {e.rating ? <Rating r={e.rating} /> : null}
               </button>
             ))}
@@ -469,11 +487,11 @@ function Row({ e, isMe }: { e: Entry; isMe: boolean }) {
   return (
     <div className="lrow">
       <button className={`lrow-cover poster ${t.square ? "square" : ""}`} onClick={() => openView(e)}>
-        <div className="ph">{t.label}</div><Cover src={e.cover} />
+        <div className="ph">{t.label}</div><LCover x={e} />
       </button>
       <div className="lrow-main">
         <div className="lrow-head">
-          <button className="lrow-title" onClick={() => openView(e)}>{e.favorite ? "♥ " : ""}{e.title}{e.year ? <> <span className="muted">({e.year})</span></> : null}</button>
+          <button className="lrow-title" onClick={() => openView(e)}>{e.favorite ? "♥ " : ""}<LTitle x={e} />{e.year ? <> <span className="muted">({e.year})</span></> : null}</button>
           <div className="lrow-tags">
             <span className={`pill ${e.status}`}>{statusLabel(e.status, e.type)}</span>
             {entryTags(e, { store: true, time: false }).map((x) => <span className="tag" key={x}>{x}</span>)}

@@ -1,6 +1,6 @@
 // TMDB anahtarı sunucuda kalsın diye tarayıcı bu adrese sorar: /api/tmdb?path=search/movie&query=dune
 // Anahtar Vercel'de TMDB_KEY ortam değişkeni olarak girilir.
-const ALLOWED = /^(search\/(movie|tv)|(movie|tv)\/\d+|discover\/(movie|tv)|trending\/(movie|tv)\/week|find\/tt\d+)$/; // find: IMDb numarasından TMDB (içe aktarma)
+const ALLOWED = /^(search\/(movie|tv)|(movie|tv)\/\d+|discover\/(movie|tv)|trending\/(movie|tv)\/week|find\/tt\d+|search\/person|person\/\d+\/combined_credits)$/; // find: IMDb numarasından TMDB (içe aktarma); person: kişi sayfası
 const PARAMS = ["query", "page", "primary_release_year", "first_air_date_year", "year", "append_to_response", "sort_by", "with_genres", "with_original_language",
   "primary_release_date.gte", "primary_release_date.lte", "first_air_date.gte", "first_air_date.lte", "vote_count.gte", "external_source"];
 // Japonca, Korece, Çince, Kiril, Arap, Yunan, Tay alfabesi: Türkçe çevirisi yoksa TMDB orijinal adı verir, okunmaz

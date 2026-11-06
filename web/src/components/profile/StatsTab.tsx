@@ -6,7 +6,7 @@ import { TYPES, TYPE_KEYS, statusLabel } from "@/lib/constants";
 import { avgText, daysTaken, fmtDate, fmtDur, fmtHoursShort, num, playSec, scoreText } from "@/lib/format";
 import { useApp } from "@/components/AppProvider";
 import { useProfile } from "@/components/ProfileShell";
-import { Cover, commentCount, likeCount } from "@/components/ui";
+import { commentCount, likeCount, LCover, LTitle } from "@/components/ui";
 import { Goals } from "@/components/Goals";
 
 // Durum renkleri: renk körlüğü için doğrulanmış sırayla (yan yana duran dilimler ayırt edilebilsin)
@@ -170,8 +170,8 @@ export function StatsTab() {
               ["En uzun inceleme", longReview, longReview && `${longReview.notes!.trim().split(/\s+/).length} kelime`],
             ] as [string, Entry | undefined, string | number | undefined][]).filter(([, e]) => e).map(([label, e, val]) => (
               <button key={label} className="record" onClick={() => openView(e!)}>
-                <div className={`poster ${TYPES[e!.type].square ? "square" : ""}`}><div className="ph">{TYPES[e!.type].label}</div><Cover src={e!.cover} /></div>
-                <div><span className="muted">{label}</span><b>{e!.title}</b><span>{val}</span></div>
+                <div className={`poster ${TYPES[e!.type].square ? "square" : ""}`}><div className="ph">{TYPES[e!.type].label}</div><LCover x={e!} /></div>
+                <div><span className="muted">{label}</span><b><LTitle x={e!} /></b><span>{val}</span></div>
               </button>
             ))}
           </div>}

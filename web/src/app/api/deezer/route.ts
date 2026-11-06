@@ -1,9 +1,16 @@
 // Deezer tarayıcıdan doğrudan sorulamıyor (CORS), bu yüzden sunucu üzerinden: /api/deezer?kind=album&q=tarkan
 // Anahtar istemez.
-const KINDS = ["album", "track"];
+const KINDS = ["album", "track", "artist"];
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+  // Sanatçının bütün albümleri: /api/deezer?albums=27 (sanatçı sayfası için)
+  const artist = searchParams.get("albums");
+  if (artist) {
+    if (!/^\d+$/.test(artist)) return Response.json({ error: "bad request" }, { status: 400 });
+    const res = await fetch(`https://api.deezer.com/artist/${artist}/albums?limit=100`, { next: { revalidate: 86400 } });
+    return new Response(res.body, { status: res.status, headers: { "content-type": "application/json" } });
+  }
   const kind = searchParams.get("kind") || "";
   const q = (searchParams.get("q") || "").slice(0, 100);
   if (!KINDS.includes(kind) || !q) return Response.json({ error: "bad request" }, { status: 400 });

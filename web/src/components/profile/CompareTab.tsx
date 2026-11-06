@@ -7,7 +7,7 @@ import { contentHref, itemOf, scoreShort } from "@/lib/format";
 import { useState } from "react";
 import { compat, compatByType, type Pair } from "@/lib/compat";
 import { useApp } from "@/components/AppProvider";
-import { Cover, displayName } from "@/components/ui";
+import { displayName, LCover, LTitle } from "@/components/ui";
 import { useProfile } from "@/components/ProfileShell";
 
 // Arkadaşla uyum: ikinizin zevkleri ne kadar uyuşuyor, ortak sevdikleriniz, ayrıştıklarınız ve ondan öneriler
@@ -25,8 +25,8 @@ export function CompareTab() {
 
   const card = (e: Entry, sub: React.ReactNode, key: string) => (
     <Link key={key} className="card" href={contentHref(e)}>
-      <div className={`poster ${TYPES[e.type].square ? "square" : ""}`}><div className="ph">{TYPES[e.type].label}</div><Cover src={e.cover} /></div>
-      <div className="card-title">{e.title}</div>
+      <div className={`poster ${TYPES[e.type].square ? "square" : ""}`}><div className="ph">{TYPES[e.type].label}</div><LCover x={e} /></div>
+      <div className="card-title"><LTitle x={e} /></div>
       <div className="card-meta">{sub}</div>
     </Link>
   );

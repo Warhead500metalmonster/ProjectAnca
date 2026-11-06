@@ -11,7 +11,7 @@ import { type Found, fetchEntries, findContent, searchCredit } from "@/lib/data"
 import { q, sb, supabaseConfigured } from "@/lib/supabase";
 import { useLoad } from "@/lib/useLoad";
 import { useApp } from "@/components/AppProvider";
-import { Avatar, Cover, Name } from "@/components/ui";
+import { Avatar, Name, LCover, LTitle } from "@/components/ui";
 import { ListEditor } from "@/components/ListEditor";
 
 const SEGMENTS: [Status | "none", string, string][] = [
@@ -141,9 +141,9 @@ function ListView({ list, base }: { list: List; base: Entry[] }) {
                 <div key={it.id} className="card li">
                   <Link href={contentHref(it)} className="card-link">
                     <div className={`poster ${t.square ? "square" : ""} ${e ? "" : "dim"}`}>
-                      <div className="ph">{t.label}</div><Cover src={it.cover} />
+                      <div className="ph">{t.label}</div><LCover x={it} />
                     </div>
-                    <div className="card-title"><span className="li-rank">{i + 1}.</span> {it.title}</div>
+                    <div className="card-title"><span className="li-rank">{i + 1}.</span> <LTitle x={it} /></div>
                     <div className="card-meta">{[t.label, it.year].filter(Boolean).join(" · ")}</div>
                     <div className="card-info"><span className={`card-status ${e?.status || ""}`}>{e ? statusLabel(e.status, e.type) : "Loglanmadı"}</span></div>
                   </Link>

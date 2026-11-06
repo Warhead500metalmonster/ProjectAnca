@@ -12,6 +12,7 @@ import { setUnlinked, skip, skipped, unlinkedOf } from "@/lib/unlinked";
 import { useApp } from "@/components/AppProvider";
 import { Cover } from "@/components/ui";
 import { LinkPicker } from "@/components/LinkPicker";
+import { RescanButton } from "@/components/Rescan";
 
 // Otomatik kapak kaynakları: kişinin elle koyduğu kapak bağlanınca da korunur, bunlar yenisiyle değişir
 const AUTO = /(images\.igdb\.com|media\.rawg\.io|howlongtobeat\.com|steamstatic\.com|image\.tmdb\.org|anilist\.co|simkl\.in)/;
@@ -76,6 +77,7 @@ export default function FixPage() {
           Bunlar kütüphanende durur ama oyun sayfasına, puan ortalamasına ve uyum hesabına girmez. <b>Bağla</b>&apos;ya bas, doğrusunu seç; o kadar.
           Puanın, notun, tarihlerin ve elle koyduğun kapak olduğu gibi kalır.
         </p>
+        <RescanButton big onDone={() => setV((x) => x + 1)} />
         <div className="tabs" style={{ marginBottom: 0 }}>
           <button className={`tab ${tab === "game" ? "active" : ""}`} onClick={() => setTab("game")}>Oyunlar <span className="count">{games.length}</span></button>
           <button className={`tab ${tab === "other" ? "active" : ""}`} onClick={() => setTab("other")}>Film, dizi, anime <span className="count">{others.length}</span></button>

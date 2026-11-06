@@ -31,6 +31,10 @@ export function skip(uid: string, ids: string[]) {
   try { localStorage.setItem(skipKey(uid), JSON.stringify([...s].slice(-5000))); } catch { /* yok say */ }
 }
 
+export function resetSkips(uid: string) {
+  try { localStorage.removeItem(skipKey(uid)); } catch { /* yok say */ }
+}
+
 // Kütüphane sekmesi ve uyarı aynı sayıyı göstersin
 let current: { uid: string; n: number } | null = null;
 const subs = new Set<() => void>();

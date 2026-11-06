@@ -213,6 +213,27 @@ function EpBump({ e }: { e: Entry }) {
   );
 }
 
+// Sanatçı, yönetmen, oyuncu, stüdyo, geliştirici adları tıklanır: o kişinin / şirketin öbür işleri açılır
+export const creatorHref = (type: Entry["type"], name: string, id?: number | string | null) =>
+  `/by/${type}/${encodeURIComponent(name.trim())}${id ? `?id=${id}` : ""}`;
+export function CreatorLinks({ type, text, onGo }: { type: Entry["type"]; text?: string | null; onGo?: () => void }) {
+  if (!text) return null;
+  const lines = text.includes("\n");
+  const parts = text.split(lines ? /\n/ : /,\s*|\s+&\s+/).map((s) => s.trim()).filter(Boolean);
+  return <>{parts.map((p, i) => <Fragment key={i}>{i ? (lines ? <br /> : ", ") : null}<Link className="flink" href={creatorHref(type, p)} onClick={onGo}>{p}</Link></Fragment>)}</>;
+}
+
+// Ayarlar'da seçilen dildeki kapak ve ad (film, dizi, anime): kayıt değişmez, sadece gösterim
+type Loc = { type: Entry["type"]; title: string; cover: string | null; ext_id?: string | null };
+export function LCover({ x }: { x: Loc }) {
+  const { prefs } = useApp();
+  return <Cover src={useLocalized(prefs, x).cover} />;
+}
+export function LTitle({ x }: { x: Loc }) {
+  const { prefs } = useApp();
+  return <>{useLocalized(prefs, x).title}</>;
+}
+
 export function EntryCard({ e, kind = false, edit = false, wall = false }: { e: Entry; kind?: boolean; edit?: boolean; wall?: boolean }) {
   const { openForm, openView, scale, prefs } = useApp();
   const t = TYPES[e.type];
@@ -276,9 +297,9 @@ export function ReviewCard({ e, who = false }: { e: Entry; who?: boolean }) {
   const likes = likeCount(e), comments = commentCount(e);
   return (
     <article className="review-card">
-      <button type="button" className={`review-cover ${t.square ? "square" : ""}`} onClick={() => openView(e)} aria-label={e.title}><span>{t.label}</span><Cover src={e.cover} /></button>
+      <button type="button" className={`review-cover ${t.square ? "square" : ""}`} onClick={() => openView(e)} aria-label={e.title}><span>{t.label}</span><LCover x={e} /></button>
       <div className="review-body">
-        <button type="button" className="review-title" onClick={() => openView(e)}>{e.title}{e.year ? <small> {e.year}</small> : null}</button>
+        <button type="button" className="review-title" onClick={() => openView(e)}><LTitle x={e} />{e.year ? <small> {e.year}</small> : null}</button>
         <div className="review-meta">
           {who && p.username && <Link className="review-who" href={`/u/${p.username}`}><Avatar p={p} cls="sm" /><Name p={p} /></Link>}
           <Rating r={e.rating} />
@@ -310,7 +331,7 @@ export function FeedItem({ e }: { e: Entry }) {
       <div className="text">
         <div className="line">
           <Link href={profile}><b><Name p={p} /></b></Link> {activityVerb(e)}:{" "}
-          <Link className="title-link" href={link}>{e.title}</Link>
+          <Link className="title-link" href={link}><LTitle x={e} /></Link>
         </div>
         <div className="sub">
           <span>{t.label}</span>
@@ -327,7 +348,7 @@ export function FeedItem({ e }: { e: Entry }) {
         )}
         {e.notes && <Link className="feed-review" href={link} title="İncelemenin tamamı"><RichText text={e.notes} /></Link>}
       </div>
-      <Link className="thumb" href={link}>{t.label}<Cover src={e.cover} /></Link>
+      <Link className="thumb" href={link}>{t.label}<LCover x={e} /></Link>
     </div>
   );
 }
@@ -356,7 +377,7 @@ function FeedGroup({ list }: { list: Entry[] }) {
         <div className="sub"><span>{types}</span><span>{timeAgo(list[0].updated_at)}</span></div>
         <div className="grp-covers">
           {shown.map((e) => (
-            <Link key={e.id} href={`${profile}?entry=${e.id}`} title={e.title} className="grp-cover"><span>{TYPES[e.type].label}</span><Cover src={e.cover} /></Link>
+            <Link key={e.id} href={`${profile}?entry=${e.id}`} title={e.title} className="grp-cover"><span>{TYPES[e.type].label}</span><LCover x={e} /></Link>
           ))}
           {list.length > shown.length && <span className="grp-more">+{list.length - shown.length}</span>}
         </div>
@@ -408,13 +429,13 @@ export function Timeline({ list: all, step = 15, empty }: { list: Entry[]; step?
               <div className="tl-text">
                 <div className="tl-who"><Link href={profile}><b><Name p={p} /></b></Link> {activityVerb(e)}</div>
                 <div className="tl-what">
-                  {g.slice(0, 3).map((x, j) => <Fragment key={x.id}>{j > 0 && ", "}<Link href={`${profile}?entry=${x.id}`}>{x.title}</Link></Fragment>)}
+                  {g.slice(0, 3).map((x, j) => <Fragment key={x.id}>{j > 0 && ", "}<Link href={`${profile}?entry=${x.id}`}><LTitle x={x} /></Link></Fragment>)}
                   {g.length > 3 && <span className="muted"> ve {g.length - 3} tane daha</span>}
                 </div>
                 {g.length === 1 && e.rating ? <Rating r={e.rating} /> : null}
               </div>
               <div className="tl-covers">
-                {g.slice(0, 3).map((x) => <Link key={x.id} className="tl-cover" href={`${profile}?entry=${x.id}`} title={x.title}><span>{TYPES[x.type].label}</span><Cover src={x.cover} /></Link>)}
+                {g.slice(0, 3).map((x) => <Link key={x.id} className="tl-cover" href={`${profile}?entry=${x.id}`} title={x.title}><span>{TYPES[x.type].label}</span><LCover x={x} /></Link>)}
               </div>
             </div>
           </Fragment>

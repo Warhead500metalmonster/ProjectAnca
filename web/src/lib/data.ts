@@ -93,13 +93,46 @@ export async function searchMusic(text: string): Promise<Found[]> {
   }).slice(0, 10);
 }
 
+const gameFound = (g: RawgGame): Found => ({
+  type: "game", title: g.name, year: parseInt(g.released || "") || null, creator: null,
+  cover: g.background_image ? smallImage(g.background_image) : null, rawg_id: g.id,
+  thumb: g.background_image ? smallImage(g.background_image) : null, raw: g,
+});
+
+// ---------- Her dilde arama: Wikidata köprüsü (Türkçe, Japonca, Rusça... adla yazılınca gerçek kaydı bulur) ----------
+interface WikiHit { label: string; local: string; ids: Record<string, string> }
+type Wiki = WikiHit[] & { en?: string | null };
+const wikiCache = new Map<string, Promise<Wiki>>();
+function viaWikidata(kind: "game" | "movie" | "show" | "anime", text: string): Promise<Wiki> {
+  const k = `${kind}|${norm(text)}`;
+  if (!wikiCache.has(k)) wikiCache.set(k, fetch(`/api/wikidata?${new URLSearchParams({ q: text, kind })}`).then((r) => (r.ok ? r.json() : { results: [] }))
+    .then((d) => Object.assign(d.results || [], { en: d.en || null })).catch(() => []));
+  return wikiCache.get(k)!;
+}
+const plainText = (s: string) => norm(s).replace(/[^\p{L}\p{N}]+/gu, "");
+// Yazılan ad bulunan sonuçların hiçbirinde geçmiyorsa başka dilde yazılmış demektir: köprüden gelenler öne alınır
+const foreignQuery = (found: { title: string }[], text: string) => {
+  const t = plainText(text);
+  return !found.slice(0, 5).some((f) => { const n = plainText(f.title); return n.includes(t) || t.includes(n); });
+};
+
 export async function searchGames(text: string, limit = 6): Promise<Found[]> {
-  const data = await rawg<{ results?: RawgGame[] }>("games", { search: text, search_precise: "true", page_size: limit });
-  return (data.results || []).map((g) => ({
-    type: "game", title: g.name, year: parseInt(g.released || "") || null, creator: null,
-    cover: g.background_image ? smallImage(g.background_image) : null, rawg_id: g.id,
-    thumb: g.background_image ? smallImage(g.background_image) : null, raw: g,
-  }));
+  const [data, wiki] = await Promise.all([
+    rawg<{ results?: RawgGame[] }>("games", { search: text, search_precise: "true", page_size: limit }),
+    text.trim().length >= 3 ? viaWikidata("game", text) : Promise.resolve([] as Wiki),
+  ]);
+  let list = (data.results || []).map(gameFound);
+  // Oyunun kendisi Wikidata'da yoksa yazılanın İngilizce adıyla da ara ("Örümcek Adam" → "Spider-Man")
+  if (wiki.en && plainText(wiki.en) !== plainText(text) && foreignQuery(list, text)) {
+    const alt = await rawg<{ results?: RawgGame[] }>("games", { search: wiki.en, search_precise: "true", page_size: limit }).catch(() => ({ results: [] as RawgGame[] }));
+    const more = (alt.results || []).map(gameFound).filter((g) => !list.some((x) => x.rawg_id === g.rawg_id));
+    list = [...more, ...list];
+  }
+  const slugs = wiki.map((w) => w.ids.P5794).filter((s) => s && !list.some((g) => g.raw?.slug === s));
+  if (!slugs.length) return list;
+  const extra = ((await rawg<{ results?: RawgGame[] }>("games", { slugs: slugs.slice(0, 6).join(",") }).catch(() => ({ results: [] }))).results || [])
+    .map(gameFound).filter((g) => !list.some((x) => x.rawg_id === g.rawg_id));
+  return foreignQuery(list, text) ? [...extra, ...list] : [...list, ...extra.slice(0, 3)];
 }
 
 // Arama bulamazsa: YouTube / YouTube Music / Spotify / SoundCloud linkinden bilgileri çek
@@ -154,8 +187,16 @@ interface TmdbHit { id: number; title?: string; name?: string; release_date?: st
 
 export async function searchTmdb(type: "movie" | "show", text: string): Promise<Found[]> {
   const kind = type === "movie" ? "movie" : "tv";
-  const data = await tmdb<{ results?: TmdbHit[] }>(`search/${kind}`, { query: text });
-  return (data.results || []).slice(0, 7).map((h) => {
+  const [data, wiki] = await Promise.all([
+    tmdb<{ results?: TmdbHit[] }>(`search/${kind}`, { query: text }),
+    text.trim().length >= 3 ? viaWikidata(type, text) : Promise.resolve([] as Wiki),
+  ]);
+  const hits = (data.results || []).slice(0, 7);
+  // Başka dildeki adla bulunanlar (TMDB aramasında çıkmayanlar) numarasıyla getirilir
+  const want = wiki.map((w) => Number(w.ids[type === "movie" ? "P4947" : "P4983"])).filter((id) => id && !hits.some((h) => h.id === id)).slice(0, 4);
+  const extra = (await Promise.all(want.map((id) => tmdb<TmdbHit>(`${kind}/${id}`).catch(() => null)))).filter((h): h is TmdbHit => !!h?.id);
+  const all = extra.length && foreignQuery(hits.map((h) => ({ title: h.title || h.name || "" })), text) ? [...extra, ...hits] : [...hits, ...extra];
+  return all.slice(0, 9).map((h) => {
     const title = h.title || h.name || "";
     const orig = h.original_title || h.original_name;
     return {
@@ -188,7 +229,7 @@ export const tmdbCreator = (d: TmdbDetail) =>
 // ---------- Anime: AniList (anahtar istemez) ----------
 
 interface AniMedia {
-  id: number; title: { romaji?: string; english?: string; native?: string }; startDate?: { year?: number };
+  id: number; idMal?: number | null; title: { romaji?: string; english?: string; native?: string }; startDate?: { year?: number };
   coverImage?: { large?: string; medium?: string }; studios?: { nodes: { name: string }[] }; episodes?: number;
 }
 
@@ -201,20 +242,51 @@ export async function anilist<T>(query: string, variables: Record<string, unknow
   return (await r.json()).data;
 }
 
+// ---------- MyAnimeList (Jikan, anahtar istemez): AniList'te olmayan animeler için ----------
+interface JikanAnime {
+  mal_id: number; title: string; title_english?: string | null; title_japanese?: string | null; year?: number | null; episodes?: number | null;
+  images?: { jpg?: { image_url?: string; large_image_url?: string } }; studios?: { name: string }[]; synopsis?: string | null; duration?: string | null;
+  genres?: { name: string }[]; score?: number | null; type?: string | null; aired?: { prop?: { from?: { year?: number | null } } }; title_synonyms?: string[];
+}
+async function jikanSearch(text: string): Promise<Found[]> {
+  const r = await fetch(`https://api.jikan.moe/v4/anime?${new URLSearchParams({ q: text, limit: "8", sfw: "true" })}`);
+  if (!r.ok) throw new Error(String(r.status));
+  const list: JikanAnime[] = (await r.json()).data || [];
+  return list.map((m) => ({
+    type: "anime", title: m.title_english || m.title, year: m.year || m.aired?.prop?.from?.year || null, creator: m.studios?.[0]?.name || null,
+    cover: m.images?.jpg?.large_image_url || m.images?.jpg?.image_url || null, rawg_id: null, ext_id: `mal:${m.mal_id}`,
+    sub: ["MyAnimeList", m.title_english && m.title !== m.title_english ? m.title : "", m.title_japanese, m.episodes ? `${m.episodes} bölüm` : ""].filter(Boolean).join(" · "),
+    thumb: m.images?.jpg?.image_url || null,
+  }));
+}
+export const malDetail = async (extId: string) => {
+  const r = await fetch(`https://api.jikan.moe/v4/anime/${extId.split(":")[1]}/full`);
+  if (!r.ok) throw new Error(String(r.status));
+  return (await r.json()).data as JikanAnime;
+};
+
+// Anime: önce AniList; onda olmayanlar MyAnimeList'ten (aynı anime iki kez çıkmaz)
 export async function searchAnime(text: string): Promise<Found[]> {
+  const [ani, mal] = await Promise.all([aniSearch(text).catch(() => null), jikanSearch(text).catch(() => [] as Found[])]);
+  if (!ani) { if (mal.length) return mal.slice(0, 8); throw new Error("anime search"); }
+  const known = new Set(ani.malIds);
+  return [...ani.list, ...mal.filter((m) => !known.has(Number(m.ext_id!.split(":")[1]))).slice(0, 4)];
+}
+
+async function aniSearch(text: string): Promise<{ list: Found[]; malIds: number[] }> {
   const data = await anilist<{ Page: { media: AniMedia[] } }>(
     `query ($s: String) { Page(perPage: 7) { media(search: $s, type: ANIME, sort: SEARCH_MATCH) {
-      id title { romaji english native } startDate { year } coverImage { large medium } studios(isMain: true) { nodes { name } } episodes } } }`,
+      id idMal title { romaji english native } startDate { year } coverImage { large medium } studios(isMain: true) { nodes { name } } episodes } } }`,
     { s: text });
-  return data.Page.media.map((m) => {
+  return { malIds: data.Page.media.map((m) => m.idMal).filter((x): x is number => !!x), list: data.Page.media.map((m) => {
     const title = m.title.english || m.title.romaji || "";
     return {
       type: "anime", title, year: m.startDate?.year || null, creator: m.studios?.nodes[0]?.name || null,
       cover: m.coverImage?.large || null, rawg_id: null, ext_id: `anilist:${m.id}`,
       sub: [m.title.romaji !== title ? m.title.romaji : "", m.title.native, m.episodes ? `${m.episodes} bölüm` : ""].filter(Boolean).join(" · ") || undefined,
       thumb: m.coverImage?.medium || null,
-    };
-  });
+    } as Found;
+  }) };
 }
 
 export interface AniDetail {
@@ -304,7 +376,7 @@ export const SEARCH_CREDITS: Record<EntryType, [string, string]> = {
   music: ["Apple Music · Deezer", "https://www.deezer.com"],
   movie: ["TMDB", "https://www.themoviedb.org"],
   show: ["TMDB", "https://www.themoviedb.org"],
-  anime: ["AniList", "https://anilist.co"],
+  anime: ["AniList · MyAnimeList", "https://anilist.co"],
 };
 export const searchCredit = (type: EntryType) => SEARCH_CREDITS[type];
 
