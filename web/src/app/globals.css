@@ -1917,6 +1917,7 @@ dialog.fav-picker:not([open]) { display: none; }
 .ev-status { margin-bottom: 12px; }
 .ev-status button { padding: 9px 18px; }
 .ev-note { display: flex; gap: 8px; }
+.ev-rule { margin: -4px 0 10px; line-height: 1.45; }
 .ev-note .input { flex: 1; }
 .ev-me-foot { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
 

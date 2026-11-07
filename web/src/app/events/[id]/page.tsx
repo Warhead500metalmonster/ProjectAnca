@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { type AncEvent, type EventMember, type EventOption, type MemberStatus, addToLibrary, dateLine, eventBadgeKey, eventState, fetchEvent, finishOrder, kindOf, libraryEntry, statusText, verbs } from "@/lib/events";
+import { type AncEvent, type EventMember, type EventOption, type MemberStatus, addToLibrary, dateLine, eventBadgeKey, eventState, fairRule, fetchEvent, finishBlock, finishOrder, kindOf, libraryEntry, statusText, verbs } from "@/lib/events";
 import { BADGES, PROFILE_COLS, TYPES } from "@/lib/constants";
 import { cssUrl, safeUrl, timeAgo, today, wideImage } from "@/lib/format";
 import { q, sb } from "@/lib/supabase";
@@ -241,8 +241,14 @@ function MyPanel({ ev, my, members, onChange }: { ev: AncEvent; my: EventMember;
   const option = ev.options.find((o) => o.id === my.choice);
   const entry = libraryEntry(mine, option);
 
+  const state = eventState(ev);
+  const block = finishBlock(ev, my);
+
   async function setStatus(s: MemberStatus) {
     if (!me || s === my.status) return;
+    if (s === "done" && block) return toast(block);
+    if (s === "playing" && state === "upcoming") return toast("Etkinlik daha başlamadı. Başlayınca Oynuyorum diyebilirsin.");
+    if (my.status === "done" && !confirm("Bitirdim'i geri alırsan bu etkinliğin rozeti ve sıran gider; yeniden Bitirdim dediğinde en sona eklenirsin. Emin misin?")) return;
     setBusy(true);
     try {
       const now = new Date().toISOString();
@@ -284,9 +290,11 @@ function MyPanel({ ev, my, members, onChange }: { ev: AncEvent; my: EventMember;
       <div className="section-head"><h2>Senin durumun</h2>{option && <span className="muted small">{option.label}</span>}</div>
       <div className="seg ev-status">
         {STATUSES.map((s) => (
-          <button key={s} type="button" disabled={busy} className={my.status === s ? "active" : ""} onClick={() => setStatus(s)}>{statusText(s, kindOf(ev, my.choice), true)}</button>
+          <button key={s} type="button" disabled={busy || (s === "done" && !!block) || (s === "playing" && state === "upcoming")} title={s === "done" && block ? block : undefined}
+            className={my.status === s ? "active" : ""} onClick={() => setStatus(s)}>{statusText(s, kindOf(ev, my.choice), true)}</button>
         ))}
       </div>
+      {my.status !== "done" && state !== "ended" && <p className="muted small ev-rule">{block && my.status === "playing" ? block : fairRule(ev)}</p>}
       <div className="ev-note">
         <input className="input" maxLength={140} value={note} onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => e.key === "Enter" && saveNote()}
           placeholder="Neredesin? ör. Su Tapınağı'ndayım, yardım! (spoiler verme)" />
@@ -309,11 +317,13 @@ function People({ ev, members }: { ev: AncEvent; members: EventMember[] }) {
     const who = m.profiles?.display_name || m.profiles?.username || "Bu kişi";
     const text = mode === "give" ? `${who} bu etkinliğin İlk bitireni olsun mu? Rozet ona geçer, öncekinden alınır.`
       : mode === "revoke" ? `${who} ilk bitiren sayılmasın mı? Rozeti alınır; ondan sonra bitiren varsa ona geçer, yoksa ilk bitirdim diyen alır.`
+      : mode === "undone" ? `${who} bu etkinliği bitirmiş sayılmasın mı? Durumu Oynuyor olur, bu etkinlikten kazandığı rozetler alınır; İlk bitirense rozet sıradakine geçer. Kendisine bildirim gider.`
       : `${who} yeniden sıralamaya girsin mi? (Rozet kendiliğinden geri gelmez; istersen sonra İlk bitiren yap.)`;
     if (!confirm(text)) return;
-    const { error } = await sb().rpc("admin_event_first", { p_event: ev.id, p_user: m.user_id, p_mode: mode });
+    const { error } = mode === "undone" ? await sb().rpc("admin_event_undone", { p_event: ev.id, p_user: m.user_id })
+      : await sb().rpc("admin_event_first", { p_event: ev.id, p_user: m.user_id, p_mode: mode });
     if (error) return toast("Olmadı: " + error.message);
-    toast(mode === "give" ? `${who} artık İlk bitiren` : mode === "revoke" ? "Rozet geri alındı, sıradakine geçti" : "Tamam");
+    toast(mode === "give" ? `${who} artık İlk bitiren` : mode === "revoke" ? "Rozet geri alındı, sıradakine geçti" : mode === "undone" ? "Bitirme geçersiz sayıldı, rozetleri alındı" : "Tamam");
     refresh();
     loadBadges();
   }
@@ -351,10 +361,11 @@ function People({ ev, members }: { ev: AncEvent; members: EventMember[] }) {
       <span className="muted small ev-person-time">{timeAgo(m.status === "done" && m.finished_at ? m.finished_at : m.updated_at)}</span>
       {isAdmin && m.status === "done" && (
         <select className="btn small ghost ev-kick" value="" aria-label="İlk bitiren ayarı" onChange={(e) => setFirst(m, e.target.value)}>
-          <option value="" disabled>İlk bitiren…</option>
+          <option value="" disabled>Bitirme…</option>
           {first?.user_id !== m.user_id && <option value="give">İlk bitiren yap</option>}
           {!unranked.includes(m) && <option value="revoke">İlk bitiren sayma (rozeti al)</option>}
           {unranked.includes(m) && <option value="restore">Sıralamaya geri al</option>}
+          <option value="undone">Bitirmeyi geçersiz say</option>
         </select>
       )}
       {isAdmin && <button type="button" className="btn small ghost ev-kick" onClick={() => remove(m)} title="Bu kişiyi etkinlikten çıkar">Çıkar</button>}
@@ -494,7 +505,7 @@ function HowTo({ kind }: { kind: AncEvent["kind"] | null }) {
     <section className="section ev-howto">
       <div><span>1</span><b>Sürümünü seç</b><small>Aşağıdan {v.pick} seç, katıl.</small></div>
       <div><span>2</span><b>{v.step}</b><small>Nerede olduğunu yaz, sohbette gaz ver; spoiler gizli kalır.</small></div>
-      <div><span>3</span><b>Bitir, rozeti kap</b><small>Bitirdim&apos;e bas; bitirenler listesine adın yazılsın.</small></div>
+      <div><span>3</span><b>Bitir, rozeti kap</b><small>Etkinlik süresinde bitirince Bitirdim&apos;e bas; bitirenler listesine adın yazılsın.</small></div>
     </section>
   );
 }

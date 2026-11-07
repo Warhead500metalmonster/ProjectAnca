@@ -5,6 +5,11 @@ export interface ChangelogItem { date: string; title: string; body: string }
 
 export const CHANGELOG: ChangelogItem[] = [
   {
+    date: "2026-11-07T14:35:00+04:00",
+    title: "Etkinliklerde adil bitirme",
+    body: "Etkinlikte sayılması için oyuna etkinlik süresi içinde başlayıp bitirmen gerekiyor. Önce Oynuyorum dersin; Bitirdim, ondan belli bir süre sonra açılır (Hyrule etkinliğinde 24 saat). Başlama ve bitirme zamanını artık sunucu yazıyor, kimse geçmiş bir tarih girip İlk bitiren olamıyor. Bu kurala uymayan eski bitirmeler geçersiz sayıldı. Hak edenler rozetini kazanmaya devam ediyor.",
+  },
+  {
     date: "2026-11-06T11:28:00+04:00",
     title: "Her dilde arama ve tıklanabilir yaratıcılar",
     body: "Oyun, film, dizi ve animeleri artık Türkçe, Japonca ya da başka bir dildeki adıyla da bulabilirsin: Yüzüklerin Efendisi, Örümcek Adam, ゼルダの伝説 gibi. AniList'te olmayan animeler MyAnimeList'ten geliyor. Bir sanatçının, yönetmenin, oyuncunun, stüdyonun ya da geliştiricinin adına tıklayınca öbür işlerini görürsün. Profilde Tümü sekmesi oyunları, filmleri, dizileri ve animeleri ayrı raflarda gösteriyor. Ayarlar → Hesap'taki Yeniden tara düğmesi sayfasız kayıtlarını baştan tarayıp adı tutanları kendiliğinden bağlıyor. Seçtiğin dildeki adlar ve kapaklar artık her yerde görünüyor, ilk açılıştaki tercih penceresi de bir seçim yapınca kapanmıyor.",

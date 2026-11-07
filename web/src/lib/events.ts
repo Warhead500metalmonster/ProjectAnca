@@ -15,6 +15,7 @@ export interface AncEvent {
   options: EventOption[]; starts_on: string; ends_on: string | null; created_at: string;
   badge_name?: string | null; badge_icon?: string | null; // bitirenlere verilen, bu etkinliğe özel rozet
   first_user?: string | null; // İlk bitiren rozetini alan (yönetim değiştirebilir); null: henüz yok, ilk bitiren alır
+  min_hours?: number | null; // Oynuyorum dedikten en az kaç saat sonra Bitirdim denebilir (hile olmasın)
 }
 // Etkinliğe özel rozetin anahtarı (user_badges.badge): ev_ + etkinlik kimliğinin ilk 8 harfi
 export const eventBadgeKey = (id: string) => `ev_${id.slice(0, 8)}`;
@@ -23,7 +24,26 @@ export interface EventMember {
   event_id: string; user_id: string; choice: string | null; status: MemberStatus; note: string | null;
   joined_at: string; updated_at: string; finished_at: string | null; profiles?: ProfileLite | null;
   no_first?: boolean; // yönetim kararıyla ilk bitiren sayılmaz
+  started_at?: string | null; // Oynuyorum dediği an (sunucu yazar)
 }
+
+// Etkinlikte sayılması için oyun etkinlik süresinde başlanıp bitirilmeli: önce Oynuyorum, en az süre dolunca Bitirdim.
+// Asıl denetim veritabanında (migration 037); burası tuşu kapatıp nedenini söyler.
+export function finishBlock(ev: Pick<AncEvent, "starts_on" | "ends_on" | "min_hours">, my: Pick<EventMember, "status" | "started_at">, now = Date.now()): string | null {
+  const s = eventState(ev);
+  if (s === "upcoming") return "Etkinlik daha başlamadı.";
+  if (s === "ended") return "Etkinlik bitti.";
+  if (my.status === "done") return null;
+  if (my.status !== "playing") return "Önce Oynuyorum de: etkinlikte sayılması için etkinlik süresinde başlayıp bitirmen gerekiyor.";
+  if (ev.min_hours && my.started_at) {
+    const open = new Date(my.started_at).getTime() + ev.min_hours * 3600000;
+    if (now < open) return `Başladıktan en az ${ev.min_hours} saat sonra Bitirdim diyebilirsin: ${new Date(open).toLocaleString("tr", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })} sonra açılır.`;
+  }
+  return null;
+}
+// Kuralın tek cümlesi (etkinlik sayfasında)
+export const fairRule = (ev: Pick<AncEvent, "min_hours" | "ends_on">) =>
+  `Sayılması için etkinlik süresinde başlayıp ${ev.ends_on ? "bitiş gününe kadar " : ""}bitirmelisin: önce Oynuyorum de${ev.min_hours ? `, Bitirdim ondan en az ${ev.min_hours} saat sonra açılır` : ""}.`;
 
 // Bitirenlerin sırası: İlk bitiren (rozetin sahibi) en üstte, sonra bitirme zamanına göre; yönetimin saymadıkları sonda ve sırasız.
 // Veritabanı güncellenmediyse (first_user yok) eskisi gibi en erken bitiren ilk sayılır.

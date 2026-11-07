@@ -32,6 +32,8 @@ export function EventForm({ ev, onDone }: { ev?: AncEvent; onDone: (id?: string)
   const [options, setOptions] = useState<EventOption[]>(ev?.options || []);
   const [badgeName, setBadgeName] = useState(ev?.badge_name || "");
   const [badgeIcon, setBadgeIcon] = useState(ev?.badge_icon || "✦");
+  // Oynuyorum dedikten en az kaç saat sonra Bitirdim denebilir (hile olmasın); yeni oyun etkinliğinde 24
+  const [minHours, setMinHours] = useState(ev ? String(ev.min_hours ?? "") : "24");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -43,9 +45,12 @@ export function EventForm({ ev, onDone }: { ev?: AncEvent; onDone: (id?: string)
     if (cover.trim() && !cover.trim().startsWith("https://")) return setError("Kapak linki https:// ile başlamalı.");
     if (ends && ends < starts) return setError("Bitiş tarihi başlangıçtan önce olamaz.");
     if (options.some((o) => !o.label.trim())) return setError("Her sürüme bir ad ver (ör. Orijinal, 3DS remake).");
+    const mh = minHours.trim() ? Math.round(Number(minHours)) : null;
+    if (mh !== null && !(mh >= 0 && mh <= 2000)) return setError("En az süre 0 ile 2000 saat arasında olmalı.");
     const row = {
       title: title.trim().slice(0, 120), description: description.trim() || null, cover: cover.trim() || null, kind,
       starts_on: starts, ends_on: ends || null,
+      ...((mh !== null || ev?.min_hours != null) && { min_hours: mh || null }),
       // Rozet alanları sadece doluysa gönderilir (veritabanı güncellenmeden de etkinlik açılabilsin)
       ...((badgeName.trim() || ev?.badge_name) && { badge_name: badgeName.trim().slice(0, 40) || null, badge_icon: badgeIcon.trim() || "✦" }),
       options: options.map((o) => ({ ...o, label: o.label.trim().slice(0, 40), sub: o.sub?.trim() || undefined })),
@@ -109,6 +114,10 @@ export function EventForm({ ev, onDone }: { ev?: AncEvent; onDone: (id?: string)
           <label htmlFor="ev-end">Bitiş <span className="muted">· boş bırakırsan süresiz</span></label>
           <input id="ev-end" type="date" value={ends} onChange={(e) => setEnds(e.target.value)} />
         </div>
+      </div>
+      <div className="field">
+        <label htmlFor="ev-min">Bitirmek için en az süre (saat) <span className="muted">· Oynuyorum dedikten bu kadar saat geçmeden Bitirdim denemez; boş: sınır yok</span></label>
+        <input id="ev-min" className="input" type="number" min={0} max={2000} placeholder="ör. 24" value={minHours} onChange={(e) => setMinHours(e.target.value)} />
       </div>
       <div className="chips ev-durations">
         <span className="muted small">Süre:</span>

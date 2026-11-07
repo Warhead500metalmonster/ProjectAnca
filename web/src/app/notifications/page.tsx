@@ -13,14 +13,14 @@ import { NOTIF_SEEN } from "@/components/Topbar";
 import { Avatar, Name } from "@/components/ui";
 import { excerptOf } from "@/components/ChatBody";
 
-type Kind = "like" | "comment" | "follow" | "plan" | "reaction" | "pcomment" | "pcomment_reply" | "support" | "support_reply" | "unlinked" | "event_first";
+type Kind = "like" | "comment" | "follow" | "plan" | "reaction" | "pcomment" | "pcomment_reply" | "support" | "support_reply" | "unlinked" | "event_first" | "event";
 interface Note { kind: Kind; at: string; who?: Partial<Profile> | null; entry?: { id: string; title: string }; body?: string; done?: boolean; link?: string; unread?: boolean }
 interface DbNote { id: string; kind: Kind; body: string | null; link: string | null; created_at: string; read_at: string | null; actor: Partial<Profile> | null }
 interface Row { created_at: string; profiles: Partial<Profile> | null; entries: { id: string; title: string }; body?: string }
 
 // Süzgeç: birbirine yakın türler tek düğmede
 const KINDS: [string, string, Kind[]][] = [["like", "Beğeniler", ["like"]], ["reaction", "Tepkiler", ["reaction"]], ["comment", "Yorumlar", ["comment", "pcomment", "pcomment_reply"]],
-  ["follow", "Takipçiler", ["follow"]], ["plan", "Planladıkların", ["plan"]], ["team", "Ekip", ["support", "support_reply", "unlinked", "event_first"]]];
+  ["follow", "Takipçiler", ["follow"]], ["plan", "Planladıkların", ["plan"]], ["team", "Ekip", ["support", "support_reply", "unlinked", "event_first", "event"]]];
 const groupOf = (at: string) => {
   const days = (Date.now() - new Date(at).getTime()) / 864e5;
   return days < 1 ? "Bugün" : days < 7 ? "Bu hafta" : "Daha eski";
@@ -104,7 +104,7 @@ export default function Notifications() {
               {n.kind === "support" && <>ekibe yazdı <span className="ann-tag">Ekip</span><p className="note-body">“{excerptOf(n.body!)}”</p></>}
               {n.kind === "support_reply" && <>Ancalog ekibi adına cevap verdi<p className="note-body">“{excerptOf(n.body!)}”</p></>}
               {n.kind === "unlinked" && <>bir sayfaya bağlı olmayan oyun ekledi: <span className="grad">{n.body}</span> <span className="ann-tag">Ekip</span></>}
-              {n.kind === "event_first" && <>{n.body}</>}
+              {(n.kind === "event_first" || n.kind === "event") && <>{n.body}</>}
               <div className="muted small">{timeAgo(n.at)}</div>
             </div>
           </Link>
